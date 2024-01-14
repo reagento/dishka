@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=66.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project]
+name = "dishka"
+version = "0.1"
+readme = "README.md"
+authors = [
+    { name = "Andrey Tikhonov", email = "17@itishka.org" },
+]
+license = { file = "LICENSE" }
+description = "Minimal DI framework"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+dependencies = []
+
+[project.urls]
+"Homepage" = "https://github.com/tishka17/dishka"
+"Bug Tracker" = "https://github.com/tishka17/dishka/issues"
+
+

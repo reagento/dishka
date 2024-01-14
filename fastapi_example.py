@@ -1,71 +1,37 @@
 from contextlib import contextmanager
 from enum import auto
-from inspect import signature, Signature
-from typing import Annotated, get_type_hints, get_origin, get_args, Any
+from inspect import Parameter
+from typing import Annotated, get_type_hints
 
 from dishka import Container, Provider, provide, Scope
+from dishka.inject import wrap_injection, Depends
 from fastapi import Request, APIRouter, FastAPI
 
 
 # framework level
-
-class Depends:
-    def __init__(self, param: Any = None):
-        self.param = param
-
-
 def inject(func):
-    hints = get_type_hints(func, include_extras=True)
-    func_signature = signature(func)
-
-    dependencies = {}
-    for name, hint in hints.items():
-        if get_origin(hint) is not Annotated:
-            continue
-        dep = next(
-            (arg for arg in get_args(hint) if isinstance(arg, Depends)),
-            None,
-        )
-        if not dep:
-            continue
-        if dep.param is None:
-            dependencies[name] = get_args(hint)[0]
-        else:
-            dependencies[name] = dep.param
-
-    request_name = next(
-        name
-        for name, hint in hints.items()
-        if hint is Request
+    hints = get_type_hints(func)
+    requests_param = next(
+        (name for name, hint in hints.items() if hint is Request),
+        None,
     )
+    if requests_param:
+        getter = lambda kwargs: kwargs[requests_param].state.container
+        additional_params = []
+    else:
+        getter = lambda kwargs: kwargs["___r___"].state.container
+        additional_params = [Parameter(
+            name="___r___",
+            annotation=Request,
+            kind=Parameter.KEYWORD_ONLY,
+        )]
 
-    def autoinjected_func(**kwargs):
-        request = kwargs[request_name]
-        container = request.state.container
-        solved = {
-            name: container.get(dep)
-            for name, dep in dependencies.items()
-        }
-        return func(**kwargs, **solved)
-
-    autoinjected_func.__annotations__ = {
-        name: hint
-        for name, hint in hints.items()
-        if name not in dependencies
-    }
-    autoinjected_func.__name__ = func.__name__
-    autoinjected_func.__doc__ = func.__doc__
-    new_params = [
-        param
-        for name, param in func_signature.parameters.items()
-        if name not in dependencies
-    ]
-    autoinjected_func.__signature__ = Signature(
-        parameters=new_params,
-        return_annotation=func_signature.return_annotation,
+    return wrap_injection(
+        func=func,
+        remove_depends=True,
+        container_getter=getter,
+        additional_params=additional_params,
     )
-
-    return autoinjected_func
 
 
 def container_middleware(container):
@@ -108,10 +74,21 @@ router = APIRouter()
 @router.get("/")
 @inject
 def index(
-        request: Request,
+        *,
         value: Annotated[int, Depends()],
-) -> int:
-    return value
+        value2: Annotated[str, Depends()],
+) -> str:
+    return f"{value} {value2}"
+
+
+@router.get("/other")
+@inject
+def index(
+        *,
+        request: Request,
+        value2: Annotated[str, Depends()],
+) -> str:
+    return f"{value2} {request!r}"
 
 
 def create_app() -> FastAPI:

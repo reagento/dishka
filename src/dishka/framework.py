@@ -66,7 +66,10 @@ class Provider:
             self, dependency: Any, scope: Scope,
     ) -> Optional[DependencyProvider]:
         dep_provider = self.dependencies.get(dependency)
-        if dep_provider and dep_provider.scope <= scope:
+        if dep_provider and (
+                dep_provider.scope == scope  # None scope is available
+                or dep_provider.scope < scope
+        ):
             return dep_provider
         return None
 
@@ -112,9 +115,11 @@ class Container:
             )
             if not dep_provider:
                 continue
-            if dep_provider.scope > self.scope:
+            if dep_provider.scope == self.scope:
+                pass
+            elif dep_provider.scope > self.scope:
                 raise ValueError("Cannot resolve dependency of greater scope")
-            if dep_provider.scope < self.scope:
+            elif dep_provider.scope < self.scope:
                 return self.parent_container.get(dependency_type)
 
             sub_dependencies = [

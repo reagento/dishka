@@ -37,6 +37,8 @@ class Container:
         )
 
     def __call__(self, context: Optional[dict] = None) -> "ContextWrapper":
+        if not self.scope:
+            raise ValueError("No root scope found, cannot enter context")
         return ContextWrapper(self._get_child(context))
 
     def get(self, dependency_type: Type[T]) -> T:
@@ -66,7 +68,8 @@ class Container:
             self.context[dependency_type] = solved
             return solved
 
-        raise ValueError(f"No provider found for {dependency_type!r}")
+        raise ValueError(f"No provider found for {dependency_type!r} "
+                         f"required for scope {self.scope}")
 
     def close(self):
         self.exit_stack.close()

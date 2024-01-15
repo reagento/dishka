@@ -17,7 +17,7 @@ authors = [
 ]
 license = { file = "LICENSE" }
 description = "Minimal DI framework"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Intended Audience :: Developers",

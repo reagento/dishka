@@ -3,5 +3,7 @@ __all__ = [
     "Depends", "wrap_injection",
 ]
 
-from .framework import provide, Scope, Container, Provider
+from .container import Container
 from .inject import Depends, wrap_injection
+from .provider import Provider, provide
+from .scope import Scope

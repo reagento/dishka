@@ -30,10 +30,10 @@ def main():
     containter = Container(MyProvider(1), scope=MyScope.APP)
     print(containter.get(int))
 
-    with containter as c_request:
+    with containter() as c_request:
         print(c_request.get(str))
 
-    with containter as c_request:
+    with containter() as c_request:
         print(c_request.get(str))
     containter.close()
 

@@ -1,11 +1,12 @@
 from contextlib import contextmanager
 from enum import auto
 from inspect import Parameter
-from typing import Annotated, get_type_hints
+from typing import Annotated, get_type_hints, NewType
+
+from fastapi import Request, APIRouter, FastAPI
 
 from dishka import Container, Provider, provide, Scope
 from dishka.inject import wrap_injection, Depends
-from fastapi import Request, APIRouter, FastAPI
 
 
 # framework level
@@ -36,7 +37,7 @@ def inject(func):
 
 def container_middleware(container):
     async def add_request_container(request: Request, call_next):
-        with container as subcontainer:
+        with container({Request: request}) as subcontainer:
             request.state.container = subcontainer
             return await call_next(request)
 
@@ -44,6 +45,9 @@ def container_middleware(container):
 
 
 # app dependency logic
+
+Host = NewType("Host", str)
+
 
 class MyScope(Scope):
     APP = auto()
@@ -62,9 +66,8 @@ class MyProvider(Provider):
 
     @provide(MyScope.REQUEST)
     @contextmanager
-    def get_str(self, dep: int) -> str:
-        print("solve str")
-        yield f">{dep}<"
+    def get_host(self, request: Request) -> Host:
+        yield request.client.host
 
 
 # app
@@ -76,9 +79,9 @@ router = APIRouter()
 def index(
         *,
         value: Annotated[int, Depends()],
-        value2: Annotated[str, Depends()],
+        host: Annotated[Host, Depends()],
 ) -> str:
-    return f"{value} {value2}"
+    return f"{value} {host}"
 
 
 @router.get("/other")
@@ -86,9 +89,9 @@ def index(
 def index(
         *,
         request: Request,
-        value2: Annotated[str, Depends()],
+        host: Annotated[Host, Depends()],
 ) -> str:
-    return f"{value2} {request!r}"
+    return f"{request.client.host} - {host}"
 
 
 def create_app() -> FastAPI:

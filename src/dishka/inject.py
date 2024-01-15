@@ -3,7 +3,7 @@ from typing import (
     Any, Annotated, Callable, Sequence, get_type_hints, get_origin, get_args,
 )
 
-from .framework import Container
+from .container import Container
 
 
 class Depends:
@@ -56,7 +56,6 @@ def wrap_injection(
             new_annotations[param.name] = param.annotation
 
     def autoinjected_func(**kwargs):
-        print(kwargs)
         container = container_getter(kwargs)
         for param in additional_params:
             kwargs.pop(param.name)

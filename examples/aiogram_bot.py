@@ -86,8 +86,8 @@ async def main():
     )
     bot = Bot(token=API_TOKEN)
     dp = Dispatcher()
-    for obseserver in dp.observers.values():
-        obseserver.middleware(ContainerMiddleware(container))
+    for observer in dp.observers.values():
+        observer.middleware(ContainerMiddleware(container))
     dp.include_router(router)
 
     await dp.start_polling(bot)

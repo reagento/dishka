@@ -27,15 +27,15 @@ class MyProvider(Provider):
 
 
 def main():
-    containter = Container(MyProvider(1), scope=MyScope.APP)
-    print(containter.get(int))
+    container = Container(MyProvider(1), scope=MyScope.APP)
+    print(container.get(int))
 
-    with containter() as c_request:
+    with container() as c_request:
         print(c_request.get(str))
 
-    with containter() as c_request:
+    with container() as c_request:
         print(c_request.get(str))
-    containter.close()
+    container.close()
 
 
 if __name__ == '__main__':

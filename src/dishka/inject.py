@@ -16,6 +16,7 @@ def wrap_injection(
         container_getter: Callable[[dict], Container],
         remove_depends: bool = True,
         additional_params: Sequence[Parameter] = (),
+        is_async: bool = False,
 ):
     hints = get_type_hints(func, include_extras=True)
     func_signature = signature(func)
@@ -55,15 +56,26 @@ def wrap_injection(
         for param in additional_params:
             new_annotations[param.name] = param.annotation
 
-    def autoinjected_func(**kwargs):
-        container = container_getter(kwargs)
-        for param in additional_params:
-            kwargs.pop(param.name)
-        solved = {
-            name: container.get(dep)
-            for name, dep in dependencies.items()
-        }
-        return func(**kwargs, **solved)
+    if is_async:
+        async def autoinjected_func(**kwargs):
+            container = container_getter(kwargs)
+            for param in additional_params:
+                kwargs.pop(param.name)
+            solved = {
+                name: await container.get(dep)
+                for name, dep in dependencies.items()
+            }
+            return await func(**kwargs, **solved)
+    else:
+        def autoinjected_func(**kwargs):
+            container = container_getter(kwargs)
+            for param in additional_params:
+                kwargs.pop(param.name)
+            solved = {
+                name: container.get(dep)
+                for name, dep in dependencies.items()
+            }
+            return func(**kwargs, **solved)
 
     autoinjected_func.__name__ = func.__name__
     autoinjected_func.__doc__ = func.__doc__
@@ -72,5 +84,4 @@ def wrap_injection(
         parameters=new_params,
         return_annotation=func_signature.return_annotation,
     )
-
     return autoinjected_func

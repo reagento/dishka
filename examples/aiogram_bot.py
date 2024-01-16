@@ -81,7 +81,9 @@ async def start(
 async def main():
     # real main
     logging.basicConfig(level=logging.INFO)
-    container = AsyncContainer(MyProvider(), scope=MyScope.APP)
+    container = AsyncContainer(
+        MyProvider(), scope=MyScope.APP, with_lock=True,
+    )
     bot = Bot(token=API_TOKEN)
     dp = Dispatcher()
     for obseserver in dp.observers.values():

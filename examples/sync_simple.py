@@ -27,7 +27,9 @@ class MyProvider(Provider):
 
 
 def main():
-    container = Container(MyProvider(1), scope=MyScope.APP)
+    container = Container(
+        MyProvider(1), scope=MyScope.APP, with_lock=True,
+    )
     print(container.get(int))
 
     with container() as c_request:

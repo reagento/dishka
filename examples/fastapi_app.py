@@ -95,7 +95,9 @@ async def other(
 
 
 def create_app() -> FastAPI:
-    container = AsyncContainer(MyProvider(), scope=MyScope.APP)
+    container = AsyncContainer(
+        MyProvider(), scope=MyScope.APP, with_lock=True,
+    )
 
     app = FastAPI()
     app.middleware("http")(container_middleware(container))

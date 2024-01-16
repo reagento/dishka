@@ -28,7 +28,9 @@ class MyProvider(Provider):
 
 
 async def main():
-    container = AsyncContainer(MyProvider(1), scope=MyScope.APP)
+    container = AsyncContainer(
+        MyProvider(1), scope=MyScope.APP, with_lock=True,
+    )
     print(await container.get(int))
 
     async with container() as c_request:

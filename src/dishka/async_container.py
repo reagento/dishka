@@ -1,3 +1,4 @@
+from asyncio import Lock
 from contextlib import AsyncExitStack
 from typing import (
     TypeVar, Optional, Type, )
@@ -13,7 +14,8 @@ class AsyncContainer:
             self, *providers: Provider,
             scope: Optional[Scope] = None,
             parent_container: Optional["AsyncContainer"] = None,
-            context: Optional[dict] = None
+            context: Optional[dict] = None,
+            with_lock: bool = False,
     ):
         self.providers = providers
         self.context = {}
@@ -22,23 +24,36 @@ class AsyncContainer:
         self.scope = scope
         self.parent_container = parent_container
         self.exit_stack = AsyncExitStack()
+        if with_lock:
+            self.lock = Lock()
+        else:
+            self.lock = None
 
         if parent_container:
             if scope <= parent_container.scope:
                 raise ValueError("Scope must only increase")
 
-    def _get_child(self, context: Optional[dict] = None) -> "AsyncContainer":
+    def _get_child(
+            self,
+            context: Optional[dict],
+            with_lock: bool,
+    ) -> "AsyncContainer":
         return AsyncContainer(
             *self.providers,
             scope=self.scope.next(),
             parent_container=self,
             context=context,
+            with_lock=with_lock,
         )
 
-    def __call__(self, context: Optional[dict] = None) -> "ContextWrapper":
+    def __call__(
+            self,
+            context: Optional[dict] = None,
+            with_lock: bool = False,
+    ) -> "ContextWrapper":
         if not self.scope:
             raise ValueError("No root scope found, cannot enter context")
-        return ContextWrapper(self._get_child(context))
+        return ContextWrapper(self._get_child(context, with_lock))
 
     async def _get_parent(self, dependency_type: Type[T]) -> T:
         return await self.parent_container.get(dependency_type)
@@ -61,24 +76,33 @@ class AsyncContainer:
         return solved
 
     async def get(self, dependency_type: Type[T]) -> T:
-        if dependency_type in self.context:
-            return self.context[dependency_type]
-        for provider in self.providers:
-            dep_provider = provider.get_dependency_provider(
-                dependency_type, self.scope,
-            )
-            if not dep_provider:
-                continue
-            if dep_provider.scope == self.scope:
-                return await self._get_self(provider, dep_provider,
-                                            dependency_type)
-            elif dep_provider.scope > self.scope:
-                raise ValueError("Cannot resolve dependency of greater scope")
-            elif dep_provider.scope < self.scope:
-                return await self._get_parent(dependency_type)
+        if self.lock:
+            await self.lock.acquire()
+        try:
+            if dependency_type in self.context:
+                return self.context[dependency_type]
+            for provider in self.providers:
+                dep_provider = provider.get_dependency_provider(
+                    dependency_type, self.scope,
+                )
+                if not dep_provider:
+                    continue
+                if dep_provider.scope == self.scope:
+                    return await self._get_self(
+                        provider, dep_provider, dependency_type,
+                    )
+                elif dep_provider.scope > self.scope:
+                    raise ValueError(
+                        "Cannot resolve dependency of greater scope",
+                    )
+                elif dep_provider.scope < self.scope:
+                    return await self._get_parent(dependency_type)
 
-        raise ValueError(f"No provider found for {dependency_type!r} "
-                         f"required for scope {self.scope}")
+            raise ValueError(f"No provider found for {dependency_type!r} "
+                             f"required for scope {self.scope}")
+        finally:
+            if self.lock:
+                self.lock.release()
 
     async def close(self):
         await self.exit_stack.aclose()

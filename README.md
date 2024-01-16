@@ -10,5 +10,6 @@ Minimal DI framework with scopes
 4. Do not forget typehints
 5. Create Container instance passing providers
 6. Call `get` to get dependency and use context manager to get deeper through scopes
+7. Add decorators and middleware for your framework
 
-See [example](example.py)
+See [examples](examples/sync_simple.py)

@@ -57,7 +57,7 @@ def wrap_injection(
             new_annotations[param.name] = param.annotation
 
     if is_async:
-        async def autoinjected_func(**kwargs):
+        async def autoinjected_func(*args, **kwargs):
             container = container_getter(kwargs)
             for param in additional_params:
                 kwargs.pop(param.name)
@@ -65,9 +65,9 @@ def wrap_injection(
                 name: await container.get(dep)
                 for name, dep in dependencies.items()
             }
-            return await func(**kwargs, **solved)
+            return await func(*args, **kwargs, **solved)
     else:
-        def autoinjected_func(**kwargs):
+        def autoinjected_func(*args, **kwargs):
             container = container_getter(kwargs)
             for param in additional_params:
                 kwargs.pop(param.name)
@@ -75,7 +75,7 @@ def wrap_injection(
                 name: container.get(dep)
                 for name, dep in dependencies.items()
             }
-            return func(**kwargs, **solved)
+            return func(*args, **kwargs, **solved)
 
     autoinjected_func.__name__ = func.__name__
     autoinjected_func.__doc__ = func.__doc__

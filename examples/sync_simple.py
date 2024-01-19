@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from enum import auto
 
-from dishka import provide, Scope, Provider, Container
+from dishka import provide, Scope, Provider, make_container
 
 
 class MyScope(Scope):
@@ -11,15 +11,16 @@ class MyScope(Scope):
 
 class MyProvider(Provider):
     def __init__(self, a: int):
+        super().__init__()
         self.a = a
 
-    @provide(MyScope.APP)
+    @provide(scope=MyScope.APP)
     @contextmanager
     def get_int(self) -> int:
         print("solve int")
         yield self.a
 
-    @provide(MyScope.REQUEST)
+    @provide(scope=MyScope.REQUEST)
     @contextmanager
     def get_str(self, dep: int) -> str:
         print("solve str")
@@ -27,8 +28,8 @@ class MyProvider(Provider):
 
 
 def main():
-    container = Container(
-        MyProvider(1), scope=MyScope.APP, with_lock=True,
+    container = make_container(
+        MyProvider(1), scopes=MyScope, with_lock=True,
     )
     print(container.get(int))
 

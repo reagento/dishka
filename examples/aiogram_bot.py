@@ -10,7 +10,7 @@ from typing import Container, Annotated
 from aiogram import Router, Bot, Dispatcher, BaseMiddleware
 from aiogram.types import Message, TelegramObject, User
 
-from dishka import Provider, provide, Scope, AsyncContainer
+from dishka import Provider, provide, Scope, make_async_container
 from dishka.inject import wrap_injection, Depends
 
 
@@ -51,13 +51,13 @@ class MyScope(Scope):
 
 
 class MyProvider(Provider):
-    @provide(MyScope.APP)
+    @provide(scope=MyScope.APP)
     @asynccontextmanager
     async def get_int(self) -> int:
         print("solve int")
         yield random.randint(0, 10000)
 
-    @provide(MyScope.REQUEST)
+    @provide(scope=MyScope.REQUEST)
     @asynccontextmanager
     async def get_name(self, request: TelegramObject) -> User:
         yield request.from_user
@@ -81,8 +81,8 @@ async def start(
 async def main():
     # real main
     logging.basicConfig(level=logging.INFO)
-    container = AsyncContainer(
-        MyProvider(), scope=MyScope.APP, with_lock=True,
+    container = make_async_container(
+        MyProvider(), scopes=MyScope, with_lock=True,
     )
     bot = Bot(token=API_TOKEN)
     dp = Dispatcher()

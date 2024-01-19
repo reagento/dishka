@@ -2,7 +2,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from enum import auto
 
-from dishka import provide, Scope, Provider, AsyncContainer
+from dishka import provide, Scope, Provider, make_async_container
 
 
 class MyScope(Scope):
@@ -12,15 +12,16 @@ class MyScope(Scope):
 
 class MyProvider(Provider):
     def __init__(self, a: int):
+        super().__init__()
         self.a = a
 
-    @provide(MyScope.APP)
+    @provide(scope=MyScope.APP)
     @asynccontextmanager
     async def get_int(self) -> int:
         print("solve int")
         yield self.a
 
-    @provide(MyScope.REQUEST)
+    @provide(scope=MyScope.REQUEST)
     @asynccontextmanager
     async def get_str(self, dep: int) -> str:
         print("solve str")
@@ -28,8 +29,8 @@ class MyProvider(Provider):
 
 
 async def main():
-    container = AsyncContainer(
-        MyProvider(1), scope=MyScope.APP, with_lock=True,
+    container = make_async_container(
+        MyProvider(1), scopes=MyScope, with_lock=True,
     )
     print(await container.get(int))
 

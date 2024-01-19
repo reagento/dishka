@@ -1,13 +1,13 @@
-import random
+import logging
 from contextlib import asynccontextmanager
 from enum import auto
 from inspect import Parameter
-from typing import Annotated, get_type_hints, NewType
+from typing import Annotated, get_type_hints, NewType, Callable
 
 import uvicorn
-from fastapi import Request, APIRouter, FastAPI
+from fastapi import Request, APIRouter, FastAPI, Depends as FastapiDepends
 
-from dishka import AsyncContainer, Provider, provide, Scope
+from dishka import Provider, provide, Scope, make_async_container
 from dishka.inject import wrap_injection, Depends
 
 
@@ -47,9 +47,56 @@ def container_middleware(container):
     return add_request_container
 
 
+class Stub:
+    def __init__(self, dependency: Callable, **kwargs):
+        self._dependency = dependency
+        self._kwargs = kwargs
+
+    def __call__(self):
+        raise NotImplementedError
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, Stub):
+            return (
+                    self._dependency == other._dependency
+                    and self._kwargs == other._kwargs
+            )
+        else:
+            if not self._kwargs:
+                return self._dependency == other
+            return False
+
+    def __hash__(self):
+        if not self._kwargs:
+            return hash(self._dependency)
+        serial = (
+            self._dependency,
+            *self._kwargs.items(),
+        )
+        return hash(serial)
+
+
 # app dependency logic
 
 Host = NewType("Host", str)
+
+
+class B:
+    def __init__(self, x: int):
+        pass
+
+
+class C:
+    def __init__(self, x: int):
+        pass
+
+
+class A:
+    def __init__(self, b: B, c: C):
+        pass
+
+
+MyInt = NewType("MyInt", int)
 
 
 class MyScope(Scope):
@@ -58,16 +105,19 @@ class MyScope(Scope):
 
 
 class MyProvider(Provider):
-    @provide(MyScope.APP)
-    @asynccontextmanager
-    async def get_int(self) -> int:
-        print("solve int")
-        yield random.randint(0, 10000)
+    @provide(scope=MyScope.REQUEST, is_context=False)
+    async def get_a(self, b: B, c: C) -> A:
+        return A(b, c)
 
-    @provide(MyScope.REQUEST)
+    @provide(scope=MyScope.REQUEST, is_context=True)
     @asynccontextmanager
-    async def get_host(self, request: Request) -> Host:
-        yield request.client.host
+    async def get_b(self) -> B:
+        yield B(1)
+
+    @provide(scope=MyScope.REQUEST, is_context=True)
+    @asynccontextmanager
+    async def get_c(self) -> C:
+        yield C(1)
 
 
 # app
@@ -78,28 +128,35 @@ router = APIRouter()
 @inject
 async def index(
         *,
-        value: Annotated[int, Depends()],
-        host: Annotated[Host, Depends()],
+        value: Annotated[A, Depends()],
+        value2: Annotated[A, Depends()],
 ) -> str:
-    return f"{value} {host}"
+    return f"{value} {value is value2}"
 
 
-@router.get("/other")
-@inject
-async def other(
+@router.get("/f")
+async def index(
         *,
-        request: Request,
-        host: Annotated[Host, Depends()],
+        value: Annotated[A, FastapiDepends(Stub(A))],
+        value2: Annotated[A, FastapiDepends(Stub(A))],
 ) -> str:
-    return f"{request.client.host} - {host}"
+    return f"{value} {value is value2}"
+
+
+def new_a(b: B = FastapiDepends(Stub(B)), c: C = FastapiDepends(Stub(C))):
+    return A(b, c)
 
 
 def create_app() -> FastAPI:
-    container = AsyncContainer(
-        MyProvider(), scope=MyScope.APP, with_lock=True,
+    logging.basicConfig(level=logging.WARNING)
+    container = make_async_container(
+        MyProvider(), scopes=MyScope, with_lock=True,
     )
 
     app = FastAPI()
+    app.dependency_overrides[A] = new_a
+    app.dependency_overrides[B] = lambda: B(1)
+    app.dependency_overrides[C] = lambda: C(1)
     app.middleware("http")(container_middleware(container))
     app.include_router(router)
     return app

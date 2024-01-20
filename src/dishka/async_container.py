@@ -19,6 +19,8 @@ class Exit:
 
 
 class AsyncContainer:
+    __slots__ = ("registry", "child_registries", "context", "parent_container", "lock", "exits")
+
     def __init__(
             self,
             registry: Registry,

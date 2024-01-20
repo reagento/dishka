@@ -1,10 +1,12 @@
 from typing import Any
 
-from .scope import Scope
 from .provider import DependencyProvider, Provider
+from .scope import Scope
 
 
 class Registry:
+    __slots__ = ("scope", "_providers")
+
     def __init__(self, scope: Scope):
         self._providers = {}
         self.scope = scope

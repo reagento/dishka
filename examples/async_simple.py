@@ -1,6 +1,7 @@
 import asyncio
 from contextlib import asynccontextmanager
 from enum import auto
+from typing import AsyncIterable, AsyncGenerator
 
 from dishka import provide, Scope, Provider, make_async_container
 
@@ -16,14 +17,12 @@ class MyProvider(Provider):
         self.a = a
 
     @provide(scope=MyScope.APP)
-    @asynccontextmanager
-    async def get_int(self) -> int:
+    async def get_int(self) -> AsyncIterable[int]:
         print("solve int")
         yield self.a
 
     @provide(scope=MyScope.REQUEST)
-    @asynccontextmanager
-    async def get_str(self, dep: int) -> str:
+    async def get_str(self, dep: int) -> AsyncGenerator[str, None]:
         print("solve str")
         yield f">{dep}<"
 

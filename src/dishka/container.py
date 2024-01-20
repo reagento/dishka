@@ -3,7 +3,7 @@ from typing import (
     TypeVar, Optional, Type,
 )
 
-from .provider import DependencyProvider
+from .provider import DependencyProvider, ProviderType
 from .registry import Registry, make_registry
 from .scope import Scope
 
@@ -58,22 +58,21 @@ class Container:
     def _get_self(
             self,
             dep_provider: DependencyProvider,
-            dependency_type: Type[T],
     ) -> T:
         sub_dependencies = [
             self._get_unlocked(dependency)
             for dependency in dep_provider.dependencies
         ]
-        context_manager = dep_provider.callable(
-            *sub_dependencies,
-        )
-        if dep_provider.is_context:
-            solved = context_manager.__enter__()
-            self.exits.append(context_manager.__exit__)
+        if dep_provider.type is ProviderType.GENERATOR:
+            generator = dep_provider.callable(*sub_dependencies)
+            self.exits.append(generator)
+            return next(generator)
+        elif dep_provider.type is ProviderType.FACTORY:
+            return dep_provider.callable(*sub_dependencies)
+        elif dep_provider.type is ProviderType.VALUE:
+            return dep_provider.callable
         else:
-            solved = context_manager
-        self.context[dependency_type] = solved
-        return solved
+            raise ValueError(f"Unsupported type {dep_provider.type}")
 
     def get(self, dependency_type: Type[T]) -> T:
         lock = self.lock
@@ -90,15 +89,17 @@ class Container:
             if not self.parent_container:
                 raise ValueError(f"No provider found for {dependency_type!r}")
             return self.parent_container.get(dependency_type)
-        return self._get_self(
-            provider, dependency_type,
-        )
+        solved = self._get_self(provider)
+        self.context[dependency_type] = solved
+        return solved
 
     def close(self):
         e = None
         for exit in self.exits:
             try:
-                exit(None, None, None)
+                next(exit)
+            except StopIteration:
+                pass
             except Exception as err:
                 e = err
         if e:

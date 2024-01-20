@@ -1,8 +1,7 @@
 import logging
-from contextlib import asynccontextmanager
 from enum import auto
 from inspect import Parameter
-from typing import Annotated, get_type_hints, NewType, Callable
+from typing import Annotated, get_type_hints, NewType, Callable, Iterable
 
 import uvicorn
 from fastapi import Request, APIRouter, FastAPI, Depends as FastapiDepends
@@ -105,18 +104,16 @@ class MyScope(Scope):
 
 
 class MyProvider(Provider):
-    @provide(scope=MyScope.REQUEST, is_context=False)
+    @provide(scope=MyScope.REQUEST)
     async def get_a(self, b: B, c: C) -> A:
         return A(b, c)
 
-    @provide(scope=MyScope.REQUEST, is_context=True)
-    @asynccontextmanager
-    async def get_b(self) -> B:
+    @provide(scope=MyScope.REQUEST)
+    async def get_b(self) -> Iterable[B]:
         yield B(1)
 
-    @provide(scope=MyScope.REQUEST, is_context=True)
-    @asynccontextmanager
-    async def get_c(self) -> C:
+    @provide(scope=MyScope.REQUEST)
+    async def get_c(self) -> Iterable[C]:
         yield C(1)
 
 

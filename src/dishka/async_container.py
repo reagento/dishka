@@ -1,13 +1,21 @@
 from asyncio import Lock
+from dataclasses import dataclass
 from typing import (
-    TypeVar, Optional, Type,
+    TypeVar, Optional, Type, Callable, List,
 )
 
-from .provider import DependencyProvider
+from .provider import DependencyProvider, ProviderType
 from .registry import Registry, make_registry
 from .scope import Scope
 
 T = TypeVar("T")
+
+
+@dataclass
+class Exit:
+    __slots__ = ("type", "callable")
+    type: ProviderType
+    callable: Callable
 
 
 class AsyncContainer:
@@ -25,12 +33,11 @@ class AsyncContainer:
         if context:
             self.context.update(context)
         self.parent_container = parent_container
-        self._exit_stack = None
         if with_lock:
             self.lock = Lock()
         else:
             self.lock = None
-        self.exits = []
+        self.exits: List[Exit] = []
 
     def _get_child(
             self,
@@ -59,24 +66,27 @@ class AsyncContainer:
     async def _get_self(
             self,
             dep_provider: DependencyProvider,
-            dependency_type: Type[T],
     ) -> T:
         sub_dependencies = [
             await self._get_unlocked(dependency)
             for dependency in dep_provider.dependencies
         ]
-        if dep_provider.is_context:
-            context_manager = dep_provider.callable(
-                *sub_dependencies,
-            )
-            solved = await context_manager.__aenter__()
-            self.exits.append(context_manager.__aexit__)
+        if dep_provider.type is ProviderType.GENERATOR:
+            generator = dep_provider.callable(*sub_dependencies)
+            self.exits.append(Exit(dep_provider.type, generator))
+            return await next(generator)
+        elif dep_provider.type is ProviderType.ASYNC_GENERATOR:
+            generator = dep_provider.callable(*sub_dependencies)
+            self.exits.append(Exit(dep_provider.type, generator))
+            return await anext(generator)
+        elif dep_provider.type is ProviderType.ASYNC_FACTORY:
+            return await dep_provider.callable(*sub_dependencies)
+        elif dep_provider.type is ProviderType.FACTORY:
+            return dep_provider.callable(*sub_dependencies)
+        elif dep_provider.type is ProviderType.VALUE:
+            return dep_provider.callable
         else:
-            solved = await dep_provider.callable(
-                *sub_dependencies,
-            )
-        self.context[dependency_type] = solved
-        return solved
+            raise ValueError(f"Unsupported type {dep_provider.type}")
 
     async def get(self, dependency_type: Type[T]) -> T:
         lock = self.lock
@@ -93,15 +103,22 @@ class AsyncContainer:
             if not self.parent_container:
                 raise ValueError(f"No provider found for {dependency_type!r}")
             return await self.parent_container.get(dependency_type)
-        return await self._get_self(
-            provider, dependency_type,
-        )
+        solved = await self._get_self(provider)
+        self.context[dependency_type] = solved
+        return solved
 
     async def close(self):
         e = None
         for exit in self.exits:
             try:
-                await exit(None, None, None)
+                if exit.type is ProviderType.ASYNC_GENERATOR:
+                    await anext(exit.callable)
+                elif exit.type is ProviderType.GENERATOR:
+                    next(exit.callable)
+            except StopIteration:
+                pass
+            except StopAsyncIteration:
+                pass
             except Exception as err:
                 e = err
         if e:

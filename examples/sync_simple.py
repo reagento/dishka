@@ -1,5 +1,5 @@
-from contextlib import contextmanager
 from enum import auto
+from typing import Iterable, Generator
 
 from dishka import provide, Scope, Provider, make_container
 
@@ -15,14 +15,12 @@ class MyProvider(Provider):
         self.a = a
 
     @provide(scope=MyScope.APP)
-    @contextmanager
-    def get_int(self) -> int:
+    def get_int(self) -> Iterable[int]:
         print("solve int")
         yield self.a
 
     @provide(scope=MyScope.REQUEST)
-    @contextmanager
-    def get_str(self, dep: int) -> str:
+    def get_str(self, dep: int) -> Generator[None, str, None]:
         print("solve str")
         yield f">{dep}<"
 

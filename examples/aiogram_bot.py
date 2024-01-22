@@ -2,10 +2,9 @@ import asyncio
 import logging
 import os
 import random
-from contextlib import asynccontextmanager
 from enum import auto
 from inspect import Parameter
-from typing import Container, Annotated
+from typing import Container, Annotated, Iterable
 
 from aiogram import Router, Bot, Dispatcher, BaseMiddleware
 from aiogram.types import Message, TelegramObject, User
@@ -52,15 +51,13 @@ class MyScope(Scope):
 
 class MyProvider(Provider):
     @provide(scope=MyScope.APP)
-    @asynccontextmanager
-    async def get_int(self) -> int:
+    async def get_int(self) -> Iterable[int]:
         print("solve int")
         yield random.randint(0, 10000)
 
     @provide(scope=MyScope.REQUEST)
-    @asynccontextmanager
     async def get_name(self, request: TelegramObject) -> User:
-        yield request.from_user
+        return request.from_user
 
 
 # app
@@ -81,16 +78,16 @@ async def start(
 async def main():
     # real main
     logging.basicConfig(level=logging.INFO)
-    container = make_async_container(
-        MyProvider(), scopes=MyScope, with_lock=True,
-    )
-    bot = Bot(token=API_TOKEN)
-    dp = Dispatcher()
-    for observer in dp.observers.values():
-        observer.middleware(ContainerMiddleware(container))
-    dp.include_router(router)
+    async with make_async_container(
+            MyProvider(), scopes=MyScope, with_lock=True,
+    ) as container:
+        bot = Bot(token=API_TOKEN)
+        dp = Dispatcher()
+        for observer in dp.observers.values():
+            observer.middleware(ContainerMiddleware(container))
+        dp.include_router(router)
 
-    await dp.start_polling(bot)
+        await dp.start_polling(bot)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 from collections.abc import Iterable, AsyncIterable
 from enum import Enum
-from inspect import isclass, iscoroutine, isasyncgenfunction, isgeneratorfunction
+from inspect import isclass, iscoroutinefunction, isasyncgenfunction, isgeneratorfunction
 from typing import (
     Optional, Type, Callable, Union, Sequence, Any,
     get_type_hints, get_origin, get_args,
@@ -92,7 +92,7 @@ def make_dependency_provider(
             possible_dependency = get_args(possible_dependency)[0]
         else:  # generator
             possible_dependency = get_args(possible_dependency)[1]
-    elif iscoroutine(func):
+    elif iscoroutinefunction(func):
         provider_type = ProviderType.ASYNC_FACTORY
     else:
         provider_type = ProviderType.FACTORY

@@ -1,0 +1,3 @@
+ruff
+pytest
+pytest-asyncio

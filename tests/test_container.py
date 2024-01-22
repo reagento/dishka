@@ -1,12 +1,20 @@
 import pytest
 
 from dishka import (
-    Provider, Scope, make_async_container, make_container,
+    Provider,
+    Scope,
+    make_async_container,
+    make_container,
     provide,
 )
 from .sample_providers import (
-    ClassA, async_func_a, async_gen_a, async_iter_a,
-    sync_func_a, sync_gen_a, sync_iter_a,
+    ClassA,
+    async_func_a,
+    async_gen_a,
+    async_iter_a,
+    sync_func_a,
+    sync_gen_a,
+    sync_iter_a,
 )
 
 
@@ -16,7 +24,7 @@ from .sample_providers import (
         (sync_func_a, False),
         (sync_iter_a, True),
         (sync_gen_a, True),
-    ]
+    ],
 )
 def test_sync(factory, closed):
     class MyProvider(Provider):
@@ -42,7 +50,7 @@ def test_sync(factory, closed):
         (async_func_a, False),
         (async_iter_a, True),
         (async_gen_a, True),
-    ]
+    ],
 )
 @pytest.mark.asyncio
 async def test_async(factory, closed):

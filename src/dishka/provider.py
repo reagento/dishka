@@ -1,12 +1,21 @@
 from collections.abc import AsyncIterable, Iterable
 from enum import Enum
 from inspect import (
-    isasyncgenfunction, isclass, iscoroutinefunction,
+    isasyncgenfunction,
+    isclass,
+    iscoroutinefunction,
     isgeneratorfunction,
 )
 from typing import (
-    Any, Callable, Optional, Sequence, Type, Union, get_args,
-    get_origin, get_type_hints,
+    Any,
+    Callable,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
 )
 
 from .scope import BaseScope
@@ -33,7 +42,7 @@ class DependencyProvider:
             result_type: Type,
             scope: Optional[BaseScope],
             type: ProviderType,
-            is_to_bound: bool
+            is_to_bound: bool,
     ):
         self.dependencies = dependencies
         self.callable = callable

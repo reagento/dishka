@@ -1,6 +1,11 @@
 from inspect import Parameter, Signature, signature
 from typing import (
-    Annotated, Any, Callable, Sequence, get_args, get_origin,
+    Annotated,
+    Any,
+    Callable,
+    Sequence,
+    get_args,
+    get_origin,
     get_type_hints,
 )
 

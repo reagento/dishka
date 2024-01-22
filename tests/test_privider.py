@@ -3,8 +3,13 @@ import pytest
 from dishka import Provider, Scope, alias, provide
 from dishka.provider import ProviderType
 from .sample_providers import (
-    ClassA, async_func_a, async_gen_a, async_iter_a,
-    sync_func_a, sync_gen_a, sync_iter_a,
+    ClassA,
+    async_func_a,
+    async_gen_a,
+    async_iter_a,
+    sync_func_a,
+    sync_gen_a,
+    sync_iter_a,
 )
 
 
@@ -31,7 +36,7 @@ def test_provider_init():
         (async_func_a, ProviderType.ASYNC_FACTORY, True),
         (async_iter_a, ProviderType.ASYNC_GENERATOR, True),
         (async_gen_a, ProviderType.ASYNC_GENERATOR, True),
-    ]
+    ],
 )
 def test_parse_provider(factory, provider_type, is_to_bound):
     dep_provider = provide(factory, scope=Scope.REQUEST)

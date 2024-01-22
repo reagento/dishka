@@ -98,12 +98,12 @@ class Container:
 
     def close(self):
         e = None
-        for exit in self.exits:
+        for exit_generator in self.exits:
             try:
-                next(exit)
+                next(exit_generator)
             except StopIteration:
                 pass
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001
                 e = err
         if e:
             raise e
@@ -131,5 +131,5 @@ def make_container(
         for scope in scopes
     ]
     return ContextWrapper(
-        Container(*registries, context=context, with_lock=with_lock)
+        Container(*registries, context=context, with_lock=with_lock),
     )

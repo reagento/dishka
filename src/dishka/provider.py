@@ -25,7 +25,7 @@ class DependencyProvider:
             dependencies: Sequence,
             callable: Callable,
             result_type: Type,
-            scope: Scope,
+            scope: Optional[Scope],
             type: ProviderType,
             is_to_bound: bool
     ):
@@ -50,6 +50,16 @@ class DependencyProvider:
             scope=self.scope,
             type=self.type,
             is_to_bound=False,
+        )
+
+    def aliased(self, target: Type):
+        return DependencyProvider(
+            dependencies=self.dependencies,
+            callable=self.callable,
+            result_type=target,
+            scope=self.scope,
+            type=self.type,
+            is_to_bound=self.is_to_bound,
         )
 
 
@@ -97,6 +107,22 @@ def make_dependency_provider(
     )
 
 
+class Alias:
+    def __init__(self, target, result_type):
+        self.target = target
+        self.result_type = result_type
+
+
+def alias(
+        target: Type,
+        dependency: Any = None,
+):
+    return Alias(
+        target=target,
+        result_type=dependency,
+    )
+
+
 def provide(
         func: Union[None, Callable] = None,
         *,
@@ -115,6 +141,9 @@ def provide(
 class Provider:
     def __init__(self):
         self.dependencies = {}
+        self.aliases = []
         for name, attr in vars(type(self)).items():
             if isinstance(attr, DependencyProvider):
                 self.dependencies[attr.result_type] = getattr(self, name)
+            elif isinstance(attr, Alias):
+                self.aliases.append(attr)

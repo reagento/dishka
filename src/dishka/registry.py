@@ -24,4 +24,10 @@ def make_registry(*providers: Provider, scope: Scope) -> Registry:
         for dependency_provider in provider.dependencies.values():
             if dependency_provider.scope is scope:
                 registry.add_provider(dependency_provider)
+
+    for provider in providers:
+        for alias in provider.aliases:
+            dependency_provider = registry.get_provider(alias.target)
+            if dependency_provider:
+                registry.add_provider(dependency_provider.aliased(alias.result_type))
     return registry

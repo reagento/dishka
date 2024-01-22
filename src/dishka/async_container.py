@@ -76,7 +76,7 @@ class AsyncContainer:
         if dep_provider.type is ProviderType.GENERATOR:
             generator = dep_provider.callable(*sub_dependencies)
             self.exits.append(Exit(dep_provider.type, generator))
-            return await next(generator)
+            return next(generator)
         elif dep_provider.type is ProviderType.ASYNC_GENERATOR:
             generator = dep_provider.callable(*sub_dependencies)
             self.exits.append(Exit(dep_provider.type, generator))

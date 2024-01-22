@@ -1,5 +1,12 @@
 from enum import Enum
 
 
-class Scope(Enum):
+class BaseScope(Enum):
     pass
+
+
+class Scope(BaseScope):
+    APP = "APP"
+    REQUEST = "REQUEST"
+    ACTION = "ACTION"
+    STEP = "STEP"

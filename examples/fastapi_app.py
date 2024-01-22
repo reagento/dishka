@@ -1,6 +1,5 @@
 import logging
 from contextlib import asynccontextmanager
-from enum import auto
 from inspect import Parameter
 from typing import Annotated, get_type_hints, NewType, Callable, Iterable
 
@@ -99,21 +98,16 @@ class A:
 MyInt = NewType("MyInt", int)
 
 
-class MyScope(Scope):
-    APP = auto()
-    REQUEST = auto()
-
-
 class MyProvider(Provider):
-    @provide(scope=MyScope.REQUEST)
+    @provide(scope=Scope.REQUEST)
     async def get_a(self, b: B, c: C) -> A:
         return A(b, c)
 
-    @provide(scope=MyScope.REQUEST)
+    @provide(scope=Scope.REQUEST)
     async def get_b(self) -> Iterable[B]:
         yield B(1)
 
-    @provide(scope=MyScope.REQUEST)
+    @provide(scope=Scope.REQUEST)
     async def get_c(self) -> Iterable[C]:
         yield C(1)
 
@@ -147,9 +141,7 @@ def new_a(b: B = FastapiDepends(Stub(B)), c: C = FastapiDepends(Stub(C))):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with make_async_container(
-            MyProvider(), scopes=MyScope, with_lock=True,
-    ) as container:
+    async with make_async_container(MyProvider(), with_lock=True) as container:
         app.state.container = container
         yield
 

@@ -1,13 +1,13 @@
 from typing import Any
 
 from .provider import DependencyProvider, Provider
-from .scope import Scope
+from .scope import BaseScope
 
 
 class Registry:
     __slots__ = ("scope", "_providers")
 
-    def __init__(self, scope: Scope):
+    def __init__(self, scope: BaseScope):
         self._providers = {}
         self.scope = scope
 
@@ -18,7 +18,7 @@ class Registry:
         return self._providers.get(dependency)
 
 
-def make_registry(*providers: Provider, scope: Scope) -> Registry:
+def make_registry(*providers: Provider, scope: BaseScope) -> Registry:
     registry = Registry(scope)
     for provider in providers:
         for dependency_provider in provider.dependencies.values():

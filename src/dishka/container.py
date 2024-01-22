@@ -5,7 +5,7 @@ from typing import (
 
 from .provider import DependencyProvider, ProviderType
 from .registry import Registry, make_registry
-from .scope import Scope
+from .scope import BaseScope, Scope
 
 T = TypeVar("T")
 
@@ -119,7 +119,12 @@ class ContextWrapper:
         self.container.close()
 
 
-def make_container(*providers, scopes: Type[Scope], context: Optional[dict] = None, with_lock: bool = False) -> ContextWrapper:
+def make_container(
+        *providers,
+        scopes: Type[BaseScope] = Scope,
+        context: Optional[dict] = None,
+        with_lock: bool = False,
+) -> ContextWrapper:
     registries = [
         make_registry(*providers, scope=scope)
         for scope in scopes

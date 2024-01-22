@@ -1,6 +1,6 @@
 from enum import auto
 
-from dishka import Scope
+from dishka import BaseScope
 
 
 class B:
@@ -54,7 +54,7 @@ class A1(A):
     pass
 
 
-class MyScope(Scope):
+class MyScope(BaseScope):
     APP = auto()
     REQUEST = auto()
 

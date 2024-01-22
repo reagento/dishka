@@ -1,12 +1,6 @@
-from enum import auto
 from typing import Generator
 
-from dishka import provide, Scope, Provider, make_container, alias
-
-
-class MyScope(Scope):
-    APP = auto()
-    REQUEST = auto()
+from dishka import provide, Provider, make_container, alias, Scope
 
 
 class BaseA:
@@ -26,20 +20,20 @@ class MyProvider(Provider):
         super().__init__()
         self.a = a
 
-    get_a = provide(A, scope=MyScope.REQUEST)
+    get_a = provide(A, scope=Scope.REQUEST)
     get_basea = alias(A, dependency=BaseA)
 
-    @provide(scope=MyScope.APP)
+    @provide(scope=Scope.APP)
     def get_int(self) -> int:
         return self.a
 
-    @provide(scope=MyScope.REQUEST)
+    @provide(scope=Scope.REQUEST)
     def get_str(self, dep: int) -> Generator[None, str, None]:
         yield f">{dep}<"
 
 
 def main():
-    with make_container(MyProvider(1), scopes=MyScope, with_lock=True) as container:
+    with make_container(MyProvider(1), with_lock=True) as container:
         print(container.get(int))
         with container() as c_request:
             print(c_request.get(BaseA))

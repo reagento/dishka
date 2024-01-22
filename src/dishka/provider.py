@@ -6,7 +6,7 @@ from typing import (
     get_type_hints, get_origin, get_args,
 )
 
-from .scope import Scope
+from .scope import BaseScope
 
 
 class ProviderType(Enum):
@@ -25,7 +25,7 @@ class DependencyProvider:
             dependencies: Sequence,
             callable: Callable,
             result_type: Type,
-            scope: Optional[Scope],
+            scope: Optional[BaseScope],
             type: ProviderType,
             is_to_bound: bool
     ):
@@ -65,7 +65,7 @@ class DependencyProvider:
 
 def make_dependency_provider(
         dependency: Any,
-        scope: Optional[Scope],
+        scope: Optional[BaseScope],
         func: Callable,
 ):
     if isclass(func):
@@ -126,7 +126,7 @@ def alias(
 def provide(
         func: Union[None, Callable] = None,
         *,
-        scope: Scope = None,
+        scope: BaseScope = None,
         dependency: Any = None,
 ):
     if func is not None:

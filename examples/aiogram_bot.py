@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import random
-from enum import auto
 from inspect import Parameter
 from typing import Container, Annotated, Iterable
 
@@ -44,18 +43,14 @@ class ContainerMiddleware(BaseMiddleware):
 
 
 # app dependency logic
-class MyScope(Scope):
-    APP = auto()
-    REQUEST = auto()
-
 
 class MyProvider(Provider):
-    @provide(scope=MyScope.APP)
+    @provide(scope=Scope.APP)
     async def get_int(self) -> Iterable[int]:
         print("solve int")
         yield random.randint(0, 10000)
 
-    @provide(scope=MyScope.REQUEST)
+    @provide(scope=Scope.REQUEST)
     async def get_name(self, request: TelegramObject) -> User:
         return request.from_user
 
@@ -78,9 +73,7 @@ async def start(
 async def main():
     # real main
     logging.basicConfig(level=logging.INFO)
-    async with make_async_container(
-            MyProvider(), scopes=MyScope, with_lock=True,
-    ) as container:
+    async with make_async_container(MyProvider(), with_lock=True) as container:
         bot = Bot(token=API_TOKEN)
         dp = Dispatcher()
         for observer in dp.observers.values():

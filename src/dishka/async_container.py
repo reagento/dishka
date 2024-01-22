@@ -112,17 +112,17 @@ class AsyncContainer:
 
     async def close(self):
         e = None
-        for exit in self.exits:
+        for exit_generator in self.exits:
             try:
-                if exit.type is ProviderType.ASYNC_GENERATOR:
-                    await anext(exit.callable)
-                elif exit.type is ProviderType.GENERATOR:
-                    next(exit.callable)
+                if exit_generator.type is ProviderType.ASYNC_GENERATOR:
+                    await anext(exit_generator.callable)
+                elif exit_generator.type is ProviderType.GENERATOR:
+                    next(exit_generator.callable)
             except StopIteration:
                 pass
             except StopAsyncIteration:
                 pass
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001
                 e = err
         if e:
             raise e
@@ -150,5 +150,5 @@ def make_async_container(
         for scope in scopes
     ]
     return AsyncContextWrapper(
-        AsyncContainer(*registries, context=context, with_lock=with_lock)
+        AsyncContainer(*registries, context=context, with_lock=with_lock),
     )

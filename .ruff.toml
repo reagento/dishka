@@ -1,0 +1,26 @@
+line-length = 79
+src = ["src"]
+include = ["src/**.py", "tests/**.py"]
+
+select = [
+    "E",
+    "F",
+    "BLE",
+    "B",
+    "COM",
+    "C4",
+    "ERA",
+    "T20",
+    "I",
+    "N",
+    "ASYNC",
+    "PIE",
+    "RUF",
+]
+
+
+[isort]
+no-lines-before = ["local-folder"]
+
+[flake8-tidy-imports]
+ban-relative-imports = "parents"

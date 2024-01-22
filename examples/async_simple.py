@@ -1,5 +1,4 @@
 import asyncio
-from contextlib import asynccontextmanager
 from enum import auto
 from typing import AsyncIterable, AsyncGenerator
 
@@ -28,17 +27,14 @@ class MyProvider(Provider):
 
 
 async def main():
-    container = make_async_container(
-        MyProvider(1), scopes=MyScope, with_lock=True,
-    )
-    print(await container.get(int))
+    async with make_async_container(MyProvider(1), scopes=MyScope, with_lock=True) as container:
+        print(await container.get(int))
 
-    async with container() as c_request:
-        print(await c_request.get(str))
+        async with container() as c_request:
+            print(await c_request.get(str))
 
-    async with container() as c_request:
-        print(await c_request.get(str))
-    await container.close()
+        async with container() as c_request:
+            print(await c_request.get(str))
 
 
 if __name__ == '__main__':

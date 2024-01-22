@@ -138,9 +138,13 @@ class AsyncContextWrapper:
         await self.container.close()
 
 
-def make_async_container(*providers, scopes: Type[Scope], with_lock: bool = False) -> AsyncContainer:
+def make_async_container(
+        *providers, scopes: Type[Scope], context: Optional[dict] = None, with_lock: bool = False,
+) -> AsyncContextWrapper:
     registries = [
         make_registry(*providers, scope=scope)
         for scope in scopes
     ]
-    return AsyncContainer(*registries, with_lock=with_lock)
+    return AsyncContextWrapper(
+        AsyncContainer(*registries, context=context, with_lock=with_lock)
+    )

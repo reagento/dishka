@@ -119,9 +119,11 @@ class ContextWrapper:
         self.container.close()
 
 
-def make_container(*providers, scopes: Type[Scope], with_lock: bool = False) -> Container:
+def make_container(*providers, scopes: Type[Scope], context: Optional[dict] = None, with_lock: bool = False) -> ContextWrapper:
     registries = [
         make_registry(*providers, scope=scope)
         for scope in scopes
     ]
-    return Container(*registries, with_lock=with_lock)
+    return ContextWrapper(
+        Container(*registries, context=context, with_lock=with_lock)
+    )

@@ -39,12 +39,12 @@ class MyProvider(Provider):
 
 
 def main():
-    container = make_container(
-        MyProvider(1), scopes=MyScope, with_lock=True,
-    )
-    with container() as c_request:
-        print(c_request.get(BaseA))
-    container.close()
+    with make_container(MyProvider(1), scopes=MyScope, with_lock=True) as container:
+        print(container.get(int))
+        with container() as c_request:
+            print(c_request.get(BaseA))
+        with container() as c_request:
+            print(c_request.get(A))
 
 
 if __name__ == '__main__':

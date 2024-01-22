@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 from enum import auto
 from inspect import Parameter
 from typing import Annotated, get_type_hints, NewType, Callable, Iterable
@@ -37,9 +38,9 @@ def inject(func):
     )
 
 
-def container_middleware(container):
+def container_middleware():
     async def add_request_container(request: Request, call_next):
-        async with container({Request: request}) as subcontainer:
+        async with request.app.state.container({Request: request}) as subcontainer:
             request.state.container = subcontainer
             return await call_next(request)
 
@@ -144,17 +145,23 @@ def new_a(b: B = FastapiDepends(Stub(B)), c: C = FastapiDepends(Stub(C))):
     return A(b, c)
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with make_async_container(
+            MyProvider(), scopes=MyScope, with_lock=True,
+    ) as container:
+        app.state.container = container
+        yield
+
+
 def create_app() -> FastAPI:
     logging.basicConfig(level=logging.WARNING)
-    container = make_async_container(
-        MyProvider(), scopes=MyScope, with_lock=True,
-    )
 
-    app = FastAPI()
+    app = FastAPI(lifespan=lifespan)
+    app.middleware("http")(container_middleware())
     app.dependency_overrides[A] = new_a
     app.dependency_overrides[B] = lambda: B(1)
     app.dependency_overrides[C] = lambda: C(1)
-    app.middleware("http")(container_middleware(container))
     app.include_router(router)
     return app
 

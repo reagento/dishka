@@ -1,7 +1,7 @@
 import asyncio
-from typing import AsyncIterable, AsyncGenerator
+from typing import AsyncGenerator, AsyncIterable
 
-from dishka import provide, Scope, Provider, make_async_container
+from dishka import Provider, Scope, make_async_container, provide
 
 
 class MyProvider(Provider):
@@ -21,7 +21,9 @@ class MyProvider(Provider):
 
 
 async def main():
-    async with make_async_container(MyProvider(1), with_lock=True) as container:
+    async with make_async_container(
+            MyProvider(1), with_lock=True,
+    ) as container:
         print(await container.get(int))
 
         async with container() as c_request:

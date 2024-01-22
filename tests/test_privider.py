@@ -1,9 +1,10 @@
 import pytest
 
-from dishka import Provider, provide, alias, Scope
+from dishka import Provider, Scope, alias, provide
 from dishka.provider import ProviderType
 from .sample_providers import (
-    ClassA, sync_gen_a, sync_func_a, sync_iter_a, async_gen_a, async_func_a, async_iter_a,
+    ClassA, async_func_a, async_gen_a, async_iter_a,
+    sync_func_a, sync_gen_a, sync_iter_a,
 )
 
 

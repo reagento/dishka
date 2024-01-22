@@ -1,7 +1,5 @@
 from threading import Lock
-from typing import (
-    TypeVar, Optional, Type,
-)
+from typing import Optional, Type, TypeVar
 
 from .provider import DependencyProvider, ProviderType
 from .registry import Registry, make_registry
@@ -11,7 +9,10 @@ T = TypeVar("T")
 
 
 class Container:
-    __slots__ = ("registry", "child_registries", "context", "parent_container", "lock", "exits")
+    __slots__ = (
+        "registry", "child_registries", "context", "parent_container",
+        "lock", "exits",
+    )
 
     def __init__(
             self,

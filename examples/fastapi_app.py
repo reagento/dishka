@@ -1,13 +1,15 @@
 import logging
 from contextlib import asynccontextmanager
 from inspect import Parameter
-from typing import Annotated, get_type_hints, NewType, Callable, Iterable
+from typing import Annotated, Callable, Iterable, NewType, get_type_hints
 
 import uvicorn
-from fastapi import Request, APIRouter, FastAPI, Depends as FastapiDepends
+from fastapi import APIRouter
+from fastapi import Depends as FastapiDepends
+from fastapi import FastAPI, Request
 
-from dishka import Provider, provide, Scope, make_async_container
-from dishka.inject import wrap_injection, Depends
+from dishka import Provider, Scope, make_async_container, provide
+from dishka.inject import Depends, wrap_injection
 
 
 # framework level
@@ -39,7 +41,9 @@ def inject(func):
 
 def container_middleware():
     async def add_request_container(request: Request, call_next):
-        async with request.app.state.container({Request: request}) as subcontainer:
+        async with request.app.state.container(
+                {Request: request}
+        ) as subcontainer:
             request.state.container = subcontainer
             return await call_next(request)
 

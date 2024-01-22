@@ -6,8 +6,8 @@ __all__ = [
     "BaseScope", "Scope",
 ]
 
-from .async_container import make_async_container, AsyncContainer
-from .container import make_container, Container
+from .async_container import AsyncContainer, make_async_container
+from .container import Container, make_container
 from .inject import Depends, wrap_injection
-from .provider import Provider, provide, alias
+from .provider import Provider, alias, provide
 from .scope import BaseScope, Scope

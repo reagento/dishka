@@ -3,13 +3,13 @@ import logging
 import os
 import random
 from inspect import Parameter
-from typing import Container, Annotated, Iterable
+from typing import Annotated, Container, Iterable
 
-from aiogram import Router, Bot, Dispatcher, BaseMiddleware
+from aiogram import BaseMiddleware, Bot, Dispatcher, Router
 from aiogram.types import Message, TelegramObject, User
 
-from dishka import Provider, provide, Scope, make_async_container
-from dishka.inject import wrap_injection, Depends
+from dishka import Provider, Scope, make_async_container, provide
+from dishka.inject import Depends, wrap_injection
 
 
 # framework level

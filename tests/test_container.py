@@ -1,8 +1,12 @@
 import pytest
 
-from dishka import Provider, provide, Scope, make_container, make_async_container
+from dishka import (
+    Provider, Scope, make_async_container, make_container,
+    provide,
+)
 from .sample_providers import (
-    ClassA, sync_gen_a, sync_func_a, sync_iter_a, async_gen_a, async_func_a, async_iter_a,
+    ClassA, async_func_a, async_gen_a, async_iter_a,
+    sync_func_a, sync_gen_a, sync_iter_a,
 )
 
 

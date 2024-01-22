@@ -1,10 +1,8 @@
 from asyncio import Lock
 from dataclasses import dataclass
-from typing import (
-    TypeVar, Optional, Type, Callable, List,
-)
+from typing import Callable, List, Optional, Type, TypeVar
 
-from .provider import DependencyProvider, ProviderType, Provider
+from .provider import DependencyProvider, Provider, ProviderType
 from .registry import Registry, make_registry
 from .scope import BaseScope, Scope
 
@@ -19,7 +17,10 @@ class Exit:
 
 
 class AsyncContainer:
-    __slots__ = ("registry", "child_registries", "context", "parent_container", "lock", "exits")
+    __slots__ = (
+        "registry", "child_registries", "context", "parent_container",
+        "lock", "exits",
+    )
 
     def __init__(
             self,

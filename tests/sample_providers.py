@@ -1,4 +1,4 @@
-from typing import Iterable, Generator, AsyncIterable, AsyncGenerator
+from typing import AsyncGenerator, AsyncIterable, Generator, Iterable
 
 
 class ClassA:

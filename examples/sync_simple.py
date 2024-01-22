@@ -1,6 +1,6 @@
 from typing import Generator
 
-from dishka import provide, Provider, make_container, alias, Scope
+from dishka import Provider, Scope, alias, make_container, provide
 
 
 class BaseA:

@@ -1,6 +1,7 @@
-from inspect import Parameter, signature, Signature
+from inspect import Parameter, Signature, signature
 from typing import (
-    Any, Annotated, Callable, Sequence, get_type_hints, get_origin, get_args,
+    Annotated, Any, Callable, Sequence, get_args, get_origin,
+    get_type_hints,
 )
 
 from .container import Container

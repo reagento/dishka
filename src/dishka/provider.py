@@ -1,9 +1,12 @@
-from collections.abc import Iterable, AsyncIterable
+from collections.abc import AsyncIterable, Iterable
 from enum import Enum
-from inspect import isclass, iscoroutinefunction, isasyncgenfunction, isgeneratorfunction
+from inspect import (
+    isasyncgenfunction, isclass, iscoroutinefunction,
+    isgeneratorfunction,
+)
 from typing import (
-    Optional, Type, Callable, Union, Sequence, Any,
-    get_type_hints, get_origin, get_args,
+    Any, Callable, Optional, Sequence, Type, Union, get_args,
+    get_origin, get_type_hints,
 )
 
 from .scope import BaseScope
@@ -18,7 +21,10 @@ class ProviderType(Enum):
 
 
 class DependencyProvider:
-    __slots__ = ("dependencies", "callable", "result_type", "scope", "type", "is_to_bound")
+    __slots__ = (
+        "dependencies", "callable", "result_type", "scope", "type",
+        "is_to_bound",
+    )
 
     def __init__(
             self,

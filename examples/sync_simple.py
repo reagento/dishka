@@ -21,7 +21,7 @@ class MyProvider(Provider):
         self.a = a
 
     get_a = provide(A, scope=Scope.REQUEST)
-    get_basea = alias(A, dependency=BaseA)
+    get_basea = alias(source=A, provides=BaseA)
 
     @provide(scope=Scope.APP)
     def get_int(self) -> int:

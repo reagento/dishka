@@ -67,13 +67,13 @@ class Container:
             for dependency in dep_provider.dependencies
         ]
         if dep_provider.type is ProviderType.GENERATOR:
-            generator = dep_provider.callable(*sub_dependencies)
+            generator = dep_provider.source(*sub_dependencies)
             self.exits.append(generator)
             return next(generator)
         elif dep_provider.type is ProviderType.FACTORY:
-            return dep_provider.callable(*sub_dependencies)
+            return dep_provider.source(*sub_dependencies)
         elif dep_provider.type is ProviderType.VALUE:
-            return dep_provider.callable
+            return dep_provider.source
         else:
             raise ValueError(f"Unsupported type {dep_provider.type}")
 
@@ -110,6 +110,8 @@ class Container:
 
 
 class ContextWrapper:
+    __slots__ = ("container", )
+
     def __init__(self, container: Container):
         self.container = container
 

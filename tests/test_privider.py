@@ -15,15 +15,15 @@ from .sample_providers import (
 
 def test_provider_init():
     class MyProvider(Provider):
-        a = alias(int, bool)
-        b = provide(lambda: False, scope=Scope.APP, dependency=bool)
+        a = alias(source=int, provides=bool)
+        b = provide(lambda: False, scope=Scope.APP, provides=bool)
 
         @provide(scope=Scope.REQUEST)
         def foo(self, x: bool) -> str:
             return f"{x}"
 
     provider = MyProvider()
-    assert len(provider.dependencies) == 2
+    assert len(provider.dependency_providers) == 2
     assert len(provider.aliases) == 1
 
 
@@ -40,9 +40,9 @@ def test_provider_init():
 )
 def test_parse_provider(factory, provider_type, is_to_bound):
     dep_provider = provide(factory, scope=Scope.REQUEST)
-    assert dep_provider.result_type == ClassA
+    assert dep_provider.provides == ClassA
     assert dep_provider.dependencies == [int]
     assert dep_provider.is_to_bound == is_to_bound
     assert dep_provider.scope == Scope.REQUEST
-    assert dep_provider.callable == factory
+    assert dep_provider.source == factory
     assert dep_provider.type == provider_type

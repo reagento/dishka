@@ -29,24 +29,28 @@ class ProviderType(Enum):
     VALUE = "value"
 
 
+def _identity(x: Any) -> Any:
+    return x
+
+
 class DependencyProvider:
     __slots__ = (
-        "dependencies", "callable", "result_type", "scope", "type",
+        "dependencies", "source", "provides", "scope", "type",
         "is_to_bound",
     )
 
     def __init__(
             self,
-            dependencies: Sequence,
-            callable: Callable,
-            result_type: Type,
+            dependencies: Sequence[Any],
+            source: Any,
+            provides: Type,
             scope: Optional[BaseScope],
             type: ProviderType,
             is_to_bound: bool,
     ):
         self.dependencies = dependencies
-        self.callable = callable
-        self.result_type = result_type
+        self.source = source
+        self.provides = provides
         self.scope = scope
         self.type = type
         self.is_to_bound = is_to_bound
@@ -55,13 +59,13 @@ class DependencyProvider:
         if instance is None:
             return self
         if self.is_to_bound:
-            callable = self.callable.__get__(instance, owner)
+            source = self.source.__get__(instance, owner)
         else:
-            callable = self.callable
+            source = self.source
         return DependencyProvider(
             dependencies=self.dependencies,
-            callable=callable,
-            result_type=self.result_type,
+            source=source,
+            provides=self.provides,
             scope=self.scope,
             type=self.type,
             is_to_bound=False,
@@ -69,9 +73,9 @@ class DependencyProvider:
 
     def aliased(self, target: Type):
         return DependencyProvider(
-            dependencies=self.dependencies,
-            callable=self.callable,
-            result_type=target,
+            dependencies=[self.provides],
+            source=_identity,
+            provides=target,
             scope=self.scope,
             type=self.type,
             is_to_bound=self.is_to_bound,
@@ -79,35 +83,35 @@ class DependencyProvider:
 
 
 def make_dependency_provider(
-        dependency: Any,
+        provides: Any,
         scope: Optional[BaseScope],
-        func: Callable,
+        source: Callable,
 ):
-    if isclass(func):
-        hints = get_type_hints(func.__init__, include_extras=True)
+    if isclass(source):
+        hints = get_type_hints(source.__init__, include_extras=True)
         hints.pop("return", None)
-        possible_dependency = func
+        possible_dependency = source
         is_to_bind = False
     else:
-        hints = get_type_hints(func, include_extras=True)
+        hints = get_type_hints(source, include_extras=True)
         possible_dependency = hints.pop("return", None)
         is_to_bind = True
 
-    if isclass(func):
+    if isclass(source):
         provider_type = ProviderType.FACTORY
-    elif isasyncgenfunction(func):
+    elif isasyncgenfunction(source):
         provider_type = ProviderType.ASYNC_GENERATOR
         if get_origin(possible_dependency) is AsyncIterable:
             possible_dependency = get_args(possible_dependency)[0]
         else:  # async generator
             possible_dependency = get_args(possible_dependency)[0]
-    elif isgeneratorfunction(func):
+    elif isgeneratorfunction(source):
         provider_type = ProviderType.GENERATOR
         if get_origin(possible_dependency) is Iterable:
             possible_dependency = get_args(possible_dependency)[0]
         else:  # generator
             possible_dependency = get_args(possible_dependency)[1]
-    elif iscoroutinefunction(func):
+    elif iscoroutinefunction(source):
         provider_type = ProviderType.ASYNC_FACTORY
     else:
         provider_type = ProviderType.FACTORY
@@ -115,50 +119,53 @@ def make_dependency_provider(
     return DependencyProvider(
         dependencies=list(hints.values()),
         type=provider_type,
-        callable=func,
+        source=source,
         scope=scope,
-        result_type=dependency or possible_dependency,
+        provides=provides or possible_dependency,
         is_to_bound=is_to_bind,
     )
 
 
 class Alias:
-    def __init__(self, target, result_type):
-        self.target = target
-        self.result_type = result_type
+    __slots__ = ("source", "provides")
+
+    def __init__(self, source, provides):
+        self.source = source
+        self.provides = provides
 
 
 def alias(
-        target: Type,
-        dependency: Any = None,
+        *,
+        source: Type,
+        provides: Type,
 ):
     return Alias(
-        target=target,
-        result_type=dependency,
+        source=source,
+        provides=provides,
     )
 
 
 def provide(
-        func: Union[None, Callable] = None,
+        source: Union[None, Callable, Type] = None,
         *,
         scope: BaseScope = None,
-        dependency: Any = None,
+        provides: Any = None,
 ):
-    if func is not None:
-        return make_dependency_provider(dependency, scope, func)
+    if source is not None:
+        return make_dependency_provider(provides, scope, source)
 
     def scoped(func):
-        return make_dependency_provider(dependency, scope, func)
+        return make_dependency_provider(provides, scope, func)
 
     return scoped
 
 
 class Provider:
     def __init__(self):
-        self.dependencies = {}
+        self.dependency_providers = {}
         self.aliases = []
         for name, attr in vars(type(self)).items():
             if isinstance(attr, DependencyProvider):
-                self.dependencies[attr.result_type] = getattr(self, name)
+                self.dependency_providers[attr.provides] = getattr(self, name)
             elif isinstance(attr, Alias):
                 self.aliases.append(attr)

@@ -5,7 +5,7 @@ from dishka.container import make_container
 
 
 class MyProvider(Provider):
-    a = provide(A1, scope=MyScope.REQUEST, dependency=A)
+    a = provide(A1, scope=MyScope.REQUEST, provides=A)
     c1 = provide(CA, scope=MyScope.REQUEST)
     c2 = provide(CAA, scope=MyScope.REQUEST)
     c3 = provide(CAAA, scope=MyScope.REQUEST)

@@ -1,6 +1,6 @@
-## DIshka - DI by Tishka17
+## DIshka (from russian "small DI")
 
-Minimal DI framework with scopes
+Small DI framework with scopes and agreeable API.
 
 ### Purpose
 
@@ -14,6 +14,7 @@ Main ideas:
 * **Modular providers**. Instead of creating lots of separate functions or contrariwise a big single class, you can split your factories into several classes, which makes them simpler reusable.
 * **Clean dependencies**. You do not need to add custom markers to the code of dependencies so to allow library to see them. All customization is done within providers code and only borders of scopes have to deal with library API.
 * **Simple API**. You need minimum of objects to start using library. You can easily integrate it with your task framework, examples provided. 
+* **Speed**. It is fast enough so you not to worry about. It is even faster than many of the analogs.
 
 ### Quickstart
 
@@ -55,27 +56,32 @@ with make_container(provider) as container:
 **Provider** is a collection of functions which really provide some objects. 
 * Add method and mark it with `@provide` decorator. It can be sync or async method returning some value.
     ```python
-    @provide(scope=Scope.REQUEST)
-    def get_a(self) -> A:
-        return A()
+    class MyProvider(Provider):
+        @provide(scope=Scope.REQUEST)
+        def get_a(self) -> A:
+            return A()
     ```
 * Want some finalization when exiting the scope? Make that method generator:
     ```python
-    @provide(scope=Scope.REQUEST)
-    def get_a(self) -> Iterable[A]:
-        a = A()
-        yield a
-        a.close()
+    class MyProvider(Provider):
+        @provide(scope=Scope.REQUEST)
+        def get_a(self) -> Iterable[A]:
+            a = A()
+            yield a
+            a.close()
     ```
 * Do not have any specific logic and just want to create class using its `__init__`? then add a provider attribute using `provide` as function passing that class. 
     ```python 
-    a = provide(A, scope=Scope.REQUEST)
+    class MyProvider(Provider):
+        a = provide(A, scope=Scope.REQUEST)
     ```
 * Want to create a child class instance when parent is requested? add a `dependency` attribute to `provide` function with a parent class while passing child as a first parameter 
     ```python 
-    a = provide(AChild, scope=Scope.REQUEST, dependency=A)
+    class MyProvider(Provider):
+        a = provide(source=AChild, scope=Scope.REQUEST, provides=A)
     ```
-* Having multiple interfaces which can be created as a same class? Use alias:
+* Having multiple interfaces which can be created as a same class with defined provider? Use alias:
     ```python
-    p = alias(AProtocol, A)
+    class MyProvider(Provider):
+        p = alias(source=A, provides=AProtocol)
     ```

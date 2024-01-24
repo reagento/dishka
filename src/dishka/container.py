@@ -24,7 +24,7 @@ class Container:
     ):
         self.registry = registry
         self.child_registries = child_registries
-        self.context = {}
+        self.context = {type(self): self}
         if context:
             self.context.update(context)
         self.parent_container = parent_container

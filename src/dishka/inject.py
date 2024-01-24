@@ -17,30 +17,46 @@ class Depends:
         self.param = param
 
 
+def default_parse_dependency(
+        parameter: Parameter,
+        hint: Any,
+) -> Any:
+    """ Resolve dependency type or return None if it is not a dependency """
+    if get_origin(hint) is not Annotated:
+        return None
+    dep = next(
+        (arg for arg in get_args(hint) if isinstance(arg, Depends)),
+        None,
+    )
+    if not dep:
+        return None
+    if dep.param is None:
+        return get_args(hint)[0]
+    else:
+        return dep.param
+
+
+DependencyParser = Callable[[Parameter, Any], Any]
+
+
 def wrap_injection(
         func: Callable,
         container_getter: Callable[[dict], Container],
         remove_depends: bool = True,
         additional_params: Sequence[Parameter] = (),
         is_async: bool = False,
-):
+        parse_dependency: DependencyParser = default_parse_dependency,
+) -> Callable:
     hints = get_type_hints(func, include_extras=True)
     func_signature = signature(func)
 
     dependencies = {}
-    for name, hint in hints.items():
-        if get_origin(hint) is not Annotated:
+    for name, param in func_signature.parameters.items():
+        hint = hints.get(name, Any)
+        dep = parse_dependency(param, hint)
+        if dep is None:
             continue
-        dep = next(
-            (arg for arg in get_args(hint) if isinstance(arg, Depends)),
-            None,
-        )
-        if not dep:
-            continue
-        if dep.param is None:
-            dependencies[name] = get_args(hint)[0]
-        else:
-            dependencies[name] = dep.param
+        dependencies[name] = dep
 
     if remove_depends:
         new_annotations = {

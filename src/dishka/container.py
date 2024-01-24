@@ -1,11 +1,19 @@
+from dataclasses import dataclass
 from threading import Lock
-from typing import Optional, Type, TypeVar
+from typing import Callable, List, Optional, Type, TypeVar
 
-from .provider import DependencyProvider, ProviderType
+from .provider import DependencyProvider, Provider, ProviderType
 from .registry import Registry, make_registry
 from .scope import BaseScope, Scope
 
 T = TypeVar("T")
+
+
+@dataclass
+class Exit:
+    __slots__ = ("type", "callable")
+    type: ProviderType
+    callable: Callable
 
 
 class Container:
@@ -32,7 +40,7 @@ class Container:
             self.lock = Lock()
         else:
             self.lock = None
-        self.exits = []
+        self.exits: List[Exit] = []
 
     def _get_child(
             self,
@@ -68,7 +76,7 @@ class Container:
         ]
         if dep_provider.type is ProviderType.GENERATOR:
             generator = dep_provider.source(*sub_dependencies)
-            self.exits.append(generator)
+            self.exits.append(Exit(dep_provider.type, generator))
             return next(generator)
         elif dep_provider.type is ProviderType.FACTORY:
             return dep_provider.source(*sub_dependencies)
@@ -100,7 +108,8 @@ class Container:
         e = None
         for exit_generator in self.exits:
             try:
-                next(exit_generator)
+                if exit_generator.type is ProviderType.GENERATOR:
+                    next(exit_generator.callable)
             except StopIteration:
                 pass
             except Exception as err:  # noqa: BLE001
@@ -110,8 +119,6 @@ class Container:
 
 
 class ContextWrapper:
-    __slots__ = ("container", )
-
     def __init__(self, container: Container):
         self.container = container
 
@@ -123,7 +130,7 @@ class ContextWrapper:
 
 
 def make_container(
-        *providers,
+        *providers: Provider,
         scopes: Type[BaseScope] = Scope,
         context: Optional[dict] = None,
         with_lock: bool = False,

@@ -111,7 +111,7 @@ class Container:
 
 class ContextWrapper:
     __slots__ = ("container", )
-
+    
     def __init__(self, container: Container):
         self.container = container
 

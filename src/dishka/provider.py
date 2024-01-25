@@ -15,7 +15,7 @@ from typing import (
     Union,
     get_args,
     get_origin,
-    get_type_hints,
+    get_type_hints, List,
 )
 
 from .scope import BaseScope
@@ -71,16 +71,6 @@ class DependencyProvider:
             is_to_bound=False,
         )
 
-    def aliased(self, target: Type):
-        return DependencyProvider(
-            dependencies=[self.provides],
-            source=_identity,
-            provides=target,
-            scope=self.scope,
-            type=self.type,
-            is_to_bound=self.is_to_bound,
-        )
-
 
 def make_dependency_provider(
         provides: Any,
@@ -133,6 +123,16 @@ class Alias:
         self.source = source
         self.provides = provides
 
+    def as_provider(self, scope: BaseScope) -> DependencyProvider:
+        return DependencyProvider(
+            scope=scope,
+            source=_identity,
+            provides=self.provides,
+            is_to_bound=False,
+            dependencies=[self.source],
+            type=ProviderType.FACTORY,
+        )
+
 
 def alias(
         *,
@@ -160,12 +160,14 @@ def provide(
     return scoped
 
 
+DependencyProviderVariant = Alias | DependencyProvider
+
+
 class Provider:
     def __init__(self):
-        self.dependency_providers = {}
-        self.aliases = []
+        self.dependency_providers: List[DependencyProviderVariant] = []
         for name, attr in vars(type(self)).items():
             if isinstance(attr, DependencyProvider):
-                self.dependency_providers[attr.provides] = getattr(self, name)
+                self.dependency_providers.append(getattr(self, name))
             elif isinstance(attr, Alias):
-                self.aliases.append(attr)
+                self.dependency_providers.append(attr)

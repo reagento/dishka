@@ -1,6 +1,6 @@
-from typing import Any
+from typing import Any, List, Type
 
-from .provider import DependencyProvider, Provider
+from .provider import DependencyProvider, Provider, Alias
 from .scope import BaseScope
 
 
@@ -33,3 +33,28 @@ def make_registry(*providers: Provider, scope: BaseScope) -> Registry:
                     dependency_provider.aliased(alias.provides),
                 )
     return registry
+
+
+def make_registries(
+        *providers: Provider, scopes: Type[BaseScope],
+) -> List[Registry]:
+    dep_scopes = {}
+    for provider in providers:
+        for dep_provider in provider.dependency_providers:
+            if hasattr(dep_provider, "scope"):
+                dep_scopes[dep_provider.provides] = dep_provider.scope
+
+    registries = {scope: Registry(scope) for scope in scopes}
+
+    for provider in providers:
+        for dep_provider in provider.dependency_providers:
+            if isinstance(dep_provider, DependencyProvider):
+                scope = dep_provider.scope
+            elif isinstance(dep_provider, Alias):
+                scope = dep_scopes[dep_provider.source]
+                dep_provider = dep_provider.as_provider(scope)
+            else:
+                raise
+            registries[scope].add_provider(dep_provider)
+
+    return list(registries.values())

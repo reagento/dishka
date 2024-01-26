@@ -210,5 +210,5 @@ class Provider:
     def __init__(self):
         self.dependency_providers: List[DependencyProviderVariant] = []
         for name, attr in vars(type(self)).items():
-            if isinstance(attr, (DependencyProvider, Alias, Decorator)):
+            if isinstance(attr, DependencyProviderVariant):
                 self.dependency_providers.append(getattr(self, name))

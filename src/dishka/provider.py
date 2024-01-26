@@ -9,13 +9,14 @@ from inspect import (
 from typing import (
     Any,
     Callable,
+    List,
     Optional,
     Sequence,
     Type,
     Union,
     get_args,
     get_origin,
-    get_type_hints, List,
+    get_type_hints,
 )
 
 from .scope import BaseScope

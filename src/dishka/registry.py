@@ -1,6 +1,6 @@
-from typing import Any, List, Type, NewType
+from typing import Any, List, NewType, Type
 
-from .provider import DependencyProvider, Provider, Alias, Decorator
+from .provider import Alias, Decorator, DependencyProvider, Provider
 from .scope import BaseScope
 
 
@@ -31,7 +31,6 @@ def make_registries(
 
     for provider in providers:
         for dep_provider in provider.dependency_providers:
-            print("prov", dep_provider)
             if isinstance(dep_provider, DependencyProvider):
                 scope = dep_provider.scope
             elif isinstance(dep_provider, Alias):

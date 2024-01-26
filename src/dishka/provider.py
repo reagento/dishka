@@ -9,6 +9,7 @@ from inspect import (
 from typing import (
     Any,
     Callable,
+    List,
     Optional,
     Sequence,
     Type,
@@ -71,16 +72,6 @@ class DependencyProvider:
             is_to_bound=False,
         )
 
-    def aliased(self, target: Type):
-        return DependencyProvider(
-            dependencies=[self.provides],
-            source=_identity,
-            provides=target,
-            scope=self.scope,
-            type=self.type,
-            is_to_bound=self.is_to_bound,
-        )
-
 
 def make_dependency_provider(
         provides: Any,
@@ -133,6 +124,19 @@ class Alias:
         self.source = source
         self.provides = provides
 
+    def as_provider(self, scope: BaseScope) -> DependencyProvider:
+        return DependencyProvider(
+            scope=scope,
+            source=_identity,
+            provides=self.provides,
+            is_to_bound=False,
+            dependencies=[self.source],
+            type=ProviderType.FACTORY,
+        )
+
+    def __get__(self, instance, owner):
+        return self
+
 
 def alias(
         *,
@@ -143,6 +147,45 @@ def alias(
         source=source,
         provides=provides,
     )
+
+
+class Decorator:
+    __slots__ = ("provides", "provider")
+
+    def __init__(self, provider: DependencyProvider):
+        self.provider = provider
+        self.provides = provider.provides
+
+    def as_provider(
+            self, scope: BaseScope, new_dependency: Any,
+    ) -> DependencyProvider:
+        return DependencyProvider(
+            scope=scope,
+            source=self.provider.source,
+            provides=self.provider.provides,
+            is_to_bound=self.provider.is_to_bound,
+            dependencies=[
+                new_dependency if dep is self.provides else dep
+                for dep in self.provider.dependencies
+            ],
+            type=self.provider.type,
+        )
+
+    def __get__(self, instance, owner):
+        return Decorator(self.provider.__get__(instance, owner))
+
+
+def decorate(
+        source: Union[None, Callable, Type] = None,
+        provides: Any = None,
+):
+    if source is not None:
+        return Decorator(make_dependency_provider(provides, None, source))
+
+    def scoped(func):
+        return Decorator(make_dependency_provider(provides, None, func))
+
+    return scoped
 
 
 def provide(
@@ -160,12 +203,12 @@ def provide(
     return scoped
 
 
+DependencyProviderVariant = Alias | DependencyProvider | Decorator
+
+
 class Provider:
     def __init__(self):
-        self.dependency_providers = {}
-        self.aliases = []
+        self.dependency_providers: List[DependencyProviderVariant] = []
         for name, attr in vars(type(self)).items():
-            if isinstance(attr, DependencyProvider):
-                self.dependency_providers[attr.provides] = getattr(self, name)
-            elif isinstance(attr, Alias):
-                self.aliases.append(attr)
+            if isinstance(attr, DependencyProviderVariant):
+                self.dependency_providers.append(getattr(self, name))

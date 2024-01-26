@@ -1,6 +1,6 @@
-from typing import Any
+from typing import Any, List, NewType, Type
 
-from .provider import DependencyProvider, Provider
+from .provider import Alias, Decorator, DependencyProvider, Provider
 from .scope import BaseScope
 
 
@@ -14,22 +14,44 @@ class Registry:
     def add_provider(self, provider: DependencyProvider):
         self._providers[provider.provides] = provider
 
-    def get_provider(self, dependency: Any):
+    def get_provider(self, dependency: Any) -> DependencyProvider:
         return self._providers.get(dependency)
 
 
-def make_registry(*providers: Provider, scope: BaseScope) -> Registry:
-    registry = Registry(scope)
+def make_registries(
+        *providers: Provider, scopes: Type[BaseScope],
+) -> List[Registry]:
+    dep_scopes = {}
     for provider in providers:
-        for dependency_provider in provider.dependency_providers.values():
-            if dependency_provider.scope is scope:
-                registry.add_provider(dependency_provider)
+        for dep_provider in provider.dependency_providers:
+            if hasattr(dep_provider, "scope"):
+                dep_scopes[dep_provider.provides] = dep_provider.scope
+
+    registries = {scope: Registry(scope) for scope in scopes}
 
     for provider in providers:
-        for alias in provider.aliases:
-            dependency_provider = registry.get_provider(alias.source)
-            if dependency_provider:
-                registry.add_provider(
-                    dependency_provider.aliased(alias.provides),
+        for dep_provider in provider.dependency_providers:
+            if isinstance(dep_provider, DependencyProvider):
+                scope = dep_provider.scope
+            elif isinstance(dep_provider, Alias):
+                scope = dep_scopes[dep_provider.source]
+                dep_scopes[dep_provider.provides] = scope
+                dep_provider = dep_provider.as_provider(scope)
+            elif isinstance(dep_provider, Decorator):
+                scope = dep_scopes[dep_provider.provides]
+                registry = registries[scope]
+                undecorated_type = NewType(
+                    f"Old_{dep_provider.provides.__name__}",
+                    dep_provider.provides,
                 )
-    return registry
+                old_provider = registry.get_provider(dep_provider.provides)
+                old_provider.provides = undecorated_type
+                registry.add_provider(old_provider)
+                dep_provider = dep_provider.as_provider(
+                    scope, undecorated_type,
+                )
+            else:
+                raise
+            registries[scope].add_provider(dep_provider)
+
+    return list(registries.values())

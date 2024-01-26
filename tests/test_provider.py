@@ -23,8 +23,7 @@ def test_provider_init():
             return f"{x}"
 
     provider = MyProvider()
-    assert len(provider.dependency_providers) == 2
-    assert len(provider.aliases) == 1
+    assert len(provider.dependency_providers) == 3
 
 
 @pytest.mark.parametrize(

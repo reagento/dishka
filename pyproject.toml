@@ -27,7 +27,7 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-"Homepage" = "https://github.com/tishka17/dishka"
-"Bug Tracker" = "https://github.com/tishka17/dishka/issues"
+"Homepage" = "https://github.com/reagento/dishka"
+"Bug Tracker" = "https://github.com/reagento/dishka/issues"
 
 

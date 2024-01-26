@@ -85,3 +85,19 @@ with make_container(provider) as container:
     class MyProvider(Provider):
         p = alias(source=A, provides=AProtocol)
     ```
+    it works the same way as
+    ```python
+    class MyProvider(Provider):
+        @provide(scope=<Scope of A>)
+        def p(self, a: A) -> AProtocol:
+            return a
+    ```
+
+* Want to apply decorator pattern and do not want to alter existing provide method? Use `decorate`. It will construct object using earlie defined provider and then pass it to your decorator before returning from the container.
+  ```python
+    class MyProvider(Provider):
+        @decorate
+        def decorate_a(self, a: A) -> A:
+            return ADecorator(a)
+   ```
+  Decorator function can also have additional parameters.

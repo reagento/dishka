@@ -19,13 +19,41 @@ Main ideas:
 ### Quickstart
 
 1. Create Provider subclass. 
-2. Mark methods which actually create depedencies with `@provide` decorator with carefully arranged scopes.
-3. Do not forget to place correct typehints for parameters and result 
-4. Create Container instance passing providers
+```python
+from dishka import Provider
+class MyProvider(Provider):
+   ...
+```
+2. Mark methods which actually create dependencies with `@provide` decorator with carefully arranged scopes. Do not forget to place correct typehints for parameters and result.
+Here we describe how to create instances of A and B classes, where B class requires itself an instance of A.
+```python
+from dishka import provide, Provider, Scope
+class MyProvider(Provider):
+   @provide(scope=Scope.APP)
+   def get_a(self) -> A:
+      return A()
+
+   @provide(scope=Scope.REQUEST)
+   def get_b(self, a: A) -> B:
+      return B(a)
+```
+4. Create Container instance passing providers, and step into `APP` scope. Or deeper if you need.
+```python
+with make_container(MyProvider()) as container:  # enter Scope.APP
+     with container() as request_container:   # enter Scope.REQUEST
+          ...
+```
+
 5. Call `get` to get dependency and use context manager to get deeper through scopes
+```python
+with make_container(MyProvider()) as container:
+     a = container.get(A)  # `A` has Scope.APP, so it is accessible here
+     with container() as request_container:
+          b = container.get(B)  # `B` has Scope.REQUEST
+```
 6. Add decorators and middleware for your framework
 
-See [examples](examples/sync_simple.py)
+See [examples](examples)
 
 ### Concepts
 
@@ -35,25 +63,11 @@ Some of them can live while you application is running, others are destroyed and
 **Scope** is a lifespan of a dependency. Standard scopes are `APP` -> `REQUEST` -> `ACTION` -> `STEP`. You manage when to enter and exit them, but it is done one by one. You set a scope for your dependency when you configure how to create it. If the same dependency is requested multiple time within one scope without leaving it, then the same instance is returned. 
 
 **Container** is what you use to get your dependency. You just call `.get(SomeType)` and it finds a way to get you an instance of that type. It does not create things itself, but manages their lifecycle and caches.
-```python
-# create container and enter APP scope
-with make_container(provider) as container:
-    # here you can get APP-scoped dependencies
-    container.get(SomeType)
-    
-    # enter the next scope which is REQUEST
-    with container() as request_container:
-        # here you can get REQUEST-scoped dependencies or APP-scoped ones
-        request_container.get(OtherType)
-        
-    # you can pass existing objects when entering scope
-    # they can be retrieved using `get` or used when resolving dependencies
-    with container({RequestClass: request_instance}) as request_container:
-        pass
-```
-
 
 **Provider** is a collection of functions which really provide some objects. 
+
+### Tips
+
 * Add method and mark it with `@provide` decorator. It can be sync or async method returning some value.
     ```python
     class MyProvider(Provider):
@@ -101,3 +115,26 @@ with make_container(provider) as container:
             return ADecorator(a)
    ```
   Decorator function can also have additional parameters.
+
+* Want to go `async`? Make provide methods asynchronous. Create async container. Use `async with` and await `get` calls:
+```python
+class MyProvider(Provider):
+   @provide(scope=Scope.APP)
+   async def get_a(self) -> A:
+      return A()
+
+async with make_async_container(MyProvider()) as container:
+     a = await container.get(A)
+```
+
+* Having some data connected with scope which you want to use when solving dependencies? Set it when entering scope. These classes can be used as parameters of your `provide` methods
+```python
+with make_container(MyProvider(), context={App: app}) as container:
+    with container({RequestClass: request_instance}) as request_container:
+        pass
+```
+
+* Having to many dependencies? Or maybe want to replace only part of them in tests keeping others? Create multiple `Provider` classes
+```python
+with make_container(MyProvider(), OtherProvider()) as container:
+```

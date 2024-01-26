@@ -2,7 +2,7 @@ from threading import Lock
 from typing import Optional, Type, TypeVar
 
 from .provider import DependencyProvider, ProviderType
-from .registry import Registry, make_registry
+from .registry import Registry, make_registries
 from .scope import BaseScope, Scope
 
 T = TypeVar("T")
@@ -110,8 +110,8 @@ class Container:
 
 
 class ContextWrapper:
-    __slots__ = ("container", )
-    
+    __slots__ = ("container",)
+
     def __init__(self, container: Container):
         self.container = container
 
@@ -128,10 +128,7 @@ def make_container(
         context: Optional[dict] = None,
         with_lock: bool = False,
 ) -> ContextWrapper:
-    registries = [
-        make_registry(*providers, scope=scope)
-        for scope in scopes
-    ]
+    registries = make_registries(*providers, scopes=scopes)
     return ContextWrapper(
         Container(*registries, context=context, with_lock=with_lock),
     )

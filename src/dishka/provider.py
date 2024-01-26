@@ -145,6 +145,42 @@ def alias(
     )
 
 
+class Decorator:
+    __slots__ = ("provides", "provider")
+
+    def __init__(self, provider: DependencyProvider):
+        self.provider = provider
+        self.provides = provider.provides
+
+    def as_provider(
+            self, scope: BaseScope, new_dependency: Any,
+    ) -> DependencyProvider:
+        return DependencyProvider(
+            scope=scope,
+            source=self.provider.source,
+            provides=self.provider.provides,
+            is_to_bound=self.provider.is_to_bound,
+            dependencies=[
+                new_dependency if dep is self.provides else dep
+                for dep in self.provider.dependencies
+            ],
+            type=self.provider.type,
+        )
+
+
+def decorate(
+        source: Union[None, Callable, Type] = None,
+        provides: Any = None,
+):
+    if source is not None:
+        return Decorator(make_dependency_provider(provides, None, source))
+
+    def scoped(func):
+        return Decorator(make_dependency_provider(provides, None, func))
+
+    return scoped
+
+
 def provide(
         source: Union[None, Callable, Type] = None,
         *,
@@ -160,7 +196,7 @@ def provide(
     return scoped
 
 
-DependencyProviderVariant = Alias | DependencyProvider
+DependencyProviderVariant = Alias | DependencyProvider | Decorator
 
 
 class Provider:
@@ -170,4 +206,6 @@ class Provider:
             if isinstance(attr, DependencyProvider):
                 self.dependency_providers.append(getattr(self, name))
             elif isinstance(attr, Alias):
+                self.dependency_providers.append(attr)
+            elif isinstance(attr, Decorator):
                 self.dependency_providers.append(attr)

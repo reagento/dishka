@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Callable, List, Optional, Type, TypeVar
 
 from .provider import DependencyProvider, Provider, ProviderType
-from .registry import Registry, make_registry
+from .registry import Registry, make_registries
 from .scope import BaseScope, Scope
 
 T = TypeVar("T")
@@ -145,10 +145,7 @@ def make_async_container(
         context: Optional[dict] = None,
         with_lock: bool = False,
 ) -> AsyncContextWrapper:
-    registries = [
-        make_registry(*providers, scope=scope)
-        for scope in scopes
-    ]
+    registries = make_registries(*providers, scopes=scopes)
     return AsyncContextWrapper(
         AsyncContainer(*registries, context=context, with_lock=with_lock),
     )

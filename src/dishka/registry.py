@@ -35,6 +35,7 @@ def make_registries(
                 scope = dep_provider.scope
             elif isinstance(dep_provider, Alias):
                 scope = dep_scopes[dep_provider.source]
+                dep_scopes[dep_provider.provides] = scope
                 dep_provider = dep_provider.as_provider(scope)
             elif isinstance(dep_provider, Decorator):
                 scope = dep_scopes[dep_provider.provides]

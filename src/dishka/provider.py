@@ -134,6 +134,9 @@ class Alias:
             type=ProviderType.FACTORY,
         )
 
+    def __get__(self, instance, owner):
+        return self
+
 
 def alias(
         *,
@@ -167,6 +170,9 @@ class Decorator:
             ],
             type=self.provider.type,
         )
+
+    def __get__(self, instance, owner):
+        return Decorator(self.provider.__get__(instance, owner))
 
 
 def decorate(
@@ -204,9 +210,5 @@ class Provider:
     def __init__(self):
         self.dependency_providers: List[DependencyProviderVariant] = []
         for name, attr in vars(type(self)).items():
-            if isinstance(attr, DependencyProvider):
+            if isinstance(attr, (DependencyProvider, Alias, Decorator)):
                 self.dependency_providers.append(getattr(self, name))
-            elif isinstance(attr, Alias):
-                self.dependency_providers.append(attr)
-            elif isinstance(attr, Decorator):
-                self.dependency_providers.append(attr)

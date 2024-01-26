@@ -1,8 +1,16 @@
 from dishka import Provider, Scope, provide, make_container
-from dishka.provider import decorate
+from dishka.provider import decorate, alias
 
 
 class A:
+    pass
+
+
+class A1(A):
+    pass
+
+
+class A2(A1):
     pass
 
 
@@ -17,7 +25,29 @@ def test_simple():
         ad = decorate(ADecorator, provides=A)
 
     with make_container(MyProvider()) as container:
-        print(container.registry)
         a = container.get(A)
         assert isinstance(a, ADecorator)
         assert isinstance(a.a, A)
+
+
+def test_alias():
+    class MyProvider(Provider):
+        a2 = provide(A2, scope=Scope.APP)
+        a1 = alias(source=A2, provides=A1)
+        a = alias(source=A1, provides=A)
+        @decorate
+        def decorated(self, a: A1) -> A1:
+            return ADecorator(a)
+
+    with make_container(MyProvider()) as container:
+        a1 = container.get(A1)
+        assert isinstance(a1, ADecorator)
+        assert isinstance(a1.a, A2)
+
+        a2 = container.get(A2)
+        assert isinstance(a2, A2)
+        assert a2 is a1.a
+
+        a = container.get(A)
+        assert isinstance(a, ADecorator)
+        assert isinstance(a.a, A2)

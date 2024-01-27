@@ -49,8 +49,8 @@ with make_container(MyProvider()) as container:  # enter Scope.APP
 with make_container(MyProvider()) as container:
      a = container.get(A)  # `A` has Scope.APP, so it is accessible here
      with container() as request_container:
-          b = container.get(B)  # `B` has Scope.REQUEST
-          a = container.get(A)  # `A` is accessible here too
+          b = request_container.get(B)  # `B` has Scope.REQUEST
+          a = request_container.get(A)  # `A` is accessible here too
 ```
 
 6. Add decorators and middleware for your framework (_would be described soon_)

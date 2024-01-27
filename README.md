@@ -16,6 +16,8 @@ Main ideas:
 * **Simple API**. You need minimum of objects to start using library. You can easily integrate it with your task framework, examples provided. 
 * **Speed**. It is fast enough so you not to worry about. It is even faster than many of the analogs.
 
+See more in [technical requirements](docs/technical_requirements.md)
+
 ### Quickstart
 
 1. Create Provider subclass. 
@@ -78,7 +80,7 @@ You can provide your own Scopes class if you are not satisfied with standard flo
 **Provider** is a collection of functions which really provide some objects. 
 Provider itself is a class with some attributes and methods. Each of them is either result of `provide`, `alias` or `decorate`.
 
-`@provide` can be used as a decorator for some method. This method will be called when corresponding dependency has to be created. Name of the moethod is not important: just check that it is different form other `Provider` attributes. Type hints do matter: they show what this method creates and what does it require. All method parameters are treated as other dependencies and created using container.
+`@provide` can be used as a decorator for some method. This method will be called when corresponding dependency has to be created. Name of the method is not important: just check that it is different form other `Provider` attributes. Type hints do matter: they show what this method creates and what does it require. All method parameters are treated as other dependencies and created using container.
 
 If `provide` is used with some class then that class itself is treated as a factory (`__init__` is analyzed for parameters). But do not forget to assing that call to some attribute otherwise it will be ignored.
 
@@ -148,7 +150,7 @@ async with make_async_container(MyProvider()) as container:
 * Having some data connected with scope which you want to use when solving dependencies? Set it when entering scope. These classes can be used as parameters of your `provide` methods
 ```python
 with make_container(MyProvider(), context={App: app}) as container:
-    with container({RequestClass: request_instance}) as request_container:
+    with container(context={RequestClass: request_instance}) as request_container:
         pass
 ```
 

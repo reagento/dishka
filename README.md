@@ -50,8 +50,10 @@ with make_container(MyProvider()) as container:
      a = container.get(A)  # `A` has Scope.APP, so it is accessible here
      with container() as request_container:
           b = container.get(B)  # `B` has Scope.REQUEST
+          a = container.get(A)  # `A` is accessible here too
 ```
-6. Add decorators and middleware for your framework
+
+6. Add decorators and middleware for your framework (_would be described soon_)
 
 See [examples](examples)
 
@@ -60,11 +62,27 @@ See [examples](examples)
 **Dependency** is what you need for some part of your code to work. They are just object which you do not create in place and probably want to replace some day. At least for tests.
 Some of them can live while you application is running, others are destroyed and created on each request. Dependencies can depend on other objects, which are their dependencies.
 
-**Scope** is a lifespan of a dependency. Standard scopes are `APP` -> `REQUEST` -> `ACTION` -> `STEP`. You manage when to enter and exit them, but it is done one by one. You set a scope for your dependency when you configure how to create it. If the same dependency is requested multiple time within one scope without leaving it, then the same instance is returned. 
+**Scope** is a lifespan of a dependency. Standard scopes are:
 
-**Container** is what you use to get your dependency. You just call `.get(SomeType)` and it finds a way to get you an instance of that type. It does not create things itself, but manages their lifecycle and caches.
+  `APP` -> `REQUEST` -> `ACTION` -> `STEP`.
+
+You decide when to enter and exit them, but it is done one by one. You set a scope for your dependency when you configure how to create it. If the same dependency is requested multiple time within one scope without leaving it, then the same instance is returned.
+
+If you are developing web application, you would enter `APP` scope on startup, and you would `REQUEST` scope in each HTTP-request.
+
+You can provide your own Scopes class if you are not satisfied with standard flow.
+
+**Container** is what you use to get your dependency. You just call `.get(SomeType)` and it finds a way to get you an instance of that type. It does not create things itself, but manages their lifecycle and caches. It delegates objects creation to providers which are passed during creation.
+
 
 **Provider** is a collection of functions which really provide some objects. 
+Provider itself is a class with some attributes and methods. Each of them is either result of `provide`, `alias` or `decorate`.
+
+`@provide` can be used as a decorator for some method. This method will be called when corresponding dependency has to be created. Name of the moethod is not important: just check that it is different form other `Provider` attributes. Type hints do matter: they show what this method creates and what does it require. All method parameters are treated as other dependencies and created using container.
+
+If `provide` is used with some class then that class itself is treated as a factory (`__init__` is analyzed for parameters). But do not forget to assing that call to some attribute otherwise it will be ignored.
+
+
 
 ### Tips
 

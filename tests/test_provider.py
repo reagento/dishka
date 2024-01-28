@@ -1,7 +1,7 @@
 import pytest
 
 from dishka import Provider, Scope, alias, provide
-from dishka.provider import ProviderType
+from dishka.dependency_source import FactoryType
 from .sample_providers import (
     ClassA,
     async_func_a,
@@ -23,25 +23,25 @@ def test_provider_init():
             return f"{x}"
 
     provider = MyProvider()
-    assert len(provider.dependency_providers) == 3
+    assert len(provider.dependency_sources) == 3
 
 
 @pytest.mark.parametrize(
-    "factory, provider_type, is_to_bound", [
-        (ClassA, ProviderType.FACTORY, False),
-        (sync_func_a, ProviderType.FACTORY, True),
-        (sync_iter_a, ProviderType.GENERATOR, True),
-        (sync_gen_a, ProviderType.GENERATOR, True),
-        (async_func_a, ProviderType.ASYNC_FACTORY, True),
-        (async_iter_a, ProviderType.ASYNC_GENERATOR, True),
-        (async_gen_a, ProviderType.ASYNC_GENERATOR, True),
+    "source, provider_type, is_to_bound", [
+        (ClassA, FactoryType.FACTORY, False),
+        (sync_func_a, FactoryType.FACTORY, True),
+        (sync_iter_a, FactoryType.GENERATOR, True),
+        (sync_gen_a, FactoryType.GENERATOR, True),
+        (async_func_a, FactoryType.ASYNC_FACTORY, True),
+        (async_iter_a, FactoryType.ASYNC_GENERATOR, True),
+        (async_gen_a, FactoryType.ASYNC_GENERATOR, True),
     ],
 )
-def test_parse_provider(factory, provider_type, is_to_bound):
-    dep_provider = provide(factory, scope=Scope.REQUEST)
-    assert dep_provider.provides == ClassA
-    assert dep_provider.dependencies == [int]
-    assert dep_provider.is_to_bound == is_to_bound
-    assert dep_provider.scope == Scope.REQUEST
-    assert dep_provider.source == factory
-    assert dep_provider.type == provider_type
+def test_parse_factory(source, provider_type, is_to_bound):
+    factory = provide(source, scope=Scope.REQUEST)
+    assert factory.provides == ClassA
+    assert factory.dependencies == [int]
+    assert factory.is_to_bound == is_to_bound
+    assert factory.scope == Scope.REQUEST
+    assert factory.source == source
+    assert factory.type == provider_type

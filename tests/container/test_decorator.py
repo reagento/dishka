@@ -1,5 +1,4 @@
-from dishka import Provider, Scope, make_container, provide
-from dishka.provider import alias, decorate
+from dishka import Provider, Scope, alias, decorate, make_container, provide
 
 
 class A:

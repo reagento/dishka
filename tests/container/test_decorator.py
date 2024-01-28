@@ -50,3 +50,15 @@ def test_alias():
 
         a = container.get(A)
         assert a is a1
+
+def test_double():
+    class MyProvider(Provider):
+        a = provide(A, scope=Scope.APP)
+        ad = decorate(ADecorator, provides=A)
+        ad2 = decorate(ADecorator, provides=A)
+
+    with make_container(MyProvider()) as container:
+        a = container.get(A)
+        assert isinstance(a, ADecorator)
+        assert isinstance(a.a, ADecorator)
+        assert isinstance(a.a.a, A)

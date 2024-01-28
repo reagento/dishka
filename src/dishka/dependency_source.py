@@ -12,7 +12,6 @@ from typing import (
     Optional,
     Sequence,
     Type,
-    Union,
     get_args,
     get_origin,
     get_type_hints,
@@ -128,7 +127,7 @@ def provide(
 
 @overload
 def provide(
-        source: Union[Callable, Type],
+        source: Callable | Type,
         *,
         scope: BaseScope,
         provides: Any = None,
@@ -137,11 +136,11 @@ def provide(
 
 
 def provide(
-        source: Union[None, Callable, Type] = None,
+        source: Callable | Type | None = None,
         *,
         scope: BaseScope,
         provides: Any = None,
-):
+) -> Factory | Callable[[Callable], Factory]:
     """
     Mark a method or class as providing some dependency.
 
@@ -195,7 +194,7 @@ def alias(
         *,
         source: Type,
         provides: Type,
-):
+) -> Alias:
     return Alias(
         source=source,
         provides=provides,
@@ -228,10 +227,27 @@ class Decorator:
         return Decorator(self.factory.__get__(instance, owner))
 
 
+@overload
 def decorate(
-        source: Union[None, Callable, Type] = None,
+        *,
         provides: Any = None,
-):
+) -> Callable[[Callable], Decorator]:
+    ...
+
+
+@overload
+def decorate(
+        source: Callable | Type,
+        *,
+        provides: Any = None,
+) -> Decorator:
+    ...
+
+
+def decorate(
+        source: Callable | Type | None = None,
+        provides: Any = None,
+) -> Decorator | Callable[[Callable], Decorator]:
     if source is not None:
         return Decorator(make_factory(provides, None, source))
 

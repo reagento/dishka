@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Any, List, NewType, Type
 
 from .dependency_source import Alias, Decorator, Factory
@@ -6,17 +7,17 @@ from .scope import BaseScope
 
 
 class Registry:
-    __slots__ = ("scope", "_providers")
+    __slots__ = ("scope", "_factories")
 
     def __init__(self, scope: BaseScope):
-        self._providers = {}
+        self._factories: dict[Type, Factory] = {}
         self.scope = scope
 
-    def add_provider(self, provider: Factory):
-        self._providers[provider.provides] = provider
+    def add_provider(self, factory: Factory):
+        self._factories[factory.provides] = factory
 
     def get_provider(self, dependency: Any) -> Factory:
-        return self._providers.get(dependency)
+        return self._factories.get(dependency)
 
 
 def make_registries(
@@ -29,26 +30,29 @@ def make_registries(
                 dep_scopes[source.provides] = source.scope
 
     registries = {scope: Registry(scope) for scope in scopes}
+    decorator_depth: dict[Type, int] = defaultdict(int)
 
     for provider in providers:
         for source in provider.dependency_sources:
+            provides = source.provides
             if isinstance(source, Factory):
                 scope = source.scope
             elif isinstance(source, Alias):
                 scope = dep_scopes[source.source]
-                dep_scopes[source.provides] = scope
-                source = source.as_provider(scope)
+                dep_scopes[provides] = scope
+                source = source.as_factory(scope)
             elif isinstance(source, Decorator):
-                scope = dep_scopes[source.provides]
+                scope = dep_scopes[provides]
                 registry = registries[scope]
                 undecorated_type = NewType(
-                    f"Old_{source.provides.__name__}",
+                    f"{provides.__name__}@{decorator_depth[provides]}",
                     source.provides,
                 )
-                old_provider = registry.get_provider(source.provides)
+                decorator_depth[provides] += 1
+                old_provider = registry.get_provider(provides)
                 old_provider.provides = undecorated_type
                 registry.add_provider(old_provider)
-                source = source.as_provider(
+                source = source.as_factory(
                     scope, undecorated_type,
                 )
             else:

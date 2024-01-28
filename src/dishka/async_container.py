@@ -2,7 +2,8 @@ from asyncio import Lock
 from dataclasses import dataclass
 from typing import Callable, List, Optional, Type, TypeVar
 
-from .provider import DependencyProvider, Provider, ProviderType
+from .dependency_source import Factory, FactoryType
+from .provider import Provider
 from .registry import Registry, make_registries
 from .scope import BaseScope, Scope
 
@@ -12,7 +13,7 @@ T = TypeVar("T")
 @dataclass
 class Exit:
     __slots__ = ("type", "callable")
-    type: ProviderType
+    type: FactoryType
     callable: Callable
 
 
@@ -74,25 +75,25 @@ class AsyncContainer:
 
     async def _get_self(
             self,
-            dep_provider: DependencyProvider,
+            dep_provider: Factory,
     ) -> T:
         sub_dependencies = [
             await self._get_unlocked(dependency)
             for dependency in dep_provider.dependencies
         ]
-        if dep_provider.type is ProviderType.GENERATOR:
+        if dep_provider.type is FactoryType.GENERATOR:
             generator = dep_provider.source(*sub_dependencies)
             self.exits.append(Exit(dep_provider.type, generator))
             return next(generator)
-        elif dep_provider.type is ProviderType.ASYNC_GENERATOR:
+        elif dep_provider.type is FactoryType.ASYNC_GENERATOR:
             generator = dep_provider.source(*sub_dependencies)
             self.exits.append(Exit(dep_provider.type, generator))
             return await anext(generator)
-        elif dep_provider.type is ProviderType.ASYNC_FACTORY:
+        elif dep_provider.type is FactoryType.ASYNC_FACTORY:
             return await dep_provider.source(*sub_dependencies)
-        elif dep_provider.type is ProviderType.FACTORY:
+        elif dep_provider.type is FactoryType.FACTORY:
             return dep_provider.source(*sub_dependencies)
-        elif dep_provider.type is ProviderType.VALUE:
+        elif dep_provider.type is FactoryType.VALUE:
             return dep_provider.source
         else:
             raise ValueError(f"Unsupported type {dep_provider.type}")
@@ -120,9 +121,9 @@ class AsyncContainer:
         e = None
         for exit_generator in self.exits:
             try:
-                if exit_generator.type is ProviderType.ASYNC_GENERATOR:
+                if exit_generator.type is FactoryType.ASYNC_GENERATOR:
                     await anext(exit_generator.callable)
-                elif exit_generator.type is ProviderType.GENERATOR:
+                elif exit_generator.type is FactoryType.GENERATOR:
                     next(exit_generator.callable)
             except StopIteration:
                 pass

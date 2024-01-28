@@ -16,7 +16,7 @@ from typing import (
     Union,
     get_args,
     get_origin,
-    get_type_hints,
+    get_type_hints, overload,
 )
 
 from .scope import BaseScope
@@ -188,12 +188,50 @@ def decorate(
     return scoped
 
 
+@overload
+def provide(
+        *,
+        scope: BaseScope,
+        provides: Any = None,
+) -> Callable[[Callable], DependencyProvider]:
+    ...
+
+
+@overload
+def provide(
+        source: Union[Callable, Type],
+        *,
+        scope: BaseScope,
+        provides: Any = None,
+) -> DependencyProvider:
+    ...
+
+
 def provide(
         source: Union[None, Callable, Type] = None,
         *,
-        scope: BaseScope = None,
+        scope: BaseScope,
         provides: Any = None,
 ):
+    """
+    Mark a method or class as providing some dependency.
+
+    If used as a method decorator then return annotation is used
+    to determine what is provided. User `provides` to override that.
+    Method parameters are analyzed and passed automatically.
+
+    If used with a class a first parameter than `__init__` method parameters
+    are passed automatically. If no provides is passed then it is
+    supposed that class itself is a provided dependency.
+
+    Return value must be saved as a `Provider` class attribute and
+    not intended for direct usage
+
+    :param source: Method to decorate or class.
+    :param scope: Scope of the dependency to limit its lifetime
+    :param provides: Dependency type which is provided by this factory
+    :return: instance of DependencyProvider or a decorator returning it
+    """
     if source is not None:
         return make_dependency_provider(provides, scope, source)
 
@@ -207,6 +245,19 @@ DependencyProviderVariant = Alias | DependencyProvider | Decorator
 
 
 class Provider:
+    """
+    A collection of factories providing dependencies.
+
+    Inherit this class and add attributes using
+    `provide`, `alias` or `decorate`.
+
+    You can use `__init__`, regular methods and attributes as usual,
+    they won't be analyzed when creating a container
+
+    The only intended usage of providers is to pass them when
+    creating a container
+    """
+
     def __init__(self):
         self.dependency_providers: List[DependencyProviderVariant] = []
         for name, attr in vars(type(self)).items():

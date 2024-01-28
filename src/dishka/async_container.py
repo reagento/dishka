@@ -59,6 +59,12 @@ class AsyncContainer:
             context: Optional[dict] = None,
             with_lock: bool = False,
     ) -> "AsyncContextWrapper":
+        """
+        Prepare container for entering the inner scope.
+        :param context: Data which will available in inner scope
+        :param with_lock: Whether synchronize dependency cache or not
+        :return: async context manager for inner scope
+        """
         if not self.child_registries:
             raise ValueError("No child scopes found")
         return AsyncContextWrapper(self._get_child(context, with_lock))

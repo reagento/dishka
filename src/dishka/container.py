@@ -59,6 +59,12 @@ class Container:
             context: Optional[dict] = None,
             with_lock: bool = False,
     ) -> "ContextWrapper":
+        """
+        Prepare container for entering the inner scope.
+        :param context: Data which will available in inner scope
+        :param with_lock: Whether synchronize dependency cache or not
+        :return: context manager for inner scope
+        """
         if not self.child_registries:
             raise ValueError("No child scopes found")
         return ContextWrapper(self._get_child(context, with_lock))

@@ -21,7 +21,7 @@ class MyProvider(Provider):
         self.a = a
 
     get_a = provide(A, scope=Scope.REQUEST)
-    get_basea = alias(A, dependency=BaseA)
+    get_basea = alias(source=A, provides=BaseA)
 
     @provide(scope=Scope.APP)
     def get_int(self) -> int:
@@ -33,7 +33,7 @@ class MyProvider(Provider):
 
 
 def main():
-    with make_container(MyProvider(1), with_lock=True) as container:
+    with make_container(MyProvider(1)) as container:
         print(container.get(int))
         with container() as c_request:
             print(c_request.get(BaseA))

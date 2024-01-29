@@ -1,15 +1,19 @@
 import logging
+from abc import abstractmethod
 from contextlib import asynccontextmanager
 from inspect import Parameter
-from typing import Annotated, Callable, Iterable, NewType, get_type_hints
+from typing import (
+    Annotated, get_type_hints, Protocol, Any, get_origin,
+    get_args,
+)
 
 import uvicorn
 from fastapi import APIRouter
-from fastapi import Depends as FastapiDepends
 from fastapi import FastAPI, Request
 
-from dishka import Provider, Scope, make_async_container, provide
-from dishka.inject import Depends, wrap_injection
+from dishka import (
+    Depends, wrap_injection, Provider, Scope, make_async_container, provide,
+)
 
 
 # framework level
@@ -50,73 +54,38 @@ def container_middleware():
     return add_request_container
 
 
-class Stub:
-    def __init__(self, dependency: Callable, **kwargs):
-        self._dependency = dependency
-        self._kwargs = kwargs
-
-    def __call__(self):
+# app core
+class DbGateway(Protocol):
+    @abstractmethod
+    def get(self) -> str:
         raise NotImplementedError
 
-    def __eq__(self, other) -> bool:
-        if isinstance(other, Stub):
-            return (
-                    self._dependency == other._dependency
-                    and self._kwargs == other._kwargs
-            )
-        else:
-            if not self._kwargs:
-                return self._dependency == other
-            return False
 
-    def __hash__(self):
-        if not self._kwargs:
-            return hash(self._dependency)
-        serial = (
-            self._dependency,
-            *self._kwargs.items(),
-        )
-        return hash(serial)
+class FakeDbGateway(DbGateway):
+    def get(self) -> str:
+        return "Hello"
+
+
+class Interactor:
+    def __init__(self, db: DbGateway):
+        self.db = db
+
+    def __call__(self) -> str:
+        return self.db.get()
 
 
 # app dependency logic
-
-Host = NewType("Host", str)
-
-
-class B:
-    def __init__(self, x: int):
-        pass
-
-
-class C:
-    def __init__(self, x: int):
-        pass
-
-
-class A:
-    def __init__(self, b: B, c: C):
-        pass
-
-
-MyInt = NewType("MyInt", int)
-
-
-class MyProvider(Provider):
+class AdaptersProvider(Provider):
     @provide(scope=Scope.REQUEST)
-    async def get_a(self, b: B, c: C) -> A:
-        return A(b, c)
-
-    @provide(scope=Scope.REQUEST)
-    async def get_b(self) -> Iterable[B]:
-        yield B(1)
-
-    @provide(scope=Scope.REQUEST)
-    async def get_c(self) -> Iterable[C]:
-        yield C(1)
+    def get_db(self) -> DbGateway:
+        return FakeDbGateway()
 
 
-# app
+class InteractorProvider(Provider):
+    i1 = provide(Interactor, scope=Scope.REQUEST)
+
+
+# presentation layer
 router = APIRouter()
 
 
@@ -124,28 +93,18 @@ router = APIRouter()
 @inject
 async def index(
         *,
-        value: Annotated[A, Depends()],
-        value2: Annotated[A, Depends()],
+        interactor: Annotated[Interactor, Depends()],
 ) -> str:
-    return f"{value} {value is value2}"
+    result = interactor()
+    return result
 
 
-@router.get("/f")
-async def index(
-        *,
-        value: Annotated[A, FastapiDepends(Stub(A))],
-        value2: Annotated[A, FastapiDepends(Stub(A))],
-) -> str:
-    return f"{value} {value is value2}"
-
-
-def new_a(b: B = FastapiDepends(Stub(B)), c: C = FastapiDepends(Stub(C))):
-    return A(b, c)
-
-
+# app configuration
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with make_async_container(MyProvider(), with_lock=True) as container:
+    async with make_async_container(
+            AdaptersProvider(), InteractorProvider(),
+    ) as container:
         app.state.container = container
         yield
 
@@ -155,9 +114,6 @@ def create_app() -> FastAPI:
 
     app = FastAPI(lifespan=lifespan)
     app.middleware("http")(container_middleware())
-    app.dependency_overrides[A] = new_a
-    app.dependency_overrides[B] = lambda: B(1)
-    app.dependency_overrides[C] = lambda: C(1)
     app.include_router(router)
     return app
 

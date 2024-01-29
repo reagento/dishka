@@ -1,3 +1,4 @@
-ruff
-pytest
-pytest-asyncio
+ruff==0.1.*
+pytest==7.*
+pytest-asyncio==0.23.*
+pytest-repeat==0.9.*

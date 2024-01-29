@@ -104,7 +104,6 @@ async def index(
 async def lifespan(app: FastAPI):
     async with make_async_container(
             AdaptersProvider(), InteractorProvider(),
-            with_lock=True,
     ) as container:
         app.state.container = container
         yield

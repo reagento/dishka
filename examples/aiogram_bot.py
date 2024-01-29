@@ -73,7 +73,7 @@ async def start(
 async def main():
     # real main
     logging.basicConfig(level=logging.INFO)
-    async with make_async_container(MyProvider(), with_lock=True) as container:
+    async with make_async_container(MyProvider()) as container:
         bot = Bot(token=API_TOKEN)
         dp = Dispatcher()
         for observer in dp.observers.values():

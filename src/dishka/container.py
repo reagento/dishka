@@ -29,7 +29,7 @@ class Container:
             *child_registries: Registry,
             parent_container: Optional["Container"] = None,
             context: Optional[dict] = None,
-            with_lock: bool = False,
+            lock_factory: Callable[[], Lock] | None = None,
     ):
         self.registry = registry
         self.child_registries = child_registries
@@ -37,8 +37,8 @@ class Container:
         if context:
             self.context.update(context)
         self.parent_container = parent_container
-        if with_lock:
-            self.lock = Lock()
+        if lock_factory:
+            self.lock = lock_factory()
         else:
             self.lock = None
         self.exits: List[Exit] = []
@@ -46,29 +46,29 @@ class Container:
     def _create_child(
             self,
             context: Optional[dict],
-            with_lock: bool,
+            lock_factory: Callable[[], Lock] | None,
     ) -> "Container":
         return Container(
             *self.child_registries,
             parent_container=self,
             context=context,
-            with_lock=with_lock,
+            lock_factory=lock_factory,
         )
 
     def __call__(
             self,
             context: Optional[dict] = None,
-            with_lock: bool = False,
+            lock_factory: Callable[[], Lock] | None = None,
     ) -> "ContextWrapper":
         """
         Prepare container for entering the inner scope.
         :param context: Data which will available in inner scope
-        :param with_lock: Whether synchronize dependency cache or not
+        :param lock_factory: Callable to create lock instance or None
         :return: context manager for inner scope
         """
         if not self.child_registries:
             raise ValueError("No child scopes found")
-        return ContextWrapper(self._create_child(context, with_lock))
+        return ContextWrapper(self._create_child(context, lock_factory))
 
     def _get_from_self(self, factory: Factory) -> T:
         sub_dependencies = [
@@ -136,9 +136,9 @@ def make_container(
         *providers: Provider,
         scopes: Type[BaseScope] = Scope,
         context: Optional[dict] = None,
-        with_lock: bool = False,
+        lock_factory: Callable[[], Lock] | None = None,
 ) -> ContextWrapper:
     registries = make_registries(*providers, scopes=scopes)
     return ContextWrapper(
-        Container(*registries, context=context, with_lock=with_lock),
+        Container(*registries, context=context, lock_factory=lock_factory),
     )

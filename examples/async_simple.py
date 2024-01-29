@@ -21,9 +21,7 @@ class MyProvider(Provider):
 
 
 async def main():
-    async with make_async_container(
-            MyProvider(1), with_lock=True,
-    ) as container:
+    async with make_async_container(MyProvider(1)) as container:
         print(await container.get(int))
 
         async with container() as c_request:

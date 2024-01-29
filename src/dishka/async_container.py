@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Callable, List, Optional, Type, TypeVar
 
 from .dependency_source import Factory, FactoryType
+from .exceptions import ExitExceptionGroup
 from .provider import Provider
 from .registry import Registry, make_registries
 from .scope import BaseScope, Scope
@@ -46,7 +47,7 @@ class AsyncContainer:
     def _create_child(
             self,
             context: Optional[dict],
-            lock_factory: Callable[[], Lock] | None
+            lock_factory: Callable[[], Lock] | None,
     ) -> "AsyncContainer":
         return AsyncContainer(
             *self.child_registries,
@@ -112,8 +113,8 @@ class AsyncContainer:
         return solved
 
     async def close(self):
-        e = None
-        for exit_generator in self.exits:
+        errors = []
+        for exit_generator in self.exits[::-1]:
             try:
                 if exit_generator.type is FactoryType.ASYNC_GENERATOR:
                     await anext(exit_generator.callable)
@@ -124,9 +125,9 @@ class AsyncContainer:
             except StopAsyncIteration:
                 pass
             except Exception as err:  # noqa: BLE001
-                e = err
-        if e:
-            raise e
+                errors.append(err)
+        if errors:
+            raise ExitExceptionGroup("Cleanup context errors", errors)
 
 
 class AsyncContextWrapper:
@@ -147,6 +148,8 @@ def make_async_container(
         lock_factory: Callable[[], Lock] | None = Lock,
 ) -> AsyncContextWrapper:
     registries = make_registries(*providers, scopes=scopes)
-    return AsyncContextWrapper(
-        AsyncContainer(*registries, context=context, lock_factory=lock_factory),
-    )
+    return AsyncContextWrapper(AsyncContainer(
+        *registries,
+        context=context,
+        lock_factory=lock_factory,
+    ))

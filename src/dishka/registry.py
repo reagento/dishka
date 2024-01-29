@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import Any, List, NewType, Type
 
 from .dependency_source import Factory
+from .exceptions import InvalidGraphError
 from .provider import Provider
 from .scope import BaseScope
 
@@ -44,7 +45,9 @@ def make_registries(
             while alias_source not in dep_scopes:
                 alias_source = alias_sources[alias_source]
                 if alias_source in visited_types:
-                    raise ValueError(f"Cycle aliases detected {visited_types}")
+                    raise InvalidGraphError(
+                        f"Cycle aliases detected {visited_types}",
+                    )
                 visited_types.append(alias_source)
             scope = dep_scopes[alias_source]
             dep_scopes[source.provides] = scope

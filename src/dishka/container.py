@@ -3,6 +3,7 @@ from threading import Lock
 from typing import Callable, List, Optional, Type, TypeVar
 
 from .dependency_source import Factory, FactoryType
+from .exceptions import ExitExceptionGroup
 from .provider import Provider
 from .registry import Registry, make_registries
 from .scope import BaseScope, Scope
@@ -105,18 +106,18 @@ class Container:
         self.context[dependency_type] = solved
         return solved
 
-    def close(self):
-        e = None
-        for exit_generator in self.exits:
+    def close(self) -> None:
+        errors = []
+        for exit_generator in self.exits[::-1]:
             try:
                 if exit_generator.type is FactoryType.GENERATOR:
                     next(exit_generator.callable)
             except StopIteration:
                 pass
             except Exception as err:  # noqa: BLE001
-                e = err
-        if e:
-            raise e
+                errors.append(err)
+        if errors:
+            raise ExitExceptionGroup("Cleanup context errors", errors)
 
 
 class ContextWrapper:

@@ -2,6 +2,7 @@ import inspect
 from typing import Any, List
 
 from .dependency_source import Alias, Decorator, DependencySource, Factory
+from .exceptions import InvalidGraphError
 
 
 def is_dependency_source(attribute: Any) -> bool:
@@ -34,7 +35,7 @@ class Provider:
         source: DependencySource
         for name, source in inspect.getmembers(self, is_dependency_source):
             if source.provides in processed_types:
-                raise ValueError(
+                raise InvalidGraphError(
                     f"Type {source.provides} is registered multiple times "
                     f"in the same {Provider} by attributes "
                     f"{processed_types[source.provides]!r} and {name!r}",

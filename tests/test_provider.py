@@ -16,14 +16,14 @@ from .sample_providers import (
 def test_provider_init():
     class MyProvider(Provider):
         a = alias(source=int, provides=bool)
-        b = provide(lambda: False, scope=Scope.APP, provides=bool)
 
         @provide(scope=Scope.REQUEST)
         def foo(self, x: bool) -> str:
             return f"{x}"
 
     provider = MyProvider()
-    assert len(provider.dependency_sources) == 3
+    assert len(provider.factories) == 1
+    assert len(provider.aliases) == 1
 
 
 @pytest.mark.parametrize(

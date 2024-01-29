@@ -43,7 +43,7 @@ class Container:
             self.lock = None
         self.exits: List[Exit] = []
 
-    def _get_child(
+    def _create_child(
             self,
             context: Optional[dict],
             with_lock: bool,
@@ -68,29 +68,23 @@ class Container:
         """
         if not self.child_registries:
             raise ValueError("No child scopes found")
-        return ContextWrapper(self._get_child(context, with_lock))
+        return ContextWrapper(self._create_child(context, with_lock))
 
-    def _get_parent(self, dependency_type: Type[T]) -> T:
-        return self.parent_container.get(dependency_type)
-
-    def _get_self(
-            self,
-            dep_provider: Factory,
-    ) -> T:
+    def _get_from_self(self, factory: Factory) -> T:
         sub_dependencies = [
             self._get_unlocked(dependency)
-            for dependency in dep_provider.dependencies
+            for dependency in factory.dependencies
         ]
-        if dep_provider.type is FactoryType.GENERATOR:
-            generator = dep_provider.source(*sub_dependencies)
-            self.exits.append(Exit(dep_provider.type, generator))
+        if factory.type is FactoryType.GENERATOR:
+            generator = factory.source(*sub_dependencies)
+            self.exits.append(Exit(factory.type, generator))
             return next(generator)
-        elif dep_provider.type is FactoryType.FACTORY:
-            return dep_provider.source(*sub_dependencies)
-        elif dep_provider.type is FactoryType.VALUE:
-            return dep_provider.source
+        elif factory.type is FactoryType.FACTORY:
+            return factory.source(*sub_dependencies)
+        elif factory.type is FactoryType.VALUE:
+            return factory.source
         else:
-            raise ValueError(f"Unsupported type {dep_provider.type}")
+            raise ValueError(f"Unsupported type {factory.type}")
 
     def get(self, dependency_type: Type[T]) -> T:
         lock = self.lock
@@ -107,7 +101,7 @@ class Container:
             if not self.parent_container:
                 raise ValueError(f"No provider found for {dependency_type!r}")
             return self.parent_container.get(dependency_type)
-        solved = self._get_self(provider)
+        solved = self._get_from_self(provider)
         self.context[dependency_type] = solved
         return solved
 

@@ -9,7 +9,7 @@ from typing import (
     get_type_hints,
 )
 
-from .container import Container
+from dishka.container import Container
 
 
 class Depends:

@@ -23,7 +23,7 @@ class Registry:
 def make_registries(
         *providers: Provider, scopes: Type[BaseScope],
 ) -> List[Registry]:
-    dep_scopes = {}
+    dep_scopes: dict[Type, BaseScope] = {}
     alias_sources = {}
     for provider in providers:
         for source in provider.factories:

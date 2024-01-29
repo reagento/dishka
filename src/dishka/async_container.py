@@ -21,7 +21,7 @@ class Exit:
 class AsyncContainer:
     __slots__ = (
         "registry", "child_registries", "context", "parent_container",
-        "lock", "exits",
+        "lock", "_exits",
     )
 
     def __init__(
@@ -42,7 +42,7 @@ class AsyncContainer:
             self.lock = lock_factory()
         else:
             self.lock = None
-        self.exits: List[Exit] = []
+        self._exits: List[Exit] = []
 
     def _create_child(
             self,
@@ -78,11 +78,11 @@ class AsyncContainer:
         ]
         if factory.type is FactoryType.GENERATOR:
             generator = factory.source(*sub_dependencies)
-            self.exits.append(Exit(factory.type, generator))
+            self._exits.append(Exit(factory.type, generator))
             return next(generator)
         elif factory.type is FactoryType.ASYNC_GENERATOR:
             generator = factory.source(*sub_dependencies)
-            self.exits.append(Exit(factory.type, generator))
+            self._exits.append(Exit(factory.type, generator))
             return await anext(generator)
         elif factory.type is FactoryType.ASYNC_FACTORY:
             return await factory.source(*sub_dependencies)
@@ -114,7 +114,7 @@ class AsyncContainer:
 
     async def close(self):
         errors = []
-        for exit_generator in self.exits[::-1]:
+        for exit_generator in self._exits[::-1]:
             try:
                 if exit_generator.type is FactoryType.ASYNC_GENERATOR:
                     await anext(exit_generator.callable)

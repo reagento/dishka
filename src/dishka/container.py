@@ -21,7 +21,7 @@ class Exit:
 class Container:
     __slots__ = (
         "registry", "child_registries", "context", "parent_container",
-        "lock", "exits",
+        "lock", "_exits",
     )
 
     def __init__(
@@ -42,7 +42,7 @@ class Container:
             self.lock = lock_factory()
         else:
             self.lock = None
-        self.exits: List[Exit] = []
+        self._exits: List[Exit] = []
 
     def _create_child(
             self,
@@ -78,7 +78,7 @@ class Container:
         ]
         if factory.type is FactoryType.GENERATOR:
             generator = factory.source(*sub_dependencies)
-            self.exits.append(Exit(factory.type, generator))
+            self._exits.append(Exit(factory.type, generator))
             return next(generator)
         elif factory.type is FactoryType.FACTORY:
             return factory.source(*sub_dependencies)
@@ -108,7 +108,7 @@ class Container:
 
     def close(self) -> None:
         errors = []
-        for exit_generator in self.exits[::-1]:
+        for exit_generator in self._exits[::-1]:
             try:
                 if exit_generator.type is FactoryType.GENERATOR:
                     next(exit_generator.callable)

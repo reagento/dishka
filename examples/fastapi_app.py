@@ -1,6 +1,5 @@
 import logging
 from abc import abstractmethod
-from contextlib import asynccontextmanager
 from typing import Annotated, Protocol
 
 import uvicorn
@@ -8,10 +7,10 @@ from fastapi import APIRouter
 from fastapi import FastAPI
 
 from dishka import (
-    Provider, Scope, make_async_container, provide,
+    Provider, Scope, provide,
 )
 from dishka.integrations.fastapi import (
-    Depends, inject, setup_container, setup_container_middleware,
+    Depends, inject, DishkaApp,
 )
 
 
@@ -60,25 +59,19 @@ async def index(
     return result
 
 
-# app configuration
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    async with make_async_container(
-            AdaptersProvider(), InteractorProvider(),
-            with_lock=True,
-    ) as container:
-        setup_container(app, container)
-        yield
+def create_app():
+    logging.basicConfig(
+        level=logging.WARNING,
+        format='%(asctime)s  %(process)-7s %(module)-20s %(message)s',
+    )
 
-
-def create_app() -> FastAPI:
-    logging.basicConfig(level=logging.WARNING)
-
-    app = FastAPI(lifespan=lifespan)
-    setup_container_middleware(app)
+    app = FastAPI()
     app.include_router(router)
-    return app
+    return DishkaApp(
+        providers=[AdaptersProvider(), InteractorProvider()],
+        app=app,
+    )
 
 
 if __name__ == "__main__":
-    uvicorn.run(create_app(), host="0.0.0.0", port=8000)
+    uvicorn.run(create_app(), host="0.0.0.0", port=8000, lifespan="on")

@@ -7,8 +7,8 @@ from typing import Annotated, Iterable
 from aiogram import Bot, Dispatcher, Router
 from aiogram.types import Message, TelegramObject, User
 
-from dishka import Provider, Scope, make_async_container, provide
-from dishka.integrations.aiogram import Depends, inject, setup_container
+from dishka import Provider, Scope, provide
+from dishka.integrations.aiogram import Depends, inject, setup_dishka
 
 
 # app dependency logic
@@ -42,12 +42,11 @@ async def start(
 async def main():
     # real main
     logging.basicConfig(level=logging.INFO)
-    async with make_async_container(MyProvider(), with_lock=True) as container:
-        bot = Bot(token=API_TOKEN)
-        dp = Dispatcher()
-        dp.include_router(router)
-        setup_container(dp, container)
-        await dp.start_polling(bot)
+    bot = Bot(token=API_TOKEN)
+    dp = Dispatcher()
+    dp.include_router(router)
+    setup_dishka(providers=[MyProvider()], router=dp)
+    await dp.start_polling(bot)
 
 
 if __name__ == '__main__':

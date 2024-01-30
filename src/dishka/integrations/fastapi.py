@@ -13,16 +13,16 @@ from .base import Depends, wrap_injection
 
 def inject(func):
     hints = get_type_hints(func)
-    requests_param = next(
+    request_param = next(
         (name for name, hint in hints.items() if hint is Request),
         None,
     )
-    if requests_param:
+    if request_param:
         additional_params = []
     else:
-        requests_param = "____@request"
+        request_param = "____dishka_request"
         additional_params = [Parameter(
-            name=requests_param,
+            name=request_param,
             annotation=Request,
             kind=Parameter.KEYWORD_ONLY,
         )]
@@ -30,7 +30,7 @@ def inject(func):
     return wrap_injection(
         func=func,
         remove_depends=True,
-        container_getter=lambda kw: kw[requests_param].state.dishka_container,
+        container_getter=lambda _, p: p[request_param].state.dishka_container,
         additional_params=additional_params,
         is_async=True,
     )
@@ -60,6 +60,6 @@ class DishkaApp:
                 elif message['type'] == 'lifespan.shutdown':
                     await self.container_wrapper.__aexit__(None, None, None)
 
-            await self.app(scope, my_recv, send)
+            return await self.app(scope, my_recv, send)
         else:
             return await self.app(scope, receive, send)

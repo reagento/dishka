@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Callable, List, Optional, Type, TypeVar
 
 from .dependency_source import Factory, FactoryType
+from .exceptions import ExitExceptionGroup
 from .provider import Provider
 from .registry import Registry, make_registries
 from .scope import BaseScope, Scope
@@ -20,7 +21,7 @@ class Exit:
 class AsyncContainer:
     __slots__ = (
         "registry", "child_registries", "context", "parent_container",
-        "lock", "exits",
+        "lock", "_exits",
     )
 
     def __init__(
@@ -29,7 +30,7 @@ class AsyncContainer:
             *child_registries: Registry,
             parent_container: Optional["AsyncContainer"] = None,
             context: Optional[dict] = None,
-            with_lock: bool = False,
+            lock_factory: Callable[[], Lock] | None = None,
     ):
         self.registry = registry
         self.child_registries = child_registries
@@ -37,66 +38,60 @@ class AsyncContainer:
         if context:
             self.context.update(context)
         self.parent_container = parent_container
-        if with_lock:
-            self.lock = Lock()
+        if lock_factory:
+            self.lock = lock_factory()
         else:
             self.lock = None
-        self.exits: List[Exit] = []
+        self._exits: List[Exit] = []
 
-    def _get_child(
+    def _create_child(
             self,
             context: Optional[dict],
-            with_lock: bool,
+            lock_factory: Callable[[], Lock] | None,
     ) -> "AsyncContainer":
         return AsyncContainer(
             *self.child_registries,
             parent_container=self,
             context=context,
-            with_lock=with_lock,
+            lock_factory=lock_factory,
         )
 
     def __call__(
             self,
             context: Optional[dict] = None,
-            with_lock: bool = False,
+            lock_factory: Callable[[], Lock] | None = None,
     ) -> "AsyncContextWrapper":
         """
         Prepare container for entering the inner scope.
         :param context: Data which will available in inner scope
-        :param with_lock: Whether synchronize dependency cache or not
+        :param lock_factory: Callable to create lock instance or None
         :return: async context manager for inner scope
         """
         if not self.child_registries:
             raise ValueError("No child scopes found")
-        return AsyncContextWrapper(self._get_child(context, with_lock))
+        return AsyncContextWrapper(self._create_child(context, lock_factory))
 
-    async def _get_parent(self, dependency_type: Type[T]) -> T:
-        return await self.parent_container.get(dependency_type)
-
-    async def _get_self(
-            self,
-            dep_provider: Factory,
-    ) -> T:
+    async def _get_from_self(self, factory: Factory) -> T:
         sub_dependencies = [
             await self._get_unlocked(dependency)
-            for dependency in dep_provider.dependencies
+            for dependency in factory.dependencies
         ]
-        if dep_provider.type is FactoryType.GENERATOR:
-            generator = dep_provider.source(*sub_dependencies)
-            self.exits.append(Exit(dep_provider.type, generator))
+        if factory.type is FactoryType.GENERATOR:
+            generator = factory.source(*sub_dependencies)
+            self._exits.append(Exit(factory.type, generator))
             return next(generator)
-        elif dep_provider.type is FactoryType.ASYNC_GENERATOR:
-            generator = dep_provider.source(*sub_dependencies)
-            self.exits.append(Exit(dep_provider.type, generator))
+        elif factory.type is FactoryType.ASYNC_GENERATOR:
+            generator = factory.source(*sub_dependencies)
+            self._exits.append(Exit(factory.type, generator))
             return await anext(generator)
-        elif dep_provider.type is FactoryType.ASYNC_FACTORY:
-            return await dep_provider.source(*sub_dependencies)
-        elif dep_provider.type is FactoryType.FACTORY:
-            return dep_provider.source(*sub_dependencies)
-        elif dep_provider.type is FactoryType.VALUE:
-            return dep_provider.source
+        elif factory.type is FactoryType.ASYNC_FACTORY:
+            return await factory.source(*sub_dependencies)
+        elif factory.type is FactoryType.FACTORY:
+            return factory.source(*sub_dependencies)
+        elif factory.type is FactoryType.VALUE:
+            return factory.source
         else:
-            raise ValueError(f"Unsupported type {dep_provider.type}")
+            raise ValueError(f"Unsupported type {factory.type}")
 
     async def get(self, dependency_type: Type[T]) -> T:
         lock = self.lock
@@ -113,13 +108,13 @@ class AsyncContainer:
             if not self.parent_container:
                 raise ValueError(f"No provider found for {dependency_type!r}")
             return await self.parent_container.get(dependency_type)
-        solved = await self._get_self(provider)
+        solved = await self._get_from_self(provider)
         self.context[dependency_type] = solved
         return solved
 
     async def close(self):
-        e = None
-        for exit_generator in self.exits:
+        errors = []
+        for exit_generator in self._exits[::-1]:
             try:
                 if exit_generator.type is FactoryType.ASYNC_GENERATOR:
                     await anext(exit_generator.callable)
@@ -130,9 +125,9 @@ class AsyncContainer:
             except StopAsyncIteration:
                 pass
             except Exception as err:  # noqa: BLE001
-                e = err
-        if e:
-            raise e
+                errors.append(err)
+        if errors:
+            raise ExitExceptionGroup("Cleanup context errors", errors)
 
 
 class AsyncContextWrapper:
@@ -150,9 +145,11 @@ def make_async_container(
         *providers: Provider,
         scopes: Type[BaseScope] = Scope,
         context: Optional[dict] = None,
-        with_lock: bool = False,
+        lock_factory: Callable[[], Lock] | None = Lock,
 ) -> AsyncContextWrapper:
     registries = make_registries(*providers, scopes=scopes)
-    return AsyncContextWrapper(
-        AsyncContainer(*registries, context=context, with_lock=with_lock),
-    )
+    return AsyncContextWrapper(AsyncContainer(
+        *registries,
+        context=context,
+        lock_factory=lock_factory,
+    ))

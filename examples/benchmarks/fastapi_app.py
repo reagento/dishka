@@ -145,7 +145,7 @@ def new_a(b: B = FastapiDepends(Stub(B)), c: C = FastapiDepends(Stub(C))):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with make_async_container(MyProvider(), with_lock=True) as container:
+    async with make_async_container(MyProvider()) as container:
         app.state.container = container
         yield
 

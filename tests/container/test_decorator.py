@@ -1,3 +1,5 @@
+import pytest
+
 from dishka import Provider, Scope, alias, decorate, make_container, provide
 
 
@@ -21,9 +23,11 @@ class ADecorator:
 def test_simple():
     class MyProvider(Provider):
         a = provide(A, scope=Scope.APP)
+
+    class DProvider(Provider):
         ad = decorate(ADecorator, provides=A)
 
-    with make_container(MyProvider()) as container:
+    with make_container(MyProvider(), DProvider()) as container:
         a = container.get(A)
         assert isinstance(a, ADecorator)
         assert isinstance(a.a, A)
@@ -35,11 +39,12 @@ def test_alias():
         a1 = alias(source=A2, provides=A1)
         a = alias(source=A1, provides=A)
 
+    class DProvider(Provider):
         @decorate
         def decorated(self, a: A1) -> A1:
             return ADecorator(a)
 
-    with make_container(MyProvider()) as container:
+    with make_container(MyProvider(), DProvider()) as container:
         a1 = container.get(A1)
         assert isinstance(a1, ADecorator)
         assert isinstance(a1.a, A2)
@@ -52,13 +57,27 @@ def test_alias():
         assert a is a1
 
 
-def test_double():
+def test_double_error():
     class MyProvider(Provider):
         a = provide(A, scope=Scope.APP)
         ad = decorate(ADecorator, provides=A)
         ad2 = decorate(ADecorator, provides=A)
 
-    with make_container(MyProvider()) as container:
+    with pytest.raises(ValueError):
+        MyProvider()
+
+
+def test_double_ok():
+    class MyProvider(Provider):
+        a = provide(A, scope=Scope.APP)
+
+    class DProvider(Provider):
+        ad = decorate(ADecorator, provides=A)
+
+    class D2Provider(Provider):
+        ad2 = decorate(ADecorator, provides=A)
+
+    with make_container(MyProvider(), DProvider(), D2Provider()) as container:
         a = container.get(A)
         assert isinstance(a, ADecorator)
         assert isinstance(a.a, ADecorator)

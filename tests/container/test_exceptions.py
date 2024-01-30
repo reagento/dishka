@@ -10,6 +10,7 @@ from dishka import (
     make_container,
     provide,
 )
+from dishka.exceptions import ExitExceptionGroup
 
 
 class MyError(Exception):
@@ -52,24 +53,24 @@ class MyProvider(Provider):
 
 
 @pytest.mark.parametrize("dep_type", [
-    SyncError, SyncFinalizationError,
+    SyncFinalizationError,
 ])
 def test_sync(dep_type):
     finalizer = Mock(return_value=123)
-    with pytest.raises(MyError):
+    with pytest.raises(ExitExceptionGroup):
         with make_container(MyProvider(finalizer)) as container:
             container.get(dep_type)
     finalizer.assert_called_once()
 
 
 @pytest.mark.parametrize("dep_type", [
-    SyncError, SyncFinalizationError,
-    AsyncError, AsyncFinalizationError,
+    SyncFinalizationError,
+    AsyncFinalizationError,
 ])
 @pytest.mark.asyncio
 async def test_async(dep_type):
     finalizer = Mock(return_value=123)
-    with pytest.raises(MyError):
+    with pytest.raises(ExitExceptionGroup):
         async with make_async_container(MyProvider(finalizer)) as container:
             await container.get(dep_type)
     finalizer.assert_called_once()

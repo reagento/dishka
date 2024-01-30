@@ -43,7 +43,9 @@ def test_cache_sync():
     event = threading.Event()
     provider = SyncProvider(event, int_getter)
     with ThreadPoolExecutor() as pool:
-        with make_container(provider, with_lock=True) as container:
+        with make_container(
+                provider, lock_factory=threading.Lock,
+        ) as container:
             pool.submit(sync_get, container)
             pool.submit(sync_get, container)
             time.sleep(0.01)
@@ -78,7 +80,9 @@ async def test_cache_async():
     event = asyncio.Event()
     provider = AsyncProvider(event, int_getter)
 
-    async with make_async_container(provider, with_lock=True) as container:
+    async with make_async_container(
+            provider, lock_factory=asyncio.Lock,
+    ) as container:
         t1 = asyncio.create_task(async_get(container))
         t2 = asyncio.create_task(async_get(container))
         await asyncio.sleep(0.01)

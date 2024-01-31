@@ -1,53 +1,13 @@
 import logging
-from contextlib import asynccontextmanager
-from inspect import Parameter
-from typing import Annotated, Callable, Iterable, NewType, get_type_hints
+from typing import Annotated, Callable, Iterable, NewType
 
 import uvicorn
 from fastapi import APIRouter
 from fastapi import Depends as FastapiDepends
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 
-from dishka import Provider, Scope, make_async_container, provide
-from dishka.inject import Depends, wrap_injection
-
-
-# framework level
-def inject(func):
-    hints = get_type_hints(func)
-    requests_param = next(
-        (name for name, hint in hints.items() if hint is Request),
-        None,
-    )
-    if requests_param:
-        getter = lambda kwargs: kwargs[requests_param].state.container
-        additional_params = []
-    else:
-        getter = lambda kwargs: kwargs["___r___"].state.container
-        additional_params = [Parameter(
-            name="___r___",
-            annotation=Request,
-            kind=Parameter.KEYWORD_ONLY,
-        )]
-
-    return wrap_injection(
-        func=func,
-        remove_depends=True,
-        container_getter=getter,
-        additional_params=additional_params,
-        is_async=True,
-    )
-
-
-def container_middleware():
-    async def add_request_container(request: Request, call_next):
-        async with request.app.state.container(
-                {Request: request}
-        ) as subcontainer:
-            request.state.container = subcontainer
-            return await call_next(request)
-
-    return add_request_container
+from dishka import Provider, Scope, provide
+from dishka.integrations.fastapi import Depends, DishkaApp, inject
 
 
 class Stub:
@@ -143,23 +103,15 @@ def new_a(b: B = FastapiDepends(Stub(B)), c: C = FastapiDepends(Stub(C))):
     return A(b, c)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    async with make_async_container(MyProvider()) as container:
-        app.state.container = container
-        yield
-
-
 def create_app() -> FastAPI:
     logging.basicConfig(level=logging.WARNING)
 
-    app = FastAPI(lifespan=lifespan)
-    app.middleware("http")(container_middleware())
+    app = FastAPI()
     app.dependency_overrides[A] = new_a
     app.dependency_overrides[B] = lambda: B(1)
     app.dependency_overrides[C] = lambda: C(1)
     app.include_router(router)
-    return app
+    return DishkaApp(providers=[MyProvider()], app=app)
 
 
 if __name__ == "__main__":

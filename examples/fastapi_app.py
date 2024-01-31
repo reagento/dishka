@@ -1,57 +1,17 @@
 import logging
 from abc import abstractmethod
-from contextlib import asynccontextmanager
-from inspect import Parameter
-from typing import (
-    Annotated, get_type_hints, Protocol, Any, get_origin,
-    get_args,
-)
+from typing import Annotated, Protocol
 
 import uvicorn
 from fastapi import APIRouter
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 
 from dishka import (
-    Depends, wrap_injection, Provider, Scope, make_async_container, provide,
+    Provider, Scope, provide,
 )
-
-
-# framework level
-def inject(func):
-    hints = get_type_hints(func)
-    requests_param = next(
-        (name for name, hint in hints.items() if hint is Request),
-        None,
-    )
-    if requests_param:
-        getter = lambda kwargs: kwargs[requests_param].state.container
-        additional_params = []
-    else:
-        getter = lambda kwargs: kwargs["___r___"].state.container
-        additional_params = [Parameter(
-            name="___r___",
-            annotation=Request,
-            kind=Parameter.KEYWORD_ONLY,
-        )]
-
-    return wrap_injection(
-        func=func,
-        remove_depends=True,
-        container_getter=getter,
-        additional_params=additional_params,
-        is_async=True,
-    )
-
-
-def container_middleware():
-    async def add_request_container(request: Request, call_next):
-        async with request.app.state.container(
-                {Request: request}
-        ) as subcontainer:
-            request.state.container = subcontainer
-            return await call_next(request)
-
-    return add_request_container
+from dishka.integrations.fastapi import (
+    Depends, inject, DishkaApp,
+)
 
 
 # app core
@@ -99,24 +59,19 @@ async def index(
     return result
 
 
-# app configuration
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    async with make_async_container(
-            AdaptersProvider(), InteractorProvider(),
-    ) as container:
-        app.state.container = container
-        yield
+def create_app():
+    logging.basicConfig(
+        level=logging.WARNING,
+        format='%(asctime)s  %(process)-7s %(module)-20s %(message)s',
+    )
 
-
-def create_app() -> FastAPI:
-    logging.basicConfig(level=logging.WARNING)
-
-    app = FastAPI(lifespan=lifespan)
-    app.middleware("http")(container_middleware())
+    app = FastAPI()
     app.include_router(router)
-    return app
+    return DishkaApp(
+        providers=[AdaptersProvider(), InteractorProvider()],
+        app=app,
+    )
 
 
 if __name__ == "__main__":
-    uvicorn.run(create_app(), host="0.0.0.0", port=8000)
+    uvicorn.run(create_app(), host="0.0.0.0", port=8000, lifespan="on")

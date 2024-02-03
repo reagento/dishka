@@ -2,6 +2,8 @@
 
 In this example we try to simulate real world application rich of classes.
 
+**Note**: it is not a guide on good architecture design, it is just an example how to use `dishka`
+
 The folder structure is simplified as we do not have real code here, but just some fake implementations.
 Anyway, the application can be split into several parts:
 

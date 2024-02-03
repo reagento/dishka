@@ -1,9 +1,9 @@
 from inspect import Parameter
-from typing import get_type_hints, Sequence, Optional
+from typing import Optional, Sequence, get_type_hints
 
-from litestar import Request, Litestar
+from litestar import Litestar, Request
 
-from dishka import make_async_container, Provider
+from dishka import Provider, make_async_container
 from dishka.integrations.base import wrap_injection
 
 

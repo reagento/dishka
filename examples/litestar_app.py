@@ -7,8 +7,13 @@ from litestar import Controller, get, Litestar
 
 from dishka import Provider, Scope, provide
 from dishka.integrations.base import Depends
-from dishka.integrations.litestar import inject, setup_dishka, startup_dishka, make_container_before_request, \
+from dishka.integrations.litestar import (
+    inject,
+    setup_dishka,
+    startup_dishka,
+    make_dishka_container,
     shutdown_dishka
+)
 
 
 # app core
@@ -61,7 +66,7 @@ def create_app():
         route_handlers=[MainController],
         on_startup=[startup_dishka],
         on_shutdown=[shutdown_dishka],
-        before_request=make_container_before_request
+        before_request=make_dishka_container
     )
     return setup_dishka(app, [InteractorProvider(), AdaptersProvider()])
 

@@ -32,7 +32,7 @@ def inject(func):
     )
 
 
-async def make_container_before_request(request: Request):
+async def make_dishka_container(request: Request):
     request_container = await request.app.state.dishka_container().__aenter__()
     request.state.dishka_container = request_container
 

@@ -8,9 +8,9 @@ from typing import get_type_hints
 from fastapi import Request
 
 from dishka import AsyncContainer
+from ..async_container import AsyncContextWrapper
 from .asgi import BaseDishkaApp
 from .base import Depends, wrap_injection
-from ..async_container import AsyncContextWrapper
 
 
 def inject(func):

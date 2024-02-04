@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Sequence
 
 from dishka import Provider, make_async_container
-from dishka.async_container import AsyncContextWrapper, AsyncContainer
+from dishka.async_container import AsyncContainer, AsyncContextWrapper
 from .base import Depends
 
 

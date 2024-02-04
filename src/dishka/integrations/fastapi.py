@@ -3,12 +3,14 @@ __all__ = [
 ]
 
 from inspect import Parameter
-from typing import Sequence, get_type_hints
+from typing import get_type_hints
 
-from fastapi import FastAPI, Request
+from fastapi import Request
 
-from dishka import Provider, make_async_container
+from dishka import AsyncContainer
+from .asgi import BaseDishkaApp
 from .base import Depends, wrap_injection
+from ..async_container import AsyncContextWrapper
 
 
 def inject(func):
@@ -44,22 +46,11 @@ async def add_request_container_middleware(request: Request, call_next):
         return await call_next(request)
 
 
-class DishkaApp:
-    def __init__(self, providers: Sequence[Provider], app: FastAPI):
-        self.app = app
-        self.app.middleware("http")(add_request_container_middleware)
-        self.container_wrapper = make_async_container(*providers)
+class DishkaApp(BaseDishkaApp):
+    def _init_request_middleware(
+            self, app, container_wrapper: AsyncContextWrapper,
+    ):
+        app.middleware("http")(add_request_container_middleware)
 
-    async def __call__(self, scope, receive, send):
-        if scope['type'] == 'lifespan':
-            async def my_recv():
-                message = await receive()
-                if message['type'] == 'lifespan.startup':
-                    container = await self.container_wrapper.__aenter__()
-                    self.app.state.dishka_container = container
-                elif message['type'] == 'lifespan.shutdown':
-                    await self.container_wrapper.__aexit__(None, None, None)
-
-            return await self.app(scope, my_recv, send)
-        else:
-            return await self.app(scope, receive, send)
+    def _app_startup(self, app, container: AsyncContainer):
+        app.state.dishka_container = container

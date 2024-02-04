@@ -49,7 +49,7 @@ class ContainerMiddleware(BaseMiddleware):
         await self.container_wrapper.__aexit__(None, None, None)
 
 
-def setup_dishka(providers: Sequence[Provider], router: Router):
+def setup_dishka(providers: Sequence[Provider], router: Router) -> None:
     middleware = ContainerMiddleware(make_async_container(*providers))
 
     router.startup()(middleware.startup)

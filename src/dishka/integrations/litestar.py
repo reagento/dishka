@@ -1,10 +1,9 @@
 from inspect import Parameter
-from typing import Optional, Sequence, get_type_hints
+from typing import Optional, get_type_hints
 
-from litestar import Litestar, Request
+from litestar import Request
 from litestar.types import ASGIApp, Receive, Scope, Send
 
-from dishka import Provider, make_async_container
 from dishka.async_container import AsyncContainer, AsyncContextWrapper
 from dishka.integrations.asgi import BaseDishkaApp
 from dishka.integrations.base import wrap_injection

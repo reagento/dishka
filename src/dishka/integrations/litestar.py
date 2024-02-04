@@ -37,6 +37,10 @@ async def make_dishka_container(request: Request):
     request.state.dishka_container = request_container
 
 
+async def close_dishka_container(request: Request):
+    await request.app.state.dishka_container().__aexit__(None, None, None)
+
+
 async def startup_dishka(app: Litestar):
     container = await app.state.dishka_container_wrapper.__aenter__()
     app.state.dishka_container = container
@@ -58,6 +62,7 @@ class DishkaApp:
         self.app.on_startup.append(startup_dishka)
         self.app.on_shutdown.append(shutdown_dishka)
         self.app.before_request = make_dishka_container
+        self.app.after_response = close_dishka_container
 
     async def __call__(self, scope, receive, send):
         await self.app(scope, receive, send)

@@ -47,11 +47,6 @@ def make_add_request_container_middleware(app: ASGIApp):
     return middleware
 
 
-def setup_dishka(app: Litestar, providers: Sequence[Provider]) -> Litestar:
-    app.state.dishka_container_wrapper = make_async_container(*providers)
-    return app
-
-
 class DishkaApp(BaseDishkaApp):
     def _init_request_middleware(
             self, app, container_wrapper: AsyncContextWrapper,

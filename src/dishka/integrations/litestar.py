@@ -49,3 +49,15 @@ async def shutdown_dishka(app: Litestar):
 def setup_dishka(app: Litestar, providers: Sequence[Provider]) -> Litestar:
     app.state.dishka_container_wrapper = make_async_container(*providers)
     return app
+
+
+class DishkaApp:
+    def __init__(self, providers: Sequence[Provider], app: Litestar):
+        self.app = app
+        self.app.state.dishka_container_wrapper = make_async_container(*providers)
+        self.app.on_startup.append(startup_dishka)
+        self.app.on_shutdown.append(shutdown_dishka)
+        self.app.before_request = make_dishka_container
+
+    async def __call__(self, scope, receive, send):
+        await self.app(scope, receive, send)

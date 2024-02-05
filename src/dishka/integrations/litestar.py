@@ -2,6 +2,7 @@ from inspect import Parameter
 from typing import Optional, get_type_hints
 
 from litestar import Request
+from litestar.enums import ScopeType
 from litestar.types import ASGIApp, Receive, Scope, Send
 
 from dishka.async_container import AsyncContainer, AsyncContextWrapper
@@ -36,6 +37,9 @@ def inject(func):
 
 def make_add_request_container_middleware(app: ASGIApp):
     async def middleware(scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("type") != ScopeType.HTTP:
+            await app(scope, receive, send)
+
         request = Request(scope)
         async with request.app.state.dishka_container(
                 {Request: request},

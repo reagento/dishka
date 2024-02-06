@@ -39,6 +39,7 @@ def make_add_request_container_middleware(app: ASGIApp):
     async def middleware(scope: Scope, receive: Receive, send: Send) -> None:
         if scope.get("type") != ScopeType.HTTP:
             await app(scope, receive, send)
+            return
 
         request = Request(scope)
         async with request.app.state.dishka_container(

@@ -1,3 +1,8 @@
+"""
+In this test file we use DIshka to provide mocked adapters
+though it is not necessary as our interactor is not bound to library
+"""
+
 from unittest.mock import Mock
 
 import pytest

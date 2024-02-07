@@ -10,17 +10,21 @@ from myapp.ioc import AdaptersProvider, InteractorProvider
 from myapp.presentation_web import router
 
 
+def create_fastapi_app() -> FastAPI:
+    app = FastAPI()
+    app.include_router(router)
+    return app
+
+
 def create_app():
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s  %(process)-7s %(module)-20s %(message)s',
     )
 
-    app = FastAPI()
-    app.include_router(router)
     return DishkaApp(
         providers=[AdaptersProvider(), InteractorProvider()],
-        app=app,
+        app=create_fastapi_app(),
     )
 
 

@@ -3,8 +3,7 @@ from abc import abstractmethod
 from typing import Annotated, Protocol
 
 import uvicorn
-from fastapi import APIRouter
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 
 from dishka import (
     Provider, Scope, provide,

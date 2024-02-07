@@ -1,0 +1,8 @@
+-r requirements.txt
+
+pytest==7.*
+pytest-asyncio==0.23.*
+pytest-repeat==0.9.*
+
+httpx==0.26.*
+asgi_lifespan==2.1.*

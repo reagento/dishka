@@ -39,3 +39,7 @@ Talking about _lifetime_ of objects we can say that:
                  └─────►Products gateway ├─►───┘
                        └─────────────────┘
 ```
+
+In production our frameworks enter scopes for us. But for tests it is often omitted by authors of frameworks.
+* For fastapi or other asgi application you should use `asgi_lifespan.LifespanManager`
+* For aiogram do not forget to trigger `dp.emit_startup()` event

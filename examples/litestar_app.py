@@ -7,13 +7,7 @@ from litestar import Controller, get, Litestar
 
 from dishka import Provider, Scope, provide
 from dishka.integrations.base import Depends
-from dishka.integrations.litestar import (
-    inject,
-    setup_dishka,
-    startup_dishka,
-    make_dishka_container,
-    shutdown_dishka
-)
+from dishka.integrations.litestar import inject, DishkaApp
 
 
 # app core
@@ -25,7 +19,7 @@ class DbGateway(Protocol):
 
 class FakeDbGateway(DbGateway):
     def get(self) -> str:
-        return "Hello"
+        return "Hello123"
 
 
 class Interactor:
@@ -62,13 +56,8 @@ def create_app():
         level=logging.WARNING,
         format='%(asctime)s  %(process)-7s %(module)-20s %(message)s',
     )
-    app = Litestar(
-        route_handlers=[MainController],
-        on_startup=[startup_dishka],
-        on_shutdown=[shutdown_dishka],
-        before_request=make_dishka_container
-    )
-    return setup_dishka(app, [InteractorProvider(), AdaptersProvider()])
+    app = Litestar(route_handlers=[MainController])
+    return DishkaApp([InteractorProvider(), AdaptersProvider()], app)
 
 
 if __name__ == "__main__":

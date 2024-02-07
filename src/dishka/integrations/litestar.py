@@ -1,9 +1,12 @@
 from inspect import Parameter
-from typing import Optional, Sequence, get_type_hints
+from typing import Optional, get_type_hints
 
-from litestar import Litestar, Request
+from litestar import Request
+from litestar.enums import ScopeType
+from litestar.types import ASGIApp, Receive, Scope, Send
 
-from dishka import Provider, make_async_container
+from dishka.async_container import AsyncContainer, AsyncContextWrapper
+from dishka.integrations.asgi import BaseDishkaApp
 from dishka.integrations.base import wrap_injection
 
 
@@ -32,20 +35,29 @@ def inject(func):
     )
 
 
-async def make_dishka_container(request: Request):
-    request_container = await request.app.state.dishka_container().__aenter__()
-    request.state.dishka_container = request_container
+def make_add_request_container_middleware(app: ASGIApp):
+    async def middleware(scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("type") != ScopeType.HTTP:
+            await app(scope, receive, send)
+            return
+
+        request = Request(scope)
+        async with request.app.state.dishka_container(
+                {Request: request},
+        ) as request_container:
+            request.state.dishka_container = request_container
+            await app(scope, receive, send)
+
+    return middleware
 
 
-async def startup_dishka(app: Litestar):
-    container = await app.state.dishka_container_wrapper.__aenter__()
-    app.state.dishka_container = container
+class DishkaApp(BaseDishkaApp):
+    def _init_request_middleware(
+            self, app, container_wrapper: AsyncContextWrapper,
+    ):
+        app.asgi_handler = make_add_request_container_middleware(
+            app.asgi_handler,
+        )
 
-
-async def shutdown_dishka(app: Litestar):
-    await app.state.dishka_container_wrapper.__aexit__(None, None, None)
-
-
-def setup_dishka(app: Litestar, providers: Sequence[Provider]) -> Litestar:
-    app.state.dishka_container_wrapper = make_async_container(*providers)
-    return app
+    def _app_startup(self, app, container: AsyncContainer):
+        app.state.dishka_container = container

@@ -12,7 +12,7 @@ from litestar.types import ASGIApp, Receive, Scope, Send
 
 from dishka.async_container import AsyncContainer, AsyncContextWrapper
 from dishka.integrations.asgi import BaseDishkaApp
-from dishka.integrations.base import wrap_injection, Depends
+from dishka.integrations.base import Depends, wrap_injection
 
 
 def inject(func):

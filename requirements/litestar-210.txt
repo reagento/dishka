@@ -1,0 +1,2 @@
+-r asgi.txt
+litestar==2.1.0

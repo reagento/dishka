@@ -1,3 +1,8 @@
+__all__ = [
+    'Depends', "inject", "DishkaApp",
+]
+
+
 from inspect import Parameter
 from typing import Optional, get_type_hints
 
@@ -7,7 +12,7 @@ from litestar.types import ASGIApp, Receive, Scope, Send
 
 from dishka.async_container import AsyncContainer, AsyncContextWrapper
 from dishka.integrations.asgi import BaseDishkaApp
-from dishka.integrations.base import wrap_injection
+from dishka.integrations.base import wrap_injection, Depends
 
 
 def inject(func):

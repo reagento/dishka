@@ -1,15 +1,13 @@
-import logging
 from abc import abstractmethod
 from typing import Annotated, Protocol
 
-import uvicorn
-from fastapi import APIRouter, FastAPI
+from flask import Flask
 
 from dishka import (
     Provider, Scope, provide,
 )
-from dishka.integrations.fastapi import (
-    Depends, inject, DishkaApp,
+from dishka.integrations.flask import (
+    Depends, inject, setup_dishka,
 )
 
 
@@ -45,12 +43,12 @@ class InteractorProvider(Provider):
 
 
 # presentation layer
-router = APIRouter()
+app = Flask(__name__)
 
 
-@router.get("/")
+@app.get("/")
 @inject
-async def index(
+def index(
         *,
         interactor: Annotated[Interactor, Depends()],
 ) -> str:
@@ -58,19 +56,11 @@ async def index(
     return result
 
 
-def create_app():
-    logging.basicConfig(
-        level=logging.WARNING,
-        format='%(asctime)s  %(process)-7s %(module)-20s %(message)s',
-    )
-
-    app = FastAPI()
-    app.include_router(router)
-    return DishkaApp(
-        providers=[AdaptersProvider(), InteractorProvider()],
-        app=app,
-    )
-
-
-if __name__ == "__main__":
-    uvicorn.run(create_app(), host="0.0.0.0", port=8000, lifespan="on")
+container = setup_dishka(
+    providers=[AdaptersProvider(), InteractorProvider()],
+    app=app,
+)
+try:
+    app.run()
+finally:
+    container.close()

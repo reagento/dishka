@@ -1,4 +1,8 @@
 ## DIshka (from russian "small DI")
+[![PyPI version](https://badge.fury.io/py/dishka.svg)](https://badge.fury.io/py/dishka)
+[![downloads](https://img.shields.io/pypi/dm/dishka.svg)](https://pypistats.org/packages/dishka)
+[![license](https://img.shields.io/github/license/reagento/dishka)](https://github.com/reagento/dishka/blob/master/LICENSE)
+[![license](https://img.shields.io/badge/💬-Telegram-blue)](https://t.me/reagento_ru)
 
 Small DI framework with scopes and agreeable API.
 

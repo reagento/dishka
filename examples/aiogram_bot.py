@@ -2,44 +2,13 @@ import asyncio
 import logging
 import os
 import random
-from inspect import Parameter
-from typing import Annotated, Container, Iterable
+from typing import Annotated, Iterable
 
-from aiogram import BaseMiddleware, Bot, Dispatcher, Router
+from aiogram import Bot, Dispatcher, Router
 from aiogram.types import Message, TelegramObject, User
 
-from dishka import Provider, Scope, make_async_container, provide
-from dishka.inject import Depends, wrap_injection
-
-
-# framework level
-def inject(func):
-    getter = lambda kwargs: kwargs["container"]
-    additional_params = [Parameter(
-        name="container",
-        annotation=Container,
-        kind=Parameter.KEYWORD_ONLY,
-    )]
-
-    return wrap_injection(
-        func=func,
-        remove_depends=True,
-        container_getter=getter,
-        additional_params=additional_params,
-        is_async=True,
-    )
-
-
-class ContainerMiddleware(BaseMiddleware):
-    def __init__(self, container):
-        self.container = container
-
-    async def __call__(
-            self, handler, event, data,
-    ):
-        async with self.container({TelegramObject: event}) as subcontainer:
-            data["container"] = subcontainer
-            return await handler(event, data)
+from dishka import Provider, Scope, provide
+from dishka.integrations.aiogram import Depends, inject, setup_dishka
 
 
 # app dependency logic
@@ -73,14 +42,12 @@ async def start(
 async def main():
     # real main
     logging.basicConfig(level=logging.INFO)
-    async with make_async_container(MyProvider()) as container:
-        bot = Bot(token=API_TOKEN)
-        dp = Dispatcher()
-        for observer in dp.observers.values():
-            observer.middleware(ContainerMiddleware(container))
-        dp.include_router(router)
+    bot = Bot(token=API_TOKEN)
+    dp = Dispatcher()
+    dp.include_router(router)
+    setup_dishka(providers=[MyProvider()], router=dp)
+    await dp.start_polling(bot)
 
-        await dp.start_polling(bot)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,4 @@
+-r test.txt
+
+httpx==0.26.*
+asgi_lifespan==2.1.*

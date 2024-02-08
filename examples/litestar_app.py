@@ -1,16 +1,13 @@
 import logging
 from abc import abstractmethod
-from typing import Annotated, Protocol
+from typing import Protocol, Annotated
 
 import uvicorn
-from fastapi import APIRouter, FastAPI
+from litestar import Controller, get, Litestar
 
-from dishka import (
-    Provider, Scope, provide,
-)
-from dishka.integrations.fastapi import (
-    Depends, inject, DishkaApp,
-)
+from dishka import Provider, Scope, provide
+from dishka.integrations.base import Depends
+from dishka.integrations.litestar import inject, DishkaApp
 
 
 # app core
@@ -22,7 +19,7 @@ class DbGateway(Protocol):
 
 class FakeDbGateway(DbGateway):
     def get(self) -> str:
-        return "Hello"
+        return "Hello123"
 
 
 class Interactor:
@@ -44,18 +41,14 @@ class InteractorProvider(Provider):
     i1 = provide(Interactor, scope=Scope.REQUEST)
 
 
-# presentation layer
-router = APIRouter()
+class MainController(Controller):
+    path = '/'
 
-
-@router.get("/")
-@inject
-async def index(
-        *,
-        interactor: Annotated[Interactor, Depends()],
-) -> str:
-    result = interactor()
-    return result
+    @get()
+    @inject
+    async def index(self, *, interactor: Annotated[Interactor, Depends()]) -> str:
+        result = interactor()
+        return result
 
 
 def create_app():
@@ -63,14 +56,9 @@ def create_app():
         level=logging.WARNING,
         format='%(asctime)s  %(process)-7s %(module)-20s %(message)s',
     )
-
-    app = FastAPI()
-    app.include_router(router)
-    return DishkaApp(
-        providers=[AdaptersProvider(), InteractorProvider()],
-        app=app,
-    )
+    app = Litestar(route_handlers=[MainController])
+    return DishkaApp([InteractorProvider(), AdaptersProvider()], app)
 
 
 if __name__ == "__main__":
-    uvicorn.run(create_app(), host="0.0.0.0", port=8000, lifespan="on")
+    uvicorn.run(create_app(), host="0.0.0.0", port=8000)

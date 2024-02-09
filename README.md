@@ -20,7 +20,7 @@ Main ideas:
 * **Simple API**. You need minimum of objects to start using library. You can easily integrate it with your task framework, examples provided. 
 * **Speed**. It is fast enough so you not to worry about. It is even faster than many of the analogs.
 
-See more in [technical requirements](docs/technical_requirements.md)
+See more in [technical requirements](https://dishka.readthedocs.io/en/latest/requirements/technical.html)
 
 ### Quickstart
 

@@ -4,6 +4,7 @@ dishka
 .. toctree::
    :caption: Contents:
 
+   di
    requirements/technical
 
 .. toctree::

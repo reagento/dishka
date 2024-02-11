@@ -20,7 +20,7 @@ class Depends:
 def default_parse_dependency(
         parameter: Parameter,
         hint: Any,
-        depends_class: Any = Depends
+        depends_class: Any = Depends,
 ) -> Any:
     """ Resolve dependency type or return None if it is not a dependency """
     if get_origin(hint) is not Annotated:

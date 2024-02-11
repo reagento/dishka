@@ -4,7 +4,7 @@ dishka
 .. toctree::
    :caption: Contents:
 
-   di
+   di_intro
    requirements/technical
 
 .. toctree::

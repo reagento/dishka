@@ -1,3 +1,5 @@
+.. _technical-requirements:
+
 Technical requirements
 *********************************************
 

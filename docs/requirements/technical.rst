@@ -53,7 +53,7 @@ Technical requirements
 7. Usability
 ================
 
-1. There should be a way to create dependency based on its `__init__`
+1. There should be a way to create dependency based on its ``__init__``
 2. When creating a dependency there should be a way to decide which subtype is used and request only its dependencies
 3. There should be a way to reuse same object for multiple requested types
 4. There should be a way to decorate dependency just adding new providers

@@ -113,7 +113,7 @@ If `provide` is used with some class then that class itself is treated as a fact
     class MyProvider(Provider):
         a = provide(A, scope=Scope.REQUEST)
     ```
-* Want to create a child class instance when parent is requested? add a `dependency` attribute to `provide` function with a parent class while passing child as a first parameter 
+* Want to create a child class instance when parent is requested? add a `source` attribute to `provide` function with a parent class while passing child as a first parameter
     ```python 
     class MyProvider(Provider):
         a = provide(source=AChild, scope=Scope.REQUEST, provides=A)

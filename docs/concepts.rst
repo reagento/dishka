@@ -79,39 +79,8 @@ Provider
         pass
 
 
-There are 3 special functions: ``provide``, ``alias`` or ``decorate``
+There are 3 special functions:
 
-* ``@provide`` can be used as a decorator for some method. This method will be called when corresponding dependency has to be created. Name of the method is not important: just check that it is different form other ``Provider`` attributes. Type hints do matter: they show what this method creates and what does it require. All method parameters are treated as other dependencies and created using container.
-
-.. code-block:: python
-
-    class MyProvider(Provider):
-        @provide(scope=Scope.REQUEST)
-        def a(self) -> A:
-            return A()
-
-* If ``provide`` is used with some class then that class itself is treated as a factory (``__init__`` is analyzed for parameters). But do not forget to assign that call to some attribute otherwise it will be ignored.
-
-
-.. code-block:: python
-
-    class MyProvider(Provider):
-        a = provide(A, scope=Scope.REQUEST)
-
-* ``alias`` is used to allow retrieving of the same object by different type hints. E.g. you have configure how to provide ``A`` object and want to use it as AProtocol: ``container.get(A)==container.get(AProtocol)``.
-
-
-.. code-block:: python
-
-    class MyProvider(Provider):
-        a_proto = alias(source=A, provides=AProtocol)
-
-* ``decorate`` is used to modify or wrap an object which is already configured in another ``Provider``.
-
-
-.. code-block:: python
-
-    class MySecondProvider(Provider):
-        @decorate()
-        def a(self, original: A) -> A:
-            return ADecorator(original)
+* ``@provide`` is used to declare a factory providing a dependency. It can be used with some class or as a method decorator. :ref:`Read more<provide>`
+* ``alias`` is used to allow retrieving of the same object by different type hints. :ref:`Read more<alias>`
+* ``decorate`` is used to modify or wrap an object which is already configured in another ``Provider``. :ref:`Read more<decorate>`

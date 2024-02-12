@@ -4,9 +4,12 @@ dishka
 .. toctree::
    :caption: Contents:
 
+   quickstart
    di_intro
    concepts
    requirements/technical
+   provider/index
+   integrations/index
 
 .. toctree::
     :hidden:

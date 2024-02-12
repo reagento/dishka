@@ -5,6 +5,7 @@ dishka
    :caption: Contents:
 
    di_intro
+   concepts
    requirements/technical
 
 .. toctree::

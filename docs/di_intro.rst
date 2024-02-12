@@ -64,6 +64,8 @@ It works well unless you have many methods and they can call each other. Also we
 .. code-block:: python
 
     class Service:
+        client: Client
+
         def action(self):
             self.client.get_data()
 

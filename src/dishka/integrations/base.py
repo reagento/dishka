@@ -20,12 +20,13 @@ class Depends:
 def default_parse_dependency(
         parameter: Parameter,
         hint: Any,
+        depends_class: Any = Depends,
 ) -> Any:
     """ Resolve dependency type or return None if it is not a dependency """
     if get_origin(hint) is not Annotated:
         return None
     dep = next(
-        (arg for arg in get_args(hint) if isinstance(arg, Depends)),
+        (arg for arg in get_args(hint) if isinstance(arg, depends_class)),
         None,
     )
     if not dep:

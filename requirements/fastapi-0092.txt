@@ -1,2 +1,0 @@
--r asgi.txt
-fastapi==0.92.0

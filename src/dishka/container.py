@@ -11,6 +11,22 @@ from .scope import BaseScope, Scope
 T = TypeVar("T")
 
 
+class Proxy:
+    def __init__(self):
+        self.__dict__["dishka_value"] = None
+
+    def __getattr__(self, item):
+        return getattr(self.dishka_value, item)
+
+    def __setattr__(self, item, value):
+        if item == "dishka_value":
+            self.__dict__["dishka_value"] = value
+        return setattr(self.dishka_value, item, value)
+
+    def __delattr__(self, item):
+        return delattr(self.dishka_value, item)
+
+
 @dataclass
 class Exit:
     __slots__ = ("type", "callable")
@@ -21,7 +37,7 @@ class Exit:
 class Container:
     __slots__ = (
         "registry", "child_registries", "context", "parent_container",
-        "lock", "_exits",
+        "lock", "_exits", "_path"
     )
 
     def __init__(
@@ -43,6 +59,7 @@ class Container:
         else:
             self.lock = None
         self._exits: List[Exit] = []
+        self._path = []
 
     def _create_child(
             self,
@@ -102,7 +119,18 @@ class Container:
             if not self.parent_container:
                 raise ValueError(f"No provider found for {dependency_type!r}")
             return self.parent_container.get(dependency_type)
-        solved = self._get_from_self(provider)
+
+        if dependency_type in self._path:
+            solved = Proxy()
+        else:
+            self._path.append(dependency_type)
+            try:
+                solved = self._get_from_self(provider)
+            finally:
+                self._path.pop()
+
+        if dependency_type in self.context:
+            self.context[dependency_type].dishka_value = solved
         self.context[dependency_type] = solved
         return solved
 

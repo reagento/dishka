@@ -77,3 +77,25 @@ async def test_request_dependency2(app_provider: AppProvider):
         client.get("/")
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
+
+
+@inject
+async def additional(
+        a: Annotated[RequestDep, Depends()],
+        mock: Annotated[Mock, Depends()],
+):
+    mock(a)
+
+
+async def get_with_depends(
+        a: Annotated[None, fastapi.Depends(additional)],
+) -> None:
+    pass
+
+
+@pytest.mark.asyncio
+async def test_fastapi_depends(app_provider: AppProvider):
+    async with dishka_app(get_with_depends, app_provider) as client:
+        client.get("/")
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()

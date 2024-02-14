@@ -6,6 +6,7 @@ from typing import (
     Callable,
     Literal,
     Sequence,
+    Type,
     get_args,
     get_origin,
     get_type_hints,
@@ -24,7 +25,7 @@ class Depends:
 def default_parse_dependency(
         parameter: Parameter,
         hint: Any,
-        depends_class: Any = Depends,
+        depends_class: Type[Any] = Depends,
 ) -> Any:
     """ Resolve dependency type or return None if it is not a dependency """
     if get_origin(hint) is not Annotated:

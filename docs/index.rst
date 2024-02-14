@@ -9,6 +9,7 @@ dishka
    concepts
    requirements/technical
    provider/index
+   container/index
    integrations/index
 
 .. toctree::

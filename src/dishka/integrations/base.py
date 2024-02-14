@@ -76,7 +76,7 @@ def wrap_injection(
         remove_depends: bool = True,
         additional_params: Sequence[Parameter] = (),
         parse_dependency: DependencyParser = default_parse_dependency,
-) -> Callable:
+):
     hints = get_type_hints(func, include_extras=True)
     func_signature = signature(func)
 

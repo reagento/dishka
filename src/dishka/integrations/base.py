@@ -2,13 +2,17 @@ from inspect import Parameter, Signature, signature
 from typing import (
     Annotated,
     Any,
+    Awaitable,
     Callable,
+    Literal,
     Sequence,
     get_args,
     get_origin,
     get_type_hints,
+    overload,
 )
 
+from dishka.async_container import AsyncContainer
 from dishka.container import Container
 
 
@@ -40,12 +44,36 @@ def default_parse_dependency(
 DependencyParser = Callable[[Parameter, Any], Any]
 
 
+@overload
 def wrap_injection(
         func: Callable,
         container_getter: Callable[[tuple, dict], Container],
+        is_async: Literal[False] = False,
         remove_depends: bool = True,
         additional_params: Sequence[Parameter] = (),
+        parse_dependency: DependencyParser = default_parse_dependency,
+) -> Callable:
+    ...
+
+
+@overload
+def wrap_injection(
+        func: Callable,
+        container_getter: Callable[[tuple, dict], AsyncContainer],
+        is_async: Literal[True],
+        remove_depends: bool = True,
+        additional_params: Sequence[Parameter] = (),
+        parse_dependency: DependencyParser = default_parse_dependency,
+) -> Awaitable:
+    ...
+
+
+def wrap_injection(
+        func: Callable,
+        container_getter,
         is_async: bool = False,
+        remove_depends: bool = True,
+        additional_params: Sequence[Parameter] = (),
         parse_dependency: DependencyParser = default_parse_dependency,
 ) -> Callable:
     hints = get_type_hints(func, include_extras=True)

@@ -47,6 +47,7 @@ DependencyParser = Callable[[Parameter, Any], Any]
 
 @overload
 def wrap_injection(
+        *,
         func: Callable,
         container_getter: Callable[[tuple, dict], Container],
         is_async: Literal[False] = False,
@@ -59,6 +60,7 @@ def wrap_injection(
 
 @overload
 def wrap_injection(
+        *,
         func: Callable,
         container_getter: Callable[[tuple, dict], AsyncContainer],
         is_async: Literal[True],
@@ -70,6 +72,7 @@ def wrap_injection(
 
 
 def wrap_injection(
+        *,
         func: Callable,
         container_getter,
         is_async: bool = False,

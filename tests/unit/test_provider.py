@@ -45,3 +45,35 @@ def test_parse_factory(source, provider_type, is_to_bound):
     assert factory.scope == Scope.REQUEST
     assert factory.source == source
     assert factory.type == provider_type
+
+
+def test_provider_class_scope():
+    class MyProvider(Provider):
+        scope = Scope.REQUEST
+
+        @provide()
+        def foo(self, x: bool) -> str:
+            return f"{x}"
+
+    provider = MyProvider()
+    assert provider.foo.scope == Scope.REQUEST
+
+
+def test_provider_instance_scope():
+    class MyProvider(Provider):
+        @provide()
+        def foo(self, x: bool) -> str:
+            return f"{x}"
+
+    provider = MyProvider(scope=Scope.REQUEST)
+    assert provider.foo.scope == Scope.REQUEST
+
+
+def test_provider_instance_braces():
+    class MyProvider(Provider):
+        @provide
+        def foo(self, x: bool) -> str:
+            return f"{x}"
+
+    provider = MyProvider(scope=Scope.REQUEST)
+    assert provider.foo.scope == Scope.REQUEST

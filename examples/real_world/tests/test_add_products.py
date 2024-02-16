@@ -27,25 +27,27 @@ from myapp.use_cases import (
 
 # app dependency logic
 class AdaptersProvider(Provider):
-    @provide(scope=Scope.APP)
+    scope=Scope.APP
+
+    @provide
     def users(self) -> UserGateway:
         gateway = Mock()
         gateway.get_user = Mock(return_value=User())
         return gateway
 
-    @provide(scope=Scope.APP)
+    @provide
     def products(self) -> ProductGateway:
         gateway = Mock()
         gateway.add_product = Mock()
         return gateway
 
-    @provide(scope=Scope.APP)
+    @provide
     def uow(self) -> UnitOfWork:
         uow = Mock()
         uow.commit = Mock()
         return uow
 
-    @provide(scope=Scope.APP)
+    @provide
     def warehouse(self) -> WarehouseClient:
         warehouse = Mock()
         warehouse.next_product = Mock(return_value=["a", "b"])

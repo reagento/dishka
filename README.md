@@ -162,3 +162,14 @@ with make_container(MyProvider(), context={App: app}) as container:
 ```python
 with make_container(MyProvider(), OtherProvider()) as container:
 ```
+
+* Tired of providing `scope==` for each depedency? Set it inside your `Provider` class and all dependencies with no scope will use it.
+```python
+
+class MyProvider(Provider):
+   scope=Scope.APP
+
+   @provide
+   async def get_a(self) -> A:
+      return A()
+```

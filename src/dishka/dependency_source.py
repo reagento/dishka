@@ -44,7 +44,7 @@ class Factory:
             dependencies: Sequence[Any],
             source: Any,
             provides: Type,
-            scope: Optional[BaseScope],
+            scope: BaseScope | None,
             type: FactoryType,
             is_to_bound: bool,
     ):
@@ -56,6 +56,7 @@ class Factory:
         self.is_to_bound = is_to_bound
 
     def __get__(self, instance, owner):
+        scope = self.scope or instance.scope
         if instance is None:
             return self
         if self.is_to_bound:
@@ -66,7 +67,7 @@ class Factory:
             dependencies=self.dependencies,
             source=source,
             provides=self.provides,
-            scope=self.scope,
+            scope=scope,
             type=self.type,
             is_to_bound=False,
         )
@@ -119,7 +120,7 @@ def make_factory(
 @overload
 def provide(
         *,
-        scope: BaseScope,
+        scope: BaseScope = None,
         provides: Any = None,
 ) -> Callable[[Callable], Factory]:
     ...
@@ -138,7 +139,7 @@ def provide(
 def provide(
         source: Callable | Type | None = None,
         *,
-        scope: BaseScope,
+        scope: BaseScope | None = None,
         provides: Any = None,
 ) -> Factory | Callable[[Callable], Factory]:
     """

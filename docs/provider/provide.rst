@@ -55,3 +55,18 @@ If it is used with class analyzes its ``__init__`` typehints to detect its depen
 
     async with make_async_container(MyProvider()) as container:
          a = await container.get(A)
+
+* Tired of providing `scope==` for each depedency? Set it inside your `Provider` class and all factories with no scope will use it.
+
+.. code-block:: python
+
+    class MyProvider(Provider):
+       scope=Scope.APP
+
+       @provide  # uses provider scope
+       async def get_a(self) -> A:
+          return A()
+
+       @provide(scope=Scope.REQUEST)  # has own scope
+       async def get_b(self) -> B:
+          return B()

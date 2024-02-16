@@ -3,7 +3,6 @@ __all__ = [
     "inject",
     "setup_dishka",
 ]
-
 from inspect import Parameter
 from typing import Container, Sequence
 
@@ -13,10 +12,12 @@ from aiogram.types import TelegramObject
 from dishka import Provider, make_async_container
 from .base import Depends, wrap_injection
 
+CONTAINER_NAME = "dishka_container"
+
 
 def inject(func):
     additional_params = [Parameter(
-        name="dishka_container",
+        name=CONTAINER_NAME,
         annotation=Container,
         kind=Parameter.KEYWORD_ONLY,
     )]
@@ -24,7 +25,7 @@ def inject(func):
     return wrap_injection(
         func=func,
         remove_depends=True,
-        container_getter=lambda _, p: p["dishka_container"],
+        container_getter=lambda _, p: p[CONTAINER_NAME],
         additional_params=additional_params,
         is_async=True,
     )
@@ -38,8 +39,8 @@ class ContainerMiddleware(BaseMiddleware):
     async def __call__(
             self, handler, event, data,
     ):
-        async with self.container({TelegramObject: event}) as subcontainer:
-            data["dishka_container"] = subcontainer
+        async with self.container({TelegramObject: event}) as sub_container:
+            data[CONTAINER_NAME] = sub_container
             return await handler(event, data)
 
     async def startup(self):

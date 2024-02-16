@@ -13,10 +13,11 @@ from telebot import BaseMiddleware, TeleBot
 from dishka import Container, Provider, make_container
 from .base import Depends, wrap_injection
 
+CONTAINER_NAME = "dishka_container"
 
 def inject(func):
     additional_params = [Parameter(
-        name="dishka_container",
+        name=CONTAINER_NAME,
         annotation=Container,
         kind=Parameter.KEYWORD_ONLY,
     )]
@@ -24,7 +25,7 @@ def inject(func):
     return wrap_injection(
         func=func,
         remove_depends=True,
-        container_getter=lambda _, p: p["dishka_container"],
+        container_getter=lambda _, p: p[CONTAINER_NAME],
         additional_params=additional_params,
         is_async=False,
     )
@@ -39,11 +40,11 @@ class ContainerMiddleware(BaseMiddleware):
 
     def pre_process(self, message, data):
         dishka_container_wrapper = self.container({type(message): message})
-        data["dishka_container_wrapper"] = dishka_container_wrapper
-        data["dishka_container"] = dishka_container_wrapper.__enter__()
+        data[CONTAINER_NAME + "_wrapper"] = dishka_container_wrapper
+        data[CONTAINER_NAME] = dishka_container_wrapper.__enter__()
 
     def post_process(self, message, data, exception):
-        data["dishka_container_wrapper"].__exit__(None, None, None)
+        data[CONTAINER_NAME + "_wrapper"].__exit__(None, None, None)
 
 
 def setup_dishka(providers: Sequence[Provider], bot: TeleBot) -> Container:

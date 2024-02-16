@@ -13,8 +13,23 @@ To create your own provider you inherit from ``Provider`` class and instantiate 
     with make_container(MyProvider()) as container:
         pass
 
+You can also set default scope for factories within provider. It will affect only those factories which have no scope set explicitly.
 
-Though it is a normal object, not all attributes are analyzed by ``Container``, but only those which are marked with special funcions:
+* Inside class:
+
+.. code-block:: python
+
+    class MyProvider(Provider):
+        scope=Scope.APP
+
+* Or when instantiating it. This can be also useful for tests to override provider scope.
+
+.. code-block:: python
+
+    with make_container(MyProvider(scope=Scope.APP)) as container:
+        pass
+
+Though it is a normal object, not all attributes are analyzed by ``Container``, but only those which are marked with special functions:
 
 .. toctree::
 

@@ -18,14 +18,12 @@ from .use_cases import (
 
 # app dependency logic
 class AdaptersProvider(Provider):
-    users = provide(
-        FakeUserGateway, scope=Scope.REQUEST, provides=UserGateway,
-    )
-    products = provide(
-        FakeProductGateway, scope=Scope.REQUEST, provides=ProductGateway,
-    )
+    scope = Scope.REQUEST
 
-    @provide(scope=Scope.REQUEST)
+    users = provide(FakeUserGateway, provides=UserGateway)
+    products = provide(FakeProductGateway, provides=ProductGateway)
+
+    @provide
     def connection(self) -> Iterable[FakeDbConnection]:
         uow = FakeDbConnection()
         yield uow
@@ -39,4 +37,6 @@ class AdaptersProvider(Provider):
 
 
 class InteractorProvider(Provider):
-    product = provide(AddProductsInteractor, scope=Scope.REQUEST)
+    scope = Scope.REQUEST
+
+    product = provide(AddProductsInteractor)

@@ -4,6 +4,7 @@ from inspect import (
     isasyncgenfunction,
     isclass,
     iscoroutinefunction,
+    isfunction,
     isgeneratorfunction,
 )
 from typing import (
@@ -18,6 +19,11 @@ from typing import (
     overload,
 )
 
+from ._adaptix.type_tools.basic_utils import get_all_type_hints
+from ._adaptix.type_tools.generic_resolver import (
+    GenericResolver,
+    MembersStorage,
+)
 from .scope import BaseScope
 
 
@@ -73,6 +79,20 @@ class Factory:
         )
 
 
+def _get_init_members(tp) -> MembersStorage[str, None]:
+    type_hints = get_all_type_hints(tp.__init__)
+    if "__init__" in tp.__dict__:
+        overriden = frozenset(type_hints)
+    else:
+        overriden = {}
+
+    return MembersStorage(
+        meta=None,
+        members=type_hints,
+        overriden=overriden,
+    )
+
+
 def make_factory(
         provides: Any,
         scope: Optional[BaseScope],
@@ -83,14 +103,20 @@ def make_factory(
         hints.pop("return", None)
         possible_dependency = source
         is_to_bind = False
-    else:
+    elif isfunction(source):
         hints = get_type_hints(source, include_extras=True)
         possible_dependency = hints.pop("return", None)
         is_to_bind = True
+    elif get_origin(source):  # concrete generic class
+        res = GenericResolver(_get_init_members)
+        hints = dict(res.get_resolved_members(source).members)
+        hints.pop("return", None)
+        possible_dependency = source
+        is_to_bind = False
+    else:
+        raise TypeError(f"Cannot use {type(source)} as a factory")
 
-    if isclass(source):
-        provider_type = FactoryType.FACTORY
-    elif isasyncgenfunction(source):
+    if isasyncgenfunction(source):
         provider_type = FactoryType.ASYNC_GENERATOR
         if get_origin(possible_dependency) is AsyncIterable:
             possible_dependency = get_args(possible_dependency)[0]

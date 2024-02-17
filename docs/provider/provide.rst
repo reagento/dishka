@@ -8,6 +8,7 @@
 If it is used with class analyzes its ``__init__`` typehints to detect its dependencies. If it is used with method, it checks its parameters typehints and a result type. Last one describes what this method is used to create.
 
 ``scope`` argument is required to define the lifetime of the created object.
+By default the result is cached within scope. You can disable it providing ``cache=False`` argument.
 
 * For simple case add method and mark it with ``@provide`` decorator.
 
@@ -55,3 +56,18 @@ If it is used with class analyzes its ``__init__`` typehints to detect its depen
 
     async with make_async_container(MyProvider()) as container:
          a = await container.get(A)
+
+* Tired of providing `scope==` for each depedency? Set it inside your `Provider` class and all factories with no scope will use it.
+
+.. code-block:: python
+
+    class MyProvider(Provider):
+       scope=Scope.APP
+
+       @provide  # uses provider scope
+       async def get_a(self) -> A:
+          return A()
+
+       @provide(scope=Scope.REQUEST)  # has own scope
+       async def get_b(self) -> B:
+          return B()

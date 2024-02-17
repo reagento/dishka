@@ -45,3 +45,81 @@ def test_parse_factory(source, provider_type, is_to_bound):
     assert factory.scope == Scope.REQUEST
     assert factory.source == source
     assert factory.type == provider_type
+
+
+def test_provider_class_scope():
+    class MyProvider(Provider):
+        scope = Scope.REQUEST
+
+        @provide()
+        def foo(self, x: bool) -> str:
+            return f"{x}"
+
+    provider = MyProvider()
+    assert provider.foo.scope == Scope.REQUEST
+
+
+def test_provider_instance_scope():
+    class MyProvider(Provider):
+        @provide()
+        def foo(self, x: bool) -> str:
+            return f"{x}"
+
+    provider = MyProvider(scope=Scope.REQUEST)
+    assert provider.foo.scope == Scope.REQUEST
+
+
+def test_provider_instance_braces():
+    class MyProvider(Provider):
+        @provide
+        def foo(self, x: bool) -> str:
+            return f"{x}"
+
+    provider = MyProvider(scope=Scope.REQUEST)
+    assert provider.foo.scope == Scope.REQUEST
+
+
+def test_self_hint():
+    class MyProvider(Provider):
+        @provide
+        def foo(self: Provider) -> str:
+            return "hello"
+
+    provider = MyProvider(scope=Scope.REQUEST)
+    assert not provider.foo.dependencies
+
+
+def test_staticmethod():
+    class MyProvider(Provider):
+        @provide
+        @staticmethod
+        def foo() -> str:
+            return "hello"
+
+    provider = MyProvider(scope=Scope.REQUEST)
+    assert not provider.foo.dependencies
+
+
+def test_classmethod():
+    class MyProvider(Provider):
+        @provide
+        @classmethod
+        def foo(cls: type) -> str:
+            return "hello"
+
+    provider = MyProvider(scope=Scope.REQUEST)
+    assert not provider.foo.dependencies
+
+
+class MyCallable:
+    def __call__(self: object, param: int) -> str:
+        return "hello"
+
+
+def test_callable():
+    class MyProvider(Provider):
+        foo = provide(MyCallable())
+
+    provider = MyProvider(scope=Scope.REQUEST)
+    assert provider.foo.provides == str
+    assert provider.foo.dependencies == [int]

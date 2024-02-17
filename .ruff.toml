@@ -1,8 +1,9 @@
 line-length = 79
 src = ["src"]
 include = ["src/**.py", "tests/**.py"]
+exclude = ["src/dishka/_adaptix/**"]
 
-select = [
+lint.select = [
     "E",
     "F",
     "BLE",
@@ -19,8 +20,8 @@ select = [
 ]
 
 
-[isort]
+[lint.isort]
 no-lines-before = ["local-folder"]
 
-[flake8-tidy-imports]
+[lint.flake8-tidy-imports]
 ban-relative-imports = "parents"

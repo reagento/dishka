@@ -1,0 +1,7 @@
+[report]
+exclude_lines = 
+    pragma: not covered
+    @overload
+[run]
+omit =
+    src/dishka/_adaptix/**

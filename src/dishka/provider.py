@@ -3,6 +3,7 @@ from typing import Any, List
 
 from .dependency_source import Alias, Decorator, DependencySource, Factory
 from .exceptions import InvalidGraphError
+from .scope import BaseScope
 
 
 def is_dependency_source(attribute: Any) -> bool:
@@ -22,12 +23,14 @@ class Provider:
     The only intended usage of providers is to pass them when
     creating a container
     """
+    scope: BaseScope | None = None
 
-    def __init__(self):
+    def __init__(self, scope: BaseScope | None = None):
         self.factories: List[Factory] = []
         self.aliases: List[Alias] = []
         self.decorators: List[Decorator] = []
         self._init_dependency_sources()
+        self.scope = self.scope or scope
 
     def _init_dependency_sources(self) -> None:
         processed_types = {}

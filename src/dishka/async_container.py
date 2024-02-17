@@ -1,6 +1,6 @@
 from asyncio import Lock
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Type, TypeVar
+from typing import Any, Callable, List, Optional, Type, TypeVar
 
 from wrapt import ObjectProxy
 
@@ -74,7 +74,9 @@ class AsyncContainer:
             raise ValueError("No child scopes found")
         return AsyncContextWrapper(self._create_child(context, lock_factory))
 
-    async def _get_from_self(self, factory: Factory) -> T:
+    async def _get_from_self(
+            self, factory: Factory, dependency_type: Any,
+    ) -> T:
         sub_dependencies = [
             await self._get_unlocked(dependency)
             for dependency in factory.dependencies
@@ -82,19 +84,22 @@ class AsyncContainer:
         if factory.type is FactoryType.GENERATOR:
             generator = factory.source(*sub_dependencies)
             self._exits.append(Exit(factory.type, generator))
-            return next(generator)
+            solved =  next(generator)
         elif factory.type is FactoryType.ASYNC_GENERATOR:
             generator = factory.source(*sub_dependencies)
             self._exits.append(Exit(factory.type, generator))
-            return await anext(generator)
+            solved =  await anext(generator)
         elif factory.type is FactoryType.ASYNC_FACTORY:
-            return await factory.source(*sub_dependencies)
+            solved =  await factory.source(*sub_dependencies)
         elif factory.type is FactoryType.FACTORY:
-            return factory.source(*sub_dependencies)
+            solved =  factory.source(*sub_dependencies)
         elif factory.type is FactoryType.VALUE:
-            return factory.source
+            solved =  factory.source
         else:
             raise ValueError(f"Unsupported type {factory.type}")
+        if factory.cache:
+            self.context[dependency_type] = solved
+        return solved
 
     async def get(self, dependency_type: Type[T]) -> T:
         lock = self.lock
@@ -106,7 +111,7 @@ class AsyncContainer:
     async def _get_unlocked(self, dependency_type: Type[T]) -> T:
         if dependency_type in self.context:
             return self.context[dependency_type]
-        provider = self.registry.get_provider(dependency_type)
+        provider = self.registry.get_factory(dependency_type)
         if not provider:
             if not self.parent_container:
                 raise ValueError(f"No provider found for {dependency_type!r}")
@@ -117,7 +122,7 @@ class AsyncContainer:
         else:
             self._path.append(dependency_type)
             try:
-                solved = await self._get_from_self(provider)
+                solved = await self._get_from_self(provider, dependency_type)
             finally:
                 self._path.pop()
 

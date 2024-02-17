@@ -72,7 +72,7 @@ Some of them can live while you application is running, others are destroyed and
 
   `APP` -> `REQUEST` -> `ACTION` -> `STEP`.
 
-You decide when to enter and exit them, but it is done one by one. You set a scope for your dependency when you configure how to create it. If the same dependency is requested multiple time within one scope without leaving it, then the same instance is returned.
+You decide when to enter and exit them, but it is done one by one. You set a scope for your dependency when you configure how to create it. If the same dependency is requested multiple time within one scope without leaving it, then by default the same instance is returned.
 
 If you are developing web application, you would enter `APP` scope on startup, and you would `REQUEST` scope in each HTTP-request.
 
@@ -161,4 +161,15 @@ with make_container(MyProvider(), context={App: app}) as container:
 * Having to many dependencies? Or maybe want to replace only part of them in tests keeping others? Create multiple `Provider` classes
 ```python
 with make_container(MyProvider(), OtherProvider()) as container:
+```
+
+* Tired of providing `scope==` for each depedency? Set it inside your `Provider` class and all dependencies with no scope will use it.
+```python
+
+class MyProvider(Provider):
+   scope=Scope.APP
+
+   @provide
+   async def get_a(self) -> A:
+      return A()
 ```

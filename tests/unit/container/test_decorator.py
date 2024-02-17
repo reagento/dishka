@@ -33,6 +33,36 @@ def test_simple():
         assert isinstance(a.a, A)
 
 
+def test_decorator():
+    class MyProvider(Provider):
+        a = provide(A, scope=Scope.APP)
+
+    class DProvider(Provider):
+        @decorate()
+        def foo(self, a: A) -> A:
+            return ADecorator(a)
+
+    with make_container(MyProvider(), DProvider()) as container:
+        a = container.get(A)
+        assert isinstance(a, ADecorator)
+        assert isinstance(a.a, A)
+
+
+def test_decorator_with_provides():
+    class MyProvider(Provider):
+        a = provide(A, scope=Scope.APP)
+
+    class DProvider(Provider):
+        @decorate(provides=A)
+        def foo(self, a: A):
+            return ADecorator(a)
+
+    with make_container(MyProvider(), DProvider()) as container:
+        a = container.get(A)
+        assert isinstance(a, ADecorator)
+        assert isinstance(a.a, A)
+
+
 def test_alias():
     class MyProvider(Provider):
         a2 = provide(A2, scope=Scope.APP)

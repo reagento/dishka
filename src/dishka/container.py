@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from threading import Lock
-from typing import Callable, List, Optional, Type, TypeVar
+from typing import Any, Callable, List, Optional, Type, TypeVar
 
 from wrapt import ObjectProxy
 
@@ -75,7 +75,9 @@ class Container:
             raise ValueError("No child scopes found")
         return ContextWrapper(self._create_child(context, lock_factory))
 
-    def _get_from_self(self, factory: Factory) -> T:
+    def _get_from_self(
+            self, factory: Factory, dependency_type: Any,
+    ) -> T:
         sub_dependencies = [
             self._get_unlocked(dependency)
             for dependency in factory.dependencies
@@ -83,13 +85,16 @@ class Container:
         if factory.type is FactoryType.GENERATOR:
             generator = factory.source(*sub_dependencies)
             self._exits.append(Exit(factory.type, generator))
-            return next(generator)
+            solved = next(generator)
         elif factory.type is FactoryType.FACTORY:
-            return factory.source(*sub_dependencies)
+            solved = factory.source(*sub_dependencies)
         elif factory.type is FactoryType.VALUE:
-            return factory.source
+            solved = factory.source
         else:
             raise ValueError(f"Unsupported type {factory.type}")
+        if factory.cache:
+            self.context[dependency_type] = solved
+        return solved
 
     def get(self, dependency_type: Type[T]) -> T:
         lock = self.lock
@@ -101,7 +106,7 @@ class Container:
     def _get_unlocked(self, dependency_type: Type[T]) -> T:
         if dependency_type in self.context:
             return self.context[dependency_type]
-        provider = self.registry.get_provider(dependency_type)
+        provider = self.registry.get_factory(dependency_type)
         if not provider:
             if not self.parent_container:
                 raise ValueError(f"No provider found for {dependency_type!r}")
@@ -112,7 +117,7 @@ class Container:
         else:
             self._path.append(dependency_type)
             try:
-                solved = self._get_from_self(provider)
+                solved = self._get_from_self(provider, dependency_type)
             finally:
                 self._path.pop()
 

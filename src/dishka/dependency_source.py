@@ -1,10 +1,19 @@
-from collections.abc import AsyncIterable, Iterable
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    Generator,
+    Iterable,
+    Iterator,
+)
 from enum import Enum
 from inspect import (
     isasyncgenfunction,
     isclass,
     iscoroutinefunction,
+    isfunction,
     isgeneratorfunction,
+    signature,
 )
 from typing import (
     Any,
@@ -18,6 +27,15 @@ from typing import (
     overload,
 )
 
+from ._adaptix.type_tools.basic_utils import (
+    get_all_type_hints,
+    get_type_vars,
+    is_bare_generic,
+)
+from ._adaptix.type_tools.generic_resolver import (
+    GenericResolver,
+    MembersStorage,
+)
 from .scope import BaseScope
 
 
@@ -36,7 +54,7 @@ def _identity(x: Any) -> Any:
 class Factory:
     __slots__ = (
         "dependencies", "source", "provides", "scope", "type",
-        "is_to_bound",
+        "is_to_bound", "cache",
     )
 
     def __init__(
@@ -44,9 +62,10 @@ class Factory:
             dependencies: Sequence[Any],
             source: Any,
             provides: Type,
-            scope: Optional[BaseScope],
+            scope: BaseScope | None,
             type: FactoryType,
             is_to_bound: bool,
+            cache: bool,
     ):
         self.dependencies = dependencies
         self.source = source
@@ -54,8 +73,10 @@ class Factory:
         self.scope = scope
         self.type = type
         self.is_to_bound = is_to_bound
+        self.cache = cache
 
     def __get__(self, instance, owner):
+        scope = self.scope or instance.scope
         if instance is None:
             return self
         if self.is_to_bound:
@@ -66,80 +87,162 @@ class Factory:
             dependencies=self.dependencies,
             source=source,
             provides=self.provides,
-            scope=self.scope,
+            scope=scope,
             type=self.type,
             is_to_bound=False,
+            cache=self.cache,
         )
+
+
+def _get_init_members(tp) -> MembersStorage[str, None]:
+    type_hints = get_all_type_hints(tp.__init__)
+    if "__init__" in tp.__dict__:
+        overriden = frozenset(type_hints)
+    else:
+        overriden = {}
+
+    return MembersStorage(
+        meta=None,
+        members=type_hints,
+        overriden=overriden,
+    )
+
+
+def _guess_factory_type(source):
+    if isasyncgenfunction(source):
+        return FactoryType.ASYNC_GENERATOR
+    elif isgeneratorfunction(source):
+        return FactoryType.GENERATOR
+    elif iscoroutinefunction(source):
+        return FactoryType.ASYNC_FACTORY
+    else:
+        return FactoryType.FACTORY
+
+
+def _clean_result_hint(factory_type: FactoryType, possible_dependency: Any):
+    if factory_type == FactoryType.ASYNC_GENERATOR:
+        origin = get_origin(possible_dependency)
+        if origin is AsyncIterable:
+            return get_args(possible_dependency)[0]
+        elif origin is AsyncIterator:
+            return get_args(possible_dependency)[0]
+        elif origin is AsyncGenerator:
+            return get_args(possible_dependency)[0]
+        else:
+            raise TypeError(
+                f"Unsupported return type {possible_dependency} {origin} "
+                f"for async generator")
+    elif factory_type == FactoryType.GENERATOR:
+        origin = get_origin(possible_dependency)
+        if origin is Iterable:
+            return get_args(possible_dependency)[0]
+        elif origin is Iterator:
+            return get_args(possible_dependency)[0]
+        elif origin is Generator:
+            return get_args(possible_dependency)[1]
+        else:
+            raise TypeError(
+                f"Unsupported return type {possible_dependency} {origin}"
+                f" for generator")
+    return possible_dependency
 
 
 def make_factory(
         provides: Any,
         scope: Optional[BaseScope],
         source: Callable,
+        cache: bool,
 ) -> Factory:
-    if isclass(source):
-        hints = get_type_hints(source.__init__, include_extras=True)
+    if is_bare_generic(source):
+        source = source[get_type_vars(source)]
+
+    if isclass(source) or get_origin(source):
+        # we need to fix concrete generics and normal classes as well
+        # as classes can be children of concrete generics
+        res = GenericResolver(_get_init_members)
+        hints = dict(res.get_resolved_members(source).members)
         hints.pop("return", None)
-        possible_dependency = source
+        dependencies = list(hints.values())
+        if not provides:
+            provides = source
         is_to_bind = False
-    else:
+        factory_type = FactoryType.FACTORY
+    elif isfunction(source) or isinstance(source, classmethod):
+        if isinstance(source, classmethod):
+            params = signature(source.__wrapped__).parameters
+            factory_type = _guess_factory_type(source.__wrapped__)
+        else:
+            params = signature(source).parameters
+            factory_type = _guess_factory_type(source)
+
+        self = next(iter(params.values()))
+        hints = get_type_hints(source, include_extras=True)
+        hints.pop(self.name, None)
+        possible_dependency = hints.pop("return", None)
+        dependencies = list(hints.values())
+        if not provides:
+            provides = _clean_result_hint(factory_type, possible_dependency)
+        is_to_bind = True
+    elif isinstance(source, staticmethod):
+        factory_type = _guess_factory_type(source.__wrapped__)
         hints = get_type_hints(source, include_extras=True)
         possible_dependency = hints.pop("return", None)
-        is_to_bind = True
-
-    if isclass(source):
-        provider_type = FactoryType.FACTORY
-    elif isasyncgenfunction(source):
-        provider_type = FactoryType.ASYNC_GENERATOR
-        if get_origin(possible_dependency) is AsyncIterable:
-            possible_dependency = get_args(possible_dependency)[0]
-        else:  # async generator
-            possible_dependency = get_args(possible_dependency)[0]
-    elif isgeneratorfunction(source):
-        provider_type = FactoryType.GENERATOR
-        if get_origin(possible_dependency) is Iterable:
-            possible_dependency = get_args(possible_dependency)[0]
-        else:  # generator
-            possible_dependency = get_args(possible_dependency)[1]
-    elif iscoroutinefunction(source):
-        provider_type = FactoryType.ASYNC_FACTORY
+        dependencies = list(hints.values())
+        if not provides:
+            provides = _clean_result_hint(factory_type, possible_dependency)
+        is_to_bind = False
+    elif callable(source):
+        factory = make_factory(
+            provides=provides,
+            source=type(source).__call__,
+            cache=cache,
+            scope=scope,
+        )
+        factory_type = factory.type
+        dependencies = factory.dependencies
+        provides = factory.provides
+        is_to_bind = False
     else:
-        provider_type = FactoryType.FACTORY
+        raise TypeError(f"Cannot use {type(source)} as a factory")
 
     return Factory(
-        dependencies=list(hints.values()),
-        type=provider_type,
+        dependencies=dependencies,
+        type=factory_type,
         source=source,
         scope=scope,
-        provides=provides or possible_dependency,
+        provides=provides,
         is_to_bound=is_to_bind,
+        cache=cache,
     )
 
 
 @overload
 def provide(
         *,
-        scope: BaseScope,
+        scope: BaseScope = None,
         provides: Any = None,
+        cache: bool = True,
 ) -> Callable[[Callable], Factory]:
     ...
 
 
 @overload
 def provide(
-        source: Callable | Type,
+        source: Callable | classmethod | staticmethod | Type | None,
         *,
         scope: BaseScope,
         provides: Any = None,
+        cache: bool = True,
 ) -> Factory:
     ...
 
 
 def provide(
-        source: Callable | Type | None = None,
+        source: Callable | classmethod | staticmethod | Type | None = None,
         *,
-        scope: BaseScope,
+        scope: BaseScope | None = None,
         provides: Any = None,
+        cache: bool = True,
 ) -> Factory | Callable[[Callable], Factory]:
     """
     Mark a method or class as providing some dependency.
@@ -159,22 +262,24 @@ def provide(
     :param scope: Scope of the dependency to limit its lifetime
     :param provides: Dependency type which is provided by this factory
     :return: instance of Factory or a decorator returning it
+    :param cache: save created object to scope cache or not
     """
     if source is not None:
-        return make_factory(provides, scope, source)
+        return make_factory(provides, scope, source, cache)
 
     def scoped(func):
-        return make_factory(provides, scope, func)
+        return make_factory(provides, scope, func, cache)
 
     return scoped
 
 
 class Alias:
-    __slots__ = ("source", "provides")
+    __slots__ = ("source", "provides", "cache")
 
-    def __init__(self, source, provides):
+    def __init__(self, source, provides, cache: bool):
         self.source = source
         self.provides = provides
+        self.cache = cache
 
     def as_factory(self, scope: BaseScope) -> Factory:
         return Factory(
@@ -184,6 +289,7 @@ class Alias:
             is_to_bound=False,
             dependencies=[self.source],
             type=FactoryType.FACTORY,
+            cache=self.cache,
         )
 
     def __get__(self, instance, owner):
@@ -194,10 +300,12 @@ def alias(
         *,
         source: Type,
         provides: Type,
+        cache: bool = True,
 ) -> Alias:
     return Alias(
         source=source,
         provides=provides,
+        cache=cache,
     )
 
 
@@ -209,7 +317,7 @@ class Decorator:
         self.provides = factory.provides
 
     def as_factory(
-            self, scope: BaseScope, new_dependency: Any,
+            self, scope: BaseScope, new_dependency: Any, cache: bool,
     ) -> Factory:
         return Factory(
             scope=scope,
@@ -221,6 +329,7 @@ class Decorator:
                 for dep in self.factory.dependencies
             ],
             type=self.factory.type,
+            cache=cache,
         )
 
     def __get__(self, instance, owner):
@@ -249,10 +358,10 @@ def decorate(
         provides: Any = None,
 ) -> Decorator | Callable[[Callable], Decorator]:
     if source is not None:
-        return Decorator(make_factory(provides, None, source))
+        return Decorator(make_factory(provides, None, source, False))
 
     def scoped(func):
-        return Decorator(make_factory(provides, None, func))
+        return Decorator(make_factory(provides, None, func, False))
 
     return scoped
 

@@ -6,6 +6,7 @@ from inspect import (
     iscoroutinefunction,
     isfunction,
     isgeneratorfunction,
+    signature,
 )
 from typing import (
     Any,
@@ -117,7 +118,10 @@ def make_factory(
         possible_dependency = source
         is_to_bind = False
     elif isfunction(source):
+        params = signature(source).parameters
+        self = next(iter(params.values()))
         hints = get_type_hints(source, include_extras=True)
+        hints.pop(self.name, None)
         possible_dependency = hints.pop("return", None)
         is_to_bind = True
     else:

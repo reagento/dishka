@@ -19,7 +19,11 @@ from typing import (
     overload,
 )
 
-from ._adaptix.type_tools.basic_utils import get_all_type_hints
+from ._adaptix.type_tools.basic_utils import (
+    get_all_type_hints,
+    get_type_vars,
+    is_bare_generic,
+)
 from ._adaptix.type_tools.generic_resolver import (
     GenericResolver,
     MembersStorage,
@@ -98,6 +102,8 @@ def make_factory(
         scope: Optional[BaseScope],
         source: Callable,
 ) -> Factory:
+    if is_bare_generic(source):
+        source = source[get_type_vars(source)]
     if isclass(source) or get_origin(source):
         # we need to fix concrete generics and normal classes as well
         # as classes can be children of concrete generics

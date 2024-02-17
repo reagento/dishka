@@ -65,3 +65,37 @@ def test_concrete_child():
         a = container.get(C)
         assert isinstance(a, C)
         assert a.x == 42
+
+
+def test_generic_class():
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        @provide
+        def get_int(self) -> int:
+            return 42
+
+        a = provide(A)
+
+    with make_container(MyProvider()) as container:
+        a = container.get(A[int])
+        assert isinstance(a, A)
+        assert a.x == 42
+
+
+def test_generic_func():
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        @provide
+        def get_int(self) -> int:
+            return 42
+
+        @provide
+        def a(self, param: T) -> A[T]:
+            return A(param)
+
+    with make_container(MyProvider()) as container:
+        a = container.get(A[int])
+        assert isinstance(a, A)
+        assert a.x == 42

@@ -1,6 +1,7 @@
 from collections import defaultdict
-from typing import Any, List, NewType, Type
+from typing import Any, List, NewType, Type, TypeVar, get_args, get_origin
 
+from ._adaptix.type_tools.basic_utils import get_type_vars, is_generic
 from .dependency_source import Factory
 from .exceptions import InvalidGraphError
 from .provider import Provider
@@ -15,10 +16,51 @@ class Registry:
         self.scope = scope
 
     def add_provider(self, factory: Factory):
-        self._factories[factory.provides] = factory
+        if is_generic(factory.provides):
+            self._factories[get_origin(factory.provides)] = factory
+        else:
+            self._factories[factory.provides] = factory
 
-    def get_provider(self, dependency: Any) -> Factory:
-        return self._factories.get(dependency)
+    def get_provider(self, dependency: Any) -> Factory | None:
+        try:
+            return self._factories[dependency]
+        except KeyError:
+            origin = get_origin(dependency)
+            if not origin:
+                return None
+            factory = self._factories.get(origin)
+            if not factory:
+                return None
+
+            factory = self._specialize_generic(factory, dependency)
+            self._factories[dependency] = factory
+            return factory
+
+    def _specialize_generic(
+            self, factory: Factory, dependency: Any,
+    ) -> Factory:
+        params_replacement = dict(zip(
+            get_args(factory.provides),
+            get_args(dependency),
+        ))
+        new_dependencies = []
+        for source_dependency in factory.dependencies:
+            if isinstance(source_dependency, TypeVar):
+                source_dependency = params_replacement[source_dependency]
+            elif get_origin(source_dependency):
+                source_dependency = source_dependency[tuple(
+                    params_replacement[param]
+                    for param in get_type_vars(source_dependency)
+                )]
+            new_dependencies.append(source_dependency)
+        return Factory(
+            source=factory.source,
+            provides=dependency,
+            dependencies=new_dependencies,
+            is_to_bound=factory.is_to_bound,
+            type=factory.type,
+            scope=factory.scope,
+        )
 
 
 def make_registries(

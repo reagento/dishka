@@ -87,3 +87,39 @@ def test_self_hint():
 
     provider = MyProvider(scope=Scope.REQUEST)
     assert not provider.foo.dependencies
+
+
+def test_staticmethod():
+    class MyProvider(Provider):
+        @provide
+        @staticmethod
+        def foo() -> str:
+            return "hello"
+
+    provider = MyProvider(scope=Scope.REQUEST)
+    assert not provider.foo.dependencies
+
+
+def test_classmethod():
+    class MyProvider(Provider):
+        @provide
+        @classmethod
+        def foo(cls: type) -> str:
+            return "hello"
+
+    provider = MyProvider(scope=Scope.REQUEST)
+    assert not provider.foo.dependencies
+
+
+class MyCallable:
+    def __call__(self: object, param: int) -> str:
+        return "hello"
+
+
+def test_callable():
+    class MyProvider(Provider):
+        foo = provide(MyCallable())
+
+    provider = MyProvider(scope=Scope.REQUEST)
+    assert provider.foo.provides == str
+    assert provider.foo.dependencies == [int]

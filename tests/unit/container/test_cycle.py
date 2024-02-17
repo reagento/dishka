@@ -8,6 +8,9 @@ class A:
     def foo(self):
         return self.b.foo()
 
+    def bar(self):
+        return "A"
+
 
 class B:
     def __init__(self, a: "A"):
@@ -15,6 +18,9 @@ class B:
 
     def foo(self):
         return "B"
+
+    def bar(self):
+        return self.a.bar()
 
 
 class MyProvider(Provider):
@@ -26,9 +32,11 @@ def test_cycle():
     with make_container(MyProvider()) as container:
         a = container.get(A)
         assert a.foo() == "B"
+        assert a.bar() == "A"
         assert isinstance(a.b, B)
         b = container.get(B)
         assert isinstance(b.a, A)
         assert b.foo() == "B"
+        assert b.bar() == "A"
         assert b.a == a
         assert b == a.b

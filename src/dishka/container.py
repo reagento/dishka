@@ -93,6 +93,8 @@ class Container:
         else:
             raise ValueError(f"Unsupported type {factory.type}")
         if factory.cache:
+            if dependency_type in self.context:
+                self.context[dependency_type].__init__(solved)
             self.context[dependency_type] = solved
         return solved
 
@@ -114,16 +116,13 @@ class Container:
 
         if dependency_type in self._path:
             solved = ObjectProxy(None)
+            self.context[dependency_type] = solved
         else:
             self._path.append(dependency_type)
             try:
                 solved = self._get_from_self(provider, dependency_type)
             finally:
                 self._path.pop()
-
-        if dependency_type in self.context:
-            self.context[dependency_type].__init__(solved)
-        self.context[dependency_type] = solved
         return solved
 
     def close(self) -> None:

@@ -1,6 +1,7 @@
 line-length = 79
 src = ["src"]
 include = ["src/**.py", "tests/**.py"]
+exclude = ["src/dishka/_adaptix/**"]
 
 lint.select = [
     "E",

@@ -50,4 +50,5 @@ value_factory = Factory(
     type=FactoryType.VALUE,
     scope=Scope.APP,
     is_to_bound=False,
+    cache=False,
 )

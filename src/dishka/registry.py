@@ -15,13 +15,13 @@ class Registry:
         self._factories: dict[Type, Factory] = {}
         self.scope = scope
 
-    def add_provider(self, factory: Factory):
+    def add_factory(self, factory: Factory):
         if is_generic(factory.provides):
             self._factories[get_origin(factory.provides)] = factory
         else:
             self._factories[factory.provides] = factory
 
-    def get_provider(self, dependency: Any) -> Factory | None:
+    def get_factory(self, dependency: Any) -> Factory | None:
         try:
             return self._factories[dependency]
         except KeyError:
@@ -60,6 +60,7 @@ class Registry:
             is_to_bound=factory.is_to_bound,
             type=factory.type,
             scope=factory.scope,
+            cache=factory.cache,
         )
 
 
@@ -80,7 +81,7 @@ def make_registries(
     for provider in providers:
         for source in provider.factories:
             scope = source.scope
-            registries[scope].add_provider(source)
+            registries[scope].add_factory(source)
         for source in provider.aliases:
             alias_source = source.source
             visited_types = [alias_source]
@@ -94,7 +95,7 @@ def make_registries(
             scope = dep_scopes[alias_source]
             dep_scopes[source.provides] = scope
             source = source.as_factory(scope)
-            registries[scope].add_provider(source)
+            registries[scope].add_factory(source)
         for source in provider.decorators:
             provides = source.provides
             scope = dep_scopes[provides]
@@ -104,12 +105,12 @@ def make_registries(
                 source.provides,
             )
             decorator_depth[provides] += 1
-            old_provider = registry.get_provider(provides)
-            old_provider.provides = undecorated_type
-            registry.add_provider(old_provider)
+            old_factory = registry.get_factory(provides)
+            old_factory.provides = undecorated_type
+            registry.add_factory(old_factory)
             source = source.as_factory(
-                scope, undecorated_type,
+                scope, undecorated_type, old_factory.cache,
             )
-            registries[scope].add_provider(source)
+            registries[scope].add_factory(source)
 
     return list(registries.values())

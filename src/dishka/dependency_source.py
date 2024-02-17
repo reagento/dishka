@@ -98,8 +98,11 @@ def make_factory(
         scope: Optional[BaseScope],
         source: Callable,
 ) -> Factory:
-    if isclass(source):
-        hints = get_type_hints(source.__init__, include_extras=True)
+    if isclass(source) or get_origin(source):
+        # we need to fix concrete generics and normal classes as well
+        # as classes can be children of concrete generics
+        res = GenericResolver(_get_init_members)
+        hints = dict(res.get_resolved_members(source).members)
         hints.pop("return", None)
         possible_dependency = source
         is_to_bind = False
@@ -107,12 +110,6 @@ def make_factory(
         hints = get_type_hints(source, include_extras=True)
         possible_dependency = hints.pop("return", None)
         is_to_bind = True
-    elif get_origin(source):  # concrete generic class
-        res = GenericResolver(_get_init_members)
-        hints = dict(res.get_resolved_members(source).members)
-        hints.pop("return", None)
-        possible_dependency = source
-        is_to_bind = False
     else:
         raise TypeError(f"Cannot use {type(source)} as a factory")
 

@@ -77,3 +77,13 @@ def test_provider_instance_braces():
 
     provider = MyProvider(scope=Scope.REQUEST)
     assert provider.foo.scope == Scope.REQUEST
+
+
+def test_self_hint():
+    class MyProvider(Provider):
+        @provide
+        def foo(self: Provider) -> str:
+            return "hello"
+
+    provider = MyProvider(scope=Scope.REQUEST)
+    assert not provider.foo.dependencies

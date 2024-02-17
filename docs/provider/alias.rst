@@ -13,3 +13,5 @@
             return A()
 
         a_proto = alias(source=A, provides=AProtocol)
+
+Additionally, alias has own setting for caching: it caches by default regardless if source is cached. You can disable it providing ``cache=False`` argument.

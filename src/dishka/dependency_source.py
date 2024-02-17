@@ -46,7 +46,7 @@ def _identity(x: Any) -> Any:
 class Factory:
     __slots__ = (
         "dependencies", "source", "provides", "scope", "type",
-        "is_to_bound",
+        "is_to_bound", "cache",
     )
 
     def __init__(
@@ -57,6 +57,7 @@ class Factory:
             scope: BaseScope | None,
             type: FactoryType,
             is_to_bound: bool,
+            cache: bool,
     ):
         self.dependencies = dependencies
         self.source = source
@@ -64,6 +65,7 @@ class Factory:
         self.scope = scope
         self.type = type
         self.is_to_bound = is_to_bound
+        self.cache = cache
 
     def __get__(self, instance, owner):
         scope = self.scope or instance.scope
@@ -80,6 +82,7 @@ class Factory:
             scope=scope,
             type=self.type,
             is_to_bound=False,
+            cache=self.cache,
         )
 
 
@@ -101,6 +104,7 @@ def make_factory(
         provides: Any,
         scope: Optional[BaseScope],
         source: Callable,
+        cache: bool,
 ) -> Factory:
     if is_bare_generic(source):
         source = source[get_type_vars(source)]
@@ -143,6 +147,7 @@ def make_factory(
         scope=scope,
         provides=provides or possible_dependency,
         is_to_bound=is_to_bind,
+        cache=cache,
     )
 
 
@@ -151,6 +156,7 @@ def provide(
         *,
         scope: BaseScope = None,
         provides: Any = None,
+        cache: bool = True,
 ) -> Callable[[Callable], Factory]:
     ...
 
@@ -161,6 +167,7 @@ def provide(
         *,
         scope: BaseScope,
         provides: Any = None,
+        cache: bool = True,
 ) -> Factory:
     ...
 
@@ -170,6 +177,7 @@ def provide(
         *,
         scope: BaseScope | None = None,
         provides: Any = None,
+        cache: bool = True,
 ) -> Factory | Callable[[Callable], Factory]:
     """
     Mark a method or class as providing some dependency.
@@ -189,22 +197,24 @@ def provide(
     :param scope: Scope of the dependency to limit its lifetime
     :param provides: Dependency type which is provided by this factory
     :return: instance of Factory or a decorator returning it
+    :param cache: save created object to scope cache or not
     """
     if source is not None:
-        return make_factory(provides, scope, source)
+        return make_factory(provides, scope, source, cache)
 
     def scoped(func):
-        return make_factory(provides, scope, func)
+        return make_factory(provides, scope, func, cache)
 
     return scoped
 
 
 class Alias:
-    __slots__ = ("source", "provides")
+    __slots__ = ("source", "provides", "cache")
 
-    def __init__(self, source, provides):
+    def __init__(self, source, provides, cache: bool):
         self.source = source
         self.provides = provides
+        self.cache = cache
 
     def as_factory(self, scope: BaseScope) -> Factory:
         return Factory(
@@ -214,6 +224,7 @@ class Alias:
             is_to_bound=False,
             dependencies=[self.source],
             type=FactoryType.FACTORY,
+            cache=self.cache,
         )
 
     def __get__(self, instance, owner):
@@ -224,10 +235,12 @@ def alias(
         *,
         source: Type,
         provides: Type,
+        cache: bool=True,
 ) -> Alias:
     return Alias(
         source=source,
         provides=provides,
+        cache=cache,
     )
 
 
@@ -239,7 +252,7 @@ class Decorator:
         self.provides = factory.provides
 
     def as_factory(
-            self, scope: BaseScope, new_dependency: Any,
+            self, scope: BaseScope, new_dependency: Any, cache: bool,
     ) -> Factory:
         return Factory(
             scope=scope,
@@ -251,6 +264,7 @@ class Decorator:
                 for dep in self.factory.dependencies
             ],
             type=self.factory.type,
+            cache=cache,
         )
 
     def __get__(self, instance, owner):
@@ -279,10 +293,10 @@ def decorate(
         provides: Any = None,
 ) -> Decorator | Callable[[Callable], Decorator]:
     if source is not None:
-        return Decorator(make_factory(provides, None, source))
+        return Decorator(make_factory(provides, None, source, False))
 
     def scoped(func):
-        return Decorator(make_factory(provides, None, func))
+        return Decorator(make_factory(provides, None, func, False))
 
     return scoped
 

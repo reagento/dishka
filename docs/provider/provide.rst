@@ -8,6 +8,7 @@
 If it is used with class analyzes its ``__init__`` typehints to detect its dependencies. If it is used with method, it checks its parameters typehints and a result type. Last one describes what this method is used to create.
 
 ``scope`` argument is required to define the lifetime of the created object.
+By default the result is cached within scope. You can disable it providing ``cache=False`` argument.
 
 * For simple case add method and mark it with ``@provide`` decorator.
 

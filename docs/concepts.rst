@@ -35,7 +35,7 @@ Standard scopes are:
 
 You decide when to enter and exit them, but it is done one by one. If you entered ``APP`` scope then the next step deeper will enter ``REQUEST`` scope.
 
-In dishka dependencies are lazy - they are created when you first request them. If the same dependency is requested multiple time within one scope then the same instance is returned. A created dependency is kept until you exit the scope. And in that moment it is not just dropped away, but corresponding finalization steps are done. You can enter same scope multiple times concurrently so to have multiple instances of objects you can work simultaneously.
+In dishka dependencies are lazy - they are created when you first request them. If the same dependency is requested multiple time within one scope then the same instance is returned (you can disable it for each dependency separately). A created dependency is kept until you exit the scope. And in that moment it is not just dropped away, but corresponding finalization steps are done. You can enter same scope multiple times concurrently so to have multiple instances of objects you can work simultaneously.
 
 Each object can depend on other objects from the same or previous scopes. So, if you have ``Config`` with scope of *APP* and ``Connection`` with scope of *REQUEST* you cannot have an *APP*-scoped object with requires a connection, but you can have *REQUEST*-scoped object which requires a ``Connection`` or a ``Config`` (or even both).
 

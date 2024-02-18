@@ -24,7 +24,6 @@ class GatewayProvider(Provider):
 
 
 GatewayDepends = Annotated[Gateway, Depends()]
-app = Application()
 router = RouteTableDef()
 
 
@@ -34,7 +33,7 @@ async def endpoint(request: str, gateway: GatewayDepends) -> Response:
     data = await gateway.get()
     return Response(text=f'gateway data: {data}')
 
-
+app = Application()
 app.add_routes(router)
-setup_dishka(GatewayProvider(), app=app)
+setup_dishka(providers=[GatewayProvider()], app=app)
 run_app(app)

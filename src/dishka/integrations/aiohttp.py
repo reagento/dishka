@@ -1,4 +1,8 @@
-from typing import Callable, Final
+__all__ = [
+    "Depends", "inject", "setup_dishka",
+]
+
+from typing import Callable, Final, Sequence
 
 from aiohttp import web
 from aiohttp.typedefs import Handler
@@ -7,17 +11,17 @@ from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 
 from dishka import Provider, make_async_container
-from dishka.async_container import AsyncContextWrapper
-from dishka.integrations.base import wrap_injection
+from dishka.async_container import AsyncContainer, AsyncContextWrapper
+from dishka.integrations.base import Depends, wrap_injection
 
-CONTAINER_KEY: Final = 'dishka_container'
+CONTAINER_KEY: Final = web.AppKey('dishka_container', AsyncContainer)
 
 
 def inject(func: Callable) -> Callable:
     return wrap_injection(
         func=func,
         remove_depends=True,
-        container_getter=lambda p, _: p[0].app[CONTAINER_KEY],
+        container_getter=lambda p, _: p[0][CONTAINER_KEY],
         is_async=True,
     )
 
@@ -26,16 +30,16 @@ def inject(func: Callable) -> Callable:
 async def container_middleware(
     request: Request, handler: Handler,
 ) -> StreamResponse:
-    container = request.app['__container__']
-    async with container() as container_:
-        request.app[CONTAINER_KEY] = container_
+    container = request.app[CONTAINER_KEY]
+    async with container(context={Request: request}) as request_container:
+        request[CONTAINER_KEY] = request_container
         res = await handler(request)
     return res
 
 
 def startup(wrapper_container: AsyncContextWrapper):
     async def wrapper(app: Application) -> None:
-        app['__container__'] = await wrapper_container.__aenter__()
+        app[CONTAINER_KEY] = await wrapper_container.__aenter__()
     return wrapper
 
 
@@ -45,8 +49,8 @@ def shutdown(wrapper_container: AsyncContextWrapper):
     return wrapper
 
 
-def setup_dishka(*provides: Provider, app: Application) -> None:
-    wrapper_container = make_async_container(*provides)
+def setup_dishka(providers: Sequence[Provider], app: Application) -> None:
+    wrapper_container = make_async_container(*providers)
     app.middlewares.append(container_middleware)
     app.on_startup.append(startup(wrapper_container))
     app.on_shutdown.append(shutdown(wrapper_container))

@@ -8,6 +8,7 @@ from dishka import (
     provide,
 )
 from ..sample_providers import (
+    A_VALUE,
     ClassA,
     async_func_a,
     async_gen_a,
@@ -15,6 +16,7 @@ from ..sample_providers import (
     sync_func_a,
     sync_gen_a,
     sync_iter_a,
+    value_factory,
 )
 
 
@@ -66,3 +68,20 @@ async def test_async(factory, closed):
         assert a
         assert a.dep == 100
     assert a.closed == closed
+
+
+def test_value():
+    class MyProvider(Provider):
+        factory = value_factory
+
+    with make_container(MyProvider()) as container:
+        assert container.get(ClassA) is A_VALUE
+
+
+@pytest.mark.asyncio
+async def test_value_async():
+    class MyProvider(Provider):
+        factory = value_factory
+
+    async with make_async_container(MyProvider()) as container:
+        assert await container.get(ClassA) is A_VALUE

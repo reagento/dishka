@@ -2,12 +2,15 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 from unittest.mock import Mock
 
-import fastapi
 import pytest
 from asgi_lifespan import LifespanManager
-from fastapi.testclient import TestClient
+from starlette.applications import Starlette
+from starlette.requests import Request
+from starlette.responses import PlainTextResponse
+from starlette.routing import Route
+from starlette.testclient import TestClient
 
-from dishka.integrations.fastapi import (
+from dishka.integrations.starlette import (
     Depends,
     DishkaApp,
     inject,
@@ -23,23 +26,22 @@ from ..common import (
 
 @asynccontextmanager
 async def dishka_app(view, provider) -> TestClient:
-    router = fastapi.APIRouter()
-    router.get("/")(inject(view))
-    app = fastapi.FastAPI()
-    app.include_router(router)
+    app = Starlette(routes=[Route("/", inject(view), methods=["GET"])])
     app = DishkaApp(
         providers=[provider],
         app=app,
     )
     async with LifespanManager(app):
-        yield fastapi.testclient.TestClient(app)
+        yield TestClient(app)
 
 
 async def get_with_app(
+        _: Request,
         a: Annotated[AppDep, Depends()],
         mock: Annotated[Mock, Depends()],
-) -> None:
+) -> PlainTextResponse:
     mock(a)
+    return PlainTextResponse("passed")
 
 
 @pytest.mark.asyncio
@@ -52,10 +54,12 @@ async def test_app_dependency(app_provider: AppProvider):
 
 
 async def get_with_request(
+        _: Request,
         a: Annotated[RequestDep, Depends()],
         mock: Annotated[Mock, Depends()],
-) -> None:
+) -> PlainTextResponse:
     mock(a)
+    return PlainTextResponse("passed")
 
 
 @pytest.mark.asyncio
@@ -74,28 +78,6 @@ async def test_request_dependency2(app_provider: AppProvider):
         app_provider.mock.reset_mock()
         app_provider.request_released.assert_called_once()
         app_provider.request_released.reset_mock()
-        client.get("/")
-        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
-        app_provider.request_released.assert_called_once()
-
-
-@inject
-async def additional(
-        a: Annotated[RequestDep, Depends()],
-        mock: Annotated[Mock, Depends()],
-):
-    mock(a)
-
-
-async def get_with_depends(
-        a: Annotated[None, fastapi.Depends(additional)],
-) -> None:
-    pass
-
-
-@pytest.mark.asyncio
-async def test_fastapi_depends(app_provider: AppProvider):
-    async with dishka_app(get_with_depends, app_provider) as client:
         client.get("/")
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()

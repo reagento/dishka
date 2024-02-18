@@ -37,7 +37,7 @@ To enter the next scope you should call container as a function and enter contex
     with container() as nested_container:
         pass
 
-Container as needed for retrieving objects. To do it you need call ``get(DependencyType)`` (and ``await`` it for async container).
+Container is needed for retrieving objects. To do it you need to call ``get(DependencyType)`` (and ``await`` it for async container).
 All retrieved dependencies are stored inside container of corresponding scope until you exit that scope. So, you if you call ``get`` multiple times you will receive the same instance. The rule is followed for indirect dependencies as well. Multiple dependencies of the same scope have their own cache.
 
 .. code-block:: python
@@ -82,7 +82,7 @@ To prevent such a condition you need to protect any session whose children can b
 Context data
 ====================
 
-Often, you scopes are assigned with some external events: HTTP-requests, message from queue, callbacks from framework. You can use those objects when creating dependencies. The difference from normal factories is that they are not created inside some ``Provder``, but passed to the scope:
+Often, your scopes are assigned with some external events: HTTP-requests, message from queue, callbacks from framework. You can use those objects when creating dependencies. The difference from normal factories is that they are not created inside some ``Provider``, but passed to the scope:
 
 .. code-block:: python
 

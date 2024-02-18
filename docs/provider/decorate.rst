@@ -5,7 +5,7 @@
 
 ``decorate`` is used to modify or wrap an object which is already configured in another ``Provider``.
 
-If you want to apply decorator pattern and do not want to alter existing provide method, then it is a place for ``decorate``. It will construct object using earlie defined provider and then pass it to your decorator before returning from the container.
+If you want to apply decorator pattern and do not want to alter existing provide method, then it is a place for ``decorate``. It will construct object using earlier defined provider and then pass it to your decorator before returning from the container.
 
 .. code-block:: python
 

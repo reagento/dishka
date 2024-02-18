@@ -2,6 +2,8 @@ from asyncio import Lock
 from dataclasses import dataclass
 from typing import Any, Callable, List, Optional, Type, TypeVar
 
+from wrapt import ObjectProxy
+
 from .dependency_source import Factory, FactoryType
 from .exceptions import ExitExceptionGroup
 from .provider import Provider
@@ -21,7 +23,7 @@ class Exit:
 class AsyncContainer:
     __slots__ = (
         "registry", "child_registries", "context", "parent_container",
-        "lock", "_exits",
+        "lock", "_exits", "_path",
     )
 
     def __init__(
@@ -43,6 +45,7 @@ class AsyncContainer:
         else:
             self.lock = None
         self._exits: List[Exit] = []
+        self._path = []
 
     def _create_child(
             self,
@@ -95,6 +98,8 @@ class AsyncContainer:
         else:
             raise ValueError(f"Unsupported type {factory.type}")
         if factory.cache:
+            if dependency_type in self.context:
+                self.context[dependency_type].__init__(solved)
             self.context[dependency_type] = solved
         return solved
 
@@ -113,7 +118,16 @@ class AsyncContainer:
             if not self.parent_container:
                 raise ValueError(f"No provider found for {dependency_type!r}")
             return await self.parent_container.get(dependency_type)
-        solved = await self._get_from_self(provider, dependency_type)
+
+        if dependency_type in self._path:
+            solved = ObjectProxy(None)
+            self.context[dependency_type] = solved
+        else:
+            self._path.append(dependency_type)
+            try:
+                solved = await self._get_from_self(provider, dependency_type)
+            finally:
+                self._path.pop()
         return solved
 
     async def close(self):

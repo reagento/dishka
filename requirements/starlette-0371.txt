@@ -1,2 +1,0 @@
--r asgi.txt
-starlette==0.37.1

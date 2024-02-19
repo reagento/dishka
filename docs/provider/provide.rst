@@ -3,7 +3,9 @@
 @provide
 ******************
 
-``provide`` function is used to declare a factory providing a dependency. It can be used with some class or as a method decorator. In second case it can be sync or async method. Also, it can support finalization of dependency if you make it a generator.
+``provide`` function is used to declare a factory providing a dependency. It can be used with some class or as a method decorator (either sync or async). It supports finalization of dependency if you make it a generator.
+
+Provider object has also a ``.provide`` method with the same logic.
 
 If it is used with class analyzes its ``__init__`` typehints to detect its dependencies. If it is used with method, it checks its parameters typehints and a result type. Last one describes what this method is used to create.
 

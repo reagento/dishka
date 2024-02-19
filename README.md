@@ -24,44 +24,73 @@ See more in [technical requirements](https://dishka.readthedocs.io/en/latest/req
 
 ### Quickstart
 
-1. Create Provider subclass. 
+1. Install dishka
+
+```shell
+pip install dishka
+```
+
+2. Create `Provider` instance.
+
 ```python
 from dishka import Provider
-class MyProvider(Provider):
-   ...
-```
-2. Mark methods which actually create dependencies with `@provide` decorator with carefully arranged scopes. Do not forget to place correct typehints for parameters and result.
-Here we describe how to create instances of A and B classes, where B class requires itself an instance of A.
-```python
-from dishka import provide, Provider, Scope
-class MyProvider(Provider):
-   @provide(scope=Scope.APP)
-   def get_a(self) -> A:
-      return A()
 
-   @provide(scope=Scope.REQUEST)
-   def get_b(self, a: A) -> B:
-      return B(a)
-```
-4. Create Container instance passing providers, and step into `APP` scope. Or deeper if you need.
-```python
-with make_container(MyProvider()) as container:  # enter Scope.APP
-     with container() as request_container:   # enter Scope.REQUEST
-          ...
+provider = Provider()
 ```
 
-5. Call `get` to get dependency and use context manager to get deeper through scopes
+3. Register functions which provide dependencies. Do not forget to place correct typehints for parameters and result. We use `scope=Scope.APP` for dependencies which ar created only once in applicaiton lifetime, and `scope=Scope.REQUEST` for those which should be recreated for each processing request/event/etc.
+
 ```python
-with make_container(MyProvider()) as container:
+def get_a() -> A:
+   return A()
+
+def get_b(a: A) -> B:
+   return B(a)
+
+provider.provide(scope=Scope.APP)
+provider.provide(scope=Scope.REQUEST)
+```
+
+4. Create Container instance passing providers, and step into `APP` scope. You can use `.get` method to access APP-scoped dependencies here:
+
+```python
+from dishka import make_container
+with make_container(provider) as container:  # enter Scope.APP
      a = container.get(A)  # `A` has Scope.APP, so it is accessible here
+
+```
+5. You can enter and exit `REQUEST` scope multiple times after that:
+
+```python
+from dishka import make_container
+with make_container(MyProvider()) as container:
      with container() as request_container:
           b = request_container.get(B)  # `B` has Scope.REQUEST
           a = request_container.get(A)  # `A` is accessible here too
+
+     with container() as request_container:
+          b = request_container.get(B)  # another instance of `B`
+          a = request_container.get(A)  # the same instance of `A`
 ```
 
-6. Add decorators and middleware for your framework (_would be described soon_)
+6. If you are using supported framework add decorators and middleware for it.
 
-See [examples](examples)
+```python
+from dishka.integrations.fastapi import (
+    Depends, inject, DishkaApp,
+)
+
+@router.get("/")
+@inject
+async def index(a: Annotated[A, Depends()]) -> str:
+    ...
+
+...
+app = DishkaApp(
+    providers=[MyProvider()],
+    app=app,
+)
+```
 
 ### Concepts
 
@@ -82,7 +111,7 @@ You can provide your own Scopes class if you are not satisfied with standard flo
 
 
 **Provider** is a collection of functions which really provide some objects. 
-Provider itself is a class with some attributes and methods. Each of them is either result of `provide`, `alias` or `decorate`.
+Provider itself is a class with some attributes and methods. Each of them is either result of `provide`, `alias` or `decorate`. They can be used as provider methods, functions to assign attributes or method decorators.
 
 `@provide` can be used as a decorator for some method. This method will be called when corresponding dependency has to be created. Name of the method is not important: just check that it is different form other `Provider` attributes. Type hints do matter: they show what this method creates and what does it require. All method parameters are treated as other dependencies and created using container.
 

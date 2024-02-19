@@ -47,8 +47,8 @@ def get_a() -> A:
 def get_b(a: A) -> B:
    return B(a)
 
-provider.provide(scope=Scope.APP)
-provider.provide(scope=Scope.REQUEST)
+provider.provide(get_a, scope=Scope.APP)
+provider.provide(get_b, scope=Scope.REQUEST)
 ```
 
 4. Create Container instance passing providers, and step into `APP` scope. You can use `.get` method to access APP-scoped dependencies here:

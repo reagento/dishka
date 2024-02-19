@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from dishka import Provider, Scope, alias, provide
@@ -28,7 +30,6 @@ def test_provider_init():
 
 @pytest.mark.parametrize(
     "source, provider_type, is_to_bound", [
-        (ClassA, FactoryType.FACTORY, False),
         (sync_func_a, FactoryType.FACTORY, True),
         (sync_iter_a, FactoryType.GENERATOR, True),
         (sync_gen_a, FactoryType.GENERATOR, True),
@@ -38,6 +39,21 @@ def test_provider_init():
     ],
 )
 def test_parse_factory(source, provider_type, is_to_bound):
+    factory = provide(source, scope=Scope.REQUEST)
+    assert factory.provides == ClassA
+    assert factory.dependencies == [Any, int]
+    assert factory.is_to_bound == is_to_bound
+    assert factory.scope == Scope.REQUEST
+    assert factory.source == source
+    assert factory.type == provider_type
+
+
+@pytest.mark.parametrize(
+    "source, provider_type, is_to_bound", [
+        (ClassA, FactoryType.FACTORY, False),
+    ],
+)
+def test_parse_factory_cls(source, provider_type, is_to_bound):
     factory = provide(source, scope=Scope.REQUEST)
     assert factory.provides == ClassA
     assert factory.dependencies == [int]
@@ -123,3 +139,22 @@ def test_callable():
     provider = MyProvider(scope=Scope.REQUEST)
     assert provider.foo.provides == str
     assert provider.foo.dependencies == [int]
+
+
+def test_provide_as_method():
+    provider = Provider(scope=Scope.REQUEST)
+    foo = provider.provide(MyCallable())
+    assert foo.provides == str
+    assert foo.dependencies == [int]
+
+    foo = provider.provide(sync_func_a)
+    assert foo.provides == ClassA
+    assert foo.dependencies == [Any, int]
+
+    foo = provider.alias(source=int, provides=str)
+    assert foo.provides == str
+    assert foo.source == int
+
+    foo = provider.decorate(sync_func_a)
+    assert foo.provides == ClassA
+    assert foo.factory.dependencies == [Any, int]

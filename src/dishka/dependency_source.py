@@ -81,10 +81,12 @@ class Factory:
             return self
         if self.is_to_bound:
             source = self.source.__get__(instance, owner)
+            dependencies = self.dependencies[1:]
         else:
             source = self.source
+            dependencies = self.dependencies[:]
         return Factory(
-            dependencies=self.dependencies,
+            dependencies=dependencies,
             source=source,
             provides=self.provides,
             scope=scope,
@@ -175,14 +177,20 @@ def make_factory(
             params = signature(source).parameters
             factory_type = _guess_factory_type(source)
 
-        self = next(iter(params.values()))
         hints = get_type_hints(source, include_extras=True)
-        hints.pop(self.name, None)
+        self = next(iter(params.values()), None)
+        if self:
+            if self.name not in hints:
+                # add self to dependencies, so it can be easily removed
+                # if we will bind factory to provider instance
+                hints = {self.name: Any, **hints}
+            is_to_bind = True
+        else:
+            is_to_bind = False
         possible_dependency = hints.pop("return", None)
         dependencies = list(hints.values())
         if not provides:
             provides = _clean_result_hint(factory_type, possible_dependency)
-        is_to_bind = True
     elif isinstance(source, staticmethod):
         factory_type = _guess_factory_type(source.__wrapped__)
         hints = get_type_hints(source, include_extras=True)
@@ -199,7 +207,8 @@ def make_factory(
             scope=scope,
         )
         factory_type = factory.type
-        dependencies = factory.dependencies
+        if factory.is_to_bound:
+            dependencies = factory.dependencies[1:]  # remove `self`
         provides = factory.provides
         is_to_bind = False
     else:
@@ -230,7 +239,7 @@ def provide(
 def provide(
         source: Callable | classmethod | staticmethod | Type | None,
         *,
-        scope: BaseScope,
+        scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
 ) -> Factory:

@@ -7,7 +7,7 @@
 
 Provider object has also a ``.provide`` method with the same logic.
 
-If it is used with class analyzes its ``__init__`` typehints to detect its dependencies. If it is used with method, it checks its parameters typehints and a result type. Last one describes what this method is used to create.
+If it is used with class, it analyzes its ``__init__`` typehints to detect its dependencies. If it is used with method, it checks its parameters typehints and a result type. Last one describes what this method is used to create.
 
 ``scope`` argument is required to define the lifetime of the created object.
 By default the result is cached within scope. You can disable it providing ``cache=False`` argument.
@@ -32,14 +32,14 @@ By default the result is cached within scope. You can disable it providing ``cac
             yield a
             a.close()
 
-* Do not have any specific logic and just want to create class using its ``__init__``? then add a provider attribute using ``provide`` as function passing that class.
+* Do not have any specific logic and just want to create class using its ``__init__``? Then add a provider attribute using ``provide`` as function passing that class.
 
 .. code-block:: python
 
     class MyProvider(Provider):
         a = provide(A, scope=Scope.REQUEST)
 
-* Want to create a child class instance when parent is requested? add a ``source`` attribute to ``provide`` function with a parent class while passing child as a first parameter
+* Want to create a child class instance when parent is requested? Add a ``source`` attribute to ``provide`` function with a parent class while passing child as a first parameter
 
 .. code-block:: python
 

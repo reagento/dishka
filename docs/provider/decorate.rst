@@ -7,7 +7,8 @@
 
 Provider object has also a ``.decorate`` method with the same logic.
 
-If you want to apply decorator pattern and do not want to alter existing provide method, then it is a place for ``decorate``. It will construct object using earlie defined provider and then pass it to your decorator before returning from the container.
+If you want to apply decorator pattern and do not want to alter existing provide method, then it is a place for ``decorate``. It will construct object using earlier defined provider and then pass it to your decorator before returning from the container.
+
 
 .. code-block:: python
 

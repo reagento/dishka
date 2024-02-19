@@ -21,7 +21,7 @@ Imagine you have a business logic which uses some remote API client
 Here, the ``client`` is a **dependency**. Imagine that you have many methods working with same client and each methods knows how to create the client. Than think about these question?
 
 * How do they get the ``token``? Should the every method read it on its own?
-* What if the ``Client`` constructor will require more than only token? Should we copy-paste new parameters to each method?
+* What if the ``Client`` constructor will require more than one token? Should we copy-paste new parameters to each method?
 * How will we replace ``client`` with mock while testing these methods?
 * How do we know which part of the code can use the ``client``?
 * How can we reuse same client if it becomes stateful? How can we reuse several clients in different cases?
@@ -59,7 +59,7 @@ It works well unless you have many methods and they can call each other. Also we
     service = Service(client)
     service.action()
 
-3. **Attribute injection**. We can store an attribute directly (or using additional methods) on the constructed object. It mostly used in combination with constructor injection to change existing objects, or to break cycle references between objects. E.g.
+3. **Attribute injection**. We can store an attribute directly (or using additional methods) on the constructed object. It is mostly used in combination with constructor injection to change existing objects, or to break cycle references between objects. E.g.
 
 .. code-block:: python
 
@@ -84,10 +84,10 @@ Additionally I need to name anti-patterns, which should be avoided as they canno
 When to inject dependencies?
 ===================================
 
-For simple cases it obvious that you have some classes with their requirements and once you start you app you create all of them and wire together. But real applications are more complicated things. They operated dozens or even hundreds of objects in complex hierarchy, they do concurrent processing.
+For simple cases it is obvious that you have some classes with their requirements and once you start you app you create all of them and wire together. But real applications are more complicated things. They operate dozens or even hundreds of objects in complex hierarchy, they do concurrent processing.
 
 
-It is a good idea to divide the code which uses dependencies and the code which creates them. Usually we want to reduce the knowledge about our dependencies in the code which uses them. But it is not always possible as different objects have different lifespan.
+It is a good idea to separate the code which uses dependencies and the code which creates them. Usually we want to reduce the knowledge about our dependencies in the code which uses them. But it is not always possible as different objects have different lifespan.
 
 For example, *configuration* is usually loaded during application startup, but *database transactions* (and corresponding *database connections*) should be opened separately for each processing HTTP-request. So it is unavoidable to create and finalize dependencies somewhere inside request processing. Other dependencies will have their own **scopes**, but often there are only two of them: the application lifetime and each request.
 
@@ -107,9 +107,9 @@ For web application it can look like this:
         service = Service(client)
         service.action()
 
-The trick is how to manager those dependencies when you have a lot of request handlers without losing ability to test them.
+The trick is how to manage those dependencies when you have a lot of request handlers without losing ability to test them.
 
-* On approach is to create all those dependencies in middleware (it's a special object which is called by your framework on each event). In pseudo-code it will be kind of this:
+* One approach is to create all those dependencies in middleware (it's a special object which is called by your framework on each event). In pseudo-code it will be kind of this:
 
 .. code-block:: python
 
@@ -157,11 +157,11 @@ In both approaches you can control whether the instance is created on each reque
 What is IoC-container?
 =============================
 
-IoC-container is a special object (or a framework providing such an object) which provides required objects following dependency injection rules and managers their lifetime. DI-framework is another name fur such frameworks.
+IoC-container is a special object (or a framework providing such an object) which provides required objects following dependency injection rules and manages their lifetime. DI-framework is another name fur such frameworks.
 
 Common mistake is to treat IoC-container as a single way to inject dependencies. It has nothing common with reality. Dependency injection can be done just by passing one object to another, but in complex application it is not so easy to do. As it was shown above you might want to create a separate object to encapsulate all DI-related logic. ``Container`` in previous example is a an example of hand-written primitive IoC-container.
 
-Bigger is your application, more complex factories you need, more necessary is to automate creation of a container. You do not need to use IoC-container to test one small part of application, but can be essential for launching it in whole. Fortunately, there are frameworks for it. But again, beware of spreading container-related details around your application code with an exception on scope boundaries.
+Bigger is your application, more complex factories you need, more necessary is to automate creation of a container. You do not need to use IoC-container to test one small part of application, but it can be essential for launching it in whole. Fortunately, there are frameworks for it. But again, beware of spreading container-related details around your application code with an exception on scope boundaries.
 
 So, talking about IoC-container we can write-down these ideas:
 

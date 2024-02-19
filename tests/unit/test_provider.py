@@ -158,3 +158,15 @@ def test_provide_as_method():
     foo = provider.decorate(sync_func_a)
     assert foo.provides == ClassA
     assert foo.factory.dependencies == [Any, int]
+
+
+class OtherClass:
+    def method(self) -> str:
+        pass
+
+
+def test_provide_external_method():
+    provider = Provider(scope=Scope.REQUEST)
+    foo = provider.provide(OtherClass().method)
+    assert foo.provides == str
+    assert foo.dependencies == []

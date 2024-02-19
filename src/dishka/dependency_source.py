@@ -13,6 +13,7 @@ from inspect import (
     iscoroutinefunction,
     isfunction,
     isgeneratorfunction,
+    ismethod,
     signature,
 )
 from typing import (
@@ -46,6 +47,8 @@ class FactoryType(Enum):
     ASYNC_FACTORY = "async_factory"
     VALUE = "value"
 
+def _is_bound_method(obj):
+    return ismethod(obj) and obj.__self__
 
 def _identity(x: Any) -> Any:
     return x
@@ -200,9 +203,13 @@ def make_factory(
             provides = _clean_result_hint(factory_type, possible_dependency)
         is_to_bind = False
     elif callable(source):
+        if _is_bound_method(source):
+            to_check = source.__func__
+        else:
+            to_check = type(source).__call__
         factory = make_factory(
             provides=provides,
-            source=type(source).__call__,
+            source=to_check,
             cache=cache,
             scope=scope,
         )

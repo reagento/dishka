@@ -19,13 +19,13 @@ def test_cache_sync():
             self.value += 1
             return self.value
 
-    with make_container(MyProvider()) as container:
-        with container() as state:
-            assert state.get(int) == 1
-            assert state.get(int) == 1
-        with container() as state:
-            assert state.get(int) == 2
-            assert state.get(int) == 2
+    container = make_container(MyProvider())
+    with container() as state:
+        assert state.get(int) == 1
+        assert state.get(int) == 1
+    with container() as state:
+        assert state.get(int) == 2
+        assert state.get(int) == 2
 
 
 @pytest.mark.asyncio
@@ -38,13 +38,14 @@ async def test_cache_async():
             self.value += 1
             return self.value
 
-    async with make_async_container(MyProvider()) as container:
-        async with container() as state:
-            assert await state.get(int) == 1
-            assert await state.get(int) == 1
-        async with container() as state:
-            assert await state.get(int) == 2
-            assert await state.get(int) == 2
+    container = make_async_container(MyProvider())
+    async with container() as state:
+        assert await state.get(int) == 1
+        assert await state.get(int) == 1
+    async with container() as state:
+        assert await state.get(int) == 2
+        assert await state.get(int) == 2
+
 
 def test_nocache_sync():
     class MyProvider(Provider):
@@ -55,10 +56,10 @@ def test_nocache_sync():
             self.value += 1
             return self.value
 
-    with make_container(MyProvider()) as container:
-        with container() as state:
-            assert state.get(int) == 1
-            assert state.get(int) == 2
+    container = make_container(MyProvider())
+    with container() as state:
+        assert state.get(int) == 1
+        assert state.get(int) == 2
 
 
 @pytest.mark.asyncio
@@ -71,10 +72,10 @@ async def test_nocache_async():
             self.value += 1
             return self.value
 
-    async with make_async_container(MyProvider()) as container:
-        async with container() as state:
-            assert await state.get(int) == 1
-            assert await state.get(int) == 2
+    container = make_async_container(MyProvider())
+    async with container() as state:
+        assert await state.get(int) == 1
+        assert await state.get(int) == 2
 
 
 @pytest.fixture()
@@ -94,19 +95,19 @@ def alias_provider():
 
 
 def test_alias_sync(alias_provider):
-    with make_container(alias_provider) as container:
-        assert container.get(int) == 1
-        assert container.get(float) == 2
-        assert container.get(float) == 2
-        assert container.get(complex) == 3
-        assert container.get(complex) == 4
+    container = make_container(alias_provider)
+    assert container.get(int) == 1
+    assert container.get(float) == 2
+    assert container.get(float) == 2
+    assert container.get(complex) == 3
+    assert container.get(complex) == 4
 
 
 @pytest.mark.asyncio
 async def test_alias_async(alias_provider):
-    async with make_async_container(alias_provider) as container:
-        assert await container.get(int) == 1
-        assert await container.get(float) == 2
-        assert await container.get(float) == 2
-        assert await container.get(complex) == 3
-        assert await container.get(complex) == 4
+    container = make_async_container(alias_provider)
+    assert await container.get(int) == 1
+    assert await container.get(float) == 2
+    assert await container.get(float) == 2
+    assert await container.get(complex) == 3
+    assert await container.get(complex) == 4

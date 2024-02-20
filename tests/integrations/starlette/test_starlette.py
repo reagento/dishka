@@ -10,10 +10,11 @@ from starlette.responses import PlainTextResponse
 from starlette.routing import Route
 from starlette.testclient import TestClient
 
+from dishka import make_async_container
 from dishka.integrations.starlette import (
     Depends,
-    DishkaApp,
     inject,
+    setup_dishka,
 )
 from ..common import (
     APP_DEP_VALUE,
@@ -27,12 +28,11 @@ from ..common import (
 @asynccontextmanager
 async def dishka_app(view, provider) -> TestClient:
     app = Starlette(routes=[Route("/", inject(view), methods=["GET"])])
-    app = DishkaApp(
-        providers=[provider],
-        app=app,
-    )
+    container = make_async_container(provider)
+    setup_dishka(container, app)
     async with LifespanManager(app):
         yield TestClient(app)
+    await container.close()
 
 
 async def get_with_app(

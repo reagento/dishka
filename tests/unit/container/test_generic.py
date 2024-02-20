@@ -41,10 +41,10 @@ def test_concrete_generic(cls):
 
         a = provide(cls[int])
 
-    with make_container(MyProvider()) as container:
-        a = container.get(cls[int])
-        assert isinstance(a, cls)
-        assert a.x == 42
+    container = make_container(MyProvider())
+    a = container.get(cls[int])
+    assert isinstance(a, cls)
+    assert a.x == 42
 
 
 class C(A[int]):
@@ -61,10 +61,10 @@ def test_concrete_child():
 
         a = provide(C)
 
-    with make_container(MyProvider()) as container:
-        a = container.get(C)
-        assert isinstance(a, C)
-        assert a.x == 42
+    container = make_container(MyProvider())
+    a = container.get(C)
+    assert isinstance(a, C)
+    assert a.x == 42
 
 
 def test_generic_class():
@@ -77,10 +77,10 @@ def test_generic_class():
 
         a = provide(A)
 
-    with make_container(MyProvider()) as container:
-        a = container.get(A[int])
-        assert isinstance(a, A)
-        assert a.x == 42
+    container = make_container(MyProvider())
+    a = container.get(A[int])
+    assert isinstance(a, A)
+    assert a.x == 42
 
 
 def test_generic_func():
@@ -95,7 +95,7 @@ def test_generic_func():
         def a(self, param: T) -> A[T]:
             return A(param)
 
-    with make_container(MyProvider()) as container:
-        a = container.get(A[int])
-        assert isinstance(a, A)
-        assert a.x == 42
+    container = make_container(MyProvider())
+    a = container.get(A[int])
+    assert isinstance(a, A)
+    assert a.x == 42

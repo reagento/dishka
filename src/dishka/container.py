@@ -142,8 +142,6 @@ def make_container(
         scopes: Type[BaseScope] = Scope,
         context: Optional[dict] = None,
         lock_factory: Callable[[], Lock] | None = None,
-) -> ContextWrapper:
+) -> Container:
     registries = make_registries(*providers, scopes=scopes)
-    return ContextWrapper(
-        Container(*registries, context=context, lock_factory=lock_factory),
-    )
+    return Container(*registries, context=context, lock_factory=lock_factory)

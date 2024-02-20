@@ -35,9 +35,13 @@ Standard scopes are:
 
 You decide when to enter and exit them, but it is done one by one. If you entered ``APP`` scope then the next step deeper will enter ``REQUEST`` scope.
 
+.. note::
+    ``APP`` scope can be used for lazy initialisation of singletons, while ``REQUEST`` scope is good for processing events like HTTP-requests or messenger updates. It is unlikely that you will need other scopes
+
+
 In dishka dependencies are lazy - they are created when you first request them. If the same dependency is requested multiple time within one scope then the same instance is returned (you can disable it for each dependency separately). A created dependency is kept until you exit the scope. And in that moment it is not just dropped away, but corresponding finalization steps are done. You can enter same scope multiple times concurrently so to have multiple instances of objects you can work simultaneously.
 
-Each object can depend on other objects from the same or previous scopes. So, if you have ``Config`` with scope of *APP* and ``Connection`` with scope of *REQUEST* you cannot have an *APP*-scoped object with requires a connection, but you can have *REQUEST*-scoped object which requires a ``Connection`` or a ``Config`` (or even both).
+Each object can depend on other objects from the same or previous scopes. So, if you have ``Config`` with scope of *APP* and ``Connection`` with scope of *REQUEST* you cannot have an *APP*-scoped object which requires a connection, but you can have *REQUEST*-scoped object which requires a ``Connection`` or a ``Config`` (or even both).
 
 If you are developing web application, you would enter ``APP`` scope on startup, and you would ``REQUEST`` scope in each HTTP-request.
 
@@ -55,11 +59,13 @@ According to scopes order container can be used to get dependencies from its and
 
 .. code-block:: python
 
-    with make_container(provider1, provider2) as app_container:  # enter APP scope
-        config = app_container.get(Config)  # APP-scoped object
-        with container() as request_container:  # enter REQUEST scope
-            connection = request_container.get(Connection)  # REQUEST-scoped object
-            config = request_container.get(Config)  # APP-scoped object
+    app_container = make_container(provider1, provider2)  # enter APP scope
+
+    config = app_container.get(Config)  # APP-scoped object
+
+    with container() as request_container:  # enter REQUEST scope
+        connection = request_container.get(Connection)  # REQUEST-scoped object
+        config = request_container.get(Config)  # APP-scoped object
 
 Async container is working in the same manner, but you should use async context manager and await the result of get
 
@@ -75,8 +81,7 @@ Provider
     class MyProvider(Provider):
         pass
 
-    with make_container(MyProvider()) as container:
-        pass
+    container = make_container(MyProvider())
 
 
 There are 3 special functions:

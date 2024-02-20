@@ -6,11 +6,11 @@ from typing import Annotated, Iterable
 import telebot
 from telebot.types import Message
 
-from dishka import Provider, Scope, provide
+from dishka import Provider, Scope, provide, make_container
 from dishka.integrations.telebot import Depends, inject, setup_dishka
 
-# app dependency logic
 
+# app dependency logic
 class MyProvider(Provider):
     @provide(scope=Scope.APP)
     def get_int(self) -> Iterable[int]:
@@ -33,7 +33,9 @@ def start(
 
 
 logging.basicConfig(level=logging.INFO)
-container = setup_dishka(providers=[MyProvider()], bot=bot)
+
+container = make_container(MyProvider())
+setup_dishka(container=container, bot=bot)
 try:
     bot.infinity_polling()
 finally:

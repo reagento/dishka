@@ -5,6 +5,7 @@ from unittest.mock import Mock
 from telebot import TeleBot
 from telebot.types import Message, Update
 
+from dishka import make_container
 from dishka.integrations.telebot import Depends, inject, setup_dishka
 from ..common import (
     APP_DEP_VALUE,
@@ -19,7 +20,8 @@ from ..common import (
 def dishka_app(handler, provider):
     bot = TeleBot("", use_class_middlewares=True, threaded=False)
     bot.message_handler()(inject(handler))
-    container = setup_dishka(providers=[provider], bot=bot)
+    container = make_container(provider)
+    setup_dishka(container=container, bot=bot)
     yield bot
     container.close()
 

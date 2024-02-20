@@ -5,8 +5,6 @@ from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from dishka import AsyncContainer
-from ..async_container import AsyncContextWrapper
-from .asgi import BaseDishkaApp
 from .base import Depends, wrap_injection
 
 

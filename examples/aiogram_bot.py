@@ -7,9 +7,8 @@ from typing import Annotated, AsyncIterable
 from aiogram import Bot, Dispatcher, Router
 from aiogram.types import Message, TelegramObject, User
 
-from dishka import Provider, Scope, provide, make_async_container
+from dishka import Provider, Scope, make_async_container, provide
 from dishka.integrations.aiogram import Depends, inject, setup_dishka
-
 
 # app dependency logic
 

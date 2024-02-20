@@ -3,12 +3,14 @@ __all__ = [
     "inject",
     "setup_dishka",
 ]
+
 from inspect import Parameter
 from typing import Container
 
 from aiogram import BaseMiddleware, Router
 from aiogram.types import TelegramObject
 
+from dishka import AsyncContainer
 from .base import Depends, wrap_injection
 
 CONTAINER_NAME = "dishka_container"
@@ -42,7 +44,7 @@ class ContainerMiddleware(BaseMiddleware):
             return await handler(event, data)
 
 
-def setup_dishka(container, router: Router) -> None:
+def setup_dishka(container: AsyncContainer, router: Router) -> None:
     middleware = ContainerMiddleware(container)
     for observer in router.observers.values():
         observer.middleware(middleware)

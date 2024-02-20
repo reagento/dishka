@@ -30,7 +30,7 @@ See more in [technical requirements](https://dishka.readthedocs.io/en/latest/req
 pip install dishka
 ```
 
-2. Create `Provider` instance.
+2. Create `Provider` instance. It is only used co setup all factories providing your objects.
 
 ```python
 from dishka import Provider
@@ -41,17 +41,37 @@ provider = Provider()
 3. Register functions which provide dependencies. Do not forget to place correct typehints for parameters and result. We use `scope=Scope.APP` for dependencies which ar created only once in applicaiton lifetime, and `scope=Scope.REQUEST` for those which should be recreated for each processing request/event/etc.
 
 ```python
+from dishka import Provider, Scope
+
 def get_a() -> A:
    return A()
 
 def get_b(a: A) -> B:
    return B(a)
 
+provider = Provider()
 provider.provide(get_a, scope=Scope.APP)
 provider.provide(get_b, scope=Scope.REQUEST)
 ```
 
-4. Create Container instance passing providers, and step into `APP` scope. You can use `.get` method to access APP-scoped dependencies here:
+This can be also rewritten using classes:
+
+```python
+from dishka import provide, Provider, Scope
+
+class MyProvider(Provider):
+  @provide(scope=Scope.APP)
+  def get_a(self) -> A:
+     return A()
+  
+  @provide(scope=Scope.REQUEST)
+  def get_b(self, a: A) -> B:
+     return B(a)
+
+provider = MyProvider()
+```
+
+4. Create Container instance passing providers, and step into `APP` scope. Container holds dependencies cache and is used to retrieve them. Here, you can use `.get` method to access APP-scoped dependencies:
 
 ```python
 from dishka import make_container

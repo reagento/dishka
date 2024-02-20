@@ -8,7 +8,7 @@ Quickstart
     pip install dishka
 
 
-2. Create Provider instance.
+2. Create Provider instance. It is only used co setup all factories providing your objects.
 
 .. code-block:: python
 
@@ -20,17 +20,36 @@ Quickstart
 
 .. code-block:: python
 
+   from dishka import Provider, Scope
+
    def get_a() -> A:
        return A()
 
    def get_b(a: A) -> B:
        return B(a)
 
+   provider = Provider()
    provider.provide(get_a, scope=Scope.APP)
    provider.provide(get_b, scope=Scope.REQUEST)
 
+This can be also rewritten using class:
 
-4. Create Container instance passing providers, and step into ``APP`` scope. You can use ``.get`` method to access APP-scoped dependencies here:
+.. code-block:: python
+
+   from dishka import provide, Provider, Scope
+
+   class MyProvider(Provider):
+      @provide(scope=Scope.APP)
+      def get_a(self) -> A:
+         return A()
+
+      @provide(scope=Scope.REQUEST)
+      def get_b(self, a: A) -> B:
+         return B(a)
+
+   provider = MyProvider()
+
+4. Create Container instance passing providers, and step into ``APP`` scope. Container holds dependencies cache and is used to retrieve them. Here, you can use ``.get`` method to access APP-scoped dependencies:
 
 .. code-block:: python
 

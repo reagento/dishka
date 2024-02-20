@@ -200,20 +200,20 @@ class MyProvider(Provider):
    async def get_a(self) -> A:
       return A()
 
-async with make_async_container(MyProvider()) as container:
-     a = await container.get(A)
+container = make_async_container(MyProvider())
+a = await container.get(A)
 ```
 
 * Having some data connected with scope which you want to use when solving dependencies? Set it when entering scope. These classes can be used as parameters of your `provide` methods
 ```python
-with make_container(MyProvider(), context={App: app}) as container:
-    with container(context={RequestClass: request_instance}) as request_container:
-        pass
+container = make_async_container(MyProvider(), context={App: app})
+with container(context={RequestClass: request_instance}) as request_container:
+    pass
 ```
 
 * Having to many dependencies? Or maybe want to replace only part of them in tests keeping others? Create multiple `Provider` classes
 ```python
-with make_container(MyProvider(), OtherProvider()) as container:
+container = make_container(MyProvider(), OtherProvider())
 ```
 
 * Tired of providing `scope==` for each depedency? Set it inside your `Provider` class and all dependencies with no scope will use it.

@@ -2,12 +2,12 @@ import asyncio
 import logging
 import os
 import random
-from typing import Annotated, Iterable
+from typing import Annotated, AsyncIterable
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.types import Message, TelegramObject, User
 
-from dishka import Provider, Scope, provide
+from dishka import Provider, Scope, provide, make_async_container
 from dishka.integrations.aiogram import Depends, inject, setup_dishka
 
 
@@ -15,7 +15,7 @@ from dishka.integrations.aiogram import Depends, inject, setup_dishka
 
 class MyProvider(Provider):
     @provide(scope=Scope.APP)
-    async def get_int(self) -> Iterable[int]:
+    async def get_int(self) -> AsyncIterable[int]:
         print("solve int")
         yield random.randint(0, 10000)
 
@@ -45,9 +45,14 @@ async def main():
     bot = Bot(token=API_TOKEN)
     dp = Dispatcher()
     dp.include_router(router)
-    setup_dishka(providers=[MyProvider()], router=dp)
-    await dp.start_polling(bot)
 
+    container = make_async_container(MyProvider())
+    setup_dishka(container=container, router=dp)
+    try:
+        await dp.start_polling(bot)
+    finally:
+        await container.close()
+        await bot.session.close()
 
 
 if __name__ == '__main__':

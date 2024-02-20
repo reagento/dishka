@@ -5,9 +5,9 @@ from typing import Annotated, Protocol
 import uvicorn
 from litestar import Controller, Litestar, get
 
-from dishka import Provider, Scope, provide
+from dishka import Provider, Scope, provide, make_async_container
 from dishka.integrations.base import Depends
-from dishka.integrations.litestar import DishkaApp, inject
+from dishka.integrations.litestar import inject, setup_dishka
 
 
 # app core
@@ -46,7 +46,9 @@ class MainController(Controller):
 
     @get()
     @inject
-    async def index(self, *, interactor: Annotated[Interactor, Depends()]) -> str:
+    async def index(
+            self, *, interactor: Annotated[Interactor, Depends()],
+    ) -> str:
         result = interactor()
         return result
 
@@ -57,7 +59,9 @@ def create_app():
         format='%(asctime)s  %(process)-7s %(module)-20s %(message)s',
     )
     app = Litestar(route_handlers=[MainController])
-    return DishkaApp([InteractorProvider(), AdaptersProvider()], app)
+    container = make_async_container(InteractorProvider(), AdaptersProvider())
+    setup_dishka(container, app)
+    return app
 
 
 if __name__ == "__main__":

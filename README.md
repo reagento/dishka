@@ -75,7 +75,7 @@ provider = MyProvider()
 
 ```python
 from dishka import make_container
-container = make_container(MyProvider())  # it has Scope.APP
+container = make_container(provider)  # it has Scope.APP
 a = container.get(A)  # `A` has Scope.APP, so it is accessible here
 
 ```
@@ -83,7 +83,7 @@ a = container.get(A)  # `A` has Scope.APP, so it is accessible here
 
 ```python
 from dishka import make_container
-container = make_container(MyProvider())
+container = make_container(provider)
 with container() as request_container:
     b = request_container.get(B)  # `B` has Scope.REQUEST
     a = request_container.get(A)  # `A` is accessible here too

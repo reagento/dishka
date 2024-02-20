@@ -65,7 +65,7 @@ This can be also rewritten using class:
 
    from dishka import make_container
 
-   container = make_container(MyProvider())
+   container = make_container(provider)
    with container() as request_container:
        b = request_container.get(B)  # `B` has Scope.REQUEST
        a = request_container.get(A)  # `A` is accessible here too

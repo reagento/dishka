@@ -58,8 +58,9 @@ class MyProvider(Provider):
 def test_sync(dep_type):
     finalizer = Mock(return_value=123)
     with pytest.raises(ExitExceptionGroup):
-        with make_container(MyProvider(finalizer)) as container:
-            container.get(dep_type)
+        container = make_container(MyProvider(finalizer))
+        container.get(dep_type)
+        container.close()
     finalizer.assert_called_once()
 
 
@@ -71,6 +72,7 @@ def test_sync(dep_type):
 async def test_async(dep_type):
     finalizer = Mock(return_value=123)
     with pytest.raises(ExitExceptionGroup):
-        async with make_async_container(MyProvider(finalizer)) as container:
-            await container.get(dep_type)
+        container = make_async_container(MyProvider(finalizer))
+        await container.get(dep_type)
+        await container.close()
     finalizer.assert_called_once()

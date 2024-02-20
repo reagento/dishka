@@ -53,24 +53,32 @@ This can be also rewritten using class:
 
 .. code-block:: python
 
-    from dishka import make_container
-    with make_container(provider) as container:  # enter Scope.APP
-         a = container.get(A)  # `A` has Scope.APP, so it is accessible here
+   from dishka import make_container
+
+   container = make_container(provider)  # it has Scope.APP
+   a = container.get(A)  # `A` has Scope.APP, so it is accessible here
 
 
-5. You can enter and exit ``REQUEST`` scope multiple times after that:
+5. You can enter and exit ``REQUEST`` scope multiple times after that using context manager:
 
 .. code-block:: python
 
-    from dishka import make_container
-    with make_container(MyProvider()) as container:
-         with container() as request_container:
-              b = request_container.get(B)  # `B` has Scope.REQUEST
-              a = request_container.get(A)  # `A` is accessible here too
+   from dishka import make_container
 
-         with container() as request_container:
-              b = request_container.get(B)  # another instance of `B`
-              a = request_container.get(A)  # the same instance of `A`
+   container = make_container(MyProvider())
+   with container() as request_container:
+       b = request_container.get(B)  # `B` has Scope.REQUEST
+       a = request_container.get(A)  # `A` is accessible here too
+
+   with container() as request_container:
+       b = request_container.get(B)  # another instance of `B`
+       a = request_container.get(A)  # the same instance of `A`
+
+6. Close container in the end:
+
+.. code-block:: python
+
+   container.close()
 
 
 6. If you are using supported framework add decorators and middleware for it.

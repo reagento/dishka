@@ -81,17 +81,17 @@ class AsyncContainer:
         if factory.type is FactoryType.GENERATOR:
             generator = factory.source(*sub_dependencies)
             self._exits.append(Exit(factory.type, generator))
-            solved =  next(generator)
+            solved = next(generator)
         elif factory.type is FactoryType.ASYNC_GENERATOR:
             generator = factory.source(*sub_dependencies)
             self._exits.append(Exit(factory.type, generator))
-            solved =  await anext(generator)
+            solved = await anext(generator)
         elif factory.type is FactoryType.ASYNC_FACTORY:
-            solved =  await factory.source(*sub_dependencies)
+            solved = await factory.source(*sub_dependencies)
         elif factory.type is FactoryType.FACTORY:
-            solved =  factory.source(*sub_dependencies)
+            solved = factory.source(*sub_dependencies)
         elif factory.type is FactoryType.VALUE:
-            solved =  factory.source
+            solved = factory.source
         else:
             raise ValueError(f"Unsupported type {factory.type}")
         if factory.cache:
@@ -150,10 +150,10 @@ def make_async_container(
         scopes: Type[BaseScope] = Scope,
         context: Optional[dict] = None,
         lock_factory: Callable[[], Lock] | None = Lock,
-) -> AsyncContextWrapper:
+) -> AsyncContainer:
     registries = make_registries(*providers, scopes=scopes)
-    return AsyncContextWrapper(AsyncContainer(
+    return AsyncContainer(
         *registries,
         context=context,
         lock_factory=lock_factory,
-    ))
+    )

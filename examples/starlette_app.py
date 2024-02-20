@@ -9,7 +9,7 @@ from starlette.responses import PlainTextResponse
 from starlette.routing import Route
 
 from dishka import Provider, Scope, provide
-from dishka.integrations.starlette import Depends, inject, DishkaApp
+from dishka.integrations.starlette import Depends, DishkaApp, inject
 
 
 # app core

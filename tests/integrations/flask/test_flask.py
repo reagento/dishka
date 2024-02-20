@@ -4,6 +4,7 @@ from unittest.mock import Mock
 
 from flask import Flask
 
+from dishka import make_container
 from dishka.integrations.flask import Depends, inject, setup_dishka
 from ..common import (
     APP_DEP_VALUE,
@@ -18,10 +19,8 @@ from ..common import (
 def dishka_app(view, provider):
     app = Flask(__name__)
     app.get("/")(inject(view))
-    container = setup_dishka(
-        providers=[provider],
-        app=app,
-    )
+    container = make_container(provider)
+    setup_dishka(container=container, app=app)
     yield app
     container.close()
 

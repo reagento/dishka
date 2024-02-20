@@ -7,8 +7,7 @@ import telebot
 from telebot.types import Message
 
 from dishka import Provider, Scope, provide
-from dishka.integrations.telebot import Depends, setup_dishka, inject
-
+from dishka.integrations.telebot import Depends, inject, setup_dishka
 
 # app dependency logic
 

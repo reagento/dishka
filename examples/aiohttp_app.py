@@ -11,8 +11,11 @@ from dishka import (
     make_async_container,
     provide,
 )
-from dishka.integrations.aiohttp import inject, setup_dishka, \
-    DISHKA_CONTAINER_KEY
+from dishka.integrations.aiohttp import (
+    DISHKA_CONTAINER_KEY,
+    inject,
+    setup_dishka,
+)
 from dishka.integrations.base import Depends
 
 

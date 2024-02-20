@@ -85,3 +85,29 @@ async def test_value_async():
 
     async with make_async_container(MyProvider()) as container:
         assert await container.get(ClassA) is A_VALUE
+
+
+class OtherClass:
+    def method(self) -> ClassA:
+        return A_VALUE
+
+    @classmethod
+    def classmethod(cls) -> ClassA:
+        return A_VALUE
+
+    @staticmethod
+    def staticmethod() -> ClassA:
+        return A_VALUE
+
+
+@pytest.mark.parametrize("method", [
+    OtherClass().method,
+    OtherClass().classmethod,
+    OtherClass().staticmethod,
+])
+def test_external_method(method):
+    provider = Provider(scope=Scope.APP)
+    provider.provide(method)
+
+    with make_container(provider) as container:
+        assert container.get(ClassA) is A_VALUE

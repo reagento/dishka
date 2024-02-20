@@ -1,4 +1,4 @@
-from typing import AsyncGenerator, AsyncIterable, Generator, Iterable
+from typing import Any, AsyncGenerator, AsyncIterable, Generator, Iterable
 
 from dishka import Scope
 from dishka.dependency_source import Factory, FactoryType
@@ -10,7 +10,7 @@ class ClassA:
         self.closed = False
 
 
-def sync_func_a(self, dep: int) -> ClassA:
+def sync_func_a(self: Any, dep: int) -> ClassA:
     return ClassA(dep)
 
 

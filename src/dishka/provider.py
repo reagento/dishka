@@ -1,7 +1,15 @@
 import inspect
-from typing import Any, List
+from typing import Any, Callable, List, Type
 
-from .dependency_source import Alias, Decorator, DependencySource, Factory
+from .dependency_source import (
+    Alias,
+    Decorator,
+    DependencySource,
+    Factory,
+    alias,
+    decorate,
+    provide,
+)
 from .exceptions import InvalidGraphError
 from .scope import BaseScope
 
@@ -50,3 +58,50 @@ class Provider:
             if isinstance(source, Decorator):
                 self.decorators.append(source)
             processed_types[source.provides] = name
+
+    def provide(
+            self,
+            source: Callable | Type,
+            *,
+            scope: BaseScope | None = None,
+            provides: Any = None,
+            cache: bool = True,
+    ) -> Factory:
+        if scope is None:
+            scope = self.scope
+        new_factory = provide(
+            source=source,
+            scope=scope,
+            provides=provides,
+            cache=cache,
+        )
+        self.factories.append(new_factory)
+        return new_factory
+
+    def alias(
+            self,
+            *,
+            source: Type,
+            provides: Type,
+            cache: bool = True,
+    ) -> Alias:
+        new_alias = alias(
+            source=source,
+            provides=provides,
+            cache=cache,
+        )
+        self.aliases.append(new_alias)
+        return new_alias
+
+    def decorate(
+            self,
+            source: Callable | Type,
+            *,
+            provides: Any = None,
+    ) -> Decorator:
+        new_decorator = decorate(
+            source=source,
+            provides=provides,
+        )
+        self.aliases.append(new_decorator)
+        return new_decorator

@@ -7,6 +7,7 @@ import pytest
 from aiogram import Dispatcher
 from aiogram.types import Chat, Message, Update, User
 
+from dishka import make_async_container
 from dishka.integrations.aiogram import Depends, inject, setup_dishka
 from ..common import (
     APP_DEP_VALUE,
@@ -21,11 +22,13 @@ from ..common import (
 async def dishka_app(handler, provider):
     dp = Dispatcher()
     dp.message()(inject(handler))
-    setup_dishka(providers=[provider], router=dp)
+    container = make_async_container(provider)
+    setup_dishka(container, router=dp)
 
     await dp.emit_startup()
     yield dp
     await dp.emit_shutdown()
+    await container.close()
 
 
 async def send_message(bot, dp):
@@ -58,6 +61,7 @@ async def test_app_dependency(bot, app_provider: AppProvider):
         await send_message(bot, dp)
         app_provider.mock.assert_called_with(APP_DEP_VALUE)
         app_provider.app_released.assert_not_called()
+
     app_provider.app_released.assert_called()
 
 

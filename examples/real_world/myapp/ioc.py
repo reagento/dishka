@@ -3,10 +3,11 @@ from typing import Iterable
 from dishka import (
     Provider,
     Scope,
-    provide, alias,
+    alias,
+    provide,
 )
 from .api_client import FakeWarehouseClient
-from .db import FakeProductGateway, FakeDbConnection, FakeUserGateway
+from .db import FakeDbConnection, FakeProductGateway, FakeUserGateway
 from .use_cases import (
     AddProductsInteractor,
     ProductGateway,

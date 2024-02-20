@@ -31,8 +31,8 @@ You can configure ``Provider`` with code like this:
     provider.provide(get_connection)
     provider.provide(Gateway)
 
-    with make_container(provider) as container:
-        ...
+    container = make_container(provider)
+
 
 Or using inheritance:
 
@@ -49,8 +49,7 @@ Or using inheritance:
 
         gateway = provider.provide(Gateway)
 
-    with make_container(MyProvider(scope=Scope.APP)) as container:
-        pass
+    container = make_container(MyProvider(scope=Scope.APP))
 
 You class-based provider can have ``__init__`` method and methods access ``self`` as usual. It can be useful for passing configuration:
 
@@ -70,8 +69,7 @@ You class-based provider can have ``__init__`` method and methods access ``self`
         gateway = provide(Gateway)
 
     provider = MyProvider(uri=os.getenv("DB_URI"), scope=Scope.APP)
-    with make_container(provider) as container:
-        pass
+    container = make_container(provider)
 
 
 Dependencies have scope and there are three places to set it (according to their priority):

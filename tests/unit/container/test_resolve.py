@@ -36,10 +36,11 @@ def test_sync(factory, closed):
         def get_int(self) -> int:
             return 100
 
-    with make_container(MyProvider()) as container:
-        a = container.get(ClassA)
-        assert a
-        assert a.dep == 100
+    container = make_container(MyProvider())
+    a = container.get(ClassA)
+    assert a
+    assert a.dep == 100
+    container.close()
     assert a.closed == closed
 
 
@@ -63,10 +64,11 @@ async def test_async(factory, closed):
         def get_int(self) -> int:
             return 100
 
-    async with make_async_container(MyProvider()) as container:
-        a = await container.get(ClassA)
-        assert a
-        assert a.dep == 100
+    container = make_async_container(MyProvider())
+    a = await container.get(ClassA)
+    assert a
+    assert a.dep == 100
+    await container.close()
     assert a.closed == closed
 
 
@@ -74,8 +76,8 @@ def test_value():
     class MyProvider(Provider):
         factory = value_factory
 
-    with make_container(MyProvider()) as container:
-        assert container.get(ClassA) is A_VALUE
+    container = make_container(MyProvider())
+    assert container.get(ClassA) is A_VALUE
 
 
 @pytest.mark.asyncio
@@ -83,8 +85,8 @@ async def test_value_async():
     class MyProvider(Provider):
         factory = value_factory
 
-    async with make_async_container(MyProvider()) as container:
-        assert await container.get(ClassA) is A_VALUE
+    container = make_async_container(MyProvider())
+    assert await container.get(ClassA) is A_VALUE
 
 
 class OtherClass:
@@ -109,5 +111,5 @@ def test_external_method(method):
     provider = Provider(scope=Scope.APP)
     provider.provide(method)
 
-    with make_container(provider) as container:
-        assert container.get(ClassA) is A_VALUE
+    container = make_container(provider)
+    assert container.get(ClassA) is A_VALUE

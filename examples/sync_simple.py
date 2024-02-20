@@ -33,12 +33,15 @@ class MyProvider(Provider):
 
 
 def main():
-    with make_container(MyProvider(1)) as container:
-        print(container.get(int))
-        with container() as c_request:
-            print(c_request.get(BaseA))
-        with container() as c_request:
-            print(c_request.get(A))
+    container = make_container(MyProvider(1))
+
+    print(container.get(int))
+    with container() as c_request:
+        print(c_request.get(BaseA))
+    with container() as c_request:
+        print(c_request.get(A))
+
+    container.close()
 
 
 if __name__ == '__main__':

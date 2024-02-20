@@ -27,10 +27,10 @@ def test_simple():
     class DProvider(Provider):
         ad = decorate(ADecorator, provides=A)
 
-    with make_container(MyProvider(), DProvider()) as container:
-        a = container.get(A)
-        assert isinstance(a, ADecorator)
-        assert isinstance(a.a, A)
+    container = make_container(MyProvider(), DProvider())
+    a = container.get(A)
+    assert isinstance(a, ADecorator)
+    assert isinstance(a.a, A)
 
 
 def test_decorator():
@@ -42,10 +42,10 @@ def test_decorator():
         def foo(self, a: A) -> A:
             return ADecorator(a)
 
-    with make_container(MyProvider(), DProvider()) as container:
-        a = container.get(A)
-        assert isinstance(a, ADecorator)
-        assert isinstance(a.a, A)
+    container = make_container(MyProvider(), DProvider())
+    a = container.get(A)
+    assert isinstance(a, ADecorator)
+    assert isinstance(a.a, A)
 
 
 def test_decorator_with_provides():
@@ -57,10 +57,10 @@ def test_decorator_with_provides():
         def foo(self, a: A):
             return ADecorator(a)
 
-    with make_container(MyProvider(), DProvider()) as container:
-        a = container.get(A)
-        assert isinstance(a, ADecorator)
-        assert isinstance(a.a, A)
+    container = make_container(MyProvider(), DProvider())
+    a = container.get(A)
+    assert isinstance(a, ADecorator)
+    assert isinstance(a.a, A)
 
 
 def test_alias():
@@ -74,17 +74,17 @@ def test_alias():
         def decorated(self, a: A1) -> A1:
             return ADecorator(a)
 
-    with make_container(MyProvider(), DProvider()) as container:
-        a1 = container.get(A1)
-        assert isinstance(a1, ADecorator)
-        assert isinstance(a1.a, A2)
+    container = make_container(MyProvider(), DProvider())
+    a1 = container.get(A1)
+    assert isinstance(a1, ADecorator)
+    assert isinstance(a1.a, A2)
 
-        a2 = container.get(A2)
-        assert isinstance(a2, A2)
-        assert a2 is a1.a
+    a2 = container.get(A2)
+    assert isinstance(a2, A2)
+    assert a2 is a1.a
 
-        a = container.get(A)
-        assert a is a1
+    a = container.get(A)
+    assert a is a1
 
 
 def test_double_error():
@@ -107,8 +107,8 @@ def test_double_ok():
     class D2Provider(Provider):
         ad2 = decorate(ADecorator, provides=A)
 
-    with make_container(MyProvider(), DProvider(), D2Provider()) as container:
-        a = container.get(A)
-        assert isinstance(a, ADecorator)
-        assert isinstance(a.a, ADecorator)
-        assert isinstance(a.a.a, A)
+    container = make_container(MyProvider(), DProvider(), D2Provider())
+    a = container.get(A)
+    assert isinstance(a, ADecorator)
+    assert isinstance(a.a, ADecorator)
+    assert isinstance(a.a.a, A)

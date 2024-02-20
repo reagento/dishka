@@ -75,29 +75,35 @@ provider = MyProvider()
 
 ```python
 from dishka import make_container
-with make_container(provider) as container:  # enter Scope.APP
-     a = container.get(A)  # `A` has Scope.APP, so it is accessible here
+container = make_container(provider)  # it has Scope.APP
+a = container.get(A)  # `A` has Scope.APP, so it is accessible here
 
 ```
 5. You can enter and exit `REQUEST` scope multiple times after that:
 
 ```python
 from dishka import make_container
-with make_container(MyProvider()) as container:
-     with container() as request_container:
-          b = request_container.get(B)  # `B` has Scope.REQUEST
-          a = request_container.get(A)  # `A` is accessible here too
+container = make_container(provider)
+with container() as request_container:
+    b = request_container.get(B)  # `B` has Scope.REQUEST
+    a = request_container.get(A)  # `A` is accessible here too
 
-     with container() as request_container:
-          b = request_container.get(B)  # another instance of `B`
-          a = request_container.get(A)  # the same instance of `A`
+with container() as request_container:
+    b = request_container.get(B)  # another instance of `B`
+    a = request_container.get(A)  # the same instance of `A`
 ```
 
-6. If you are using supported framework add decorators and middleware for it.
+6. Close container in the end:
+
+```python
+container.close()
+```
+
+7. If you are using supported framework add decorators and middleware for it.
 
 ```python
 from dishka.integrations.fastapi import (
-    Depends, inject, DishkaApp,
+    Depends, inject, setup_dishka,
 )
 
 @router.get("/")
@@ -106,10 +112,8 @@ async def index(a: Annotated[A, Depends()]) -> str:
     ...
 
 ...
-app = DishkaApp(
-    providers=[MyProvider()],
-    app=app,
-)
+
+setup_dishka(container, app)
 ```
 
 ### Concepts

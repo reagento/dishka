@@ -6,14 +6,6 @@ though it is not necessary as our interactor is not bound to library
 from unittest.mock import Mock
 
 import pytest
-
-from dishka import (
-    Provider,
-    Scope,
-    make_container,
-    provide,
-)
-
 from myapp.ioc import InteractorProvider
 from myapp.use_cases import (
     AddProductsInteractor,
@@ -22,6 +14,13 @@ from myapp.use_cases import (
     User,
     UserGateway,
     WarehouseClient,
+)
+
+from dishka import (
+    Provider,
+    Scope,
+    make_container,
+    provide,
 )
 
 
@@ -56,9 +55,9 @@ class AdaptersProvider(Provider):
 
 @pytest.fixture
 def container():
-    with make_container(AdaptersProvider(), InteractorProvider()) as c:
-        with c() as request_c:
-            yield request_c
+    c = make_container(AdaptersProvider(), InteractorProvider())
+    with c() as request_c:
+        yield request_c
 
 
 def test_interactor(container):

@@ -7,10 +7,11 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi.testclient import TestClient
 
+from dishka import make_async_container
 from dishka.integrations.fastapi import (
     Depends,
-    DishkaApp,
     inject,
+    setup_dishka,
 )
 from ..common import (
     APP_DEP_VALUE,
@@ -27,12 +28,11 @@ async def dishka_app(view, provider) -> TestClient:
     router.get("/")(inject(view))
     app = fastapi.FastAPI()
     app.include_router(router)
-    app = DishkaApp(
-        providers=[provider],
-        app=app,
-    )
+    container = make_async_container(provider)
+    setup_dishka(container, app)
     async with LifespanManager(app):
         yield fastapi.testclient.TestClient(app)
+    await container.close()
 
 
 async def get_with_app(

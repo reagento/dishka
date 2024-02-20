@@ -5,15 +5,15 @@ __all__ = [
 ]
 
 from inspect import Parameter
-from typing import Sequence
 
 import telebot
 from telebot import BaseMiddleware, TeleBot
 
-from dishka import Container, Provider, make_container
+from dishka import Container
 from .base import Depends, wrap_injection
 
 CONTAINER_NAME = "dishka_container"
+
 
 def inject(func):
     additional_params = [Parameter(
@@ -47,9 +47,7 @@ class ContainerMiddleware(BaseMiddleware):
         data[CONTAINER_NAME + "_wrapper"].__exit__(None, None, None)
 
 
-def setup_dishka(providers: Sequence[Provider], bot: TeleBot) -> Container:
-    container_wrapper = make_container(*providers)
-    container = container_wrapper.__enter__()
+def setup_dishka(container: Container, bot: TeleBot) -> Container:
     middleware = ContainerMiddleware(container)
     bot.setup_middleware(middleware)
     return container

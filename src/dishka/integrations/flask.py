@@ -2,11 +2,9 @@ __all__ = [
     "inject", "setup_dishka", "Depends",
 ]
 
-from typing import Sequence
-
 from flask import Flask, Request, g, request
 
-from dishka import Container, Provider, make_container
+from dishka import Container
 from .base import Depends, wrap_injection
 
 
@@ -29,13 +27,10 @@ class ContainerMiddleware:
         g.dishka_container = g.dishka_container_wrapper.__enter__()
 
     def exit_request(self, *_args, **_kwargs):
-        g.dishka_container_wrapper.__exit__(None, None, None)
+        g.dishka_container.close()
 
 
-def setup_dishka(providers: Sequence[Provider], app: Flask) -> Container:
-    container_wrapper = make_container(*providers)
-    container = container_wrapper.__enter__()
+def setup_dishka(container: Container, app: Flask) -> Container:
     middleware = ContainerMiddleware(container)
     app.before_request(middleware.enter_request)
     app.teardown_appcontext(middleware.exit_request)
-    return container

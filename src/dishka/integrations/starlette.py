@@ -1,11 +1,10 @@
-__all__ = ["Depends", "inject", "DishkaApp"]
+__all__ = ["Depends", "inject", "setup_dishka"]
 
+from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from dishka import AsyncContainer
-from ..async_container import AsyncContextWrapper
-from .asgi import BaseDishkaApp
 from .base import Depends, wrap_injection
 
 
@@ -37,11 +36,6 @@ class ContainerMiddleware:
             await self.app(scope, receive, send)
 
 
-class DishkaApp(BaseDishkaApp):
-    def _init_request_middleware(
-            self, app, container_wrapper: AsyncContextWrapper,
-    ):
-        app.add_middleware(ContainerMiddleware)
-
-    def _app_startup(self, app, container: AsyncContainer):
-        app.state.dishka_container = container
+def setup_dishka(container: AsyncContainer, app: Starlette) -> None:
+    app.add_middleware(ContainerMiddleware)
+    app.state.dishka_container = container

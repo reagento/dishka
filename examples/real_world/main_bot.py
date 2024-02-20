@@ -3,10 +3,11 @@ import logging
 import os
 
 from aiogram import Bot, Dispatcher
-
-from dishka.integrations.aiogram import setup_dishka
 from myapp.ioc import AdaptersProvider, InteractorProvider
 from myapp.presentation_bot import router
+
+from dishka import make_async_container
+from dishka.integrations.aiogram import setup_dishka
 
 
 async def main():
@@ -15,11 +16,13 @@ async def main():
     bot = Bot(token=os.getenv("BOT_TOKEN"))
     dp = Dispatcher()
     dp.include_router(router)
-    setup_dishka(
-        providers=[InteractorProvider(), AdaptersProvider()],
-        router=dp,
-    )
-    await dp.start_polling(bot)
+    container = make_async_container(AdaptersProvider(), InteractorProvider())
+    setup_dishka(container=container, router=dp)
+    try:
+        await dp.start_polling(bot)
+    finally:
+        await container.close()
+        await bot.session.close()
 
 
 if __name__ == '__main__':

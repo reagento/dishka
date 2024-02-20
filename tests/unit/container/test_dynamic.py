@@ -30,8 +30,8 @@ class MyProvider(Provider):
 
 
 def test_dynamic():
-    with make_container(MyProvider()) as container:
-        with container({Request: 0}) as c:
-            assert type(c.get(A)) is A0
-        with container({Request: 1}) as c:
-            assert type(c.get(A)) is A1
+    container = make_container(MyProvider())
+    with container({Request: 0}) as c:
+        assert type(c.get(A)) is A0
+    with container({Request: 1}) as c:
+        assert type(c.get(A)) is A1

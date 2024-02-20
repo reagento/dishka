@@ -133,6 +133,7 @@ def wrap_injection(
             return func(*args, **kwargs, **solved)
 
     autoinjected_func.__name__ = func.__name__
+    autoinjected_func.__qualname__ = func.__qualname__
     autoinjected_func.__doc__ = func.__doc__
     autoinjected_func.__annotations__ = new_annotations
     autoinjected_func.__signature__ = Signature(

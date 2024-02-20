@@ -8,8 +8,8 @@ from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 from starlette.routing import Route
 
-from dishka import Provider, Scope, provide
-from dishka.integrations.starlette import Depends, DishkaApp, inject
+from dishka import Provider, Scope, provide, make_async_container
+from dishka.integrations.starlette import Depends, inject, setup_dishka
 
 
 # app core
@@ -45,7 +45,9 @@ class InteractorProvider(Provider):
 
 # presentation layer
 @inject
-async def index(request: Request, *, interactor: Annotated[Interactor, Depends()]) -> PlainTextResponse:
+async def index(
+        request: Request, *, interactor: Annotated[Interactor, Depends()],
+) -> PlainTextResponse:
     result = interactor()
     return PlainTextResponse(result)
 
@@ -57,10 +59,9 @@ def create_app():
     )
 
     app = Starlette(routes=[Route("/", endpoint=index, methods=["GET"])])
-    return DishkaApp(
-        providers=[AdaptersProvider(), InteractorProvider()],
-        app=app,
-    )
+    container = make_async_container(AdaptersProvider(), InteractorProvider())
+    setup_dishka(container, app)
+    return app
 
 
 if __name__ == "__main__":

@@ -12,13 +12,11 @@ import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from fastapi.testclient import TestClient
-
-from dishka import Provider, Scope, provide
-from dishka.integrations.fastapi import (
-    DishkaApp,
-)
 from main_web import create_fastapi_app
 from myapp.use_cases import AddProductsInteractor
+
+from dishka import Provider, Scope, make_async_container, provide
+from dishka.integrations.fastapi import setup_dishka
 
 
 class FakeInteractorProvider(Provider):
@@ -34,10 +32,9 @@ def interactor_provider():
 
 @pytest_asyncio.fixture
 async def client(interactor_provider):
-    app = DishkaApp(
-        providers=[interactor_provider],
-        app=create_fastapi_app(),
-    )
+    container = make_async_container(interactor_provider)
+    app = create_fastapi_app()
+    setup_dishka(container, app)
     async with LifespanManager(app):
         yield TestClient(app)
 

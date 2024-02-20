@@ -6,13 +6,13 @@ from aiohttp.web_response import Response
 from aiohttp.web_routedef import RouteTableDef
 
 from dishka import (
-    AsyncContainer,
     Provider,
     Scope,
     make_async_container,
     provide,
 )
-from dishka.integrations.aiohttp import inject, setup_dishka
+from dishka.integrations.aiohttp import inject, setup_dishka, \
+    DISHKA_CONTAINER_KEY
 from dishka.integrations.base import Depends
 
 
@@ -40,11 +40,8 @@ async def endpoint(request: str, gateway: GatewayDepends) -> Response:
     return Response(text=f'gateway data: {data}')
 
 
-def shutdown(container: AsyncContainer):
-    async def wrapper(app: Application) -> None:
-        await container.close()
-
-    return wrapper
+async def on_shutdown(app: Application):
+    await app[DISHKA_CONTAINER_KEY].close()
 
 
 app = Application()
@@ -52,5 +49,5 @@ app.add_routes(router)
 
 container = make_async_container(GatewayProvider())
 setup_dishka(container=container, app=app)
-app.on_shutdown.append(shutdown(container))
+app.on_shutdown.append(on_shutdown)
 run_app(app)

@@ -1,15 +1,13 @@
 __all__ = [
-    'Depends', "inject", "DishkaApp",
+    'Depends', "inject", "setup_dishka",
 ]
 
 from inspect import Parameter
 from typing import get_type_hints
 
-from fastapi import Request
+from fastapi import FastAPI, Request
 
 from dishka import AsyncContainer
-from ..async_container import AsyncContextWrapper
-from .asgi import BaseDishkaApp
 from .base import Depends, wrap_injection
 
 
@@ -46,11 +44,6 @@ async def add_request_container_middleware(request: Request, call_next):
         return await call_next(request)
 
 
-class DishkaApp(BaseDishkaApp):
-    def _init_request_middleware(
-            self, app, container_wrapper: AsyncContextWrapper,
-    ):
-        app.middleware("http")(add_request_container_middleware)
-
-    def _app_startup(self, app, container: AsyncContainer):
-        app.state.dishka_container = container
+def setup_dishka(container: AsyncContainer, app: FastAPI) -> None:
+    app.middleware("http")(add_request_container_middleware)
+    app.state.dishka_container = container

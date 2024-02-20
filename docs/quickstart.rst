@@ -87,7 +87,7 @@ This can be also rewritten using class:
 .. code-block:: python
 
     from dishka.integrations.fastapi import (
-        Depends, inject, DishkaApp,
+        Depends, inject, setup_dishka,
     )
 
     @router.get("/")
@@ -96,7 +96,4 @@ This can be also rewritten using class:
         ...
 
     ...
-    app = DishkaApp(
-        providers=[MyProvider()],
-        app=app,
-    )
+    setup_dishka(container, app)

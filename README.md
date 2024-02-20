@@ -103,7 +103,7 @@ container.close()
 
 ```python
 from dishka.integrations.fastapi import (
-    Depends, inject, DishkaApp,
+    Depends, inject, setup_dishka,
 )
 
 @router.get("/")
@@ -112,10 +112,8 @@ async def index(a: Annotated[A, Depends()]) -> str:
     ...
 
 ...
-app = DishkaApp(
-    providers=[MyProvider()],
-    app=app,
-)
+
+setup_dishka(container, app)
 ```
 
 ### Concepts

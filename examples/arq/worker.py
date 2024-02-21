@@ -1,9 +1,11 @@
+import asyncio
 import logging
+from asyncio import CancelledError
 from typing import Protocol, Annotated, Any
 
 from arq import Worker
 from arq.connections import RedisSettings
-from dishka import Provider, Scope, provide
+from dishka import Provider, Scope, provide, make_async_container
 from dishka.integrations.base import Depends
 from dishka.integrations.arq import inject, setup_dishka
 
@@ -32,16 +34,25 @@ async def get_content(
     logger.info(result)
 
 
-def main():
+async def main():
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s  %(process)-7s %(module)-20s %(message)s",
     )
 
     worker = Worker(functions=[get_content], redis_settings=RedisSettings())  # type: ignore
-    setup_dishka(GatewayProvider(), worker=worker)
-    worker.run()
+
+    container = make_async_container(GatewayProvider())
+    setup_dishka(container=container, worker=worker)
+
+    try:
+        await worker.async_run()
+    except CancelledError:  # happens on shutdown, fine
+        pass
+    finally:
+        await container.close()
+        await worker.close()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

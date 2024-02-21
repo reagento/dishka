@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from asyncio import CancelledError
 from typing import Protocol, Annotated, Any
 
 from arq import Worker
@@ -47,12 +46,13 @@ async def main():
 
     try:
         await worker.async_run()
-    except CancelledError:  # happens on shutdown, fine
-        pass
     finally:
         await container.close()
         await worker.close()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except asyncio.CancelledError:  # happens on shutdown, fine
+        pass

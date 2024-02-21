@@ -4,10 +4,15 @@ from typing import Annotated, Protocol
 from flask import Flask
 
 from dishka import (
-    Provider, Scope, provide,
+    Provider,
+    Scope,
+    make_container,
+    provide,
 )
 from dishka.integrations.flask import (
-    Depends, inject, setup_dishka,
+    Depends,
+    inject,
+    setup_dishka,
 )
 
 
@@ -56,10 +61,8 @@ def index(
     return result
 
 
-container = setup_dishka(
-    providers=[AdaptersProvider(), InteractorProvider()],
-    app=app,
-)
+container = make_container(AdaptersProvider(), InteractorProvider())
+setup_dishka(container=container, app=app)
 try:
     app.run()
 finally:

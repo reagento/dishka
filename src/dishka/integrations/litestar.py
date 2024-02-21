@@ -1,17 +1,15 @@
 __all__ = [
-    'Depends', "inject", "DishkaApp",
+    'Depends', "inject", "setup_dishka",
 ]
-
 
 from inspect import Parameter
 from typing import Optional, get_type_hints
 
-from litestar import Request
+from litestar import Litestar, Request
 from litestar.enums import ScopeType
 from litestar.types import ASGIApp, Receive, Scope, Send
 
-from dishka.async_container import AsyncContainer, AsyncContextWrapper
-from dishka.integrations.asgi import BaseDishkaApp
+from dishka.async_container import AsyncContainer
 from dishka.integrations.base import Depends, wrap_injection
 
 
@@ -56,13 +54,8 @@ def make_add_request_container_middleware(app: ASGIApp):
     return middleware
 
 
-class DishkaApp(BaseDishkaApp):
-    def _init_request_middleware(
-            self, app, container_wrapper: AsyncContextWrapper,
-    ):
-        app.asgi_handler = make_add_request_container_middleware(
-            app.asgi_handler,
-        )
-
-    def _app_startup(self, app, container: AsyncContainer):
-        app.state.dishka_container = container
+def setup_dishka(container: AsyncContainer, app: Litestar) -> None:
+    app.asgi_handler = make_add_request_container_middleware(
+        app.asgi_handler,
+    )
+    app.state.dishka_container = container

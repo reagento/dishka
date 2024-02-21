@@ -3,7 +3,9 @@
 @provide
 ******************
 
-``provide`` function is used to declare a factory providing a dependency. It can be used with some class or as a method decorator. In second case it can be sync or async method. Also, it can support finalization of dependency if you make it a generator.
+``provide`` function is used to declare a factory providing a dependency. It can be used with some class or as a method decorator (either sync or async). It supports finalization of dependency if you make it a generator.
+
+Provider object has also a ``.provide`` method with the same logic.
 
 If it is used with class, it analyzes its ``__init__`` typehints to detect its dependencies. If it is used with method, it checks its parameters typehints and a result type. Last one describes what this method is used to create.
 
@@ -54,8 +56,8 @@ By default the result is cached within scope. You can disable it providing ``cac
        async def get_a(self) -> A:
           return A()
 
-    async with make_async_container(MyProvider()) as container:
-         a = await container.get(A)
+    container = make_async_container(MyProvider())
+    a = await container.get(A)
 
 * Tired of providing `scope==` for each depedency? Set it inside your `Provider` class and all factories with no scope will use it.
 

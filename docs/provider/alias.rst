@@ -5,6 +5,8 @@
 
 ``alias`` is used to allow retrieving of the same object by different type hints. E.g. you have configured how to provide ``A`` object and want to use it as AProtocol: ``container.get(A)==container.get(AProtocol)``.
 
+Provider object has also a ``.alias`` method with the same logic.
+
 .. code-block:: python
 
     class MyProvider(Provider):

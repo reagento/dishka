@@ -21,14 +21,15 @@ class MyProvider(Provider):
 
 
 async def main():
-    async with make_async_container(MyProvider(1)) as container:
-        print(await container.get(int))
+    container = make_async_container(MyProvider(1))
 
-        async with container() as c_request:
-            print(await c_request.get(str))
+    print(await container.get(int))
+    async with container() as c_request:
+        print(await c_request.get(str))
+    async with container() as c_request:
+        print(await c_request.get(str))
 
-        async with container() as c_request:
-            print(await c_request.get(str))
+    await container.close()
 
 
 if __name__ == '__main__':

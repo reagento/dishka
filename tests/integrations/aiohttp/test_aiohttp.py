@@ -8,6 +8,7 @@ from aiohttp.web_app import Application
 from aiohttp.web_response import Response
 from aiohttp.web_routedef import RouteTableDef
 
+from dishka import make_async_container
 from dishka.integrations.aiohttp import (
     Depends,
     inject,
@@ -30,11 +31,13 @@ async def dishka_app(view, provider) -> TestClient:
     router.get("/")(inject(view))
 
     app.add_routes(router)
-    setup_dishka(providers=[provider], app=app)
+    container = make_async_container(provider)
+    setup_dishka(container, app=app)
     client = TestClient(TestServer(app))
     await client.start_server()
     yield client
     await client.close()
+    await container.close()
 
 
 async def get_with_app(

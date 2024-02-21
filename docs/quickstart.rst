@@ -8,49 +8,77 @@ Quickstart
     pip install dishka
 
 
-2. Create Provider subclass.
+2. Create Provider instance. It is only used co setup all factories providing your objects.
 
 .. code-block:: python
 
     from dishka import Provider
-    class MyProvider(Provider):
-       ...
 
-3. Mark methods which actually create dependencies with `@provide` decorator with carefully arranged scopes. Do not forget to place correct typehints for parameters and result.
-Here we describe how to create instances of A and B classes, where B class requires itself an instance of A.
+    provider = Provider()
 
-.. code-block:: python
-
-    from dishka import provide, Provider, Scope
-    class MyProvider(Provider):
-       @provide(scope=Scope.APP)
-       def get_a(self) -> A:
-          return A()
-
-       @provide(scope=Scope.REQUEST)
-       def get_b(self, a: A) -> B:
-          return B(a)
-
-4. Create Container instance passing providers, and step into `APP` scope. Or deeper if you need.
+3. Register functions which provide dependencies. Do not forget to place correct typehints for parameters and result. We use ``scope=Scope.APP`` for dependencies which ar created only once in applicaiton lifetime, and ``scope=Scope.REQUEST`` for those which should be recreated for each processing request/event/etc.
 
 .. code-block:: python
 
-    from dishka import make_container
-    with make_container(MyProvider()) as container:  # enter Scope.APP
-         with container() as request_container:   # enter Scope.REQUEST
-              ...
+   from dishka import Provider, Scope
 
+   def get_a() -> A:
+       return A()
 
-5. Call `get` to get dependency and use context manager to get deeper through scopes
+   def get_b(a: A) -> B:
+       return B(a)
+
+   provider = Provider()
+   provider.provide(get_a, scope=Scope.APP)
+   provider.provide(get_b, scope=Scope.REQUEST)
+
+This can be also rewritten using class:
 
 .. code-block:: python
 
-    from dishka import make_container
-    with make_container(MyProvider()) as container:
-         a = container.get(A)  # `A` has Scope.APP, so it is accessible here
-         with container() as request_container:
-              b = request_container.get(B)  # `B` has Scope.REQUEST
-              a = request_container.get(A)  # `A` is accessible here too
+   from dishka import provide, Provider, Scope
+
+   class MyProvider(Provider):
+      @provide(scope=Scope.APP)
+      def get_a(self) -> A:
+         return A()
+
+      @provide(scope=Scope.REQUEST)
+      def get_b(self, a: A) -> B:
+         return B(a)
+
+   provider = MyProvider()
+
+4. Create Container instance passing providers, and step into ``APP`` scope. Container holds dependencies cache and is used to retrieve them. Here, you can use ``.get`` method to access APP-scoped dependencies:
+
+.. code-block:: python
+
+   from dishka import make_container
+
+   container = make_container(provider)  # it has Scope.APP
+   a = container.get(A)  # `A` has Scope.APP, so it is accessible here
+
+
+5. You can enter and exit ``REQUEST`` scope multiple times after that using context manager:
+
+.. code-block:: python
+
+   from dishka import make_container
+
+   container = make_container(provider)
+   with container() as request_container:
+       b = request_container.get(B)  # `B` has Scope.REQUEST
+       a = request_container.get(A)  # `A` is accessible here too
+
+   with container() as request_container:
+       b = request_container.get(B)  # another instance of `B`
+       a = request_container.get(A)  # the same instance of `A`
+
+6. Close container in the end:
+
+.. code-block:: python
+
+   container.close()
 
 
 6. If you are using supported framework add decorators and middleware for it.
@@ -59,7 +87,7 @@ Here we describe how to create instances of A and B classes, where B class requi
 .. code-block:: python
 
     from dishka.integrations.fastapi import (
-        Depends, inject, DishkaApp,
+        Depends, inject, setup_dishka,
     )
 
     @router.get("/")
@@ -68,7 +96,4 @@ Here we describe how to create instances of A and B classes, where B class requi
         ...
 
     ...
-    app = DishkaApp(
-        providers=[MyProvider()],
-        app=app,
-    )
+    setup_dishka(container, app)

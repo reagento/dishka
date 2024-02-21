@@ -13,13 +13,13 @@ class AliasProvider(Provider):
 
 
 def test_alias():
-    with make_container(AliasProvider()) as container:
-        assert container.get(float) == container.get(int)
+    container = make_container(AliasProvider())
+    assert container.get(float) == container.get(int)
 
 
 def test_alias_to_alias():
-    with make_container(AliasProvider()) as container:
-        assert container.get(complex) == container.get(int)
+    container = make_container(AliasProvider())
+    assert container.get(complex) == container.get(int)
 
 
 class CycleProvider(Provider):

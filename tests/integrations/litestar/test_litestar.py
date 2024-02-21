@@ -8,10 +8,11 @@ from asgi_lifespan import LifespanManager
 from litestar import get
 from litestar.testing import TestClient
 
+from dishka import make_async_container
 from dishka.integrations.litestar import (
     Depends,
-    DishkaApp,
     inject,
+    setup_dishka,
 )
 from ..common import (
     APP_DEP_VALUE,
@@ -26,12 +27,11 @@ from ..common import (
 async def dishka_app(view, provider) -> TestClient:
     app = litestar.Litestar()
     app.register(get("/")(inject(view)))
-    app = DishkaApp(
-        providers=[provider],
-        app=app,
-    )
+    container = make_async_container(provider)
+    setup_dishka(container, app)
     async with LifespanManager(app):
         yield litestar.testing.TestClient(app)
+    await container.close()
 
 
 async def get_with_app(

@@ -12,7 +12,7 @@ from dishka import (
     provide,
 )
 from dishka.exceptions import (
-    ExitExceptionGroup,
+    ExitError,
     NoFactoryError,
     UnsupportedFactoryError,
 )
@@ -64,7 +64,7 @@ def test_sync(dep_type):
     finalizer = Mock(return_value=123)
     container = make_container(MyProvider(finalizer))
     container.get(dep_type)
-    with pytest.raises(ExitExceptionGroup):
+    with pytest.raises(ExitError):
         container.close()
     finalizer.assert_called_once()
 
@@ -78,7 +78,7 @@ async def test_async(dep_type):
     finalizer = Mock(return_value=123)
     container = make_async_container(MyProvider(finalizer))
     await container.get(dep_type)
-    with pytest.raises(ExitExceptionGroup):
+    with pytest.raises(ExitError):
         await container.close()
     finalizer.assert_called_once()
 

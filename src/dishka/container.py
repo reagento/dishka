@@ -4,7 +4,7 @@ from typing import Any, Callable, List, Optional, Type, TypeVar
 
 from .dependency_source import Factory, FactoryType
 from .exceptions import (
-    ExitExceptionGroup,
+    ExitError,
     NoFactoryError,
     UnsupportedFactoryError,
 )
@@ -142,7 +142,7 @@ class Container:
             except Exception as err:  # noqa: BLE001
                 errors.append(err)
         if errors:
-            raise ExitExceptionGroup("Cleanup context errors", errors)
+            raise ExitError("Cleanup context errors", errors)
 
 
 class ContextWrapper:

@@ -6,23 +6,23 @@ except ImportError:
     from exceptiongroup import ExceptionGroup
 
 
-class DishkaException(Exception):
+class DishkaError(Exception):
     pass
 
 
-class InvalidGraphError(DishkaException):
+class InvalidGraphError(DishkaError):
     pass
 
 
-class ExitExceptionGroup(ExceptionGroup, DishkaException):
+class ExitError(ExceptionGroup, DishkaError):
     pass
 
 
-class UnsupportedFactoryError(DishkaException):
+class UnsupportedFactoryError(DishkaError):
     pass
 
 
-class NoFactoryError(DishkaException):
+class NoFactoryError(DishkaError):
     def __init__(self, requested: Any):
         self.requested = requested
         self.path = []

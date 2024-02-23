@@ -1,6 +1,7 @@
 import pytest
 
 from dishka import Provider, Scope, alias, make_container, provide
+from dishka.exceptions import InvalidGraphError
 
 
 class AliasProvider(Provider):
@@ -29,5 +30,5 @@ class CycleProvider(Provider):
 
 
 def test_cycle():
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidGraphError):
         make_container(CycleProvider())

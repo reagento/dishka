@@ -1,9 +1,9 @@
 __all__ = [
-    'Depends',
+    "Depends",
 ]
 
 from abc import ABC, abstractmethod
-from typing import Sequence
+from collections.abc import Sequence
 
 from dishka import Provider, make_async_container
 from dishka.async_container import AsyncContainer, AsyncContextWrapper
@@ -27,13 +27,13 @@ class BaseDishkaApp(ABC):
         pass
 
     async def __call__(self, scope, receive, send):
-        if scope['type'] == 'lifespan':
+        if scope["type"] == "lifespan":
             async def my_recv():
                 message = await receive()
-                if message['type'] == 'lifespan.startup':
+                if message["type"] == "lifespan.startup":
                     container = await self.container_wrapper.__aenter__()
                     self._app_startup(self.app, container)
-                elif message['type'] == 'lifespan.shutdown':
+                elif message["type"] == "lifespan.shutdown":
                     await self.container_wrapper.__aexit__(None, None, None)
 
             return await self.app(scope, my_recv, send)

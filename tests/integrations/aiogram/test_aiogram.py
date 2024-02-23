@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated
 from unittest.mock import Mock
 
@@ -36,7 +36,7 @@ async def send_message(bot, dp):
         update_id=1,
         message=Message(
             message_id=2,
-            date=datetime.fromtimestamp(1234567890),
+            date=datetime.fromtimestamp(1234567890, tz=timezone.utc),
             chat=Chat(id=1, type="private"),
             from_user=User(
                 id=1, is_bot=False,

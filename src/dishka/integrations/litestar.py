@@ -1,9 +1,9 @@
 __all__ = [
-    'Depends', "inject", "setup_dishka",
+    "Depends", "inject", "setup_dishka",
 ]
 
 from inspect import Parameter
-from typing import Optional, get_type_hints
+from typing import get_type_hints
 
 from litestar import Litestar, Request
 from litestar.enums import ScopeType
@@ -25,7 +25,7 @@ def inject(func):
         request_param = "request"
         additional_params = [Parameter(
             name=request_param,
-            annotation=Optional[Request],
+            annotation=Request | None,
             kind=Parameter.KEYWORD_ONLY,
         )]
 

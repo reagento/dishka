@@ -1,6 +1,7 @@
 from asyncio import Lock
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, List, Optional, Type, TypeVar
+from typing import Any, Optional, TypeVar
 
 from .dependency_source import Factory, FactoryType
 from .exceptions import (
@@ -33,7 +34,7 @@ class AsyncContainer:
             registry: Registry,
             *child_registries: Registry,
             parent_container: Optional["AsyncContainer"] = None,
-            context: Optional[dict] = None,
+            context: dict | None = None,
             lock_factory: Callable[[], Lock] | None = None,
     ):
         self.registry = registry
@@ -46,11 +47,11 @@ class AsyncContainer:
             self.lock = lock_factory()
         else:
             self.lock = None
-        self._exits: List[Exit] = []
+        self._exits: list[Exit] = []
 
     def _create_child(
             self,
-            context: Optional[dict],
+            context: dict | None,
             lock_factory: Callable[[], Lock] | None,
     ) -> "AsyncContainer":
         return AsyncContainer(
@@ -62,7 +63,7 @@ class AsyncContainer:
 
     def __call__(
             self,
-            context: Optional[dict] = None,
+            context: dict | None = None,
             lock_factory: Callable[[], Lock] | None = None,
     ) -> "AsyncContextWrapper":
         """
@@ -109,14 +110,14 @@ class AsyncContainer:
             self.context[dependency_type] = solved
         return solved
 
-    async def get(self, dependency_type: Type[T]) -> T:
+    async def get(self, dependency_type: type[T]) -> T:
         lock = self.lock
         if not lock:
             return await self._get_unlocked(dependency_type)
         async with lock:
             return await self._get_unlocked(dependency_type)
 
-    async def _get_unlocked(self, dependency_type: Type[T]) -> T:
+    async def _get_unlocked(self, dependency_type: type[T]) -> T:
         if dependency_type in self.context:
             return self.context[dependency_type]
         factory = self.registry.get_factory(dependency_type)
@@ -124,8 +125,7 @@ class AsyncContainer:
             if not self.parent_container:
                 raise NoFactoryError(dependency_type)
             return await self.parent_container.get(dependency_type)
-        solved = await self._get_from_self(factory, dependency_type)
-        return solved
+        return await self._get_from_self(factory, dependency_type)
 
     async def close(self):
         errors = []
@@ -158,8 +158,8 @@ class AsyncContextWrapper:
 
 def make_async_container(
         *providers: Provider,
-        scopes: Type[BaseScope] = Scope,
-        context: Optional[dict] = None,
+        scopes: type[BaseScope] = Scope,
+        context: dict | None = None,
         lock_factory: Callable[[], Lock] | None = Lock,
 ) -> AsyncContainer:
     registries = make_registries(*providers, scopes=scopes)

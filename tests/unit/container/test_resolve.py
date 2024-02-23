@@ -21,7 +21,8 @@ from ..sample_providers import (
 
 
 @pytest.mark.parametrize(
-    "factory, closed", [
+    ("factory", "closed"),
+    [
         (ClassA, False),
         (sync_func_a, False),
         (sync_iter_a, True),
@@ -45,7 +46,8 @@ def test_sync(factory, closed):
 
 
 @pytest.mark.parametrize(
-    "factory, closed", [
+    ("factory", "closed"),
+    [
         (ClassA, False),
         (sync_func_a, False),
         (sync_iter_a, True),

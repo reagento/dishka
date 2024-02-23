@@ -2,9 +2,11 @@ from collections.abc import (
     AsyncGenerator,
     AsyncIterable,
     AsyncIterator,
+    Callable,
     Generator,
     Iterable,
     Iterator,
+    Sequence,
 )
 from enum import Enum
 from inspect import (
@@ -18,10 +20,6 @@ from inspect import (
 )
 from typing import (
     Any,
-    Callable,
-    Optional,
-    Sequence,
-    Type,
     get_args,
     get_origin,
     get_type_hints,
@@ -57,17 +55,18 @@ def _identity(x: Any) -> Any:
 class Factory:
     __slots__ = (
         "dependencies", "source", "provides", "scope", "type",
-        "is_to_bound", "cache",
+        "is_to_bind", "cache",
     )
 
     def __init__(
             self,
+            *,
             dependencies: Sequence[Any],
             source: Any,
-            provides: Type,
+            provides: type,
             scope: BaseScope | None,
             type: FactoryType,
-            is_to_bound: bool,
+            is_to_bind: bool,
             cache: bool,
     ):
         self.dependencies = dependencies
@@ -75,14 +74,14 @@ class Factory:
         self.provides = provides
         self.scope = scope
         self.type = type
-        self.is_to_bound = is_to_bound
+        self.is_to_bind = is_to_bind
         self.cache = cache
 
     def __get__(self, instance, owner):
         scope = self.scope or instance.scope
         if instance is None:
             return self
-        if self.is_to_bound:
+        if self.is_to_bind:
             source = self.source.__get__(instance, owner)
             dependencies = self.dependencies[1:]
         else:
@@ -94,7 +93,7 @@ class Factory:
             provides=self.provides,
             scope=scope,
             type=self.type,
-            is_to_bound=False,
+            is_to_bind=False,
             cache=self.cache,
         )
 
@@ -153,8 +152,9 @@ def _clean_result_hint(factory_type: FactoryType, possible_dependency: Any):
 
 
 def make_factory(
+        *,
         provides: Any,
-        scope: Optional[BaseScope],
+        scope: BaseScope | None,
         source: Callable,
         cache: bool,
 ) -> Factory:
@@ -214,8 +214,10 @@ def make_factory(
             scope=scope,
         )
         factory_type = factory.type
-        if factory.is_to_bound:
+        if factory.is_to_bind:
             dependencies = factory.dependencies[1:]  # remove `self`
+        else:
+            dependencies = factory.dependencies
         provides = factory.provides
         is_to_bind = False
     else:
@@ -227,7 +229,7 @@ def make_factory(
         source=source,
         scope=scope,
         provides=provides,
-        is_to_bound=is_to_bind,
+        is_to_bind=is_to_bind,
         cache=cache,
     )
 
@@ -244,7 +246,7 @@ def provide(
 
 @overload
 def provide(
-        source: Callable | classmethod | staticmethod | Type | None,
+        source: Callable | classmethod | staticmethod | type | None,
         *,
         scope: BaseScope | None = None,
         provides: Any = None,
@@ -254,7 +256,7 @@ def provide(
 
 
 def provide(
-        source: Callable | classmethod | staticmethod | Type | None = None,
+        source: Callable | classmethod | staticmethod | type | None = None,
         *,
         scope: BaseScope | None = None,
         provides: Any = None,
@@ -281,10 +283,14 @@ def provide(
     :param cache: save created object to scope cache or not
     """
     if source is not None:
-        return make_factory(provides, scope, source, cache)
+        return make_factory(
+            provides=provides, scope=scope, source=source, cache=cache,
+        )
 
     def scoped(func):
-        return make_factory(provides, scope, func, cache)
+        return make_factory(
+            provides=provides, scope=scope, source=func, cache=cache,
+        )
 
     return scoped
 
@@ -292,7 +298,7 @@ def provide(
 class Alias:
     __slots__ = ("source", "provides", "cache")
 
-    def __init__(self, source, provides, cache: bool):
+    def __init__(self, *, source, provides, cache: bool):
         self.source = source
         self.provides = provides
         self.cache = cache
@@ -302,7 +308,7 @@ class Alias:
             scope=scope,
             source=_identity,
             provides=self.provides,
-            is_to_bound=False,
+            is_to_bind=False,
             dependencies=[self.source],
             type=FactoryType.FACTORY,
             cache=self.cache,
@@ -314,8 +320,8 @@ class Alias:
 
 def alias(
         *,
-        source: Type,
-        provides: Type,
+        source: type,
+        provides: type,
         cache: bool = True,
 ) -> Alias:
     return Alias(
@@ -333,13 +339,13 @@ class Decorator:
         self.provides = factory.provides
 
     def as_factory(
-            self, scope: BaseScope, new_dependency: Any, cache: bool,
+            self, *, scope: BaseScope, new_dependency: Any, cache: bool,
     ) -> Factory:
         return Factory(
             scope=scope,
             source=self.factory.source,
             provides=self.factory.provides,
-            is_to_bound=self.factory.is_to_bound,
+            is_to_bind=self.factory.is_to_bind,
             dependencies=[
                 new_dependency if dep is self.provides else dep
                 for dep in self.factory.dependencies
@@ -362,7 +368,7 @@ def decorate(
 
 @overload
 def decorate(
-        source: Callable | Type,
+        source: Callable | type,
         *,
         provides: Any = None,
 ) -> Decorator:
@@ -370,14 +376,18 @@ def decorate(
 
 
 def decorate(
-        source: Callable | Type | None = None,
+        source: Callable | type | None = None,
         provides: Any = None,
 ) -> Decorator | Callable[[Callable], Decorator]:
     if source is not None:
-        return Decorator(make_factory(provides, None, source, False))
+        return Decorator(make_factory(
+            provides=provides, scope=None, source=source, cache=False,
+        ))
 
     def scoped(func):
-        return Decorator(make_factory(provides, None, func, False))
+        return Decorator(make_factory(
+            provides=provides, scope=None, source=func, cache=False,
+        ))
 
     return scoped
 

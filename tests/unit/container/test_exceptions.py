@@ -1,4 +1,5 @@
-from typing import AsyncIterable, Iterable, NewType
+from collections.abc import AsyncIterable, Iterable
+from typing import NewType
 from unittest.mock import Mock
 
 import pytest
@@ -23,8 +24,8 @@ class MyError(Exception):
 
 SyncError = NewType("SyncError", int)
 SyncFinalizationError = NewType("SyncFinalizationError", int)
-AsyncError = NewType("SyncError", int)
-AsyncFinalizationError = NewType("SyncFinalizationError", int)
+AsyncError = NewType("AsyncError", int)
+AsyncFinalizationError = NewType("AsyncFinalizationError", int)
 
 
 class MyProvider(Provider):
@@ -61,9 +62,9 @@ class MyProvider(Provider):
 ])
 def test_sync(dep_type):
     finalizer = Mock(return_value=123)
+    container = make_container(MyProvider(finalizer))
+    container.get(dep_type)
     with pytest.raises(ExitExceptionGroup):
-        container = make_container(MyProvider(finalizer))
-        container.get(dep_type)
         container.close()
     finalizer.assert_called_once()
 
@@ -75,21 +76,21 @@ def test_sync(dep_type):
 @pytest.mark.asyncio
 async def test_async(dep_type):
     finalizer = Mock(return_value=123)
+    container = make_async_container(MyProvider(finalizer))
+    await container.get(dep_type)
     with pytest.raises(ExitExceptionGroup):
-        container = make_async_container(MyProvider(finalizer))
-        await container.get(dep_type)
         await container.close()
     finalizer.assert_called_once()
 
 
 class InvalidScopeProvider(Provider):
     @provide(scope=Scope.REQUEST)
-    def y(self) -> bool:
+    def y(self) -> object:
         return False
 
     @provide(scope=Scope.APP)
-    def x(self, value: bool) -> int:
-        return value
+    def x(self, value: object) -> int:
+        return 1
 
     @provide(scope=Scope.APP)
     def a(self, value: int) -> float:
@@ -104,7 +105,7 @@ def test_no_factory_sync():
     container = make_container(InvalidScopeProvider())
     with pytest.raises(NoFactoryError) as e:
         container.get(complex)
-    assert e.value.requested == bool
+    assert e.value.requested == object
     assert e.value.path == [complex, float, int]
 
 
@@ -113,7 +114,7 @@ async def test_no_factory_async():
     container = make_async_container(InvalidScopeProvider())
     with pytest.raises(NoFactoryError) as e:
         await container.get(complex)
-    assert e.value.requested == bool
+    assert e.value.requested == object
     assert e.value.path == [complex, float, int]
 
 

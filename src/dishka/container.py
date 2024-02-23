@@ -3,7 +3,11 @@ from threading import Lock
 from typing import Any, Callable, List, Optional, Type, TypeVar
 
 from .dependency_source import Factory, FactoryType
-from .exceptions import ExitExceptionGroup
+from .exceptions import (
+    ExitExceptionGroup,
+    NoFactoryError,
+    UnsupportedFactoryError,
+)
 from .provider import Provider
 from .registry import Registry, make_registries
 from .scope import BaseScope, Scope
@@ -74,20 +78,37 @@ class Container:
     def _get_from_self(
             self, factory: Factory, dependency_type: Any,
     ) -> T:
-        sub_dependencies = [
-            self._get_unlocked(dependency)
-            for dependency in factory.dependencies
-        ]
+        try:
+            sub_dependencies = [
+                self._get_unlocked(dependency)
+                for dependency in factory.dependencies
+            ]
+        except NoFactoryError as e:
+            e.add_path(dependency_type)
+            raise
+
         if factory.type is FactoryType.GENERATOR:
             generator = factory.source(*sub_dependencies)
             self._exits.append(Exit(factory.type, generator))
             solved = next(generator)
         elif factory.type is FactoryType.FACTORY:
             solved = factory.source(*sub_dependencies)
+        elif factory.type is FactoryType.ASYNC_GENERATOR:
+            raise UnsupportedFactoryError(
+                f"Unsupported factory type {factory.type}. "
+                f"Did you mean to use an async container?",
+            )
+        elif factory.type is FactoryType.ASYNC_FACTORY:
+            raise UnsupportedFactoryError(
+                f"Unsupported factory type {factory.type}. "
+                f"Did you mean to use an async container?",
+            )
         elif factory.type is FactoryType.VALUE:
             solved = factory.source
         else:
-            raise ValueError(f"Unsupported type {factory.type}")
+            raise UnsupportedFactoryError(
+                f"Unsupported factory type {factory.type}. ",
+            )
         if factory.cache:
             self.context[dependency_type] = solved
         return solved
@@ -102,12 +123,12 @@ class Container:
     def _get_unlocked(self, dependency_type: Type[T]) -> T:
         if dependency_type in self.context:
             return self.context[dependency_type]
-        provider = self.registry.get_factory(dependency_type)
-        if not provider:
+        factory = self.registry.get_factory(dependency_type)
+        if not factory:
             if not self.parent_container:
-                raise ValueError(f"No provider found for {dependency_type!r}")
+                raise NoFactoryError(dependency_type)
             return self.parent_container.get(dependency_type)
-        solved = self._get_from_self(provider, dependency_type)
+        solved = self._get_from_self(factory, dependency_type)
         return solved
 
     def close(self) -> None:

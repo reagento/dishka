@@ -1,6 +1,7 @@
 import pytest
 
 from dishka import Provider, Scope, alias, decorate, make_container, provide
+from dishka.exceptions import InvalidGraphError
 
 
 class A:
@@ -93,7 +94,7 @@ def test_double_error():
         ad = decorate(ADecorator, provides=A)
         ad2 = decorate(ADecorator, provides=A)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidGraphError):
         MyProvider()
 
 

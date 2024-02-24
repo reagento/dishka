@@ -10,7 +10,11 @@ from dishka import (
     make_container,
     provide,
 )
-from dishka.exceptions import ExitExceptionGroup
+from dishka.exceptions import (
+    ExitError,
+    NoFactoryError,
+    UnsupportedFactoryError,
+)
 
 
 class MyError(Exception):
@@ -57,7 +61,7 @@ class MyProvider(Provider):
 ])
 def test_sync(dep_type):
     finalizer = Mock(return_value=123)
-    with pytest.raises(ExitExceptionGroup):
+    with pytest.raises(ExitError):
         container = make_container(MyProvider(finalizer))
         container.get(dep_type)
         container.close()
@@ -71,8 +75,55 @@ def test_sync(dep_type):
 @pytest.mark.asyncio
 async def test_async(dep_type):
     finalizer = Mock(return_value=123)
-    with pytest.raises(ExitExceptionGroup):
+    with pytest.raises(ExitError):
         container = make_async_container(MyProvider(finalizer))
         await container.get(dep_type)
         await container.close()
     finalizer.assert_called_once()
+
+
+class InvalidScopeProvider(Provider):
+    @provide(scope=Scope.REQUEST)
+    def y(self) -> bool:
+        return False
+
+    @provide(scope=Scope.APP)
+    def x(self, value: bool) -> int:
+        return value
+
+    @provide(scope=Scope.APP)
+    def a(self, value: int) -> float:
+        return value
+
+    @provide(scope=Scope.APP)
+    def b(self, value: float) -> complex:
+        return value
+
+
+def test_no_factory_sync():
+    container = make_container(InvalidScopeProvider())
+    with pytest.raises(NoFactoryError) as e:
+        container.get(complex)
+    assert e.value.requested == bool
+    assert e.value.path == [complex, float, int]
+
+
+@pytest.mark.asyncio
+async def test_no_factory_async():
+    container = make_async_container(InvalidScopeProvider())
+    with pytest.raises(NoFactoryError) as e:
+        await container.get(complex)
+    assert e.value.requested == bool
+    assert e.value.path == [complex, float, int]
+
+
+class AsyncProvider(Provider):
+    @provide(scope=Scope.APP)
+    async def x(self) -> int:
+        return 0
+
+
+def test_async_factory_in_sync():
+    container = make_container(AsyncProvider())
+    with pytest.raises(UnsupportedFactoryError):
+        container.get(int)

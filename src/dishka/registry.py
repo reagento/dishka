@@ -58,7 +58,7 @@ class Registry:
             provides=dependency,
             dependencies=new_dependencies,
             is_to_bind=factory.is_to_bind,
-            type=factory.type,
+            type_=factory.type,
             scope=factory.scope,
             cache=factory.cache,
         )

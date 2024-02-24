@@ -45,8 +45,10 @@ class FactoryType(Enum):
     ASYNC_FACTORY = "async_factory"
     VALUE = "value"
 
+
 def _is_bound_method(obj):
     return ismethod(obj) and obj.__self__
+
 
 def _identity(x: Any) -> Any:
     return x
@@ -65,7 +67,7 @@ class Factory:
             source: Any,
             provides: type,
             scope: BaseScope | None,
-            type: FactoryType,
+            type_: FactoryType,
             is_to_bind: bool,
             cache: bool,
     ):
@@ -73,7 +75,7 @@ class Factory:
         self.source = source
         self.provides = provides
         self.scope = scope
-        self.type = type
+        self.type = type_
         self.is_to_bind = is_to_bind
         self.cache = cache
 
@@ -92,7 +94,7 @@ class Factory:
             source=source,
             provides=self.provides,
             scope=scope,
-            type=self.type,
+            type_=self.type,
             is_to_bind=False,
             cache=self.cache,
         )
@@ -123,32 +125,170 @@ def _guess_factory_type(source):
         return FactoryType.FACTORY
 
 
+def _async_generator_result(possible_dependency: Any):
+    origin = get_origin(possible_dependency)
+    if origin in (AsyncIterable, AsyncIterator, AsyncGenerator):
+        return get_args(possible_dependency)[0]
+    elif origin is AsyncIterator:
+        return get_args(possible_dependency)[0]
+    elif origin is AsyncGenerator:
+        return get_args(possible_dependency)[0]
+    else:
+        raise TypeError(
+            f"Unsupported return type {possible_dependency} {origin} "
+            f"for async generator",
+        )
+
+
+def _generator_result(possible_dependency: Any):
+    origin = get_origin(possible_dependency)
+    if origin is Iterable:
+        return get_args(possible_dependency)[0]
+    elif origin is Iterator:
+        return get_args(possible_dependency)[0]
+    elif origin is Generator:
+        return get_args(possible_dependency)[1]
+    else:
+        raise TypeError(
+            f"Unsupported return type {possible_dependency} {origin}"
+            f" for generator",
+        )
+
+
 def _clean_result_hint(factory_type: FactoryType, possible_dependency: Any):
     if factory_type == FactoryType.ASYNC_GENERATOR:
-        origin = get_origin(possible_dependency)
-        if origin is AsyncIterable:
-            return get_args(possible_dependency)[0]
-        elif origin is AsyncIterator:
-            return get_args(possible_dependency)[0]
-        elif origin is AsyncGenerator:
-            return get_args(possible_dependency)[0]
-        else:
-            raise TypeError(
-                f"Unsupported return type {possible_dependency} {origin} "
-                f"for async generator")
+        return _async_generator_result(possible_dependency)
     elif factory_type == FactoryType.GENERATOR:
-        origin = get_origin(possible_dependency)
-        if origin is Iterable:
-            return get_args(possible_dependency)[0]
-        elif origin is Iterator:
-            return get_args(possible_dependency)[0]
-        elif origin is Generator:
-            return get_args(possible_dependency)[1]
-        else:
-            raise TypeError(
-                f"Unsupported return type {possible_dependency} {origin}"
-                f" for generator")
+        return _generator_result(possible_dependency)
     return possible_dependency
+
+
+def _make_factory_by_class(
+        *,
+        provides: Any,
+        scope: BaseScope | None,
+        source: Callable,
+        cache: bool,
+):
+    # we need to fix concrete generics and normal classes as well
+    # as classes can be children of concrete generics
+    res = GenericResolver(_get_init_members)
+    hints = dict(res.get_resolved_members(source).members)
+    hints.pop("return", None)
+    dependencies = list(hints.values())
+    if not provides:
+        provides = source
+    is_to_bind = False
+    factory_type = FactoryType.FACTORY
+    return Factory(
+        dependencies=dependencies,
+        type_=factory_type,
+        source=source,
+        scope=scope,
+        provides=provides,
+        is_to_bind=is_to_bind,
+        cache=cache,
+    )
+
+
+def _make_factory_by_method(
+        *,
+        provides: Any,
+        scope: BaseScope | None,
+        source: Callable | classmethod,
+        cache: bool,
+):
+    if isinstance(source, classmethod):
+        params = signature(source.__wrapped__).parameters
+        factory_type = _guess_factory_type(source.__wrapped__)
+    else:
+        params = signature(source).parameters
+        factory_type = _guess_factory_type(source)
+
+    hints = get_type_hints(source, include_extras=True)
+    self = next(iter(params.values()), None)
+    if self:
+        if self.name not in hints:
+            # add self to dependencies, so it can be easily removed
+            # if we will bind factory to provider instance
+            hints = {self.name: Any, **hints}
+        is_to_bind = True
+    else:
+        is_to_bind = False
+    possible_dependency = hints.pop("return", None)
+    dependencies = list(hints.values())
+    if not provides:
+        provides = _clean_result_hint(factory_type, possible_dependency)
+
+    return Factory(
+        dependencies=dependencies,
+        type_=factory_type,
+        source=source,
+        scope=scope,
+        provides=provides,
+        is_to_bind=is_to_bind,
+        cache=cache,
+    )
+
+
+def _make_factory_by_static_method(
+        *,
+        provides: Any,
+        scope: BaseScope | None,
+        source: staticmethod,
+        cache: bool,
+):
+    factory_type = _guess_factory_type(source.__wrapped__)
+    hints = get_type_hints(source, include_extras=True)
+    possible_dependency = hints.pop("return", None)
+    dependencies = list(hints.values())
+    if not provides:
+        provides = _clean_result_hint(factory_type, possible_dependency)
+    is_to_bind = False
+    return Factory(
+        dependencies=dependencies,
+        type_=factory_type,
+        source=source,
+        scope=scope,
+        provides=provides,
+        is_to_bind=is_to_bind,
+        cache=cache,
+    )
+
+
+def _make_factory_by_other_callable(
+        *,
+        provides: Any,
+        scope: BaseScope | None,
+        source: Callable,
+        cache: bool,
+):
+    if _is_bound_method(source):
+        to_check = source.__func__
+    else:
+        to_check = type(source).__call__
+    factory = make_factory(
+        provides=provides,
+        source=to_check,
+        cache=cache,
+        scope=scope,
+    )
+    factory_type = factory.type
+    if factory.is_to_bind:
+        dependencies = factory.dependencies[1:]  # remove `self`
+    else:
+        dependencies = factory.dependencies
+    provides = factory.provides
+    is_to_bind = False
+    return Factory(
+        dependencies=dependencies,
+        type_=factory_type,
+        source=source,
+        scope=scope,
+        provides=provides,
+        is_to_bind=is_to_bind,
+        cache=cache,
+    )
 
 
 def make_factory(
@@ -162,76 +302,23 @@ def make_factory(
         source = source[get_type_vars(source)]
 
     if isclass(source) or get_origin(source):
-        # we need to fix concrete generics and normal classes as well
-        # as classes can be children of concrete generics
-        res = GenericResolver(_get_init_members)
-        hints = dict(res.get_resolved_members(source).members)
-        hints.pop("return", None)
-        dependencies = list(hints.values())
-        if not provides:
-            provides = source
-        is_to_bind = False
-        factory_type = FactoryType.FACTORY
-    elif isfunction(source) or isinstance(source, classmethod):
-        if isinstance(source, classmethod):
-            params = signature(source.__wrapped__).parameters
-            factory_type = _guess_factory_type(source.__wrapped__)
-        else:
-            params = signature(source).parameters
-            factory_type = _guess_factory_type(source)
-
-        hints = get_type_hints(source, include_extras=True)
-        self = next(iter(params.values()), None)
-        if self:
-            if self.name not in hints:
-                # add self to dependencies, so it can be easily removed
-                # if we will bind factory to provider instance
-                hints = {self.name: Any, **hints}
-            is_to_bind = True
-        else:
-            is_to_bind = False
-        possible_dependency = hints.pop("return", None)
-        dependencies = list(hints.values())
-        if not provides:
-            provides = _clean_result_hint(factory_type, possible_dependency)
-    elif isinstance(source, staticmethod):
-        factory_type = _guess_factory_type(source.__wrapped__)
-        hints = get_type_hints(source, include_extras=True)
-        possible_dependency = hints.pop("return", None)
-        dependencies = list(hints.values())
-        if not provides:
-            provides = _clean_result_hint(factory_type, possible_dependency)
-        is_to_bind = False
-    elif callable(source):
-        if _is_bound_method(source):
-            to_check = source.__func__
-        else:
-            to_check = type(source).__call__
-        factory = make_factory(
-            provides=provides,
-            source=to_check,
-            cache=cache,
-            scope=scope,
+        return _make_factory_by_class(
+            provides=provides, scope=scope, source=source, cache=cache,
         )
-        factory_type = factory.type
-        if factory.is_to_bind:
-            dependencies = factory.dependencies[1:]  # remove `self`
-        else:
-            dependencies = factory.dependencies
-        provides = factory.provides
-        is_to_bind = False
+    elif isfunction(source) or isinstance(source, classmethod):
+        return _make_factory_by_method(
+            provides=provides, scope=scope, source=source, cache=cache,
+        )
+    elif isinstance(source, staticmethod):
+        return _make_factory_by_static_method(
+            provides=provides, scope=scope, source=source, cache=cache,
+        )
+    elif callable(source):
+        return _make_factory_by_other_callable(
+            provides=provides, scope=scope, source=source, cache=cache,
+        )
     else:
         raise TypeError(f"Cannot use {type(source)} as a factory")
-
-    return Factory(
-        dependencies=dependencies,
-        type=factory_type,
-        source=source,
-        scope=scope,
-        provides=provides,
-        is_to_bind=is_to_bind,
-        cache=cache,
-    )
 
 
 @overload
@@ -310,7 +397,7 @@ class Alias:
             provides=self.provides,
             is_to_bind=False,
             dependencies=[self.source],
-            type=FactoryType.FACTORY,
+            type_=FactoryType.FACTORY,
             cache=self.cache,
         )
 
@@ -350,7 +437,7 @@ class Decorator:
                 new_dependency if dep is self.provides else dep
                 for dep in self.factory.dependencies
             ],
-            type=self.factory.type,
+            type_=self.factory.type,
             cache=cache,
         )
 

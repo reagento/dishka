@@ -20,7 +20,7 @@ def test_provider_init():
         a = alias(source=int, provides=bool)
 
         @provide(scope=Scope.REQUEST)
-        def foo(self, x: bool) -> str:
+        def foo(self, x: object) -> str:
             return f"{x}"
 
     provider = MyProvider()
@@ -29,7 +29,8 @@ def test_provider_init():
 
 
 @pytest.mark.parametrize(
-    "source, provider_type, is_to_bound", [
+    ("source", "provider_type", "is_to_bound"),
+    [
         (sync_func_a, FactoryType.FACTORY, True),
         (sync_iter_a, FactoryType.GENERATOR, True),
         (sync_gen_a, FactoryType.GENERATOR, True),
@@ -42,14 +43,15 @@ def test_parse_factory(source, provider_type, is_to_bound):
     factory = provide(source, scope=Scope.REQUEST)
     assert factory.provides == ClassA
     assert factory.dependencies == [Any, int]
-    assert factory.is_to_bound == is_to_bound
+    assert factory.is_to_bind == is_to_bound
     assert factory.scope == Scope.REQUEST
     assert factory.source == source
     assert factory.type == provider_type
 
 
 @pytest.mark.parametrize(
-    "source, provider_type, is_to_bound", [
+    ("source", "provider_type", "is_to_bound"),
+    [
         (ClassA, FactoryType.FACTORY, False),
     ],
 )
@@ -57,7 +59,7 @@ def test_parse_factory_cls(source, provider_type, is_to_bound):
     factory = provide(source, scope=Scope.REQUEST)
     assert factory.provides == ClassA
     assert factory.dependencies == [int]
-    assert factory.is_to_bound == is_to_bound
+    assert factory.is_to_bind == is_to_bound
     assert factory.scope == Scope.REQUEST
     assert factory.source == source
     assert factory.type == provider_type
@@ -68,7 +70,7 @@ def test_provider_class_scope():
         scope = Scope.REQUEST
 
         @provide()
-        def foo(self, x: bool) -> str:
+        def foo(self, x: object) -> str:
             return f"{x}"
 
     provider = MyProvider()
@@ -78,7 +80,7 @@ def test_provider_class_scope():
 def test_provider_instance_scope():
     class MyProvider(Provider):
         @provide()
-        def foo(self, x: bool) -> str:
+        def foo(self, x: object) -> str:
             return f"{x}"
 
     provider = MyProvider(scope=Scope.REQUEST)
@@ -88,7 +90,7 @@ def test_provider_instance_scope():
 def test_provider_instance_braces():
     class MyProvider(Provider):
         @provide
-        def foo(self, x: bool) -> str:
+        def foo(self, x: object) -> str:
             return f"{x}"
 
     provider = MyProvider(scope=Scope.REQUEST)

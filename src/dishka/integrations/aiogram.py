@@ -4,8 +4,8 @@ __all__ = [
     "setup_dishka",
 ]
 
+from collections.abc import Container
 from inspect import Parameter
-from typing import Container
 
 from aiogram import BaseMiddleware, Router
 from aiogram.types import TelegramObject

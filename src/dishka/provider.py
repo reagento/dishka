@@ -1,5 +1,6 @@
 import inspect
-from typing import Any, Callable, List, Type
+from collections.abc import Callable
+from typing import Any
 
 from .dependency_source import (
     Alias,
@@ -34,9 +35,9 @@ class Provider:
     scope: BaseScope | None = None
 
     def __init__(self, scope: BaseScope | None = None):
-        self.factories: List[Factory] = []
-        self.aliases: List[Alias] = []
-        self.decorators: List[Decorator] = []
+        self.factories: list[Factory] = []
+        self.aliases: list[Alias] = []
+        self.decorators: list[Decorator] = []
         self._init_dependency_sources()
         self.scope = self.scope or scope
 
@@ -61,7 +62,7 @@ class Provider:
 
     def provide(
             self,
-            source: Callable | Type,
+            source: Callable | type,
             *,
             scope: BaseScope | None = None,
             provides: Any = None,
@@ -81,8 +82,8 @@ class Provider:
     def alias(
             self,
             *,
-            source: Type,
-            provides: Type,
+            source: type,
+            provides: type,
             cache: bool = True,
     ) -> Alias:
         new_alias = alias(
@@ -95,7 +96,7 @@ class Provider:
 
     def decorate(
             self,
-            source: Callable | Type,
+            source: Callable | type,
             *,
             provides: Any = None,
     ) -> Decorator:

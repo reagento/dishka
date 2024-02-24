@@ -1,4 +1,5 @@
-from typing import Any, AsyncGenerator, AsyncIterable, Generator, Iterable
+from collections.abc import AsyncGenerator, AsyncIterable, Generator, Iterable
+from typing import Any
 
 from dishka import Scope
 from dishka.dependency_source import Factory, FactoryType
@@ -47,8 +48,8 @@ value_factory = Factory(
     provides=ClassA,
     source=A_VALUE,
     dependencies=[],
-    type=FactoryType.VALUE,
+    type_=FactoryType.VALUE,
     scope=Scope.APP,
-    is_to_bound=False,
+    is_to_bind=False,
     cache=False,
 )

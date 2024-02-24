@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, List, NewType, Type, TypeVar, get_args, get_origin
+from typing import Any, NewType, TypeVar, get_args, get_origin
 
 from ._adaptix.type_tools.basic_utils import get_type_vars, is_generic
 from .dependency_source import Factory
@@ -12,7 +12,7 @@ class Registry:
     __slots__ = ("scope", "_factories")
 
     def __init__(self, scope: BaseScope):
-        self._factories: dict[Type, Factory] = {}
+        self._factories: dict[type, Factory] = {}
         self.scope = scope
 
     def add_factory(self, factory: Factory):
@@ -41,7 +41,7 @@ class Registry:
     ) -> Factory:
         params_replacement = dict(zip(
             get_args(factory.provides),
-            get_args(dependency),
+            get_args(dependency), strict=False,
         ))
         new_dependencies = []
         for source_dependency in factory.dependencies:
@@ -57,17 +57,17 @@ class Registry:
             source=factory.source,
             provides=dependency,
             dependencies=new_dependencies,
-            is_to_bound=factory.is_to_bound,
-            type=factory.type,
+            is_to_bind=factory.is_to_bind,
+            type_=factory.type,
             scope=factory.scope,
             cache=factory.cache,
         )
 
 
 def make_registries(
-        *providers: Provider, scopes: Type[BaseScope],
-) -> List[Registry]:
-    dep_scopes: dict[Type, BaseScope] = {}
+        *providers: Provider, scopes: type[BaseScope],
+) -> list[Registry]:
+    dep_scopes: dict[type, BaseScope] = {}
     alias_sources = {}
     for provider in providers:
         for source in provider.factories:
@@ -76,7 +76,7 @@ def make_registries(
             alias_sources[source.provides] = source.source
 
     registries = {scope: Registry(scope) for scope in scopes}
-    decorator_depth: dict[Type, int] = defaultdict(int)
+    decorator_depth: dict[type, int] = defaultdict(int)
 
     for provider in providers:
         for source in provider.factories:
@@ -109,7 +109,9 @@ def make_registries(
             old_factory.provides = undecorated_type
             registry.add_factory(old_factory)
             source = source.as_factory(
-                scope, undecorated_type, old_factory.cache,
+                scope=scope,
+                new_dependency=undecorated_type,
+                cache=old_factory.cache,
             )
             registries[scope].add_factory(source)
 

@@ -1,6 +1,7 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 from threading import Lock
-from typing import Any, Callable, List, Optional, Type, TypeVar
+from typing import Any, Optional, TypeVar
 
 from .dependency_source import Factory, FactoryType
 from .exceptions import (
@@ -33,7 +34,7 @@ class Container:
             registry: Registry,
             *child_registries: Registry,
             parent_container: Optional["Container"] = None,
-            context: Optional[dict] = None,
+            context: dict | None = None,
             lock_factory: Callable[[], Lock] | None = None,
     ):
         self.registry = registry
@@ -46,11 +47,11 @@ class Container:
             self.lock = lock_factory()
         else:
             self.lock = None
-        self._exits: List[Exit] = []
+        self._exits: list[Exit] = []
 
     def _create_child(
             self,
-            context: Optional[dict],
+            context: dict | None,
             lock_factory: Callable[[], Lock] | None,
     ) -> "Container":
         return Container(
@@ -62,7 +63,7 @@ class Container:
 
     def __call__(
             self,
-            context: Optional[dict] = None,
+            context: dict | None = None,
             lock_factory: Callable[[], Lock] | None = None,
     ) -> "ContextWrapper":
         """
@@ -113,14 +114,14 @@ class Container:
             self.context[dependency_type] = solved
         return solved
 
-    def get(self, dependency_type: Type[T]) -> T:
+    def get(self, dependency_type: type[T]) -> T:
         lock = self.lock
         if not lock:
             return self._get_unlocked(dependency_type)
         with lock:
             return self._get_unlocked(dependency_type)
 
-    def _get_unlocked(self, dependency_type: Type[T]) -> T:
+    def _get_unlocked(self, dependency_type: type[T]) -> T:
         if dependency_type in self.context:
             return self.context[dependency_type]
         factory = self.registry.get_factory(dependency_type)
@@ -128,8 +129,7 @@ class Container:
             if not self.parent_container:
                 raise NoFactoryError(dependency_type)
             return self.parent_container.get(dependency_type)
-        solved = self._get_from_self(factory, dependency_type)
-        return solved
+        return self._get_from_self(factory, dependency_type)
 
     def close(self) -> None:
         errors = []
@@ -137,7 +137,7 @@ class Container:
             try:
                 if exit_generator.type is FactoryType.GENERATOR:
                     next(exit_generator.callable)
-            except StopIteration:
+            except StopIteration:  # noqa: PERF203
                 pass
             except Exception as err:  # noqa: BLE001
                 errors.append(err)
@@ -160,8 +160,8 @@ class ContextWrapper:
 
 def make_container(
         *providers: Provider,
-        scopes: Type[BaseScope] = Scope,
-        context: Optional[dict] = None,
+        scopes: type[BaseScope] = Scope,
+        context: dict | None = None,
         lock_factory: Callable[[], Lock] | None = None,
 ) -> Container:
     registries = make_registries(*providers, scopes=scopes)

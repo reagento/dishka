@@ -136,7 +136,7 @@ class AsyncContainer:
         if not factory:
             if not self.parent_container:
                 raise NoFactoryError(key)
-            return self.parent_container.get(key.type_hint, key.component)
+            return await self.parent_container.get(key.type_hint, key.component)
         return await self._get_from_self(factory, key)
 
     async def close(self):

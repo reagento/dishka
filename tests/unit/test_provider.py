@@ -4,6 +4,10 @@ import pytest
 
 from dishka import Provider, Scope, alias, provide
 from dishka.dependency_source import FactoryType
+from dishka.dependency_source.key import (
+    hint_to_dependency_key,
+    hints_to_dependency_keys,
+)
 from .sample_providers import (
     ClassA,
     async_func_a,
@@ -41,8 +45,8 @@ def test_provider_init():
 )
 def test_parse_factory(source, provider_type, is_to_bound):
     factory = provide(source, scope=Scope.REQUEST)
-    assert factory.provides == ClassA
-    assert factory.dependencies == [Any, int]
+    assert factory.provides == hint_to_dependency_key(ClassA)
+    assert factory.dependencies == hints_to_dependency_keys([Any, int])
     assert factory.is_to_bind == is_to_bound
     assert factory.scope == Scope.REQUEST
     assert factory.source == source
@@ -57,8 +61,8 @@ def test_parse_factory(source, provider_type, is_to_bound):
 )
 def test_parse_factory_cls(source, provider_type, is_to_bound):
     factory = provide(source, scope=Scope.REQUEST)
-    assert factory.provides == ClassA
-    assert factory.dependencies == [int]
+    assert factory.provides == hint_to_dependency_key(ClassA)
+    assert factory.dependencies == hints_to_dependency_keys([int])
     assert factory.is_to_bind == is_to_bound
     assert factory.scope == Scope.REQUEST
     assert factory.source == source
@@ -139,27 +143,27 @@ def test_callable():
         foo = provide(MyCallable())
 
     provider = MyProvider(scope=Scope.REQUEST)
-    assert provider.foo.provides == str
-    assert provider.foo.dependencies == [int]
+    assert provider.foo.provides == hint_to_dependency_key(str)
+    assert provider.foo.dependencies == hints_to_dependency_keys([int])
 
 
 def test_provide_as_method():
     provider = Provider(scope=Scope.REQUEST)
     foo = provider.provide(MyCallable())
-    assert foo.provides == str
-    assert foo.dependencies == [int]
+    assert foo.provides == hint_to_dependency_key(str)
+    assert foo.dependencies == hints_to_dependency_keys([int])
 
     foo = provider.provide(sync_func_a)
-    assert foo.provides == ClassA
-    assert foo.dependencies == [Any, int]
+    assert foo.provides == hint_to_dependency_key(ClassA)
+    assert foo.dependencies == hints_to_dependency_keys([Any, int])
 
     foo = provider.alias(source=int, provides=str)
-    assert foo.provides == str
-    assert foo.source == int
+    assert foo.provides == hint_to_dependency_key(str)
+    assert foo.source == hint_to_dependency_key(int)
 
     foo = provider.decorate(sync_func_a)
-    assert foo.provides == ClassA
-    assert foo.factory.dependencies == [Any, int]
+    assert foo.provides == hint_to_dependency_key(ClassA)
+    assert foo.factory.dependencies == hints_to_dependency_keys([Any, int])
 
 
 class OtherClass:
@@ -170,5 +174,5 @@ class OtherClass:
 def test_provide_external_method():
     provider = Provider(scope=Scope.REQUEST)
     foo = provider.provide(OtherClass().method)
-    assert foo.provides == str
+    assert foo.provides == hint_to_dependency_key(str)
     assert foo.dependencies == []

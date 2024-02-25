@@ -63,7 +63,7 @@ class Factory:
             *,
             dependencies: Sequence[DependencyKey],
             source: Any,
-            provides: type,
+            provides: DependencyKey,
             scope: BaseScope | None,
             type_: FactoryType,
             is_to_bind: bool,
@@ -97,13 +97,13 @@ class Factory:
             cache=self.cache,
         )
 
-    def fill_component(self, component: Component) -> "Factory":
+    def with_component(self, component: Component) -> "Factory":
         return Factory(
             dependencies=[
                 d.with_component(component) for d in self.dependencies
             ],
             source=self.source,
-            provides=self.provides,
+            provides=self.provides.with_component(component),
             scope=self.scope,
             is_to_bind=self.is_to_bind,
             cache=self.cache,

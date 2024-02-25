@@ -7,6 +7,7 @@ from typing import (
 )
 
 from .factory import Factory, make_factory
+from ..component import Component
 from ..scope import BaseScope
 
 
@@ -22,6 +23,7 @@ class Decorator:
             scope: BaseScope,
             new_dependency: Any,
             cache: bool,
+            component: Component,
     ) -> Factory:
         return Factory(
             scope=scope,
@@ -29,7 +31,9 @@ class Decorator:
             provides=self.factory.provides,
             is_to_bind=self.factory.is_to_bind,
             dependencies=[
-                new_dependency if dep is self.provides else dep
+                (
+                    new_dependency if dep is self.provides else dep
+                ).with_component(component)
                 for dep in self.factory.dependencies
             ],
             type_=self.factory.type,

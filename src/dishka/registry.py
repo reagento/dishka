@@ -3,6 +3,7 @@ from typing import Any, NewType, TypeVar, get_args, get_origin
 
 from ._adaptix.type_tools.basic_utils import get_type_vars, is_generic
 from .dependency_source import Factory
+from .dependency_source.key import DependencyKey
 from .exceptions import InvalidGraphError
 from .provider import Provider
 from .scope import BaseScope
@@ -12,7 +13,7 @@ class Registry:
     __slots__ = ("scope", "_factories")
 
     def __init__(self, scope: BaseScope):
-        self._factories: dict[type, Factory] = {}
+        self._factories: dict[DependencyKey, Factory] = {}
         self.scope = scope
 
     def add_factory(self, factory: Factory):
@@ -21,7 +22,7 @@ class Registry:
         else:
             self._factories[factory.provides] = factory
 
-    def get_factory(self, dependency: Any) -> Factory | None:
+    def get_factory(self, dependency: DependencyKey) -> Factory | None:
         try:
             return self._factories[dependency]
         except KeyError:
@@ -37,25 +38,29 @@ class Registry:
             return factory
 
     def _specialize_generic(
-            self, factory: Factory, dependency: Any,
+            self, factory: Factory, dependency_key: DependencyKey,
     ) -> Factory:
+        dependency = dependency_key.type_hint
         params_replacement = dict(zip(
             get_args(factory.provides),
             get_args(dependency), strict=False,
         ))
-        new_dependencies = []
+        new_dependencies: list[DependencyKey] = []
         for source_dependency in factory.dependencies:
-            if isinstance(source_dependency, TypeVar):
-                source_dependency = params_replacement[source_dependency]
-            elif get_origin(source_dependency):
-                source_dependency = source_dependency[tuple(
+            hint = source_dependency.type_hint
+            if isinstance(hint, TypeVar):
+                hint = params_replacement[hint]
+            elif get_origin(hint):
+                hint = hint[tuple(
                     params_replacement[param]
-                    for param in get_type_vars(source_dependency)
+                    for param in get_type_vars(hint)
                 )]
-            new_dependencies.append(source_dependency)
+            new_dependencies.append(DependencyKey(
+                hint, source_dependency.component,
+            ))
         return Factory(
             source=factory.source,
-            provides=dependency,
+            provides=dependency_key,
             dependencies=new_dependencies,
             is_to_bind=factory.is_to_bind,
             type_=factory.type,
@@ -67,21 +72,26 @@ class Registry:
 def make_registries(
         *providers: Provider, scopes: type[BaseScope],
 ) -> list[Registry]:
-    dep_scopes: dict[type, BaseScope] = {}
-    alias_sources = {}
+    dep_scopes: dict[DependencyKey, BaseScope] = {}
+    alias_sources: dict[DependencyKey, Any] = {}
     for provider in providers:
+        component = provider.component
+
         for source in provider.factories:
-            dep_scopes[source.provides] = source.scope
+            provides = source.provides.with_component(component)
+            dep_scopes[provides] = source.scope
         for source in provider.aliases:
-            alias_sources[source.provides] = source.source
+            provides = source.provides.with_component(component)
+            alias_sources[provides] = source.source
 
     registries = {scope: Registry(scope) for scope in scopes}
-    decorator_depth: dict[type, int] = defaultdict(int)
+    decorator_depth: dict[DependencyKey, int] = defaultdict(int)
 
     for provider in providers:
+        component = provider.component
         for source in provider.factories:
             scope = source.scope
-            registries[scope].add_factory(source)
+            registries[scope].add_factory(source.with_component(component))
         for source in provider.aliases:
             alias_source = source.source
             visited_types = [alias_source]
@@ -94,10 +104,10 @@ def make_registries(
                 visited_types.append(alias_source)
             scope = dep_scopes[alias_source]
             dep_scopes[source.provides] = scope
-            source = source.as_factory(scope)
+            source = source.as_factory(scope, component)
             registries[scope].add_factory(source)
         for source in provider.decorators:
-            provides = source.provides
+            provides = DependencyKey(source.provides, provider.component)
             scope = dep_scopes[provides]
             registry = registries[scope]
             undecorated_type = NewType(
@@ -112,6 +122,7 @@ def make_registries(
                 scope=scope,
                 new_dependency=undecorated_type,
                 cache=old_factory.cache,
+                component=component,
             )
             registries[scope].add_factory(source)
 

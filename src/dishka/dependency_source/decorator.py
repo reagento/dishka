@@ -9,6 +9,7 @@ from typing import (
 from dishka.component import Component
 from dishka.scope import BaseScope
 from .factory import Factory, make_factory
+from .key import DependencyKey
 
 
 class Decorator:
@@ -21,18 +22,20 @@ class Decorator:
     def as_factory(
             self, *,
             scope: BaseScope,
-            new_dependency: Any,
+            new_dependency: DependencyKey,
             cache: bool,
             component: Component,
     ) -> Factory:
         return Factory(
             scope=scope,
             source=self.factory.source,
-            provides=self.factory.provides,
+            provides=self.factory.provides.with_component(component),
             is_to_bind=self.factory.is_to_bind,
             dependencies=[
                 (
-                    new_dependency if dep is self.provides else dep
+                    new_dependency
+                    if dep.type_hint == self.provides.type_hint
+                    else dep
                 ).with_component(component)
                 for dep in self.factory.dependencies
             ],

@@ -102,24 +102,28 @@ def make_registries(
                     )
                 visited_keys.append(alias_source)
             scope = dep_scopes[alias_source]
-            dep_scopes[source.provides] = scope
             source = source.as_factory(scope, component)
+            dep_scopes[source.provides] = scope
             registries[scope].add_factory(source)
         for source in provider.decorators:
-            provides = DependencyKey(source.provides, provider.component)
+            provides = source.provides.with_component(component)
+            print(provides)
+            print(dep_scopes)
             scope = dep_scopes[provides]
             registry = registries[scope]
             undecorated_type = NewType(
-                f"{provides.__name__}@{decorator_depth[provides]}",
+                f"{provides.type_hint.__name__}@{decorator_depth[provides]}",
                 source.provides,
             )
             decorator_depth[provides] += 1
             old_factory = registry.get_factory(provides)
-            old_factory.provides = undecorated_type
+            old_factory.provides = DependencyKey(
+                undecorated_type, old_factory.provides.component,
+            )
             registry.add_factory(old_factory)
             source = source.as_factory(
                 scope=scope,
-                new_dependency=undecorated_type,
+                new_dependency=DependencyKey(undecorated_type),
                 cache=old_factory.cache,
                 component=component,
             )

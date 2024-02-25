@@ -39,4 +39,4 @@ jobs:
       
     - name: Run tests
       run: |
-        tox
+        tox run-parallel

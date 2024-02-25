@@ -1,7 +1,12 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, get_origin, Annotated, get_args
 
 from dishka.component import Component
+
+
+@dataclass(frozen=True)
+class FromComponent:
+    component: Component
 
 
 @dataclass(frozen=True)
@@ -18,9 +23,15 @@ class DependencyKey:
         )
 
 
-def hint_to_dependency_key(type_hint: Any) -> DependencyKey:
-    # TODO annotated FromContainer
-    return DependencyKey(type_hint)
+def hint_to_dependency_key(hint: Any) -> DependencyKey:
+    if get_origin(hint) is not Annotated:
+        return DependencyKey(hint)
+    args = get_args(hint)
+    from_component = next(
+        (arg for arg in args if isinstance(arg, FromComponent)),
+        None,
+    )
+    return DependencyKey(args[0], from_component.component)
 
 
 def hints_to_dependency_keys(hints: list) -> list[DependencyKey]:

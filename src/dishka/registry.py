@@ -130,5 +130,4 @@ def make_registries(
                 component=component,
             )
             registries[scope].add_factory(source)
-
     return list(registries.values())

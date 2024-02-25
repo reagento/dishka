@@ -34,18 +34,20 @@ class Provider:
     creating a container
     """
     scope: BaseScope | None = None
+    component: Component = DEFAULT_COMPONENT
 
     def __init__(
             self,
             scope: BaseScope | None = None,
-            component: Component = DEFAULT_COMPONENT,
+            component: Component | None = None,
     ):
         self.factories: list[Factory] = []
         self.aliases: list[Alias] = []
         self.decorators: list[Decorator] = []
         self._init_dependency_sources()
         self.scope = self.scope or scope
-        self.component = component
+        if component is not None:
+            self.component = component
 
     def _init_dependency_sources(self) -> None:
         processed_types = {}

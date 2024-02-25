@@ -1,7 +1,7 @@
 __all__ = [
     "make_async_container", "AsyncContainer",
     "DEFAULT_COMPONENT", "Component",
-    "make_container", "Container",
+    "make_container", "Container", "FromComponent",
     "Provider",
     "alias", "decorate", "provide", "DependencyKey",
     "BaseScope", "Scope",
@@ -10,6 +10,12 @@ __all__ = [
 from .async_container import AsyncContainer, make_async_container
 from .component import DEFAULT_COMPONENT, Component
 from .container import Container, make_container
-from .dependency_source import DependencyKey, alias, decorate, provide
+from .dependency_source import (
+    DependencyKey,
+    FromComponent,
+    alias,
+    decorate,
+    provide,
+)
 from .provider import Provider
 from .scope import BaseScope, Scope

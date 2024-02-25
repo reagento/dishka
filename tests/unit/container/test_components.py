@@ -2,7 +2,7 @@ from typing import Annotated
 
 import pytest
 
-from dishka import Provider, provide, make_container, Scope
+from dishka import Provider, Scope, make_container, provide
 from dishka.dependency_source.key import FromComponent
 from dishka.exceptions import NoFactoryError
 

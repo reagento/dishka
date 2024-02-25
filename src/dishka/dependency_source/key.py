@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, get_origin, Annotated, get_args
+from typing import Annotated, Any, get_args, get_origin
 
 from dishka.component import Component
 

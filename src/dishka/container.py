@@ -139,7 +139,9 @@ class Container:
         if not factory:
             if not self.parent_container:
                 raise NoFactoryError(key)
-            return self.parent_container.get(key.type_hint, key.component)
+            return self.parent_container.get(
+                key.type_hint, key.component,
+            )
         return self._get_from_self(factory, key)
 
     def close(self) -> None:

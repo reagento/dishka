@@ -26,16 +26,18 @@ from typing import (
     overload,
 )
 
-from ._adaptix.type_tools.basic_utils import (
+from .key import DependencyKey
+from .._adaptix.type_tools.basic_utils import (
     get_all_type_hints,
     get_type_vars,
     is_bare_generic,
 )
-from ._adaptix.type_tools.generic_resolver import (
+from .._adaptix.type_tools.generic_resolver import (
     GenericResolver,
     MembersStorage,
 )
-from .scope import BaseScope
+from ..component import Component
+from ..scope import BaseScope
 
 
 class FactoryType(Enum):
@@ -50,10 +52,6 @@ def _is_bound_method(obj):
     return ismethod(obj) and obj.__self__
 
 
-def _identity(x: Any) -> Any:
-    return x
-
-
 class Factory:
     __slots__ = (
         "dependencies", "source", "provides", "scope", "type",
@@ -63,7 +61,7 @@ class Factory:
     def __init__(
             self,
             *,
-            dependencies: Sequence[Any],
+            dependencies: Sequence[DependencyKey],
             source: Any,
             provides: type,
             scope: BaseScope | None,
@@ -97,6 +95,19 @@ class Factory:
             type_=self.type,
             is_to_bind=False,
             cache=self.cache,
+        )
+
+    def fill_component(self, component: Component) -> "Factory":
+        return Factory(
+            dependencies=[
+                d.with_component(component) for d in self.dependencies
+            ],
+            source=self.source,
+            provides=self.provides,
+            scope=self.scope,
+            is_to_bind=self.is_to_bind,
+            cache=self.cache,
+            type_=self.type,
         )
 
 
@@ -380,103 +391,3 @@ def provide(
         )
 
     return scoped
-
-
-class Alias:
-    __slots__ = ("source", "provides", "cache")
-
-    def __init__(self, *, source, provides, cache: bool):
-        self.source = source
-        self.provides = provides
-        self.cache = cache
-
-    def as_factory(self, scope: BaseScope) -> Factory:
-        return Factory(
-            scope=scope,
-            source=_identity,
-            provides=self.provides,
-            is_to_bind=False,
-            dependencies=[self.source],
-            type_=FactoryType.FACTORY,
-            cache=self.cache,
-        )
-
-    def __get__(self, instance, owner):
-        return self
-
-
-def alias(
-        *,
-        source: type,
-        provides: type,
-        cache: bool = True,
-) -> Alias:
-    return Alias(
-        source=source,
-        provides=provides,
-        cache=cache,
-    )
-
-
-class Decorator:
-    __slots__ = ("provides", "factory")
-
-    def __init__(self, factory: Factory):
-        self.factory = factory
-        self.provides = factory.provides
-
-    def as_factory(
-            self, *, scope: BaseScope, new_dependency: Any, cache: bool,
-    ) -> Factory:
-        return Factory(
-            scope=scope,
-            source=self.factory.source,
-            provides=self.factory.provides,
-            is_to_bind=self.factory.is_to_bind,
-            dependencies=[
-                new_dependency if dep is self.provides else dep
-                for dep in self.factory.dependencies
-            ],
-            type_=self.factory.type,
-            cache=cache,
-        )
-
-    def __get__(self, instance, owner):
-        return Decorator(self.factory.__get__(instance, owner))
-
-
-@overload
-def decorate(
-        *,
-        provides: Any = None,
-) -> Callable[[Callable], Decorator]:
-    ...
-
-
-@overload
-def decorate(
-        source: Callable | type,
-        *,
-        provides: Any = None,
-) -> Decorator:
-    ...
-
-
-def decorate(
-        source: Callable | type | None = None,
-        provides: Any = None,
-) -> Decorator | Callable[[Callable], Decorator]:
-    if source is not None:
-        return Decorator(make_factory(
-            provides=provides, scope=None, source=source, cache=False,
-        ))
-
-    def scoped(func):
-        return Decorator(make_factory(
-            provides=provides, scope=None, source=func, cache=False,
-        ))
-
-    return scoped
-
-
-DependencySource = Alias | Factory | Decorator

@@ -2,6 +2,7 @@ import inspect
 from collections.abc import Callable
 from typing import Any
 
+from .component import Component, DEFAULT_COMPONENT
 from .dependency_source import (
     Alias,
     Decorator,
@@ -34,12 +35,17 @@ class Provider:
     """
     scope: BaseScope | None = None
 
-    def __init__(self, scope: BaseScope | None = None):
+    def __init__(
+            self,
+            scope: BaseScope | None = None,
+            component: Component = DEFAULT_COMPONENT,
+    ):
         self.factories: list[Factory] = []
         self.aliases: list[Alias] = []
         self.decorators: list[Decorator] = []
         self._init_dependency_sources()
         self.scope = self.scope or scope
+        self.component = component
 
     def _init_dependency_sources(self) -> None:
         processed_types = {}
@@ -106,3 +112,13 @@ class Provider:
         )
         self.aliases.append(new_decorator)
         return new_decorator
+
+    def to_component(self, component: Component) -> "Provider":
+        provider = Provider(
+            scope=self.scope,
+            component=component,
+        )
+        provider.factories = self.factories
+        provider.aliases = self.aliases
+        provider.decorators = self.decorators
+        return provider

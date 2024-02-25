@@ -32,6 +32,7 @@ class Provider:
     The only intended usage of providers is to pass them when
     creating a container
     """
+
     scope: BaseScope | None = None
 
     def __init__(self, scope: BaseScope | None = None):
@@ -61,12 +62,12 @@ class Provider:
             processed_types[source.provides] = name
 
     def provide(
-            self,
-            source: Callable | type,
-            *,
-            scope: BaseScope | None = None,
-            provides: Any = None,
-            cache: bool = True,
+        self,
+        source: Callable | type,
+        *,
+        scope: BaseScope | None = None,
+        provides: Any = None,
+        cache: bool = True,
     ) -> Factory:
         if scope is None:
             scope = self.scope
@@ -80,11 +81,11 @@ class Provider:
         return new_factory
 
     def alias(
-            self,
-            *,
-            source: type,
-            provides: type,
-            cache: bool = True,
+        self,
+        *,
+        source: type,
+        provides: type,
+        cache: bool = True,
     ) -> Alias:
         new_alias = alias(
             source=source,
@@ -95,10 +96,10 @@ class Provider:
         return new_alias
 
     def decorate(
-            self,
-            source: Callable | type,
-            *,
-            provides: Any = None,
+        self,
+        source: Callable | type,
+        *,
+        provides: Any = None,
     ) -> Decorator:
         new_decorator = decorate(
             source=source,

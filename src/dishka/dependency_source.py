@@ -56,20 +56,25 @@ def _identity(x: Any) -> Any:
 
 class Factory:
     __slots__ = (
-        "dependencies", "source", "provides", "scope", "type",
-        "is_to_bind", "cache",
+        "dependencies",
+        "source",
+        "provides",
+        "scope",
+        "type",
+        "is_to_bind",
+        "cache",
     )
 
     def __init__(
-            self,
-            *,
-            dependencies: Sequence[Any],
-            source: Any,
-            provides: type,
-            scope: BaseScope | None,
-            type_: FactoryType,
-            is_to_bind: bool,
-            cache: bool,
+        self,
+        *,
+        dependencies: Sequence[Any],
+        source: Any,
+        provides: type,
+        scope: BaseScope | None,
+        type_: FactoryType,
+        is_to_bind: bool,
+        cache: bool,
     ):
         self.dependencies = dependencies
         self.source = source
@@ -103,14 +108,14 @@ class Factory:
 def _get_init_members(tp) -> MembersStorage[str, None]:
     type_hints = get_all_type_hints(tp.__init__)
     if "__init__" in tp.__dict__:
-        overriden = frozenset(type_hints)
+        overridden = frozenset(type_hints)
     else:
-        overriden = {}
+        overridden = {}
 
     return MembersStorage(
         meta=None,
         members=type_hints,
-        overriden=overriden,
+        overridden=overridden,
     )
 
 
@@ -164,11 +169,11 @@ def _clean_result_hint(factory_type: FactoryType, possible_dependency: Any):
 
 
 def _make_factory_by_class(
-        *,
-        provides: Any,
-        scope: BaseScope | None,
-        source: Callable,
-        cache: bool,
+    *,
+    provides: Any,
+    scope: BaseScope | None,
+    source: Callable,
+    cache: bool,
 ):
     # we need to fix concrete generics and normal classes as well
     # as classes can be children of concrete generics
@@ -192,11 +197,11 @@ def _make_factory_by_class(
 
 
 def _make_factory_by_method(
-        *,
-        provides: Any,
-        scope: BaseScope | None,
-        source: Callable | classmethod,
-        cache: bool,
+    *,
+    provides: Any,
+    scope: BaseScope | None,
+    source: Callable | classmethod,
+    cache: bool,
 ):
     if isinstance(source, classmethod):
         params = signature(source.__wrapped__).parameters
@@ -232,11 +237,11 @@ def _make_factory_by_method(
 
 
 def _make_factory_by_static_method(
-        *,
-        provides: Any,
-        scope: BaseScope | None,
-        source: staticmethod,
-        cache: bool,
+    *,
+    provides: Any,
+    scope: BaseScope | None,
+    source: staticmethod,
+    cache: bool,
 ):
     factory_type = _guess_factory_type(source.__wrapped__)
     hints = get_type_hints(source, include_extras=True)
@@ -257,11 +262,11 @@ def _make_factory_by_static_method(
 
 
 def _make_factory_by_other_callable(
-        *,
-        provides: Any,
-        scope: BaseScope | None,
-        source: Callable,
-        cache: bool,
+    *,
+    provides: Any,
+    scope: BaseScope | None,
+    source: Callable,
+    cache: bool,
 ):
     if _is_bound_method(source):
         to_check = source.__func__
@@ -292,30 +297,42 @@ def _make_factory_by_other_callable(
 
 
 def make_factory(
-        *,
-        provides: Any,
-        scope: BaseScope | None,
-        source: Callable,
-        cache: bool,
+    *,
+    provides: Any,
+    scope: BaseScope | None,
+    source: Callable,
+    cache: bool,
 ) -> Factory:
     if is_bare_generic(source):
         source = source[get_type_vars(source)]
 
     if isclass(source) or get_origin(source):
         return _make_factory_by_class(
-            provides=provides, scope=scope, source=source, cache=cache,
+            provides=provides,
+            scope=scope,
+            source=source,
+            cache=cache,
         )
     elif isfunction(source) or isinstance(source, classmethod):
         return _make_factory_by_method(
-            provides=provides, scope=scope, source=source, cache=cache,
+            provides=provides,
+            scope=scope,
+            source=source,
+            cache=cache,
         )
     elif isinstance(source, staticmethod):
         return _make_factory_by_static_method(
-            provides=provides, scope=scope, source=source, cache=cache,
+            provides=provides,
+            scope=scope,
+            source=source,
+            cache=cache,
         )
     elif callable(source):
         return _make_factory_by_other_callable(
-            provides=provides, scope=scope, source=source, cache=cache,
+            provides=provides,
+            scope=scope,
+            source=source,
+            cache=cache,
         )
     else:
         raise TypeError(f"Cannot use {type(source)} as a factory")
@@ -323,31 +340,31 @@ def make_factory(
 
 @overload
 def provide(
-        *,
-        scope: BaseScope = None,
-        provides: Any = None,
-        cache: bool = True,
+    *,
+    scope: BaseScope = None,
+    provides: Any = None,
+    cache: bool = True,
 ) -> Callable[[Callable], Factory]:
     ...
 
 
 @overload
 def provide(
-        source: Callable | classmethod | staticmethod | type | None,
-        *,
-        scope: BaseScope | None = None,
-        provides: Any = None,
-        cache: bool = True,
+    source: Callable | classmethod | staticmethod | type | None,
+    *,
+    scope: BaseScope | None = None,
+    provides: Any = None,
+    cache: bool = True,
 ) -> Factory:
     ...
 
 
 def provide(
-        source: Callable | classmethod | staticmethod | type | None = None,
-        *,
-        scope: BaseScope | None = None,
-        provides: Any = None,
-        cache: bool = True,
+    source: Callable | classmethod | staticmethod | type | None = None,
+    *,
+    scope: BaseScope | None = None,
+    provides: Any = None,
+    cache: bool = True,
 ) -> Factory | Callable[[Callable], Factory]:
     """
     Mark a method or class as providing some dependency.
@@ -371,12 +388,18 @@ def provide(
     """
     if source is not None:
         return make_factory(
-            provides=provides, scope=scope, source=source, cache=cache,
+            provides=provides,
+            scope=scope,
+            source=source,
+            cache=cache,
         )
 
     def scoped(func):
         return make_factory(
-            provides=provides, scope=scope, source=func, cache=cache,
+            provides=provides,
+            scope=scope,
+            source=func,
+            cache=cache,
         )
 
     return scoped
@@ -406,10 +429,10 @@ class Alias:
 
 
 def alias(
-        *,
-        source: type,
-        provides: type,
-        cache: bool = True,
+    *,
+    source: type,
+    provides: type,
+    cache: bool = True,
 ) -> Alias:
     return Alias(
         source=source,
@@ -426,7 +449,11 @@ class Decorator:
         self.provides = factory.provides
 
     def as_factory(
-            self, *, scope: BaseScope, new_dependency: Any, cache: bool,
+        self,
+        *,
+        scope: BaseScope,
+        new_dependency: Any,
+        cache: bool,
     ) -> Factory:
         return Factory(
             scope=scope,
@@ -447,34 +474,44 @@ class Decorator:
 
 @overload
 def decorate(
-        *,
-        provides: Any = None,
+    *,
+    provides: Any = None,
 ) -> Callable[[Callable], Decorator]:
     ...
 
 
 @overload
 def decorate(
-        source: Callable | type,
-        *,
-        provides: Any = None,
+    source: Callable | type,
+    *,
+    provides: Any = None,
 ) -> Decorator:
     ...
 
 
 def decorate(
-        source: Callable | type | None = None,
-        provides: Any = None,
+    source: Callable | type | None = None,
+    provides: Any = None,
 ) -> Decorator | Callable[[Callable], Decorator]:
     if source is not None:
-        return Decorator(make_factory(
-            provides=provides, scope=None, source=source, cache=False,
-        ))
+        return Decorator(
+            make_factory(
+                provides=provides,
+                scope=None,
+                source=source,
+                cache=False,
+            ),
+        )
 
     def scoped(func):
-        return Decorator(make_factory(
-            provides=provides, scope=None, source=func, cache=False,
-        ))
+        return Decorator(
+            make_factory(
+                provides=provides,
+                scope=None,
+                source=func,
+                cache=False,
+            ),
+        )
 
     return scoped
 

@@ -1,5 +1,8 @@
 __all__ = [
-    "Depends", "DISHKA_CONTAINER_KEY", "inject", "setup_dishka",
+    "Depends",
+    "DISHKA_CONTAINER_KEY",
+    "inject",
+    "setup_dishka",
 ]
 
 from collections.abc import Callable
@@ -28,7 +31,8 @@ def inject(func: Callable) -> Callable:
 
 @web.middleware
 async def container_middleware(
-    request: Request, handler: Handler,
+    request: Request,
+    handler: Handler,
 ) -> StreamResponse:
     container = request.app[DISHKA_CONTAINER_KEY]
     async with container(context={Request: request}) as request_container:

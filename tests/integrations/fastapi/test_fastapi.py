@@ -36,8 +36,8 @@ async def dishka_app(view, provider) -> TestClient:
 
 
 async def get_with_app(
-        a: Annotated[AppDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+    a: Annotated[AppDep, Depends()],
+    mock: Annotated[Mock, Depends()],
 ) -> None:
     mock(a)
 
@@ -52,8 +52,8 @@ async def test_app_dependency(app_provider: AppProvider):
 
 
 async def get_with_request(
-        a: Annotated[RequestDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+    a: Annotated[RequestDep, Depends()],
+    mock: Annotated[Mock, Depends()],
 ) -> None:
     mock(a)
 
@@ -81,14 +81,14 @@ async def test_request_dependency2(app_provider: AppProvider):
 
 @inject
 async def additional(
-        a: Annotated[RequestDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+    a: Annotated[RequestDep, Depends()],
+    mock: Annotated[Mock, Depends()],
 ):
     mock(a)
 
 
 async def get_with_depends(
-        a: Annotated[None, fastapi.Depends(additional)],
+    a: Annotated[None, fastapi.Depends(additional)],
 ) -> None:
     pass
 

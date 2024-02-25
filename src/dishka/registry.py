@@ -37,21 +37,28 @@ class Registry:
             return factory
 
     def _specialize_generic(
-            self, factory: Factory, dependency: Any,
+        self,
+        factory: Factory,
+        dependency: Any,
     ) -> Factory:
-        params_replacement = dict(zip(
-            get_args(factory.provides),
-            get_args(dependency), strict=False,
-        ))
+        params_replacement = dict(
+            zip(
+                get_args(factory.provides),
+                get_args(dependency),
+                strict=False,
+            ),
+        )
         new_dependencies = []
         for source_dependency in factory.dependencies:
             if isinstance(source_dependency, TypeVar):
                 source_dependency = params_replacement[source_dependency]
             elif get_origin(source_dependency):
-                source_dependency = source_dependency[tuple(
-                    params_replacement[param]
-                    for param in get_type_vars(source_dependency)
-                )]
+                source_dependency = source_dependency[
+                    tuple(
+                        params_replacement[param]
+                        for param in get_type_vars(source_dependency)
+                    )
+                ]
             new_dependencies.append(source_dependency)
         return Factory(
             source=factory.source,
@@ -65,7 +72,8 @@ class Registry:
 
 
 def make_registries(
-        *providers: Provider, scopes: type[BaseScope],
+    *providers: Provider,
+    scopes: type[BaseScope],
 ) -> list[Registry]:
     dep_scopes: dict[type, BaseScope] = {}
     alias_sources = {}

@@ -104,11 +104,14 @@ class OtherClass:
         return A_VALUE
 
 
-@pytest.mark.parametrize("method", [
-    OtherClass().method,
-    OtherClass().classmethod,
-    OtherClass().staticmethod,
-])
+@pytest.mark.parametrize(
+    "method",
+    [
+        OtherClass().method,
+        OtherClass().classmethod,
+        OtherClass().staticmethod,
+    ],
+)
 def test_external_method(method):
     provider = Provider(scope=Scope.APP)
     provider.provide(method)

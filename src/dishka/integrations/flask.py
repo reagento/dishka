@@ -1,5 +1,7 @@
 __all__ = [
-    "inject", "setup_dishka", "Depends",
+    "inject",
+    "setup_dishka",
+    "Depends",
 ]
 
 from flask import Flask, Request, g, request

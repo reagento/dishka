@@ -1,9 +1,14 @@
 __all__ = [
-    "make_async_container", "AsyncContainer",
-    "make_container", "Container",
+    "make_async_container",
+    "AsyncContainer",
+    "make_container",
+    "Container",
     "Provider",
-    "alias", "decorate", "provide",
-    "BaseScope", "Scope",
+    "alias",
+    "decorate",
+    "provide",
+    "BaseScope",
+    "Scope",
 ]
 
 from .async_container import AsyncContainer, make_async_container

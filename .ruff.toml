@@ -1,13 +1,11 @@
 line-length = 79
-target-version="py310"
+target-version = "py310"
 src = ["src"]
 
 include = ["src/**.py", "tests/**.py"]
 exclude = ["src/dishka/_adaptix/**"]
 
-lint.select = [
-"ALL"
-]
+lint.select = ["ALL"]
 lint.ignore = [
    "ARG",
    "ANN",

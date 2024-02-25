@@ -27,22 +27,24 @@ def dishka_app(handler, provider):
 
 
 def send_message(bot: TeleBot):
-    update = Update.de_json({
-        "update_id": 1,
-        "message": {
-            "chat": {"id": 1, "type": "private"},
-            "message_id": 2,
-            "date": 1234567890,
-            "text": "/start",
+    update = Update.de_json(
+        {
+            "update_id": 1,
+            "message": {
+                "chat": {"id": 1, "type": "private"},
+                "message_id": 2,
+                "date": 1234567890,
+                "text": "/start",
+            },
         },
-    })
+    )
     bot.process_new_updates([update])
 
 
 def handle_with_app(
-        _: Message,
-        a: Annotated[AppDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+    _: Message,
+    a: Annotated[AppDep, Depends()],
+    mock: Annotated[Mock, Depends()],
 ) -> None:
     mock(a)
 
@@ -56,9 +58,9 @@ def test_app_dependency(app_provider: AppProvider):
 
 
 def handle_with_request(
-        _: Message,
-        a: Annotated[RequestDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+    _: Message,
+    a: Annotated[RequestDep, Depends()],
+    mock: Annotated[Mock, Depends()],
 ) -> None:
     mock(a)
 

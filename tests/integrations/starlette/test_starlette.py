@@ -36,9 +36,9 @@ async def dishka_app(view, provider) -> TestClient:
 
 
 async def get_with_app(
-        _: Request,
-        a: Annotated[AppDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+    _: Request,
+    a: Annotated[AppDep, Depends()],
+    mock: Annotated[Mock, Depends()],
 ) -> PlainTextResponse:
     mock(a)
     return PlainTextResponse("passed")
@@ -54,9 +54,9 @@ async def test_app_dependency(app_provider: AppProvider):
 
 
 async def get_with_request(
-        _: Request,
-        a: Annotated[RequestDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+    _: Request,
+    a: Annotated[RequestDep, Depends()],
+    mock: Annotated[Mock, Depends()],
 ) -> PlainTextResponse:
     mock(a)
     return PlainTextResponse("passed")

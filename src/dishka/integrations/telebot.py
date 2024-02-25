@@ -16,11 +16,13 @@ CONTAINER_NAME = "dishka_container"
 
 
 def inject(func):
-    additional_params = [Parameter(
-        name=CONTAINER_NAME,
-        annotation=Container,
-        kind=Parameter.KEYWORD_ONLY,
-    )]
+    additional_params = [
+        Parameter(
+            name=CONTAINER_NAME,
+            annotation=Container,
+            kind=Parameter.KEYWORD_ONLY,
+        ),
+    ]
 
     return wrap_injection(
         func=func,

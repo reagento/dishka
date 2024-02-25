@@ -17,11 +17,13 @@ CONTAINER_NAME = "dishka_container"
 
 
 def inject(func):
-    additional_params = [Parameter(
-        name=CONTAINER_NAME,
-        annotation=Container,
-        kind=Parameter.KEYWORD_ONLY,
-    )]
+    additional_params = [
+        Parameter(
+            name=CONTAINER_NAME,
+            annotation=Container,
+            kind=Parameter.KEYWORD_ONLY,
+        ),
+    ]
 
     return wrap_injection(
         func=func,
@@ -37,7 +39,10 @@ class ContainerMiddleware(BaseMiddleware):
         self.container = container
 
     async def __call__(
-            self, handler, event, data,
+        self,
+        handler,
+        event,
+        data,
     ):
         async with self.container({TelegramObject: event}) as sub_container:
             data[CONTAINER_NAME] = sub_container

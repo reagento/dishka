@@ -25,17 +25,21 @@ class Exit:
 
 class Container:
     __slots__ = (
-        "registry", "child_registries", "context", "parent_container",
-        "lock", "_exits",
+        "registry",
+        "child_registries",
+        "context",
+        "parent_container",
+        "lock",
+        "_exits",
     )
 
     def __init__(
-            self,
-            registry: Registry,
-            *child_registries: Registry,
-            parent_container: Optional["Container"] = None,
-            context: dict | None = None,
-            lock_factory: Callable[[], Lock] | None = None,
+        self,
+        registry: Registry,
+        *child_registries: Registry,
+        parent_container: Optional["Container"] = None,
+        context: dict | None = None,
+        lock_factory: Callable[[], Lock] | None = None,
     ):
         self.registry = registry
         self.child_registries = child_registries
@@ -50,9 +54,9 @@ class Container:
         self._exits: list[Exit] = []
 
     def _create_child(
-            self,
-            context: dict | None,
-            lock_factory: Callable[[], Lock] | None,
+        self,
+        context: dict | None,
+        lock_factory: Callable[[], Lock] | None,
     ) -> "Container":
         return Container(
             *self.child_registries,
@@ -62,9 +66,9 @@ class Container:
         )
 
     def __call__(
-            self,
-            context: dict | None = None,
-            lock_factory: Callable[[], Lock] | None = None,
+        self,
+        context: dict | None = None,
+        lock_factory: Callable[[], Lock] | None = None,
     ) -> "ContextWrapper":
         """
         Prepare container for entering the inner scope.
@@ -77,7 +81,9 @@ class Container:
         return ContextWrapper(self._create_child(context, lock_factory))
 
     def _get_from_self(
-            self, factory: Factory, dependency_type: Any,
+        self,
+        factory: Factory,
+        dependency_type: Any,
     ) -> T:
         try:
             sub_dependencies = [
@@ -159,10 +165,10 @@ class ContextWrapper:
 
 
 def make_container(
-        *providers: Provider,
-        scopes: type[BaseScope] = Scope,
-        context: dict | None = None,
-        lock_factory: Callable[[], Lock] | None = None,
+    *providers: Provider,
+    scopes: type[BaseScope] = Scope,
+    context: dict | None = None,
+    lock_factory: Callable[[], Lock] | None = None,
 ) -> Container:
     registries = make_registries(*providers, scopes=scopes)
     return Container(*registries, context=context, lock_factory=lock_factory)

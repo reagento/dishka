@@ -24,8 +24,7 @@ Getting started
 
 .. code-block::
 
-    pip install -r requirements_dev.txt
-    pip install -e .
+    pip install -e . -r requirements_dev.txt
 
 Running linters
 =====================
@@ -35,6 +34,12 @@ Currently we use ``ruff`` to check code. To run it do
 .. code-block::
 
     ruff check
+
+Or run ``tox`` script
+
+.. code-block::
+
+    tox run -e lint
 
 We do not use ruff formatter for all code, so ensure that you formatted only your part of code proposing new changes.
 We have a lot of checks enabled and some of them can be false positive. Double check your code before suppressing any linter warning.

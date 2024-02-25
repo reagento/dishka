@@ -20,11 +20,11 @@ class Depends:
 
 
 def default_parse_dependency(
-        parameter: Parameter,
-        hint: Any,
-        depends_class: type[Any] = Depends,
+    parameter: Parameter,
+    hint: Any,
+    depends_class: type[Any] = Depends,
 ) -> Any:
-    """ Resolve dependency type or return None if it is not a dependency """
+    """Resolve dependency type or return None if it is not a dependency"""
     if get_origin(hint) is not Annotated:
         return None
     dep = next(
@@ -44,38 +44,38 @@ DependencyParser = Callable[[Parameter, Any], Any]
 
 @overload
 def wrap_injection(
-        *,
-        func: Callable,
-        container_getter: Callable[[tuple, dict], Container],
-        is_async: Literal[False] = False,
-        remove_depends: bool = True,
-        additional_params: Sequence[Parameter] = (),
-        parse_dependency: DependencyParser = default_parse_dependency,
+    *,
+    func: Callable,
+    container_getter: Callable[[tuple, dict], Container],
+    is_async: Literal[False] = False,
+    remove_depends: bool = True,
+    additional_params: Sequence[Parameter] = (),
+    parse_dependency: DependencyParser = default_parse_dependency,
 ) -> Callable:
     ...
 
 
 @overload
 def wrap_injection(
-        *,
-        func: Callable,
-        container_getter: Callable[[tuple, dict], AsyncContainer],
-        is_async: Literal[True],
-        remove_depends: bool = True,
-        additional_params: Sequence[Parameter] = (),
-        parse_dependency: DependencyParser = default_parse_dependency,
+    *,
+    func: Callable,
+    container_getter: Callable[[tuple, dict], AsyncContainer],
+    is_async: Literal[True],
+    remove_depends: bool = True,
+    additional_params: Sequence[Parameter] = (),
+    parse_dependency: DependencyParser = default_parse_dependency,
 ) -> Awaitable:
     ...
 
 
 def wrap_injection(
-        *,
-        func: Callable,
-        container_getter: Callable,
-        is_async: bool = False,
-        remove_depends: bool = True,
-        additional_params: Sequence[Parameter] = (),
-        parse_dependency: DependencyParser = default_parse_dependency,
+    *,
+    func: Callable,
+    container_getter: Callable,
+    is_async: bool = False,
+    remove_depends: bool = True,
+    additional_params: Sequence[Parameter] = (),
+    parse_dependency: DependencyParser = default_parse_dependency,
 ):
     hints = get_type_hints(func, include_extras=True)
     func_signature = signature(func)
@@ -134,10 +134,10 @@ def wrap_injection(
 
 
 def _async_injection_wrapper(
-        container_getter: Callable,
-        additional_params: Sequence[Parameter],
-        dependencies: dict[str, Any],
-        func: Callable,
+    container_getter: Callable,
+    additional_params: Sequence[Parameter],
+    dependencies: dict[str, Any],
+    func: Callable,
 ):
     async def autoinjected_func(*args, **kwargs):
         container = container_getter(args, kwargs)
@@ -153,18 +153,17 @@ def _async_injection_wrapper(
 
 
 def _sync_injection_wrapper(
-        container_getter: Callable,
-        additional_params: Sequence[Parameter],
-        dependencies: dict[str, Any],
-        func: Callable,
+    container_getter: Callable,
+    additional_params: Sequence[Parameter],
+    dependencies: dict[str, Any],
+    func: Callable,
 ):
     def autoinjected_func(*args, **kwargs):
         container = container_getter(args, kwargs)
         for param in additional_params:
             kwargs.pop(param.name)
         solved = {
-            name: container.get(dep)
-            for name, dep in dependencies.items()
+            name: container.get(dep) for name, dep in dependencies.items()
         }
         return func(*args, **kwargs, **solved)
 

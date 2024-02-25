@@ -41,9 +41,9 @@ async def dishka_app(view, provider) -> TestClient:
 
 
 async def get_with_app(
-        _,
-        a: Annotated[AppDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+    _,
+    a: Annotated[AppDep, Depends()],
+    mock: Annotated[Mock, Depends()],
 ) -> Response:
     mock(a)
     return Response(text="passed")
@@ -59,13 +59,12 @@ async def test_app_dependency(app_provider: AppProvider):
 
 
 async def get_with_request(
-        _,
-        a: Annotated[RequestDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+    _,
+    a: Annotated[RequestDep, Depends()],
+    mock: Annotated[Mock, Depends()],
 ) -> Response:
     mock(a)
     return Response(text="passed")
-
 
 
 @pytest.mark.asyncio

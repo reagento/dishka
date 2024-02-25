@@ -25,17 +25,21 @@ class Exit:
 
 class AsyncContainer:
     __slots__ = (
-        "registry", "child_registries", "context", "parent_container",
-        "lock", "_exits",
+        "registry",
+        "child_registries",
+        "context",
+        "parent_container",
+        "lock",
+        "_exits",
     )
 
     def __init__(
-            self,
-            registry: Registry,
-            *child_registries: Registry,
-            parent_container: Optional["AsyncContainer"] = None,
-            context: dict | None = None,
-            lock_factory: Callable[[], Lock] | None = None,
+        self,
+        registry: Registry,
+        *child_registries: Registry,
+        parent_container: Optional["AsyncContainer"] = None,
+        context: dict | None = None,
+        lock_factory: Callable[[], Lock] | None = None,
     ):
         self.registry = registry
         self.child_registries = child_registries
@@ -50,9 +54,9 @@ class AsyncContainer:
         self._exits: list[Exit] = []
 
     def _create_child(
-            self,
-            context: dict | None,
-            lock_factory: Callable[[], Lock] | None,
+        self,
+        context: dict | None,
+        lock_factory: Callable[[], Lock] | None,
     ) -> "AsyncContainer":
         return AsyncContainer(
             *self.child_registries,
@@ -62,9 +66,9 @@ class AsyncContainer:
         )
 
     def __call__(
-            self,
-            context: dict | None = None,
-            lock_factory: Callable[[], Lock] | None = None,
+        self,
+        context: dict | None = None,
+        lock_factory: Callable[[], Lock] | None = None,
     ) -> "AsyncContextWrapper":
         """
         Prepare container for entering the inner scope.
@@ -77,7 +81,9 @@ class AsyncContainer:
         return AsyncContextWrapper(self._create_child(context, lock_factory))
 
     async def _get_from_self(
-            self, factory: Factory, dependency_type: Any,
+        self,
+        factory: Factory,
+        dependency_type: Any,
     ) -> T:
         try:
             sub_dependencies = [
@@ -157,10 +163,10 @@ class AsyncContextWrapper:
 
 
 def make_async_container(
-        *providers: Provider,
-        scopes: type[BaseScope] = Scope,
-        context: dict | None = None,
-        lock_factory: Callable[[], Lock] | None = Lock,
+    *providers: Provider,
+    scopes: type[BaseScope] = Scope,
+    context: dict | None = None,
+    lock_factory: Callable[[], Lock] | None = Lock,
 ) -> AsyncContainer:
     registries = make_registries(*providers, scopes=scopes)
     return AsyncContainer(

@@ -29,7 +29,8 @@ class B(A[U], Generic[U]):
 
 
 @pytest.mark.parametrize(
-    "cls", [A, B, ReplaceInit],
+    "cls",
+    [A, B, ReplaceInit],
 )
 def test_concrete_generic(cls):
     class MyProvider(Provider):

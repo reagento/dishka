@@ -64,7 +64,6 @@ async def get_with_request(
     return "passed"
 
 
-
 @pytest.mark.asyncio
 async def test_request_dependency(app_provider: AppProvider):
     async with dishka_app(get_with_request, app_provider) as client:

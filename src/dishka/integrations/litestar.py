@@ -1,5 +1,7 @@
 __all__ = [
-    "Depends", "inject", "setup_dishka",
+    "Depends",
+    "inject",
+    "setup_dishka",
 ]
 
 from inspect import Parameter
@@ -23,11 +25,13 @@ def inject(func):
         additional_params = []
     else:
         request_param = "request"
-        additional_params = [Parameter(
-            name=request_param,
-            annotation=Request | None,
-            kind=Parameter.KEYWORD_ONLY,
-        )]
+        additional_params = [
+            Parameter(
+                name=request_param,
+                annotation=Request | None,
+                kind=Parameter.KEYWORD_ONLY,
+            ),
+        ]
 
     return wrap_injection(
         func=func,
@@ -46,7 +50,7 @@ def make_add_request_container_middleware(app: ASGIApp):
 
         request = Request(scope)
         async with request.app.state.dishka_container(
-                {Request: request},
+            {Request: request},
         ) as request_container:
             request.state.dishka_container = request_container
             await app(scope, receive, send)

@@ -57,9 +57,12 @@ class MyProvider(Provider):
         raise MyError
 
 
-@pytest.mark.parametrize("dep_type", [
-    SyncFinalizationError,
-])
+@pytest.mark.parametrize(
+    "dep_type",
+    [
+        SyncFinalizationError,
+    ],
+)
 def test_sync(dep_type):
     finalizer = Mock(return_value=123)
     container = make_container(MyProvider(finalizer))
@@ -69,10 +72,13 @@ def test_sync(dep_type):
     finalizer.assert_called_once()
 
 
-@pytest.mark.parametrize("dep_type", [
-    SyncFinalizationError,
-    AsyncFinalizationError,
-])
+@pytest.mark.parametrize(
+    "dep_type",
+    [
+        SyncFinalizationError,
+        AsyncFinalizationError,
+    ],
+)
 @pytest.mark.asyncio
 async def test_async(dep_type):
     finalizer = Mock(return_value=123)

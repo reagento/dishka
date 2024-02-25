@@ -10,7 +10,7 @@ Dependency
 ==================
 
 **Dependency** is what you need for some part of your code to work.
-If you *database gateway* needs *database connection* to execute SQL queries, then the connection is a dependency for a gateway. If your business logic class requires *database gateway* or some *api client* then *api client* and *database gateway* are dependencies for a business logic. Here the ``Client`` is a dependency, while ``Service`` is a dependant.
+If you *database gateway* needs *database connection* to execute SQL queries, then the connection is a dependency for a gateway. If your business logic class requires *database gateway* or some *api client* then *api client* and *database gateway* are dependencies for a business logic. Here the ``Client`` is a dependency, while ``Service`` is a dependent.
 
 .. code-block:: python
 

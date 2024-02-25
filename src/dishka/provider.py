@@ -2,7 +2,7 @@ import inspect
 from collections.abc import Callable
 from typing import Any
 
-from .component import Component, DEFAULT_COMPONENT
+from .component import DEFAULT_COMPONENT, Component
 from .dependency_source import (
     Alias,
     Decorator,

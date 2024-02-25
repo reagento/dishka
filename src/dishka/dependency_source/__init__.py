@@ -3,10 +3,12 @@ __all__ = [
     "alias", "Alias",
     "decorate", "Decorator",
     "provide", "Factory", "FactoryType",
+    "DependencyKey",
 ]
 
-from .alias import alias, Alias
-from .decorator import decorate, Decorator
-from .factory import provide, Factory, FactoryType
+from .alias import Alias, alias
+from .decorator import Decorator, decorate
+from .factory import Factory, FactoryType, provide
+from .key import DependencyKey
 
 DependencySource = Alias | Factory | Decorator

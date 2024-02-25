@@ -5,6 +5,8 @@ from unittest.mock import Mock
 import pytest
 
 from dishka import (
+    DEFAULT_COMPONENT,
+    DependencyKey,
     Provider,
     Scope,
     make_async_container,
@@ -105,8 +107,12 @@ def test_no_factory_sync():
     container = make_container(InvalidScopeProvider())
     with pytest.raises(NoFactoryError) as e:
         container.get(complex)
-    assert e.value.requested == object
-    assert e.value.path == [complex, float, int]
+    assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+    assert e.value.path == [
+        DependencyKey(complex, DEFAULT_COMPONENT),
+        DependencyKey(float, DEFAULT_COMPONENT),
+        DependencyKey(int, DEFAULT_COMPONENT),
+    ]
 
 
 @pytest.mark.asyncio
@@ -114,8 +120,12 @@ async def test_no_factory_async():
     container = make_async_container(InvalidScopeProvider())
     with pytest.raises(NoFactoryError) as e:
         await container.get(complex)
-    assert e.value.requested == object
-    assert e.value.path == [complex, float, int]
+    assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+    assert e.value.path == [
+        DependencyKey(complex, DEFAULT_COMPONENT),
+        DependencyKey(float, DEFAULT_COMPONENT),
+        DependencyKey(int, DEFAULT_COMPONENT),
+    ]
 
 
 class AsyncProvider(Provider):

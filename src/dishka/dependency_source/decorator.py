@@ -6,9 +6,9 @@ from typing import (
     overload,
 )
 
-from .factory import Factory, make_factory
 from ..component import Component
 from ..scope import BaseScope
+from .factory import Factory, make_factory
 
 
 class Decorator:

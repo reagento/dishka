@@ -2,10 +2,10 @@ from typing import (
     Any,
 )
 
-from .factory import Factory, FactoryType
-from .key import DependencyKey
 from ..component import Component
 from ..scope import BaseScope
+from .factory import Factory, FactoryType
+from .key import DependencyKey
 
 
 def _identity(x: Any) -> Any:

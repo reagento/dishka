@@ -16,3 +16,15 @@ class DependencyKey:
             type_hint=self.type_hint,
             component=component,
         )
+
+
+def hint_to_dependency_key(type_hint: Any) -> DependencyKey:
+    # TODO annotated FromContainer
+    return DependencyKey(type_hint)
+
+
+def hints_to_dependency_keys(hints: list) -> list[DependencyKey]:
+    return [
+        hint_to_dependency_key(type_hint)
+        for type_hint in hints
+    ]

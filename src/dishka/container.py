@@ -3,7 +3,9 @@ from dataclasses import dataclass
 from threading import Lock
 from typing import Any, Optional, TypeVar
 
+from .component import DEFAULT_COMPONENT, Component
 from .dependency_source import Factory, FactoryType
+from .dependency_source.key import DependencyKey
 from .exceptions import (
     ExitError,
     NoFactoryError,
@@ -39,9 +41,13 @@ class Container:
     ):
         self.registry = registry
         self.child_registries = child_registries
-        self.context = {type(self): self}
+        self.context = {DependencyKey(type(self), DEFAULT_COMPONENT): self}
         if context:
-            self.context.update(context)
+            for key, value in context.items():
+                if isinstance(key, DependencyKey):
+                    self.context[key] = value
+                else:
+                    self.context[DependencyKey(key, DEFAULT_COMPONENT)] = value
         self.parent_container = parent_container
         if lock_factory:
             self.lock = lock_factory()
@@ -77,7 +83,7 @@ class Container:
         return ContextWrapper(self._create_child(context, lock_factory))
 
     def _get_from_self(
-            self, factory: Factory, dependency_type: Any,
+            self, factory: Factory, key: DependencyKey,
     ) -> T:
         try:
             sub_dependencies = [
@@ -85,7 +91,7 @@ class Container:
                 for dependency in factory.dependencies
             ]
         except NoFactoryError as e:
-            e.add_path(dependency_type)
+            e.add_path(key)
             raise
 
         if factory.type is FactoryType.GENERATOR:
@@ -111,25 +117,30 @@ class Container:
                 f"Unsupported factory type {factory.type}. ",
             )
         if factory.cache:
-            self.context[dependency_type] = solved
+            self.context[key] = solved
         return solved
 
-    def get(self, dependency_type: type[T]) -> T:
+    def get(
+            self,
+            dependency_type: type[T],
+            component: Component = DEFAULT_COMPONENT,
+    ) -> T:
         lock = self.lock
+        key = DependencyKey(dependency_type, component)
         if not lock:
-            return self._get_unlocked(dependency_type)
+            return self._get_unlocked(key)
         with lock:
-            return self._get_unlocked(dependency_type)
+            return self._get_unlocked(key)
 
-    def _get_unlocked(self, dependency_type: type[T]) -> T:
-        if dependency_type in self.context:
-            return self.context[dependency_type]
-        factory = self.registry.get_factory(dependency_type)
+    def _get_unlocked(self, key: DependencyKey) -> Any:
+        if key in self.context:
+            return self.context[key]
+        factory = self.registry.get_factory(key)
         if not factory:
             if not self.parent_container:
-                raise NoFactoryError(dependency_type)
-            return self.parent_container.get(dependency_type)
-        return self._get_from_self(factory, dependency_type)
+                raise NoFactoryError(key)
+            return self.parent_container.get(key.type_hint, key.component)
+        return self._get_from_self(factory, key)
 
     def close(self) -> None:
         errors = []

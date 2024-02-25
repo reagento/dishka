@@ -26,7 +26,6 @@ from typing import (
     overload,
 )
 
-from .key import DependencyKey
 from .._adaptix.type_tools.basic_utils import (
     get_all_type_hints,
     get_type_vars,
@@ -38,6 +37,7 @@ from .._adaptix.type_tools.generic_resolver import (
 )
 from ..component import Component
 from ..scope import BaseScope
+from .key import DependencyKey, hints_to_dependency_keys
 
 
 class FactoryType(Enum):
@@ -192,11 +192,11 @@ def _make_factory_by_class(
     is_to_bind = False
     factory_type = FactoryType.FACTORY
     return Factory(
-        dependencies=dependencies,
+        dependencies=hints_to_dependency_keys(dependencies),
         type_=factory_type,
         source=source,
         scope=scope,
-        provides=provides,
+        provides=DependencyKey(provides),
         is_to_bind=is_to_bind,
         cache=cache,
     )
@@ -232,11 +232,11 @@ def _make_factory_by_method(
         provides = _clean_result_hint(factory_type, possible_dependency)
 
     return Factory(
-        dependencies=dependencies,
+        dependencies=hints_to_dependency_keys(dependencies),
         type_=factory_type,
         source=source,
         scope=scope,
-        provides=provides,
+        provides=DependencyKey(provides),
         is_to_bind=is_to_bind,
         cache=cache,
     )
@@ -255,14 +255,13 @@ def _make_factory_by_static_method(
     dependencies = list(hints.values())
     if not provides:
         provides = _clean_result_hint(factory_type, possible_dependency)
-    is_to_bind = False
     return Factory(
-        dependencies=dependencies,
+        dependencies=hints_to_dependency_keys(dependencies),
         type_=factory_type,
         source=source,
         scope=scope,
-        provides=provides,
-        is_to_bind=is_to_bind,
+        provides=DependencyKey(provides),
+        is_to_bind=False,
         cache=cache,
     )
 
@@ -284,20 +283,17 @@ def _make_factory_by_other_callable(
         cache=cache,
         scope=scope,
     )
-    factory_type = factory.type
     if factory.is_to_bind:
         dependencies = factory.dependencies[1:]  # remove `self`
     else:
         dependencies = factory.dependencies
-    provides = factory.provides
-    is_to_bind = False
     return Factory(
         dependencies=dependencies,
-        type_=factory_type,
+        type_=factory.type,
         source=source,
         scope=scope,
-        provides=provides,
-        is_to_bind=is_to_bind,
+        provides=factory.provides,
+        is_to_bind=False,
         cache=cache,
     )
 

@@ -1,14 +1,19 @@
-## DIshka (from russian "small DI")
-[![PyPI version](https://badge.fury.io/py/dishka.svg)](https://badge.fury.io/py/dishka)
+## Dishka (from russian "cute DI")
+
+[![PyPI version](https://badge.fury.io/py/dishka.svg)](https://pypi.python.org/pypi/dishka)
 [![downloads](https://img.shields.io/pypi/dm/dishka.svg)](https://pypistats.org/packages/dishka)
 [![license](https://img.shields.io/github/license/reagento/dishka)](https://github.com/reagento/dishka/blob/master/LICENSE)
-[![license](https://img.shields.io/badge/💬-Telegram-blue)](https://t.me/reagento_ru)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/reagento/dishka/setup.yml)](https://github.com/reagento/dishka/actions)
+[![Doc](https://readthedocs.org/projects/dishka/badge/?version=latest&style=flat)](https://dishka.readthedocs.io)
+[![Telegram](https://img.shields.io/badge/💬-Telegram-blue)](https://t.me/reagento_ru)
 
-Small DI framework with scopes and agreeable API.
+Cute DI framework with scopes and agreeable API.
+
+📚 [Documentation](https://dishka.readthedocs.io)
 
 ### Purpose
 
-This library is targeting to provide only an IoC-container. If you are tired manually passing objects to create others objects which are only used to create more object - we have a solution. Otherwise, you do not probably need a IoC-container but check what we have.
+This library is targeting to provide only an IoC-container but make it really useful. If you are tired manually passing objects to create others objects which are only used to create more object - we have a solution. Not all project require an IoC-container, but check what we have.
 
 Unlike other instruments we are not trying to solve tasks not related to dependency injection. We want to keep DI in place, not soiling you code with global variables and additional specifiers in all places. 
 

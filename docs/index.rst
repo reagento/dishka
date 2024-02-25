@@ -1,6 +1,10 @@
 dishka
 =============================================
 
+Cute DI framework with scopes and agreeable API.
+
+This library is targeting to provide only an IoC-container but make it really useful.
+
 .. toctree::
    :caption: Contents:
 

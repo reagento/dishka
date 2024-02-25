@@ -11,6 +11,7 @@ dishka
    provider/index
    container/index
    integrations/index
+   contributing
 
 .. toctree::
     :hidden:

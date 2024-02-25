@@ -17,8 +17,10 @@ class Registry:
         self.scope = scope
 
     def add_factory(self, factory: Factory):
-        if is_generic(factory.provides):
-            self._factories[get_origin(factory.provides)] = factory
+        if is_generic(factory.provides.type_hint):
+            origin = get_origin(factory.provides.type_hint)
+            origin_key = DependencyKey(origin, factory.provides.component)
+            self._factories[origin_key] = factory
         else:
             self._factories[factory.provides] = factory
 
@@ -26,10 +28,11 @@ class Registry:
         try:
             return self._factories[dependency]
         except KeyError:
-            origin = get_origin(dependency)
+            origin = get_origin(dependency.type_hint)
             if not origin:
                 return None
-            factory = self._factories.get(origin)
+            origin_key = DependencyKey(origin, dependency.component)
+            factory = self._factories.get(origin_key)
             if not factory:
                 return None
 
@@ -42,8 +45,9 @@ class Registry:
     ) -> Factory:
         dependency = dependency_key.type_hint
         params_replacement = dict(zip(
-            get_args(factory.provides),
-            get_args(dependency), strict=False,
+            get_args(factory.provides.type_hint),
+            get_args(dependency),
+            strict=False,
         ))
         new_dependencies: list[DependencyKey] = []
         for source_dependency in factory.dependencies:
@@ -107,8 +111,6 @@ def make_registries(
             registries[scope].add_factory(source)
         for source in provider.decorators:
             provides = source.provides.with_component(component)
-            print(provides)
-            print(dep_scopes)
             scope = dep_scopes[provides]
             registry = registries[scope]
             undecorated_type = NewType(

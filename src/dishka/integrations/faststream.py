@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Any, ParamSpec, TypeVar
 
@@ -18,7 +18,7 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 
-def inject(func: Callable[P, T]) -> Callable[P, T]:
+def inject(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
     return wrap_injection(
         func=func,
         container_getter=lambda *_: context.get_local("dishka"),

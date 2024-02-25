@@ -4,6 +4,9 @@ from typing import (
     Annotated,
     Any,
     Literal,
+    ParamSpec,
+    TypeVar,
+    cast,
     get_args,
     get_origin,
     get_type_hints,
@@ -12,6 +15,9 @@ from typing import (
 
 from dishka.async_container import AsyncContainer
 from dishka.container import Container
+
+P = ParamSpec("P")
+T = TypeVar("T")
 
 
 class Depends:
@@ -45,38 +51,45 @@ DependencyParser = Callable[[Parameter, Any], Any]
 @overload
 def wrap_injection(
     *,
-    func: Callable,
+    func: Callable[P, T],
     container_getter: Callable[[tuple, dict], Container],
     is_async: Literal[False] = False,
     remove_depends: bool = True,
     additional_params: Sequence[Parameter] = (),
     parse_dependency: DependencyParser = default_parse_dependency,
-) -> Callable:
+) -> Callable[P, T]:
     ...
 
 
 @overload
 def wrap_injection(
     *,
-    func: Callable,
+    func: Callable[P, Awaitable[T]],
     container_getter: Callable[[tuple, dict], AsyncContainer],
     is_async: Literal[True],
     remove_depends: bool = True,
     additional_params: Sequence[Parameter] = (),
     parse_dependency: DependencyParser = default_parse_dependency,
-) -> Awaitable:
+) -> Callable[P, Awaitable[T]]:
     ...
 
 
 def wrap_injection(
     *,
-    func: Callable,
-    container_getter: Callable,
+    func: Callable[P, T],
+    container_getter: Callable[
+        [tuple, dict],
+        Container,
+    ]
+    | Callable[
+        [tuple, dict],
+        AsyncContainer,
+    ],
     is_async: bool = False,
     remove_depends: bool = True,
     additional_params: Sequence[Parameter] = (),
     parse_dependency: DependencyParser = default_parse_dependency,
-):
+) -> Callable[P, T]:
     hints = get_type_hints(func, include_extras=True)
     func_signature = signature(func)
 
@@ -101,7 +114,7 @@ def wrap_injection(
         ]
     else:
         new_annotations = hints.copy()
-        new_params = func_signature.parameters.copy()
+        new_params = list(func_signature.parameters.values())
 
     if additional_params:
         new_params.extend(additional_params)
@@ -110,14 +123,20 @@ def wrap_injection(
 
     if is_async:
         autoinjected_func = _async_injection_wrapper(
-            container_getter=container_getter,
+            container_getter=cast(
+                Callable[[tuple, dict], AsyncContainer],
+                container_getter,
+            ),
             dependencies=dependencies,
-            func=func,
+            func=cast(Callable[P, Awaitable[T]], func),
             additional_params=additional_params,
         )
     else:
         autoinjected_func = _sync_injection_wrapper(
-            container_getter=container_getter,
+            container_getter=cast(
+                Callable[[tuple, dict], Container],
+                container_getter,
+            ),
             dependencies=dependencies,
             func=func,
             additional_params=additional_params,
@@ -134,12 +153,12 @@ def wrap_injection(
 
 
 def _async_injection_wrapper(
-    container_getter: Callable,
+    container_getter: Callable[[tuple, dict], AsyncContainer],
     additional_params: Sequence[Parameter],
     dependencies: dict[str, Any],
-    func: Callable,
-):
-    async def autoinjected_func(*args, **kwargs):
+    func: Callable[P, Awaitable[T]],
+) -> Callable[P, Awaitable[T]]:
+    async def autoinjected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         container = container_getter(args, kwargs)
         for param in additional_params:
             kwargs.pop(param.name)
@@ -153,12 +172,12 @@ def _async_injection_wrapper(
 
 
 def _sync_injection_wrapper(
-    container_getter: Callable,
+    container_getter: Callable[[tuple, dict], Container],
     additional_params: Sequence[Parameter],
     dependencies: dict[str, Any],
-    func: Callable,
-):
-    def autoinjected_func(*args, **kwargs):
+    func: Callable[P, T],
+) -> Callable[P, T]:
+    def autoinjected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         container = container_getter(args, kwargs)
         for param in additional_params:
             kwargs.pop(param.name)

@@ -6,8 +6,8 @@ from typing import (
     overload,
 )
 
-from ..component import Component
-from ..scope import BaseScope
+from dishka.component import Component
+from dishka.scope import BaseScope
 from .factory import Factory, make_factory
 
 

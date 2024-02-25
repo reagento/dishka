@@ -2,8 +2,8 @@ from typing import (
     Any,
 )
 
-from ..component import Component
-from ..scope import BaseScope
+from dishka.component import Component
+from dishka.scope import BaseScope
 from .factory import Factory, FactoryType
 from .key import DependencyKey
 
@@ -16,13 +16,12 @@ class Alias:
     __slots__ = ("source", "provides", "cache", "component")
 
     def __init__(
-            self, *, source, provides, cache: bool,
-            component: Component | None,
+            self, *,
+            source: DependencyKey,
+            provides: DependencyKey,
+            cache: bool,
     ) -> None:
-        self.source = DependencyKey(
-            type_hint=source,
-            component=component,
-        )
+        self.source = source
         self.provides = provides
         self.cache = cache
 
@@ -32,7 +31,7 @@ class Alias:
         return Factory(
             scope=scope,
             source=_identity,
-            provides=self.provides,
+            provides=self.provides.with_component(component),
             is_to_bind=False,
             dependencies=[self.source.with_component(component)],
             type_=FactoryType.FACTORY,
@@ -51,8 +50,10 @@ def alias(
         component: Component | None = None,
 ) -> Alias:
     return Alias(
-        source=source,
-        provides=provides,
+        source=DependencyKey(
+            type_hint=source,
+            component=component,
+        ),
+        provides=DependencyKey(provides),
         cache=cache,
-        component=component,
     )

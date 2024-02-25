@@ -26,17 +26,17 @@ from typing import (
     overload,
 )
 
-from .._adaptix.type_tools.basic_utils import (
+from dishka._adaptix.type_tools.basic_utils import (
     get_all_type_hints,
     get_type_vars,
     is_bare_generic,
 )
-from .._adaptix.type_tools.generic_resolver import (
+from dishka._adaptix.type_tools.generic_resolver import (
     GenericResolver,
     MembersStorage,
 )
-from ..component import Component
-from ..scope import BaseScope
+from dishka.component import Component
+from dishka.scope import BaseScope
 from .key import DependencyKey, hints_to_dependency_keys
 
 

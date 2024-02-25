@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from ..component import Component
+from dishka.component import Component
 
 
 @dataclass(frozen=True)

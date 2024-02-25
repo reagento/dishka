@@ -76,13 +76,12 @@ def make_registries(
     alias_sources: dict[DependencyKey, Any] = {}
     for provider in providers:
         component = provider.component
-
         for source in provider.factories:
             provides = source.provides.with_component(component)
             dep_scopes[provides] = source.scope
         for source in provider.aliases:
             provides = source.provides.with_component(component)
-            alias_sources[provides] = source.source
+            alias_sources[provides] = source.source.with_component(component)
 
     registries = {scope: Registry(scope) for scope in scopes}
     decorator_depth: dict[DependencyKey, int] = defaultdict(int)
@@ -93,15 +92,15 @@ def make_registries(
             scope = source.scope
             registries[scope].add_factory(source.with_component(component))
         for source in provider.aliases:
-            alias_source = source.source
-            visited_types = [alias_source]
+            alias_source = source.source.with_component(component)
+            visited_keys = [alias_source]
             while alias_source not in dep_scopes:
                 alias_source = alias_sources[alias_source]
-                if alias_source in visited_types:
+                if alias_source in visited_keys:
                     raise InvalidGraphError(
-                        f"Cycle aliases detected {visited_types}",
+                        f"Cycle aliases detected {visited_keys}",
                     )
-                visited_types.append(alias_source)
+                visited_keys.append(alias_source)
             scope = dep_scopes[alias_source]
             dep_scopes[source.provides] = scope
             source = source.as_factory(scope, component)

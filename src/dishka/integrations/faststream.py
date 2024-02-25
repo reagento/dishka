@@ -1,6 +1,6 @@
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, ParamSpec, TypeVar
+from typing import Any, ParamSpec, TypeVar
 
 from faststream import BaseMiddleware, FastStream, context
 from faststream.types import DecodedMessage

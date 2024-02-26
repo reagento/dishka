@@ -1,10 +1,10 @@
 from typing import Annotated, Any, NamedTuple, get_args, get_origin
 
-from .component import Component
+from .component import DEFAULT_COMPONENT, Component
 
 
 class FromComponent(NamedTuple):
-    component: Component
+    component: Component = DEFAULT_COMPONENT
 
 
 class DependencyKey(NamedTuple):

@@ -3,9 +3,10 @@ from dataclasses import dataclass
 from threading import Lock
 from typing import Any, Optional, TypeVar
 
-from .component import DEFAULT_COMPONENT, Component
+from dishka.entities.component import DEFAULT_COMPONENT, Component
+from dishka.entities.key import DependencyKey
+from dishka.entities.scope import BaseScope, Scope
 from .dependency_source import Factory, FactoryType
-from .dependency_source.key import DependencyKey
 from .exceptions import (
     ExitError,
     NoFactoryError,
@@ -13,7 +14,6 @@ from .exceptions import (
 )
 from .provider import Provider
 from .registry import Registry, make_registries
-from .scope import BaseScope, Scope
 
 T = TypeVar("T")
 

@@ -2,7 +2,8 @@ import inspect
 from collections.abc import Callable
 from typing import Any
 
-from .component import DEFAULT_COMPONENT, Component
+from dishka.entities.component import DEFAULT_COMPONENT, Component
+from dishka.entities.scope import BaseScope
 from .dependency_source import (
     Alias,
     Decorator,
@@ -13,7 +14,6 @@ from .dependency_source import (
     provide,
 )
 from .exceptions import InvalidGraphError
-from .scope import BaseScope
 
 
 def is_dependency_source(attribute: Any) -> bool:

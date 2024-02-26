@@ -2,10 +2,10 @@ from typing import (
     Any,
 )
 
-from dishka.component import Component
-from dishka.scope import BaseScope
+from dishka.entities.component import Component
+from dishka.entities.key import DependencyKey
+from dishka.entities.scope import BaseScope
 from .factory import Factory, FactoryType
-from .key import DependencyKey
 
 
 def _identity(x: Any) -> Any:

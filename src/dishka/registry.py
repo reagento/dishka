@@ -1,12 +1,12 @@
 from collections import defaultdict
 from typing import Any, NewType, TypeVar, get_args, get_origin
 
+from dishka.entities.key import DependencyKey
+from dishka.entities.scope import BaseScope
 from ._adaptix.type_tools.basic_utils import get_type_vars, is_generic
 from .dependency_source import Factory
-from .dependency_source.key import DependencyKey
 from .exceptions import InvalidGraphError
 from .provider import Provider
-from .scope import BaseScope
 
 
 class Registry:

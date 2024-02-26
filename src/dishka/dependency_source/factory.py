@@ -35,9 +35,9 @@ from dishka._adaptix.type_tools.generic_resolver import (
     GenericResolver,
     MembersStorage,
 )
-from dishka.component import Component
-from dishka.scope import BaseScope
-from .key import DependencyKey, hints_to_dependency_keys
+from dishka.entities.component import Component
+from dishka.entities.key import DependencyKey, hints_to_dependency_keys
+from dishka.entities.scope import BaseScope
 
 
 class FactoryType(Enum):

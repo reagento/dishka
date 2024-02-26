@@ -1,6 +1,6 @@
 from typing import Annotated, Any, NamedTuple, get_args, get_origin
 
-from dishka.component import Component
+from .component import Component
 
 
 class FromComponent(NamedTuple):

@@ -4,7 +4,7 @@ import pytest
 
 from dishka import Provider, Scope, alias, provide
 from dishka.dependency_source import FactoryType
-from dishka.dependency_source.key import (
+from dishka.entities.key import (
     hint_to_dependency_key,
     hints_to_dependency_keys,
 )

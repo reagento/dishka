@@ -6,10 +6,10 @@ from typing import (
     overload,
 )
 
-from dishka.component import Component
-from dishka.scope import BaseScope
+from dishka.entities.component import Component
+from dishka.entities.key import DependencyKey
+from dishka.entities.scope import BaseScope
 from .factory import Factory, make_factory
-from .key import DependencyKey
 
 
 class Decorator:

@@ -54,6 +54,6 @@ def alias(
             type_hint=source,
             component=component,
         ),
-        provides=DependencyKey(provides),
+        provides=DependencyKey(provides, None),
         cache=cache,
     )

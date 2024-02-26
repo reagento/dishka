@@ -125,7 +125,7 @@ def make_registries(
             registry.add_factory(old_factory)
             source = source.as_factory(
                 scope=scope,
-                new_dependency=DependencyKey(undecorated_type),
+                new_dependency=DependencyKey(undecorated_type, None),
                 cache=old_factory.cache,
                 component=component,
             )

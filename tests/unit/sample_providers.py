@@ -45,7 +45,7 @@ async def async_gen_a(self, dep: int) -> AsyncGenerator[ClassA, None]:
 
 A_VALUE = ClassA(42)
 value_factory = Factory(
-    provides=DependencyKey(ClassA),
+    provides=DependencyKey(ClassA, None),
     source=A_VALUE,
     dependencies=[],
     type_=FactoryType.VALUE,

@@ -1,18 +1,15 @@
-from dataclasses import dataclass
-from typing import Annotated, Any, get_args, get_origin
+from typing import Annotated, Any, NamedTuple, get_args, get_origin
 
 from dishka.component import Component
 
 
-@dataclass(frozen=True)
-class FromComponent:
+class FromComponent(NamedTuple):
     component: Component
 
 
-@dataclass(frozen=True)
-class DependencyKey:
+class DependencyKey(NamedTuple):
     type_hint: Any
-    component: Component | None = None
+    component: Component | None
 
     def with_component(self, component: Component) -> "DependencyKey":
         if self.component is not None:
@@ -25,7 +22,7 @@ class DependencyKey:
 
 def hint_to_dependency_key(hint: Any) -> DependencyKey:
     if get_origin(hint) is not Annotated:
-        return DependencyKey(hint)
+        return DependencyKey(hint, None)
     args = get_args(hint)
     from_component = next(
         (arg for arg in args if isinstance(arg, FromComponent)),

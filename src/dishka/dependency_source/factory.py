@@ -196,7 +196,7 @@ def _make_factory_by_class(
         type_=factory_type,
         source=source,
         scope=scope,
-        provides=DependencyKey(provides),
+        provides=DependencyKey(provides, None),
         is_to_bind=is_to_bind,
         cache=cache,
     )
@@ -236,7 +236,7 @@ def _make_factory_by_method(
         type_=factory_type,
         source=source,
         scope=scope,
-        provides=DependencyKey(provides),
+        provides=DependencyKey(provides, None),
         is_to_bind=is_to_bind,
         cache=cache,
     )
@@ -260,7 +260,7 @@ def _make_factory_by_static_method(
         type_=factory_type,
         source=source,
         scope=scope,
-        provides=DependencyKey(provides),
+        provides=DependencyKey(provides, None),
         is_to_bind=False,
         cache=cache,
     )

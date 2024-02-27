@@ -1,6 +1,7 @@
 ## Dishka (from russian "cute DI")
 
 [![PyPI version](https://badge.fury.io/py/dishka.svg)](https://pypi.python.org/pypi/dishka)
+[![Supported versions](https://img.shields.io/pypi/pyversions/dishka.svg)](https://pypi.python.org/pypi/dishka)
 [![downloads](https://img.shields.io/pypi/dm/dishka.svg)](https://pypistats.org/packages/dishka)
 [![license](https://img.shields.io/github/license/reagento/dishka)](https://github.com/reagento/dishka/blob/master/LICENSE)
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/reagento/dishka/setup.yml)](https://github.com/reagento/dishka/actions)
@@ -15,14 +16,14 @@ Cute DI framework with scopes and agreeable API.
 
 This library is targeting to provide only an IoC-container but make it really useful. If you are tired manually passing objects to create others objects which are only used to create more object - we have a solution. Not all project require an IoC-container, but check what we have.
 
-Unlike other instruments we are not trying to solve tasks not related to dependency injection. We want to keep DI in place, not soiling you code with global variables and additional specifiers in all places. 
+Unlike other instruments we are not trying to solve tasks not related to dependency injection. We want to keep DI in place, not soiling you code with global variables and additional specifiers in all places.
 
 Main ideas:
 * **Scopes**. Any object can have lifespan of the whole app, single request or even more fractionally. Many frameworks do not have scopes or have only 2 of them. Here you can have as many scopes as you need.
 * **Finalization**. Some dependencies like database connections must be not only created, but carefully released. Many framework lack this essential feature
 * **Modular providers**. Instead of creating lots of separate functions or contrariwise a big single class, you can split your factories into several classes, which makes them simpler reusable.
 * **Clean dependencies**. You do not need to add custom markers to the code of dependencies so to allow library to see them. All customization is done within providers code and only borders of scopes have to deal with library API.
-* **Simple API**. You need minimum of objects to start using library. You can easily integrate it with your task framework, examples provided. 
+* **Simple API**. You need minimum of objects to start using library. You can easily integrate it with your task framework, examples provided.
 * **Speed**. It is fast enough so you not to worry about. It is even faster than many of the analogs.
 
 See more in [technical requirements](https://dishka.readthedocs.io/en/latest/requirements/technical.html)
@@ -82,8 +83,8 @@ provider = MyProvider()
 from dishka import make_container
 container = make_container(provider)  # it has Scope.APP
 a = container.get(A)  # `A` has Scope.APP, so it is accessible here
-
 ```
+
 5. You can enter and exit `REQUEST` scope multiple times after that:
 
 ```python
@@ -138,7 +139,6 @@ You can provide your own Scopes class if you are not satisfied with standard flo
 
 **Container** is what you use to get your dependency. You just call `.get(SomeType)` and it finds a way to get you an instance of that type. It does not create things itself, but manages their lifecycle and caches. It delegates objects creation to providers which are passed during creation.
 
-
 **Provider** is a collection of functions which really provide some objects. 
 Provider itself is a class with some attributes and methods. Each of them is either result of `provide`, `alias` or `decorate`. They can be used as provider methods, functions to assign attributes or method decorators.
 
@@ -146,11 +146,14 @@ Provider itself is a class with some attributes and methods. Each of them is eit
 
 If `provide` is used with some class then that class itself is treated as a factory (`__init__` is analyzed for parameters). But do not forget to assing that call to some attribute otherwise it will be ignored.
 
+**Component** - is an isolated group of providers within the same container identified by a string. When dependency is requested it is searched only within the same component as its dependant, unless it is declared explicitly.
 
+This allows you to have multiple parts of application build separately without need to think if the use same types.
 
 ### Tips
 
 * Add method and mark it with `@provide` decorator. It can be sync or async method returning some value.
+
     ```python
     class MyProvider(Provider):
         @provide(scope=Scope.REQUEST)
@@ -158,6 +161,7 @@ If `provide` is used with some class then that class itself is treated as a fact
             return A()
     ```
 * Want some finalization when exiting the scope? Make that method generator:
+
     ```python
     class MyProvider(Provider):
         @provide(scope=Scope.REQUEST)
@@ -167,16 +171,19 @@ If `provide` is used with some class then that class itself is treated as a fact
             a.close()
     ```
 * Do not have any specific logic and just want to create class using its `__init__`? then add a provider attribute using `provide` as function passing that class. 
+
     ```python 
     class MyProvider(Provider):
         a = provide(A, scope=Scope.REQUEST)
     ```
 * Want to create a child class instance when parent is requested? add a `source` attribute to `provide` function with a parent class while passing child as a first parameter
+
     ```python 
     class MyProvider(Provider):
         a = provide(source=AChild, scope=Scope.REQUEST, provides=A)
     ```
 * Having multiple interfaces which can be created as a same class with defined provider? Use alias:
+
     ```python
     class MyProvider(Provider):
         p = alias(source=A, provides=AProtocol)
@@ -190,6 +197,7 @@ If `provide` is used with some class then that class itself is treated as a fact
     ```
 
 * Want to apply decorator pattern and do not want to alter existing provide method? Use `decorate`. It will construct object using earlie defined provider and then pass it to your decorator before returning from the container.
+
   ```python
     class MyProvider(Provider):
         @decorate
@@ -199,6 +207,7 @@ If `provide` is used with some class then that class itself is treated as a fact
   Decorator function can also have additional parameters.
 
 * Want to go `async`? Make provide methods asynchronous. Create async container. Use `async with` and await `get` calls:
+
 ```python
 class MyProvider(Provider):
    @provide(scope=Scope.APP)
@@ -210,6 +219,7 @@ a = await container.get(A)
 ```
 
 * Having some data connected with scope which you want to use when solving dependencies? Set it when entering scope. These classes can be used as parameters of your `provide` methods
+
 ```python
 container = make_async_container(MyProvider(), context={App: app})
 with container(context={RequestClass: request_instance}) as request_container:
@@ -217,13 +227,14 @@ with container(context={RequestClass: request_instance}) as request_container:
 ```
 
 * Having to many dependencies? Or maybe want to replace only part of them in tests keeping others? Create multiple `Provider` classes
+
 ```python
 container = make_container(MyProvider(), OtherProvider())
 ```
 
 * Tired of providing `scope==` for each depedency? Set it inside your `Provider` class and all dependencies with no scope will use it.
-```python
 
+```python
 class MyProvider(Provider):
    scope=Scope.APP
 

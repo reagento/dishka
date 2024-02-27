@@ -59,7 +59,7 @@ By default the result is cached within scope. You can disable it providing ``cac
     container = make_async_container(MyProvider())
     a = await container.get(A)
 
-* Tired of providing `scope==` for each depedency? Set it inside your `Provider` class and all factories with no scope will use it.
+* Tired of providing ``scope=`` for each dependency? Set it inside your ``Provider`` class and all factories with no scope will use it.
 
 .. code-block:: python
 

@@ -114,14 +114,14 @@ class Factory:
 def _get_init_members(tp) -> MembersStorage[str, None]:
     type_hints = get_all_type_hints(tp.__init__)
     if "__init__" in tp.__dict__:
-        overriden = frozenset(type_hints)
+        overridden = frozenset(type_hints)
     else:
-        overriden = {}
+        overridden = {}
 
     return MembersStorage(
         meta=None,
         members=type_hints,
-        overriden=overriden,
+        overriden=overridden,
     )
 
 

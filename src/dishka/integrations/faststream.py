@@ -1,6 +1,6 @@
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any, ParamSpec, TypeVar
+from typing import Any, TypeVar
 
 from faststream import BaseMiddleware, FastStream, context
 from faststream.types import DecodedMessage
@@ -14,11 +14,10 @@ __all__ = (
     "setup_dishka",
 )
 
-P = ParamSpec("P")
 T = TypeVar("T")
 
 
-def inject(func: Callable[P, T]) -> Callable[P, T]:
+def inject(func: Callable[...,  Awaitable[T]]) -> Callable[...,  Awaitable[T]]:
     return wrap_injection(
         func=func,
         container_getter=lambda *_: context.get_local("dishka"),

@@ -24,7 +24,7 @@ def default_parse_dependency(
         hint: Any,
         depends_class: type[Any] = Depends,
 ) -> Any:
-    """ Resolve dependency type or return None if it is not a dependency """
+    """Resolve dependency type or return None if it is not a dependency."""
     if get_origin(hint) is not Annotated:
         return None
     dep = next(

@@ -8,6 +8,7 @@ from dishka import (
     Provider,
     Scope,
     alias,
+    decorate,
     make_async_container,
     make_container,
     provide,
@@ -162,3 +163,42 @@ def test_cache():
     assert container.get(int, component="X") == 4
     assert container.get(int, component="Y") == 5
     assert container.get(int, component="X") == 4
+
+
+@pytest.mark.asyncio
+async def test_cache_async():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(lambda: 1, provides=int)
+    provider_inc = ProviderInc()
+    container = make_async_container(provider, provider_inc)
+    assert await container.get(int, component="X") == 2
+    assert await container.get(int, component="X") == 2
+    assert await container.get(int) == 1
+    container = make_async_container(provider, provider_inc)
+    assert await container.get(int, component="X") == 3
+    assert await container.get(int, component="X") == 3
+
+    container = make_async_container(provider_inc.to_component("Y"),
+                                     provider_inc)
+    assert await container.get(int, component="X") == 4
+    assert await container.get(int, component="X") == 4
+    assert await container.get(int, component="Y") == 5
+    assert await container.get(int, component="X") == 4
+
+
+class ProviderDecorated(Provider):
+    @decorate
+    def foo(self, a: int) -> int:
+        return a + 1
+
+
+def test_decorator():
+    dec_provider = ProviderDecorated(scope=Scope.APP, component="X")
+    x_provider = Provider(scope=Scope.APP, component="X")
+    x_provider.provide(lambda: 1, provides=int)
+    provider = Provider(scope=Scope.APP)
+    provider.provide(lambda: 100, provides=int)
+
+    container = make_container(provider, x_provider, dec_provider)
+    assert container.get(int, component="X") == 2
+    assert container.get(int) == 100

@@ -49,6 +49,8 @@ Technical requirements
 1. There can be multiple containers within same code base for different purposes
 2. There must be a way to assemble a container from some reusable parts.
 3. Assembling of container should be done in runtime in local scope
+4. There should be a way to isolate different parts of container so they do not affect each other
+5. Isolated parts should have API to interact with each other if it is requested explicitly
 
 7. Usability
 ================

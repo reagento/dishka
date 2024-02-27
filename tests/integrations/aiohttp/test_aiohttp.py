@@ -46,7 +46,7 @@ async def get_with_app(
         mock: Annotated[Mock, Depends()],
 ) -> Response:
     mock(a)
-    return Response(text='passed')
+    return Response(text="passed")
 
 
 @pytest.mark.asyncio
@@ -64,7 +64,7 @@ async def get_with_request(
         mock: Annotated[Mock, Depends()],
 ) -> Response:
     mock(a)
-    return Response(text='passed')
+    return Response(text="passed")
 
 
 

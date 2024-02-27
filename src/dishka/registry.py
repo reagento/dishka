@@ -1,34 +1,38 @@
 from collections import defaultdict
-from typing import Any, List, NewType, Type, TypeVar, get_args, get_origin
+from typing import Any, NewType, TypeVar, get_args, get_origin
 
+from dishka.entities.key import DependencyKey
+from dishka.entities.scope import BaseScope
 from ._adaptix.type_tools.basic_utils import get_type_vars, is_generic
 from .dependency_source import Factory
 from .exceptions import InvalidGraphError
 from .provider import Provider
-from .scope import BaseScope
 
 
 class Registry:
     __slots__ = ("scope", "_factories")
 
     def __init__(self, scope: BaseScope):
-        self._factories: dict[Type, Factory] = {}
+        self._factories: dict[DependencyKey, Factory] = {}
         self.scope = scope
 
     def add_factory(self, factory: Factory):
-        if is_generic(factory.provides):
-            self._factories[get_origin(factory.provides)] = factory
+        if is_generic(factory.provides.type_hint):
+            origin = get_origin(factory.provides.type_hint)
+            origin_key = DependencyKey(origin, factory.provides.component)
+            self._factories[origin_key] = factory
         else:
             self._factories[factory.provides] = factory
 
-    def get_factory(self, dependency: Any) -> Factory | None:
+    def get_factory(self, dependency: DependencyKey) -> Factory | None:
         try:
             return self._factories[dependency]
         except KeyError:
-            origin = get_origin(dependency)
+            origin = get_origin(dependency.type_hint)
             if not origin:
                 return None
-            factory = self._factories.get(origin)
+            origin_key = DependencyKey(origin, dependency.component)
+            factory = self._factories.get(origin_key)
             if not factory:
                 return None
 
@@ -37,80 +41,93 @@ class Registry:
             return factory
 
     def _specialize_generic(
-            self, factory: Factory, dependency: Any,
+            self, factory: Factory, dependency_key: DependencyKey,
     ) -> Factory:
+        dependency = dependency_key.type_hint
         params_replacement = dict(zip(
-            get_args(factory.provides),
+            get_args(factory.provides.type_hint),
             get_args(dependency),
+            strict=False,
         ))
-        new_dependencies = []
+        new_dependencies: list[DependencyKey] = []
         for source_dependency in factory.dependencies:
-            if isinstance(source_dependency, TypeVar):
-                source_dependency = params_replacement[source_dependency]
-            elif get_origin(source_dependency):
-                source_dependency = source_dependency[tuple(
+            hint = source_dependency.type_hint
+            if isinstance(hint, TypeVar):
+                hint = params_replacement[hint]
+            elif get_origin(hint):
+                hint = hint[tuple(
                     params_replacement[param]
-                    for param in get_type_vars(source_dependency)
+                    for param in get_type_vars(hint)
                 )]
-            new_dependencies.append(source_dependency)
+            new_dependencies.append(DependencyKey(
+                hint, source_dependency.component,
+            ))
         return Factory(
             source=factory.source,
-            provides=dependency,
+            provides=dependency_key,
             dependencies=new_dependencies,
-            is_to_bound=factory.is_to_bound,
-            type=factory.type,
+            is_to_bind=factory.is_to_bind,
+            type_=factory.type,
             scope=factory.scope,
             cache=factory.cache,
         )
 
 
 def make_registries(
-        *providers: Provider, scopes: Type[BaseScope],
-) -> List[Registry]:
-    dep_scopes: dict[Type, BaseScope] = {}
-    alias_sources = {}
+        *providers: Provider, scopes: type[BaseScope],
+) -> list[Registry]:
+    dep_scopes: dict[DependencyKey, BaseScope] = {}
+    alias_sources: dict[DependencyKey, Any] = {}
     for provider in providers:
+        component = provider.component
         for source in provider.factories:
-            dep_scopes[source.provides] = source.scope
+            provides = source.provides.with_component(component)
+            dep_scopes[provides] = source.scope
         for source in provider.aliases:
-            alias_sources[source.provides] = source.source
+            provides = source.provides.with_component(component)
+            alias_sources[provides] = source.source.with_component(component)
 
     registries = {scope: Registry(scope) for scope in scopes}
-    decorator_depth: dict[Type, int] = defaultdict(int)
+    decorator_depth: dict[DependencyKey, int] = defaultdict(int)
 
     for provider in providers:
+        component = provider.component
         for source in provider.factories:
             scope = source.scope
-            registries[scope].add_factory(source)
+            registries[scope].add_factory(source.with_component(component))
         for source in provider.aliases:
-            alias_source = source.source
-            visited_types = [alias_source]
+            alias_source = source.source.with_component(component)
+            visited_keys = [alias_source]
             while alias_source not in dep_scopes:
                 alias_source = alias_sources[alias_source]
-                if alias_source in visited_types:
+                if alias_source in visited_keys:
                     raise InvalidGraphError(
-                        f"Cycle aliases detected {visited_types}",
+                        f"Cycle aliases detected {visited_keys}",
                     )
-                visited_types.append(alias_source)
+                visited_keys.append(alias_source)
             scope = dep_scopes[alias_source]
+            source = source.as_factory(scope, component)
             dep_scopes[source.provides] = scope
-            source = source.as_factory(scope)
             registries[scope].add_factory(source)
         for source in provider.decorators:
-            provides = source.provides
+            provides = source.provides.with_component(component)
             scope = dep_scopes[provides]
             registry = registries[scope]
             undecorated_type = NewType(
-                f"{provides.__name__}@{decorator_depth[provides]}",
+                f"{provides.type_hint.__name__}@{decorator_depth[provides]}",
                 source.provides,
             )
             decorator_depth[provides] += 1
             old_factory = registry.get_factory(provides)
-            old_factory.provides = undecorated_type
+            old_factory.provides = DependencyKey(
+                undecorated_type, old_factory.provides.component,
+            )
             registry.add_factory(old_factory)
             source = source.as_factory(
-                scope, undecorated_type, old_factory.cache,
+                scope=scope,
+                new_dependency=DependencyKey(undecorated_type, None),
+                cache=old_factory.cache,
+                component=component,
             )
             registries[scope].add_factory(source)
-
     return list(registries.values())

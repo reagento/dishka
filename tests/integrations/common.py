@@ -1,4 +1,5 @@
-from typing import Iterable, NewType
+from collections.abc import Iterable
+from typing import NewType
 from unittest.mock import Mock
 
 from dishka import Provider, Scope, provide

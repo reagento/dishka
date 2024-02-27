@@ -1,24 +1,31 @@
 line-length = 79
+target-version="py310"
 src = ["src"]
+
 include = ["src/**.py", "tests/**.py"]
 exclude = ["src/dishka/_adaptix/**"]
 
 lint.select = [
-    "E",
-    "F",
-    "BLE",
-    "B",
-    "COM",
-    "C4",
-    "ERA",
-    "T20",
-    "I",
-    "N",
-    "ASYNC",
-    "PIE",
-    "RUF",
+"ALL"
+]
+lint.ignore = [
+   "ARG",
+   "ANN",
+   "D",
+   "EM101",
+   "EM102",
+   "PT001",
+   "PT023",
+   "SIM108",
+   "SIM114",
+   "TRY003",
+   "PLW2901",
+   "RET505",
+   "PLR0913",
 ]
 
+[lint.per-file-ignores]
+"tests/**" = ["TID252", "PLR2004", "S101"]
 
 [lint.isort]
 no-lines-before = ["local-folder"]

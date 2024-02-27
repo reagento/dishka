@@ -1,5 +1,5 @@
 __all__ = [
-    'Depends', "inject", "setup_dishka",
+    "Depends", "inject", "setup_dishka",
 ]
 
 from inspect import Parameter

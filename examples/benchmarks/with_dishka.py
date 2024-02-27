@@ -22,10 +22,10 @@ class MyProvider(Provider):
 
 
 def main():
-    with make_container(MyProvider(), scopes=MyScope) as container:
-        for x in range(NUMBER):
-            with container() as state:
-                state.get(A)
+    container =  make_container(MyProvider(), scopes=MyScope)
+    for x in range(NUMBER):
+        with container() as state:
+            state.get(A)
 
 
 if __name__ == '__main__':

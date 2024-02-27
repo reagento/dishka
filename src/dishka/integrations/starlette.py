@@ -33,7 +33,7 @@ class ContainerMiddleware:
                 {Request: request},
         ) as request_container:
             request.state.dishka_container = request_container
-            await self.app(scope, receive, send)
+            return await self.app(scope, receive, send)
 
 
 def setup_dishka(container: AsyncContainer, app: Starlette) -> None:

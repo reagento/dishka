@@ -60,7 +60,7 @@ And async:
     a = await container.get(A)
     a = await container.get(A)  # same instance
 
-Whe you exit the scope, dependency cache is cleared. Finalization of dependencies is done if you used generator factories.
+When you exit the scope, dependency cache is cleared. Finalization of dependencies is done if you used generator factories.
 
 APP-level container is not a context manager, so call ``.close()`` on your app termination
 

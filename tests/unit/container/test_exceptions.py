@@ -1,16 +1,23 @@
-from typing import AsyncIterable, Iterable, NewType
+from collections.abc import AsyncIterable, Iterable
+from typing import NewType
 from unittest.mock import Mock
 
 import pytest
 
 from dishka import (
+    DEFAULT_COMPONENT,
+    DependencyKey,
     Provider,
     Scope,
     make_async_container,
     make_container,
     provide,
 )
-from dishka.exceptions import ExitExceptionGroup
+from dishka.exceptions import (
+    ExitError,
+    NoFactoryError,
+    UnsupportedFactoryError,
+)
 
 
 class MyError(Exception):
@@ -19,8 +26,8 @@ class MyError(Exception):
 
 SyncError = NewType("SyncError", int)
 SyncFinalizationError = NewType("SyncFinalizationError", int)
-AsyncError = NewType("SyncError", int)
-AsyncFinalizationError = NewType("SyncFinalizationError", int)
+AsyncError = NewType("AsyncError", int)
+AsyncFinalizationError = NewType("AsyncFinalizationError", int)
 
 
 class MyProvider(Provider):
@@ -57,9 +64,9 @@ class MyProvider(Provider):
 ])
 def test_sync(dep_type):
     finalizer = Mock(return_value=123)
-    with pytest.raises(ExitExceptionGroup):
-        container = make_container(MyProvider(finalizer))
-        container.get(dep_type)
+    container = make_container(MyProvider(finalizer))
+    container.get(dep_type)
+    with pytest.raises(ExitError):
         container.close()
     finalizer.assert_called_once()
 
@@ -71,8 +78,63 @@ def test_sync(dep_type):
 @pytest.mark.asyncio
 async def test_async(dep_type):
     finalizer = Mock(return_value=123)
-    with pytest.raises(ExitExceptionGroup):
-        container = make_async_container(MyProvider(finalizer))
-        await container.get(dep_type)
+    container = make_async_container(MyProvider(finalizer))
+    await container.get(dep_type)
+    with pytest.raises(ExitError):
         await container.close()
     finalizer.assert_called_once()
+
+
+class InvalidScopeProvider(Provider):
+    @provide(scope=Scope.REQUEST)
+    def y(self) -> object:
+        return False
+
+    @provide(scope=Scope.APP)
+    def x(self, value: object) -> int:
+        return 1
+
+    @provide(scope=Scope.APP)
+    def a(self, value: int) -> float:
+        return value
+
+    @provide(scope=Scope.APP)
+    def b(self, value: float) -> complex:
+        return value
+
+
+def test_no_factory_sync():
+    container = make_container(InvalidScopeProvider())
+    with pytest.raises(NoFactoryError) as e:
+        container.get(complex)
+    assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+    assert e.value.path == [
+        DependencyKey(complex, DEFAULT_COMPONENT),
+        DependencyKey(float, DEFAULT_COMPONENT),
+        DependencyKey(int, DEFAULT_COMPONENT),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_no_factory_async():
+    container = make_async_container(InvalidScopeProvider())
+    with pytest.raises(NoFactoryError) as e:
+        await container.get(complex)
+    assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+    assert e.value.path == [
+        DependencyKey(complex, DEFAULT_COMPONENT),
+        DependencyKey(float, DEFAULT_COMPONENT),
+        DependencyKey(int, DEFAULT_COMPONENT),
+    ]
+
+
+class AsyncProvider(Provider):
+    @provide(scope=Scope.APP)
+    async def x(self) -> int:
+        return 0
+
+
+def test_async_factory_in_sync():
+    container = make_container(AsyncProvider())
+    with pytest.raises(UnsupportedFactoryError):
+        container.get(int)

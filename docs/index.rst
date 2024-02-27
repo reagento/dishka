@@ -11,6 +11,8 @@ dishka
    provider/index
    container/index
    integrations/index
+   advanced/testing
+   advanced/components
 
 .. toctree::
     :hidden:

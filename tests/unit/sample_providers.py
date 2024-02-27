@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator, AsyncIterable, Generator, Iterable
 from typing import Any
 
-from dishka import Scope
+from dishka import DependencyKey, Scope
 from dishka.dependency_source import Factory, FactoryType
 
 
@@ -45,7 +45,7 @@ async def async_gen_a(self, dep: int) -> AsyncGenerator[ClassA, None]:
 
 A_VALUE = ClassA(42)
 value_factory = Factory(
-    provides=ClassA,
+    provides=DependencyKey(ClassA, None),
     source=A_VALUE,
     dependencies=[],
     type_=FactoryType.VALUE,

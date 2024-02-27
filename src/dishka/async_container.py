@@ -3,6 +3,9 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Optional, TypeVar
 
+from dishka.entities.component import DEFAULT_COMPONENT, Component
+from dishka.entities.key import DependencyKey
+from dishka.entities.scope import BaseScope, Scope
 from .dependency_source import Factory, FactoryType
 from .exceptions import (
     ExitError,
@@ -11,7 +14,6 @@ from .exceptions import (
 )
 from .provider import Provider
 from .registry import Registry, make_registries
-from .scope import BaseScope, Scope
 
 T = TypeVar("T")
 
@@ -39,9 +41,14 @@ class AsyncContainer:
     ):
         self.registry = registry
         self.child_registries = child_registries
-        self.context = {type(self): self}
+        self.context = {DependencyKey(type(self), DEFAULT_COMPONENT): self}
         if context:
-            self.context.update(context)
+            for key, value in context.items():
+                if isinstance(key, DependencyKey):
+                    self.context[key] = value
+                else:
+                    self.context[DependencyKey(key, DEFAULT_COMPONENT)] = value
+
         self.parent_container = parent_container
         if lock_factory:
             self.lock = lock_factory()
@@ -77,7 +84,7 @@ class AsyncContainer:
         return AsyncContextWrapper(self._create_child(context, lock_factory))
 
     async def _get_from_self(
-            self, factory: Factory, dependency_type: Any,
+            self, factory: Factory, key: DependencyKey,
     ) -> T:
         try:
             sub_dependencies = [
@@ -85,7 +92,7 @@ class AsyncContainer:
                 for dependency in factory.dependencies
             ]
         except NoFactoryError as e:
-            e.add_path(dependency_type)
+            e.add_path(key)
             raise
 
         if factory.type is FactoryType.GENERATOR:
@@ -107,25 +114,32 @@ class AsyncContainer:
                 f"Unsupported factory type {factory.type}.",
             )
         if factory.cache:
-            self.context[dependency_type] = solved
+            self.context[key] = solved
         return solved
 
-    async def get(self, dependency_type: type[T]) -> T:
+    async def get(
+            self,
+            dependency_type: type[T],
+            component: Component = DEFAULT_COMPONENT,
+    ) -> T:
         lock = self.lock
+        key = DependencyKey(dependency_type, component)
         if not lock:
-            return await self._get_unlocked(dependency_type)
+            return await self._get_unlocked(key)
         async with lock:
-            return await self._get_unlocked(dependency_type)
+            return await self._get_unlocked(key)
 
-    async def _get_unlocked(self, dependency_type: type[T]) -> T:
-        if dependency_type in self.context:
-            return self.context[dependency_type]
-        factory = self.registry.get_factory(dependency_type)
+    async def _get_unlocked(self, key: DependencyKey) -> Any:
+        if key in self.context:
+            return self.context[key]
+        factory = self.registry.get_factory(key)
         if not factory:
             if not self.parent_container:
-                raise NoFactoryError(dependency_type)
-            return await self.parent_container.get(dependency_type)
-        return await self._get_from_self(factory, dependency_type)
+                raise NoFactoryError(key)
+            return await self.parent_container.get(
+                key.type_hint, key.component,
+            )
+        return await self._get_from_self(factory, key)
 
     async def close(self):
         errors = []

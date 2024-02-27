@@ -26,16 +26,18 @@ from typing import (
     overload,
 )
 
-from ._adaptix.type_tools.basic_utils import (
+from dishka._adaptix.type_tools.basic_utils import (
     get_all_type_hints,
     get_type_vars,
     is_bare_generic,
 )
-from ._adaptix.type_tools.generic_resolver import (
+from dishka._adaptix.type_tools.generic_resolver import (
     GenericResolver,
     MembersStorage,
 )
-from .scope import BaseScope
+from dishka.entities.component import Component
+from dishka.entities.key import DependencyKey, hints_to_dependency_keys
+from dishka.entities.scope import BaseScope
 
 
 class FactoryType(Enum):
@@ -50,10 +52,6 @@ def _is_bound_method(obj):
     return ismethod(obj) and obj.__self__
 
 
-def _identity(x: Any) -> Any:
-    return x
-
-
 class Factory:
     __slots__ = (
         "dependencies", "source", "provides", "scope", "type",
@@ -63,9 +61,9 @@ class Factory:
     def __init__(
             self,
             *,
-            dependencies: Sequence[Any],
+            dependencies: Sequence[DependencyKey],
             source: Any,
-            provides: type,
+            provides: DependencyKey,
             scope: BaseScope | None,
             type_: FactoryType,
             is_to_bind: bool,
@@ -97,6 +95,19 @@ class Factory:
             type_=self.type,
             is_to_bind=False,
             cache=self.cache,
+        )
+
+    def with_component(self, component: Component) -> "Factory":
+        return Factory(
+            dependencies=[
+                d.with_component(component) for d in self.dependencies
+            ],
+            source=self.source,
+            provides=self.provides.with_component(component),
+            scope=self.scope,
+            is_to_bind=self.is_to_bind,
+            cache=self.cache,
+            type_=self.type,
         )
 
 
@@ -181,11 +192,11 @@ def _make_factory_by_class(
     is_to_bind = False
     factory_type = FactoryType.FACTORY
     return Factory(
-        dependencies=dependencies,
+        dependencies=hints_to_dependency_keys(dependencies),
         type_=factory_type,
         source=source,
         scope=scope,
-        provides=provides,
+        provides=DependencyKey(provides, None),
         is_to_bind=is_to_bind,
         cache=cache,
     )
@@ -221,11 +232,11 @@ def _make_factory_by_method(
         provides = _clean_result_hint(factory_type, possible_dependency)
 
     return Factory(
-        dependencies=dependencies,
+        dependencies=hints_to_dependency_keys(dependencies),
         type_=factory_type,
         source=source,
         scope=scope,
-        provides=provides,
+        provides=DependencyKey(provides, None),
         is_to_bind=is_to_bind,
         cache=cache,
     )
@@ -244,14 +255,13 @@ def _make_factory_by_static_method(
     dependencies = list(hints.values())
     if not provides:
         provides = _clean_result_hint(factory_type, possible_dependency)
-    is_to_bind = False
     return Factory(
-        dependencies=dependencies,
+        dependencies=hints_to_dependency_keys(dependencies),
         type_=factory_type,
         source=source,
         scope=scope,
-        provides=provides,
-        is_to_bind=is_to_bind,
+        provides=DependencyKey(provides, None),
+        is_to_bind=False,
         cache=cache,
     )
 
@@ -273,20 +283,17 @@ def _make_factory_by_other_callable(
         cache=cache,
         scope=scope,
     )
-    factory_type = factory.type
     if factory.is_to_bind:
         dependencies = factory.dependencies[1:]  # remove `self`
     else:
         dependencies = factory.dependencies
-    provides = factory.provides
-    is_to_bind = False
     return Factory(
         dependencies=dependencies,
-        type_=factory_type,
+        type_=factory.type,
         source=source,
         scope=scope,
-        provides=provides,
-        is_to_bind=is_to_bind,
+        provides=factory.provides,
+        is_to_bind=False,
         cache=cache,
     )
 
@@ -380,103 +387,3 @@ def provide(
         )
 
     return scoped
-
-
-class Alias:
-    __slots__ = ("source", "provides", "cache")
-
-    def __init__(self, *, source, provides, cache: bool):
-        self.source = source
-        self.provides = provides
-        self.cache = cache
-
-    def as_factory(self, scope: BaseScope) -> Factory:
-        return Factory(
-            scope=scope,
-            source=_identity,
-            provides=self.provides,
-            is_to_bind=False,
-            dependencies=[self.source],
-            type_=FactoryType.FACTORY,
-            cache=self.cache,
-        )
-
-    def __get__(self, instance, owner):
-        return self
-
-
-def alias(
-        *,
-        source: type,
-        provides: type,
-        cache: bool = True,
-) -> Alias:
-    return Alias(
-        source=source,
-        provides=provides,
-        cache=cache,
-    )
-
-
-class Decorator:
-    __slots__ = ("provides", "factory")
-
-    def __init__(self, factory: Factory):
-        self.factory = factory
-        self.provides = factory.provides
-
-    def as_factory(
-            self, *, scope: BaseScope, new_dependency: Any, cache: bool,
-    ) -> Factory:
-        return Factory(
-            scope=scope,
-            source=self.factory.source,
-            provides=self.factory.provides,
-            is_to_bind=self.factory.is_to_bind,
-            dependencies=[
-                new_dependency if dep is self.provides else dep
-                for dep in self.factory.dependencies
-            ],
-            type_=self.factory.type,
-            cache=cache,
-        )
-
-    def __get__(self, instance, owner):
-        return Decorator(self.factory.__get__(instance, owner))
-
-
-@overload
-def decorate(
-        *,
-        provides: Any = None,
-) -> Callable[[Callable], Decorator]:
-    ...
-
-
-@overload
-def decorate(
-        source: Callable | type,
-        *,
-        provides: Any = None,
-) -> Decorator:
-    ...
-
-
-def decorate(
-        source: Callable | type | None = None,
-        provides: Any = None,
-) -> Decorator | Callable[[Callable], Decorator]:
-    if source is not None:
-        return Decorator(make_factory(
-            provides=provides, scope=None, source=source, cache=False,
-        ))
-
-    def scoped(func):
-        return Decorator(make_factory(
-            provides=provides, scope=None, source=func, cache=False,
-        ))
-
-    return scoped
-
-
-DependencySource = Alias | Factory | Decorator

@@ -15,6 +15,8 @@ This library is targeting to provide only an IoC-container but make it really us
    provider/index
    container/index
    integrations/index
+   advanced/testing
+   advanced/components
    contributing
 
 .. toctree::

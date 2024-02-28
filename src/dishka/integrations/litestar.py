@@ -15,14 +15,14 @@ from dishka.integrations.base import Depends, wrap_injection
 
 def inject(func):
     hints = get_type_hints(func)
+    request_param = "request"
     request_param = next(
-        (name for name, hint in hints.items() if hint is Request or issubclass(hint, Request)),
+        (name for name, hint in hints.items() if name == request_param),
         None,
     )
     if request_param:
         additional_params = []
     else:
-        request_param = "request"
         additional_params = [Parameter(
             name=request_param,
             annotation=Request | None,

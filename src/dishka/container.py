@@ -14,6 +14,7 @@ from .exceptions import (
 )
 from .provider import Provider
 from .registry import Registry, make_registries
+from .validation import GraphValidator
 
 T = TypeVar("T")
 
@@ -178,4 +179,6 @@ def make_container(
         lock_factory: Callable[[], Lock] | None = None,
 ) -> Container:
     registries = make_registries(*providers, scopes=scopes)
+    validator = GraphValidator(registries)
+    validator.validate()
     return Container(*registries, context=context, lock_factory=lock_factory)

@@ -1,9 +1,16 @@
-from typing import Any
+from collections.abc import Sequence
+
+from dishka.entities.key import DependencyKey
+from .dependency_source import Factory
 
 try:
     from builtins import ExceptionGroup
 except ImportError:
     from exceptiongroup import ExceptionGroup
+
+from .error_rendering import PathRenderer
+
+_renderer = PathRenderer()
 
 
 class DishkaError(Exception):
@@ -12,6 +19,14 @@ class DishkaError(Exception):
 
 class InvalidGraphError(DishkaError):
     pass
+
+
+class CycleDependenciesError(DishkaError):
+    def __init__(self, path: Sequence[Factory]) -> None:
+        self.path = path
+
+    def __str__(self):
+        return "Cycle dependencies detected.\n" + _renderer.render(self.path)
 
 
 class ExitError(ExceptionGroup, DishkaError):
@@ -23,11 +38,11 @@ class UnsupportedFactoryError(DishkaError):
 
 
 class NoFactoryError(DishkaError):
-    def __init__(self, requested: Any):
+    def __init__(self, requested: DependencyKey):
         self.requested = requested
         self.path = []
 
-    def add_path(self, requested_by: Any):
+    def add_path(self, requested_by: Factory):
         self.path.insert(0, requested_by)
 
     def __str__(self):
@@ -35,9 +50,8 @@ class NoFactoryError(DishkaError):
             path = self.path[-1]
             return (
                 f"Cannot find factory for {self.requested} "
-                f"requested by {path}. "
-                f"It is missing or has invalid scope."
-            )
+                f"It is missing or has invalid scope.\n"
+            ) + _renderer.render(self.path, self.requested)
         else:
             return (
                 f"Cannot find factory for {self.requested}. "

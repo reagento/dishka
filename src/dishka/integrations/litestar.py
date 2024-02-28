@@ -16,7 +16,7 @@ from dishka.integrations.base import Depends, wrap_injection
 def inject(func):
     hints = get_type_hints(func)
     request_param = next(
-        (name for name, hint in hints.items() if hint is Request),
+        (name for name, hint in hints.items() if hint is Request or issubclass(hint, Request)),
         None,
     )
     if request_param:

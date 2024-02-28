@@ -109,6 +109,8 @@ class AsyncContainer:
             solved = await factory.source(*sub_dependencies)
         elif factory.type is FactoryType.VALUE:
             solved = factory.source
+        elif factory.type is FactoryType.ALIAS:
+            solved = sub_dependencies[0]
         else:
             raise UnsupportedFactoryError(
                 f"Unsupported factory type {factory.type}.",

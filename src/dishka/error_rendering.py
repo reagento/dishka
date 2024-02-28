@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from dishka.dependency_source import Factory
+from dishka.dependency_source import Factory, FactoryType
 from dishka.entities.key import DependencyKey
 
 
@@ -30,8 +30,10 @@ class PathRenderer:
         source = factory.source
         if source == factory.provides.type_hint:
             return ""
+        if factory.type is FactoryType.ALIAS:
+            return "alias"
         if func := getattr(source, "__func__", None):
-            return getattr(func, "__qualname__") or str(func)
+            return getattr(func, "__qualname__", None) or str(func)
         else:
             return str(source)
 

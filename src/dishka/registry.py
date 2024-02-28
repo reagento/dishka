@@ -4,8 +4,11 @@ from typing import Any, NewType, TypeVar, get_args, get_origin
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
 from ._adaptix.type_tools.basic_utils import get_type_vars, is_generic
-from .dependency_source import Factory
-from .exceptions import InvalidGraphError
+from .dependency_source import Alias, Factory
+from .exceptions import (
+    CycleDependenciesError,
+    NoFactoryError,
+)
 from .provider import Provider
 
 
@@ -78,6 +81,7 @@ def make_registries(
 ) -> list[Registry]:
     dep_scopes: dict[DependencyKey, BaseScope] = {}
     alias_sources: dict[DependencyKey, Any] = {}
+    aliases: dict[DependencyKey, Alias] = {}
     for provider in providers:
         component = provider.component
         for source in provider.factories:
@@ -86,6 +90,7 @@ def make_registries(
         for source in provider.aliases:
             provides = source.provides.with_component(component)
             alias_sources[provides] = source.source.with_component(component)
+            aliases[provides] = source
 
     registries = {scope: Registry(scope) for scope in scopes}
     decorator_depth: dict[DependencyKey, int] = defaultdict(int)
@@ -97,14 +102,21 @@ def make_registries(
             registries[scope].add_factory(source.with_component(component))
         for source in provider.aliases:
             alias_source = source.source.with_component(component)
-            visited_keys = [alias_source]
+            visited_keys = []
             while alias_source not in dep_scopes:
+                if alias_source not in alias_sources:
+                    e = NoFactoryError(alias_source)
+                    for s in visited_keys[::-1]:
+                        e.add_path(aliases[s].as_factory("<unknown scope>", s.component))
+                    e.add_path(source.as_factory("<unknown scope>", component))
+                    raise e
+                visited_keys.append(alias_source)
                 alias_source = alias_sources[alias_source]
                 if alias_source in visited_keys:
-                    raise InvalidGraphError(
-                        f"Cycle aliases detected {visited_keys}",
-                    )
-                visited_keys.append(alias_source)
+                    raise CycleDependenciesError([
+                        aliases[s].as_factory("<unknown scope>", component)
+                        for s in visited_keys
+                    ])
             scope = dep_scopes[alias_source]
             source = source.as_factory(scope, component)
             dep_scopes[source.provides] = scope

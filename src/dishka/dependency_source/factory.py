@@ -46,6 +46,7 @@ class FactoryType(Enum):
     FACTORY = "factory"
     ASYNC_FACTORY = "async_factory"
     VALUE = "value"
+    ALIAS = "alias"
 
 
 def _is_bound_method(obj):

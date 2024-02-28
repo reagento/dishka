@@ -2,10 +2,12 @@ from collections.abc import Sequence
 
 from dishka.dependency_source import Factory
 from dishka.entities.key import DependencyKey
-from dishka.exceptions import NoFactoryError, InvalidGraphError, \
-    CycleDependenciesError
+from dishka.exceptions import (
+    CycleDependenciesError,
+    InvalidGraphError,
+    NoFactoryError,
+)
 from dishka.registry import Registry
-from .error_rendering import PathRenderer
 
 
 class GraphValidator:

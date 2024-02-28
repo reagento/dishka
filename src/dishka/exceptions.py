@@ -49,7 +49,7 @@ class NoFactoryError(DishkaError):
         if self.path:
             path = self.path[-1]
             return (
-                f"Cannot find factory for {self.requested} "
+                f"Cannot find factory for {self.requested}. "
                 f"It is missing or has invalid scope.\n"
             ) + _renderer.render(self.path, self.requested)
         else:

@@ -1,7 +1,9 @@
 from collections.abc import Sequence
 
 from dishka.dependency_source import Factory, FactoryType
+from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
+from dishka.entities.scope import BaseScope
 
 
 class PathRenderer:
@@ -37,6 +39,11 @@ class PathRenderer:
         else:
             return str(source)
 
+    def _switch(
+            self, scope: BaseScope, component: Component,
+    ) -> str:
+        return f"~~~ component={component!r}, {scope} ~~~\n"
+
     def render(self, path: Sequence[Factory], last: DependencyKey = None):
         print(path, last)
         cycle = last is None
@@ -53,10 +60,7 @@ class PathRenderer:
             arrow = self._arrow(i, length, cycle)
             new_dest = (factory.scope, factory.provides.component)
             if new_dest != dest:
-                res += (
-                        "   " + " " * len(arrow) + " " +
-                        f"=== component={new_dest[1]!r}, {new_dest[0]} ===\n"
-                )
+                res += "   " + " " * len(arrow) + " " + self._switch(*new_dest)
                 dest = new_dest
 
             res += (
@@ -69,10 +73,7 @@ class PathRenderer:
         if last:
             new_dest = (dest[0], last.component)
             if new_dest != dest:
-                res += (
-                        "   " + " " * len(arrow) + " " +
-                        f"=== component={new_dest[1]!r}, {new_dest[0]} ===\n"
-                )
+                res += "   " + " " * len(arrow) + " " + self._switch(*new_dest)
                 dest = new_dest
             arrow = self._arrow(length + 1, length, cycle)
             res += (

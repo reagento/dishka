@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request
 
 from dishka import AsyncContainer
 from .base import Depends, wrap_injection
+from .starlette import ContainerMiddleware
 
 
 def inject(func):
@@ -36,14 +37,6 @@ def inject(func):
     )
 
 
-async def add_request_container_middleware(request: Request, call_next):
-    async with request.app.state.dishka_container(
-            {Request: request},
-    ) as request_container:
-        request.state.dishka_container = request_container
-        return await call_next(request)
-
-
 def setup_dishka(container: AsyncContainer, app: FastAPI) -> None:
-    app.middleware("http")(add_request_container_middleware)
+    app.add_middleware(ContainerMiddleware)
     app.state.dishka_container = container

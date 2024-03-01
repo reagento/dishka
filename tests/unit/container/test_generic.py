@@ -83,6 +83,20 @@ def test_generic_class():
     assert a.x == 42
 
 
+def test_bare_generic_method():
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        @provide
+        def a(self) -> A:
+            return A(42)
+
+    container = make_container(MyProvider())
+    a = container.get(A)
+    assert isinstance(a, A)
+    assert a.x == 42
+
+
 def test_generic_func():
     class MyProvider(Provider):
         scope = Scope.APP

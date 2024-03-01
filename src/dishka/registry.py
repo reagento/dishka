@@ -19,10 +19,10 @@ class Registry:
     def add_factory(self, factory: Factory):
         if is_generic(factory.provides.type_hint):
             origin = get_origin(factory.provides.type_hint)
-            origin_key = DependencyKey(origin, factory.provides.component)
-            self._factories[origin_key] = factory
-        else:
-            self._factories[factory.provides] = factory
+            if origin:
+                origin_key = DependencyKey(origin, factory.provides.component)
+                self._factories[origin_key] = factory
+        self._factories[factory.provides] = factory
 
     def get_factory(self, dependency: DependencyKey) -> Factory | None:
         try:

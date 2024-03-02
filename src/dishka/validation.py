@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import TypeVar
 
 from dishka.dependency_source import Factory
 from dishka.entities.key import DependencyKey
@@ -39,7 +40,9 @@ class GraphValidator:
         self.path[factory.provides] = factory
         try:
             for dep in factory.dependencies:
-                self._validate_key(dep, registry_index)
+                # ignore TypeVar parameters
+                if not isinstance(dep.type_hint, TypeVar):
+                    self._validate_key(dep, registry_index)
         except NoFactoryError as e:
             e.add_path(factory)
             raise

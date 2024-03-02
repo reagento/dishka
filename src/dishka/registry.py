@@ -1,10 +1,11 @@
 from collections import defaultdict
 from typing import Any, NewType, TypeVar, get_args, get_origin
 
-from dishka.entities.key import DependencyKey
-from dishka.entities.scope import BaseScope
 from ._adaptix.type_tools.basic_utils import get_type_vars, is_generic
-from .dependency_source import Alias, Factory
+from .dependency_source import Alias, Factory, from_context
+from .entities.component import DEFAULT_COMPONENT
+from .entities.key import DependencyKey
+from .entities.scope import BaseScope
 from .exceptions import (
     CycleDependenciesError,
     NoFactoryError,
@@ -13,10 +14,10 @@ from .provider import Provider
 
 
 class Registry:
-    __slots__ = ("scope", "_factories")
+    __slots__ = ("scope", "factories")
 
     def __init__(self, scope: BaseScope):
-        self._factories: dict[DependencyKey, Factory] = {}
+        self.factories: dict[DependencyKey, Factory] = {}
         self.scope = scope
 
     def add_factory(self, factory: Factory):
@@ -24,23 +25,23 @@ class Registry:
             origin = get_origin(factory.provides.type_hint)
             if origin:
                 origin_key = DependencyKey(origin, factory.provides.component)
-                self._factories[origin_key] = factory
-        self._factories[factory.provides] = factory
+                self.factories[origin_key] = factory
+        self.factories[factory.provides] = factory
 
     def get_factory(self, dependency: DependencyKey) -> Factory | None:
         try:
-            return self._factories[dependency]
+            return self.factories[dependency]
         except KeyError:
             origin = get_origin(dependency.type_hint)
             if not origin:
                 return None
             origin_key = DependencyKey(origin, dependency.component)
-            factory = self._factories.get(origin_key)
+            factory = self.factories.get(origin_key)
             if not factory:
                 return None
 
             factory = self._specialize_generic(factory, dependency)
-            self._factories[dependency] = factory
+            self.factories[dependency] = factory
             return factory
 
     def _specialize_generic(
@@ -77,13 +78,17 @@ class Registry:
 
 
 def make_registries(
-        *providers: Provider, scopes: type[BaseScope],
+        *providers: Provider,
+        scopes: type[BaseScope],
+        container_type: type,
 ) -> list[Registry]:
     dep_scopes: dict[DependencyKey, BaseScope] = {}
     alias_sources: dict[DependencyKey, Any] = {}
     aliases: dict[DependencyKey, Alias] = {}
+    components = {DEFAULT_COMPONENT}
     for provider in providers:
         component = provider.component
+        components.add(component)
         for source in provider.factories:
             provides = source.provides.with_component(component)
             dep_scopes[provides] = source.scope
@@ -92,7 +97,14 @@ def make_registries(
             alias_sources[provides] = source.source.with_component(component)
             aliases[provides] = source
 
-    registries = {scope: Registry(scope) for scope in scopes}
+    registries: dict[BaseScope, Registry] = {}
+    for scope in scopes:
+        registry = Registry(scope)
+        context_var = from_context(provides=container_type, scope=scope)
+        for component in components:
+            registry.add_factory(context_var.as_factory(component))
+        registries[scope] = registry
+
     decorator_depth: dict[DependencyKey, int] = defaultdict(int)
 
     for provider in providers:
@@ -107,7 +119,8 @@ def make_registries(
                 if alias_source not in alias_sources:
                     e = NoFactoryError(alias_source)
                     for s in visited_keys[::-1]:
-                        e.add_path(aliases[s].as_factory("<unknown scope>", s.component))
+                        e.add_path(aliases[s].as_factory("<unknown scope>",
+                                                         s.component))
                     e.add_path(source.as_factory("<unknown scope>", component))
                     raise e
                 visited_keys.append(alias_source)
@@ -142,4 +155,9 @@ def make_registries(
                 component=component,
             )
             registries[scope].add_factory(source)
+        for source in provider.context_vars:
+            scope = source.scope
+            registry = registries[scope]
+            for component in components:
+                registry.add_factory(source.as_factory(component))
     return list(registries.values())

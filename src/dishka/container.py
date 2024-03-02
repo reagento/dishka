@@ -9,6 +9,7 @@ from dishka.entities.scope import BaseScope, Scope
 from .dependency_source import Factory, FactoryType
 from .exceptions import (
     ExitError,
+    NoContextValueError,
     NoFactoryError,
     UnsupportedFactoryError,
 )
@@ -115,6 +116,11 @@ class Container:
             solved = factory.source
         elif factory.type is FactoryType.ALIAS:
             solved = sub_dependencies[0]
+        elif factory.type is FactoryType.CONTEXT:
+            raise NoContextValueError(
+                f"Value for type {factory.provides.type_hint} is not found "
+                f"in container context with scope={factory.scope}",
+            )
         else:
             raise UnsupportedFactoryError(
                 f"Unsupported factory type {factory.type}. ",
@@ -180,7 +186,11 @@ def make_container(
         context: dict | None = None,
         lock_factory: Callable[[], Lock] | None = None,
 ) -> Container:
-    registries = make_registries(*providers, scopes=scopes)
+    registries = make_registries(
+        *providers,
+        scopes=scopes,
+        container_type=Container,
+    )
     validator = GraphValidator(registries)
     validator.validate()
     return Container(*registries, context=context, lock_factory=lock_factory)

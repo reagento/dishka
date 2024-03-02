@@ -47,6 +47,7 @@ class FactoryType(Enum):
     ASYNC_FACTORY = "async_factory"
     VALUE = "value"
     ALIAS = "alias"
+    CONTEXT = "context"
 
 
 def _is_bound_method(obj):
@@ -388,3 +389,7 @@ def provide(
         )
 
     return scoped
+
+
+def _context_stub():
+    raise NotImplementedError

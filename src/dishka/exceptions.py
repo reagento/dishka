@@ -37,6 +37,10 @@ class UnsupportedFactoryError(DishkaError):
     pass
 
 
+class NoContextValueError(DishkaError):
+    pass
+
+
 class NoFactoryError(DishkaError):
     def __init__(self, requested: DependencyKey):
         self.requested = requested

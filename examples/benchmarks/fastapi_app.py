@@ -1,13 +1,14 @@
+import asyncio
 import logging
-from typing import Annotated, Callable, Iterable, NewType
+from collections.abc import AsyncIterable, Callable
+from typing import Annotated, NewType
 
 import uvicorn
-from fastapi import APIRouter
+from fastapi import APIRouter, FastAPI
 from fastapi import Depends as FastapiDepends
-from fastapi import FastAPI
 
-from dishka import Provider, Scope, provide
-from dishka.integrations.fastapi import Depends, DishkaApp, inject
+from dishka import Provider, Scope, make_async_container, provide
+from dishka.integrations.fastapi import Depends, inject
 
 
 class Stub:
@@ -68,11 +69,13 @@ class MyProvider(Provider):
         return A(b, c)
 
     @provide(scope=Scope.REQUEST)
-    async def get_b(self) -> Iterable[B]:
+    async def get_b(self) -> AsyncIterable[B]:
+        await asyncio.sleep(0.000001)
         yield B(1)
 
     @provide(scope=Scope.REQUEST)
-    async def get_c(self) -> Iterable[C]:
+    async def get_c(self) -> AsyncIterable[C]:
+        await asyncio.sleep(0.0000001)
         yield C(1)
 
 
@@ -103,15 +106,27 @@ def new_a(b: B = FastapiDepends(Stub(B)), c: C = FastapiDepends(Stub(C))):
     return A(b, c)
 
 
+async def get_b() -> AsyncIterable[B]:
+    await asyncio.sleep(0.000001)
+    yield B(1)
+
+
+async def get_c() -> AsyncIterable[C]:
+    await asyncio.sleep(0.0000001)
+    yield C(1)
+
+
 def create_app() -> FastAPI:
     logging.basicConfig(level=logging.WARNING)
 
     app = FastAPI()
     app.dependency_overrides[A] = new_a
-    app.dependency_overrides[B] = lambda: B(1)
-    app.dependency_overrides[C] = lambda: C(1)
+    app.dependency_overrides[B] = get_b
+    app.dependency_overrides[C] = get_c
     app.include_router(router)
-    return DishkaApp(providers=[MyProvider()], app=app)
+    c = make_async_container(MyProvider())
+    # setup_dishka(container=c, app=app)
+    return app
 
 
 if __name__ == "__main__":

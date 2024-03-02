@@ -21,7 +21,7 @@ class InvalidGraphError(DishkaError):
     pass
 
 
-class CycleDependenciesError(DishkaError):
+class CycleDependenciesError(InvalidGraphError):
     def __init__(self, path: Sequence[Factory]) -> None:
         self.path = path
 
@@ -42,16 +42,19 @@ class NoContextValueError(DishkaError):
 
 
 class NoFactoryError(DishkaError):
-    def __init__(self, requested: DependencyKey):
+    def __init__(
+            self,
+            requested: DependencyKey,
+            path: Sequence[Factory] = (),
+    ) -> None:
         self.requested = requested
-        self.path = []
+        self.path = list(path)
 
     def add_path(self, requested_by: Factory):
         self.path.insert(0, requested_by)
 
     def __str__(self):
         if self.path:
-            path = self.path[-1]
             return (
                 f"Cannot find factory for {self.requested}. "
                 f"It is missing or has invalid scope.\n"
@@ -62,3 +65,7 @@ class NoFactoryError(DishkaError):
                 f"Check scopes in your providers. "
                 f"It is missing or has invalid scope."
             )
+
+
+class GraphMissingFactoryError(NoFactoryError, InvalidGraphError):
+    pass

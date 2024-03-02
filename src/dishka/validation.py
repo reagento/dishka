@@ -4,7 +4,7 @@ from dishka.dependency_source import Factory
 from dishka.entities.key import DependencyKey
 from dishka.exceptions import (
     CycleDependenciesError,
-    InvalidGraphError,
+    GraphMissingFactoryError,
     NoFactoryError,
 )
 from dishka.registry import Registry
@@ -54,6 +54,8 @@ class GraphValidator:
                 try:
                     self._validate_factory(factory, registry_index)
                 except NoFactoryError as e:
-                    raise InvalidGraphError(str(e)) from None
+                    raise GraphMissingFactoryError(
+                        e.requested, e.path,
+                    ) from None
                 except CycleDependenciesError as e:
-                    raise InvalidGraphError(str(e)) from None
+                    raise e from None

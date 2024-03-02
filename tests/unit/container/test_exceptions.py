@@ -103,29 +103,32 @@ class InvalidScopeProvider(Provider):
         return value
 
 
-def test_no_factory_sync():
-    container = make_container(InvalidScopeProvider())
+def test_no_factory_init_sync():
     with pytest.raises(NoFactoryError) as e:
-        container.get(complex)
+        make_container(InvalidScopeProvider())
     assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
-    assert e.value.path == [
-        DependencyKey(complex, DEFAULT_COMPONENT),
-        DependencyKey(float, DEFAULT_COMPONENT),
-        DependencyKey(int, DEFAULT_COMPONENT),
-    ]
+
+
+@pytest.mark.asyncio
+async def test_no_factory_init_async():
+    with pytest.raises(NoFactoryError) as e:
+        make_async_container(InvalidScopeProvider())
+    assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+
+
+def test_no_factory_sync():
+    container = make_container(Provider())
+    with pytest.raises(NoFactoryError) as e:
+        container.get(object)
+    assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
 
 
 @pytest.mark.asyncio
 async def test_no_factory_async():
-    container = make_async_container(InvalidScopeProvider())
+    container = make_async_container(Provider())
     with pytest.raises(NoFactoryError) as e:
-        await container.get(complex)
+        await container.get(object)
     assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
-    assert e.value.path == [
-        DependencyKey(complex, DEFAULT_COMPONENT),
-        DependencyKey(float, DEFAULT_COMPONENT),
-        DependencyKey(int, DEFAULT_COMPONENT),
-    ]
 
 
 class AsyncProvider(Provider):

@@ -15,6 +15,7 @@ from .exceptions import (
 )
 from .provider import Provider
 from .registry import Registry, make_registries
+from .validation import GraphValidator
 
 T = TypeVar("T")
 
@@ -183,12 +184,16 @@ def make_async_container(
         scopes: type[BaseScope] = Scope,
         context: dict | None = None,
         lock_factory: Callable[[], Lock] | None = Lock,
+        skip_validation: bool = False,
 ) -> AsyncContainer:
     registries = make_registries(
         *providers,
         scopes=scopes,
         container_type=AsyncContainer,
     )
+    if not skip_validation:
+        validator = GraphValidator(registries)
+        validator.validate()
     return AsyncContainer(
         *registries,
         context=context,

@@ -185,12 +185,14 @@ def make_container(
         scopes: type[BaseScope] = Scope,
         context: dict | None = None,
         lock_factory: Callable[[], Lock] | None = None,
+        skip_validation: bool = False,
 ) -> Container:
     registries = make_registries(
         *providers,
         scopes=scopes,
         container_type=Container,
     )
-    validator = GraphValidator(registries)
-    validator.validate()
+    if not skip_validation:
+        validator = GraphValidator(registries)
+        validator.validate()
     return Container(*registries, context=context, lock_factory=lock_factory)

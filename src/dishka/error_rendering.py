@@ -80,6 +80,6 @@ class PathRenderer:
             res += (
                     "   " + arrow + " " +
                     self._key(last).ljust(width) +
-                    " ???"
+                    " ???\n"
             )
         return res

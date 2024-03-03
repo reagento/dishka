@@ -16,6 +16,7 @@ from dishka import (
 )
 from dishka.exceptions import (
     ExitError,
+    NoContextValueError,
     NoFactoryError,
     UnknownScopeError,
     UnsupportedFactoryError,
@@ -161,3 +162,21 @@ def test_invalid_scope_context_var():
 
     with pytest.raises(UnknownScopeError):
         make_container(InvalidScopeProvider())
+
+
+def test_missing_context_var_sync():
+    class MyProvider(Provider):
+        a = from_context(provides=int, scope=Scope.APP)
+
+    container = make_container(MyProvider())
+    with pytest.raises(NoContextValueError):
+        container.get(int)
+
+@pytest.mark.asyncio
+async def test_missing_context_var_async():
+    class MyProvider(Provider):
+        a = from_context(provides=int, scope=Scope.APP)
+
+    container = make_async_container(MyProvider())
+    with pytest.raises(NoContextValueError):
+        await container.get(int)

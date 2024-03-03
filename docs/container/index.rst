@@ -107,13 +107,15 @@ To prevent such a condition you need to protect any session whose children can b
 Context data
 ====================
 
-Often, your scopes are assigned with some external events: HTTP-requests, message from queue, callbacks from framework. You can use those objects when creating dependencies. The difference from normal factories is that they are not created inside some ``Provider``, but passed to the scope:
+Often, your scopes are assigned with some external events: HTTP-requests, message from queue, callbacks from framework. You can use those objects when creating dependencies. The difference from normal factories is that they are not created inside some ``Provider``, but passed to the scope. You need explicitly tell dishka which dependencies are expected to be received from context using ``from_context``
 
 .. code-block:: python
 
     from framework import Request
 
     class MyProvider:
+        request = from_context(provides=Request, scope=Scope.REQUEST)
+
         @provide(scope=Scope.REQUEST)
         def a(self, request: Request) -> A:
             return A(data=request.contents)

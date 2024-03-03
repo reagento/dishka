@@ -101,4 +101,5 @@ Though it is a normal object, not all attributes are analyzed by ``Container``, 
 
    provide
    alias
+   from_context
    decorate

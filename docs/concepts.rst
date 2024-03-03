@@ -88,7 +88,8 @@ There are 3 special functions:
 
 * ``@provide`` is used to declare a factory providing a dependency. It can be used with some class or as a method decorator. :ref:`Read more<provide>`
 * ``alias`` is used to allow retrieving of the same object by different type hints. :ref:`Read more<alias>`
-* ``decorate`` is used to modify or wrap an object which is already configured in another ``Provider``. :ref:`Read more<decorate>`
+* ``from_context`` is used to mark a dependency as context data, which will be set manually when entering a scope. :ref:`Read more<from-context>`
+* ``@decorate`` is used to modify or wrap an object which is already configured in another ``Provider``. :ref:`Read more<decorate>`
 
 Component
 ====================

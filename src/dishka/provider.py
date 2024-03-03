@@ -117,7 +117,7 @@ class Provider:
             source=source,
             provides=provides,
         )
-        self.aliases.append(new_decorator)
+        self.decorators.append(new_decorator)
         return new_decorator
 
     def to_component(self, component: Component) -> "Provider":

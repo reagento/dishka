@@ -1,5 +1,8 @@
 __all__ = [
-    "Depends", "inject", "setup_dishka",
+    "Depends",
+    "FromDishka",
+    "inject",
+    "setup_dishka",
 ]
 
 from inspect import Parameter
@@ -7,7 +10,7 @@ from typing import get_type_hints
 
 from fastapi import FastAPI, Request
 
-from dishka import AsyncContainer
+from dishka import AsyncContainer, FromDishka
 from .base import Depends, wrap_injection
 from .starlette import ContainerMiddleware
 

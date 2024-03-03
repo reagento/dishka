@@ -6,7 +6,7 @@ from telebot import TeleBot
 from telebot.types import Message, Update
 
 from dishka import make_container
-from dishka.integrations.telebot import Depends, inject, setup_dishka
+from dishka.integrations.telebot import FromDishka, inject, setup_dishka
 from ..common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
@@ -41,8 +41,8 @@ def send_message(bot: TeleBot):
 
 def handle_with_app(
         _: Message,
-        a: Annotated[AppDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+        a: Annotated[AppDep, FromDishka()],
+        mock: Annotated[Mock, FromDishka()],
 ) -> None:
     mock(a)
 
@@ -57,8 +57,8 @@ def test_app_dependency(app_provider: AppProvider):
 
 def handle_with_request(
         _: Message,
-        a: Annotated[RequestDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+        a: Annotated[RequestDep, FromDishka()],
+        mock: Annotated[Mock, FromDishka()],
 ) -> None:
     mock(a)
 

@@ -9,7 +9,7 @@ from faststream.nats import NatsBroker, TestNatsBroker
 
 from dishka import make_async_container
 from dishka.integrations.faststream import (
-    Depends,
+    FromDishka,
     inject,
     setup_dishka,
 )
@@ -39,8 +39,8 @@ async def dishka_app(view, provider) -> AsyncIterator[NatsBroker]:
 
 
 async def get_with_app(
-    a: Annotated[AppDep, Depends()],
-    mock: Annotated[Mock, Depends()],
+    a: Annotated[AppDep, FromDishka()],
+    mock: Annotated[Mock, FromDishka()],
 ) -> str:
     mock(a)
     return "passed"
@@ -57,8 +57,8 @@ async def test_app_dependency(app_provider: AppProvider):
 
 
 async def get_with_request(
-    a: Annotated[RequestDep, Depends()],
-    mock: Annotated[Mock, Depends()],
+    a: Annotated[RequestDep, FromDishka()],
+    mock: Annotated[Mock, FromDishka()],
 ) -> str:
     mock(a)
     return "passed"

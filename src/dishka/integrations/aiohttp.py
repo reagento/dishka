@@ -1,5 +1,9 @@
 __all__ = [
-    "Depends", "DISHKA_CONTAINER_KEY", "inject", "setup_dishka",
+    "Depends",
+    "DISHKA_CONTAINER_KEY",
+    "FromDishka",
+    "inject",
+    "setup_dishka",
 ]
 
 from collections.abc import Callable
@@ -11,7 +15,7 @@ from aiohttp.web_app import Application
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 
-from dishka.async_container import AsyncContainer
+from dishka import AsyncContainer, FromDishka
 from dishka.integrations.base import Depends, wrap_injection
 
 DISHKA_CONTAINER_KEY: Final = web.AppKey("dishka_container", AsyncContainer)

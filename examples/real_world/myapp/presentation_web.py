@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter
 
 from dishka.integrations.fastapi import (
-    Depends,
+    FromDishka,
     inject,
 )
 from myapp.use_cases import AddProductsInteractor
@@ -15,7 +15,7 @@ router = APIRouter()
 @inject
 async def add_product(
         *,
-        interactor: Annotated[AddProductsInteractor, Depends()],
+        interactor: Annotated[AddProductsInteractor, FromDishka()],
 ) -> str:
     interactor(user_id=1)
     return "Ok"

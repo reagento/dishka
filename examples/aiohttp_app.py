@@ -13,10 +13,10 @@ from dishka import (
 )
 from dishka.integrations.aiohttp import (
     DISHKA_CONTAINER_KEY,
+    FromDishka,
     inject,
     setup_dishka,
 )
-from dishka.integrations.base import Depends
 
 
 class Gateway(Protocol):
@@ -32,13 +32,14 @@ class GatewayProvider(Provider):
     get_gateway = provide(MockGateway, scope=Scope.REQUEST, provides=Gateway)
 
 
-GatewayDepends = Annotated[Gateway, Depends()]
 router = RouteTableDef()
 
 
 @router.get('/')
 @inject
-async def endpoint(request: str, gateway: GatewayDepends) -> Response:
+async def endpoint(
+        request: str, gateway: Annotated[Gateway, FromDishka()],
+) -> Response:
     data = await gateway.get()
     return Response(text=f'gateway data: {data}')
 

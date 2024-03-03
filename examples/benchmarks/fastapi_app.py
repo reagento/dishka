@@ -5,10 +5,10 @@ from typing import Annotated, NewType
 
 import uvicorn
 from fastapi import APIRouter, FastAPI
-from fastapi import Depends as FastapiDepends
+from fastapi import Depends
 
 from dishka import Provider, Scope, make_async_container, provide
-from dishka.integrations.fastapi import Depends, inject
+from dishka.integrations.fastapi import FromDishka, inject
 
 
 class Stub:
@@ -87,8 +87,8 @@ router = APIRouter()
 @inject
 async def index(
         *,
-        value: Annotated[A, Depends()],
-        value2: Annotated[A, Depends()],
+        value: Annotated[A, FromDishka()],
+        value2: Annotated[A, FromDishka()],
 ) -> str:
     return f"{value} {value is value2}"
 
@@ -96,13 +96,13 @@ async def index(
 @router.get("/f")
 async def index(
         *,
-        value: Annotated[A, FastapiDepends(Stub(A))],
-        value2: Annotated[A, FastapiDepends(Stub(A))],
+        value: Annotated[A, Depends(Stub(A))],
+        value2: Annotated[A, Depends(Stub(A))],
 ) -> str:
     return f"{value} {value is value2}"
 
 
-def new_a(b: B = FastapiDepends(Stub(B)), c: C = FastapiDepends(Stub(C))):
+def new_a(b: B = Depends(Stub(B)), c: C = Depends(Stub(C))):
     return A(b, c)
 
 

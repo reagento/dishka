@@ -1,10 +1,15 @@
-__all__ = ["Depends", "inject", "setup_dishka"]
+__all__ = [
+    "Depends",
+    "FromDishka",
+    "inject",
+    "setup_dishka",
+]
 
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from dishka import AsyncContainer
+from dishka import AsyncContainer, FromDishka
 from .base import Depends, wrap_injection
 
 

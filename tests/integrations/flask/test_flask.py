@@ -5,7 +5,7 @@ from unittest.mock import Mock
 from flask import Flask
 
 from dishka import make_container
-from dishka.integrations.flask import Depends, inject, setup_dishka
+from dishka.integrations.flask import FromDishka, inject, setup_dishka
 from ..common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
@@ -26,8 +26,8 @@ def dishka_app(view, provider):
 
 
 def handle_with_app(
-        a: Annotated[AppDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+        a: Annotated[AppDep, FromDishka()],
+        mock: Annotated[Mock, FromDishka()],
 ) -> None:
     mock(a)
 
@@ -41,8 +41,8 @@ def test_app_dependency(app_provider: AppProvider):
 
 
 def handle_with_request(
-        a: Annotated[RequestDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+        a: Annotated[RequestDep, FromDishka()],
+        mock: Annotated[Mock, FromDishka()],
 ) -> None:
     mock(a)
 

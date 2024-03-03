@@ -14,7 +14,7 @@ from .exceptions import (
     UnsupportedFactoryError,
 )
 from .provider import Provider
-from .registry import Registry, make_registries
+from .registry import Registry, RegistryBuilder
 from .validation import GraphValidator
 
 T = TypeVar("T")
@@ -187,11 +187,9 @@ def make_container(
         lock_factory: Callable[[], Lock] | None = None,
         skip_validation: bool = False,
 ) -> Container:
-    registries = make_registries(
-        *providers,
-        scopes=scopes,
-        container_type=Container,
-    )
+    registries = RegistryBuilder(
+        scopes=scopes, container_type=Container, providers=providers,
+    ).build()
     if not skip_validation:
         validator = GraphValidator(registries)
         validator.validate()

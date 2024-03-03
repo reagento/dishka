@@ -21,6 +21,10 @@ class InvalidGraphError(DishkaError):
     pass
 
 
+class UnknownScopeError(InvalidGraphError):
+    pass
+
+
 class CycleDependenciesError(InvalidGraphError):
     def __init__(self, path: Sequence[Factory]) -> None:
         self.path = path

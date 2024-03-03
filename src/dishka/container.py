@@ -15,7 +15,6 @@ from .exceptions import (
 )
 from .provider import Provider
 from .registry import Registry, RegistryBuilder
-from .validation import GraphValidator
 
 T = TypeVar("T")
 
@@ -188,9 +187,9 @@ def make_container(
         skip_validation: bool = False,
 ) -> Container:
     registries = RegistryBuilder(
-        scopes=scopes, container_type=Container, providers=providers,
+        scopes=scopes,
+        container_type=Container,
+        providers=providers,
+        skip_validation=skip_validation,
     ).build()
-    if not skip_validation:
-        validator = GraphValidator(registries)
-        validator.validate()
     return Container(*registries, context=context, lock_factory=lock_factory)

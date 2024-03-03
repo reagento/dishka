@@ -15,7 +15,6 @@ from .exceptions import (
 )
 from .provider import Provider
 from .registry import Registry, RegistryBuilder
-from .validation import GraphValidator
 
 T = TypeVar("T")
 
@@ -187,11 +186,11 @@ def make_async_container(
         skip_validation: bool = False,
 ) -> AsyncContainer:
     registries = RegistryBuilder(
-        scopes=scopes, container_type=AsyncContainer, providers=providers,
+        scopes=scopes,
+        container_type=AsyncContainer,
+        providers=providers,
+        skip_validation=skip_validation,
     ).build()
-    if not skip_validation:
-        validator = GraphValidator(registries)
-        validator.validate()
     return AsyncContainer(
         *registries,
         context=context,

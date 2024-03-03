@@ -88,11 +88,7 @@ async def test_async(dep_type):
     finalizer.assert_called_once()
 
 
-class InvalidScopeProvider(Provider):
-    @provide(scope=Scope.REQUEST)
-    def y(self) -> object:
-        return False
-
+class MissingFactoryProvider(Provider):
     @provide(scope=Scope.APP)
     def x(self, value: object) -> int:
         return 1
@@ -108,14 +104,13 @@ class InvalidScopeProvider(Provider):
 
 def test_no_factory_init_sync():
     with pytest.raises(NoFactoryError) as e:
-        make_container(InvalidScopeProvider())
+        make_container(MissingFactoryProvider())
     assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
-
 
 @pytest.mark.asyncio
 async def test_no_factory_init_async():
     with pytest.raises(NoFactoryError) as e:
-        make_async_container(InvalidScopeProvider())
+        make_async_container(MissingFactoryProvider())
     assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
 
 
@@ -126,11 +121,30 @@ def test_no_factory_sync():
     assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
 
 
+def test_no_factory_path_sync():
+    container = make_container(MissingFactoryProvider(), skip_validation=True)
+    with pytest.raises(NoFactoryError) as e:
+        container.get(complex)
+    assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+
+
+
 @pytest.mark.asyncio
 async def test_no_factory_async():
     container = make_async_container(Provider())
     with pytest.raises(NoFactoryError) as e:
         await container.get(object)
+    assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+
+
+
+@pytest.mark.asyncio
+async def test_no_factory_path_async():
+    container = make_async_container(
+        MissingFactoryProvider(), skip_validation=True,
+    )
+    with pytest.raises(NoFactoryError) as e:
+        await container.get(complex)
     assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
 
 

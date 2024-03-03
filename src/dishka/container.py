@@ -92,7 +92,7 @@ class Container:
                 for dependency in factory.dependencies
             ]
         except NoFactoryError as e:
-            e.add_path(key)
+            e.add_path(factory)
             raise
 
         if factory.type is FactoryType.GENERATOR:

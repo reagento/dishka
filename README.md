@@ -109,12 +109,12 @@ container.close()
 
 ```python
 from dishka.integrations.fastapi import (
-    Depends, inject, setup_dishka,
+    FromDishka, inject, setup_dishka,
 )
 
 @router.get("/")
 @inject
-async def index(a: Annotated[A, Depends()]) -> str:
+async def index(a: Annotated[A, FromDishka()]) -> str:
     ...
 
 ...

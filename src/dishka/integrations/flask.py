@@ -1,10 +1,13 @@
 __all__ = [
-    "inject", "setup_dishka", "Depends",
+    "Depends",
+    "FromDishka",
+    "inject",
+    "setup_dishka",
 ]
 
 from flask import Flask, Request, g, request
 
-from dishka import Container
+from dishka import Container, FromDishka
 from .base import Depends, wrap_injection
 
 

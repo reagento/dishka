@@ -6,18 +6,18 @@ For several frameworks library contains helper functions so you don't need to co
 To use framework integration you mainly need to do 3 things:
 
 * call ``setup_dishka`` on your container and framework entity
-* add ``Annotated[YourClass, Depends()]`` on you framework handlers (or view-functions)
+* add ``Annotated[YourClass, FromDishka()]`` on you framework handlers (or view-functions)
 * decorate your handlers with ``@inject`` before registering them in framework
 
 For FastAPI it will look like:
 
 .. code-block:: python
 
-   from dishka.integrations.fastapi import Depends, inject, setup_dishka
+   from dishka.integrations.fastapi import FromDishka, inject, setup_dishka
 
    @router.get("/")
    @inject
-   async def index(interactor: Annotated[Interactor, Depends()]) -> str:
+   async def index(interactor: Annotated[Interactor, FromDishka()]) -> str:
        result = interactor()
        return result
 

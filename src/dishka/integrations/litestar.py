@@ -1,5 +1,8 @@
 __all__ = [
-    "Depends", "inject", "setup_dishka",
+    "Depends",
+    "FromDishka",
+    "inject",
+    "setup_dishka",
 ]
 
 from inspect import Parameter
@@ -9,7 +12,7 @@ from litestar import Litestar, Request
 from litestar.enums import ScopeType
 from litestar.types import ASGIApp, Receive, Scope, Send
 
-from dishka.async_container import AsyncContainer
+from dishka import AsyncContainer, FromDishka
 from dishka.integrations.base import Depends, wrap_injection
 
 

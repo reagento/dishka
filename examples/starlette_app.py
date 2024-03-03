@@ -9,7 +9,7 @@ from starlette.responses import PlainTextResponse
 from starlette.routing import Route
 
 from dishka import Provider, Scope, provide, make_async_container
-from dishka.integrations.starlette import Depends, inject, setup_dishka
+from dishka.integrations.starlette import FromDishka, inject, setup_dishka
 
 
 # app core
@@ -46,7 +46,7 @@ class InteractorProvider(Provider):
 # presentation layer
 @inject
 async def index(
-        request: Request, *, interactor: Annotated[Interactor, Depends()],
+        request: Request, *, interactor: Annotated[Interactor, FromDishka()],
 ) -> PlainTextResponse:
     result = interactor()
     return PlainTextResponse(result)

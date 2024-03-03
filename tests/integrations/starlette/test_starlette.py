@@ -12,7 +12,7 @@ from starlette.testclient import TestClient
 
 from dishka import make_async_container
 from dishka.integrations.starlette import (
-    Depends,
+    FromDishka,
     inject,
     setup_dishka,
 )
@@ -37,8 +37,8 @@ async def dishka_app(view, provider) -> TestClient:
 
 async def get_with_app(
         _: Request,
-        a: Annotated[AppDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+        a: Annotated[AppDep, FromDishka()],
+        mock: Annotated[Mock, FromDishka()],
 ) -> PlainTextResponse:
     mock(a)
     return PlainTextResponse("passed")
@@ -55,8 +55,8 @@ async def test_app_dependency(app_provider: AppProvider):
 
 async def get_with_request(
         _: Request,
-        a: Annotated[RequestDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+        a: Annotated[RequestDep, FromDishka()],
+        mock: Annotated[Mock, FromDishka()],
 ) -> PlainTextResponse:
     mock(a)
     return PlainTextResponse("passed")

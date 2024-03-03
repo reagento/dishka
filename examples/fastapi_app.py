@@ -13,7 +13,7 @@ from dishka import (
     provide,
 )
 from dishka.integrations.fastapi import (
-    Depends,
+    FromDishka,
     inject,
     setup_dishka,
 )
@@ -58,7 +58,7 @@ router = APIRouter()
 @inject
 async def index(
         *,
-        interactor: Annotated[Interactor, Depends()],
+        interactor: Annotated[Interactor, FromDishka()],
 ) -> str:
     result = interactor()
     return result

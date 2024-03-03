@@ -4,6 +4,7 @@ __all__ = [
     "make_container", "Container", "FromComponent",
     "Provider",
     "alias", "decorate", "from_context", "provide", "DependencyKey",
+    "FromDishka",
     "BaseScope", "Scope",
 ]
 
@@ -16,6 +17,7 @@ from .dependency_source import (
     provide,
 )
 from .entities.component import DEFAULT_COMPONENT, Component
+from .entities.depends_marker import FromDishka
 from .entities.key import DependencyKey, FromComponent
 from .entities.scope import BaseScope, Scope
 from .provider import Provider

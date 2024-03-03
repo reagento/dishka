@@ -9,11 +9,12 @@ from dishka.entities.scope import BaseScope, Scope
 from .dependency_source import Factory, FactoryType
 from .exceptions import (
     ExitError,
+    NoContextValueError,
     NoFactoryError,
     UnsupportedFactoryError,
 )
 from .provider import Provider
-from .registry import Registry, make_registries
+from .registry import Registry, RegistryBuilder
 
 T = TypeVar("T")
 
@@ -92,7 +93,7 @@ class AsyncContainer:
                 for dependency in factory.dependencies
             ]
         except NoFactoryError as e:
-            e.add_path(key)
+            e.add_path(factory)
             raise
 
         if factory.type is FactoryType.GENERATOR:
@@ -109,6 +110,13 @@ class AsyncContainer:
             solved = await factory.source(*sub_dependencies)
         elif factory.type is FactoryType.VALUE:
             solved = factory.source
+        elif factory.type is FactoryType.ALIAS:
+            solved = sub_dependencies[0]
+        elif factory.type is FactoryType.CONTEXT:
+            raise NoContextValueError(
+                f"Value for type {factory.provides.type_hint} is not found "
+                f"in container context with scope={factory.scope}",
+            )
         else:
             raise UnsupportedFactoryError(
                 f"Unsupported factory type {factory.type}.",
@@ -175,8 +183,14 @@ def make_async_container(
         scopes: type[BaseScope] = Scope,
         context: dict | None = None,
         lock_factory: Callable[[], Lock] | None = Lock,
+        skip_validation: bool = False,
 ) -> AsyncContainer:
-    registries = make_registries(*providers, scopes=scopes)
+    registries = RegistryBuilder(
+        scopes=scopes,
+        container_type=AsyncContainer,
+        providers=providers,
+        skip_validation=skip_validation,
+    ).build()
     return AsyncContainer(
         *registries,
         context=context,

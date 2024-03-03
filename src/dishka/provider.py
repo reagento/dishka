@@ -6,11 +6,13 @@ from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.scope import BaseScope
 from .dependency_source import (
     Alias,
+    ContextVariable,
     Decorator,
     DependencySource,
     Factory,
     alias,
     decorate,
+    from_context,
     provide,
 )
 from .exceptions import InvalidGraphError
@@ -44,6 +46,7 @@ class Provider:
         self.factories: list[Factory] = []
         self.aliases: list[Alias] = []
         self.decorators: list[Decorator] = []
+        self.context_vars: list[ContextVariable] = []
         self._init_dependency_sources()
         self.scope = self.scope or scope
         if component is not None:
@@ -66,6 +69,8 @@ class Provider:
                 self.factories.append(source)
             if isinstance(source, Decorator):
                 self.decorators.append(source)
+            if isinstance(source, ContextVariable):
+                self.context_vars.append(source)
             processed_types[source.provides] = name
 
     def provide(
@@ -124,3 +129,10 @@ class Provider:
         provider.aliases = self.aliases
         provider.decorators = self.decorators
         return provider
+
+    def from_context(
+            self, *, provides: Any, scope: BaseScope,
+    ) -> ContextVariable:
+        context_var = from_context(provides=provides, scope=scope)
+        self.context_vars.append(context_var)
+        return context_var

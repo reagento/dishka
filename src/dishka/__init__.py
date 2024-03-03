@@ -3,7 +3,7 @@ __all__ = [
     "DEFAULT_COMPONENT", "Component",
     "make_container", "Container", "FromComponent",
     "Provider",
-    "alias", "decorate", "provide", "DependencyKey",
+    "alias", "decorate", "from_context", "provide", "DependencyKey",
     "BaseScope", "Scope",
 ]
 
@@ -12,6 +12,7 @@ from .container import Container, make_container
 from .dependency_source import (
     alias,
     decorate,
+    from_context,
     provide,
 )
 from .entities.component import DEFAULT_COMPONENT, Component

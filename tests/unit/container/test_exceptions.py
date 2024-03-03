@@ -9,6 +9,7 @@ from dishka import (
     DependencyKey,
     Provider,
     Scope,
+    from_context,
     make_async_container,
     make_container,
     provide,
@@ -16,6 +17,7 @@ from dishka import (
 from dishka.exceptions import (
     ExitError,
     NoFactoryError,
+    UnknownScopeError,
     UnsupportedFactoryError,
 )
 
@@ -141,3 +143,21 @@ def test_async_factory_in_sync():
     container = make_container(AsyncProvider())
     with pytest.raises(UnsupportedFactoryError):
         container.get(int)
+
+
+def test_invalid_scope_factory():
+    class InvalidScopeProvider(Provider):
+        @provide(scope="invalid")
+        def foo(self) -> int:
+            return 1
+
+    with pytest.raises(UnknownScopeError):
+        make_container(InvalidScopeProvider())
+
+
+def test_invalid_scope_context_var():
+    class InvalidScopeProvider(Provider):
+        a = from_context(provides=int, scope="invalid")
+
+    with pytest.raises(UnknownScopeError):
+        make_container(InvalidScopeProvider())

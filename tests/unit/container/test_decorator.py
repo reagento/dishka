@@ -1,7 +1,16 @@
 import pytest
 
-from dishka import Provider, Scope, alias, decorate, make_container, provide
-from dishka.exceptions import InvalidGraphError
+from dishka import (
+    DEFAULT_COMPONENT,
+    DependencyKey,
+    Provider,
+    Scope,
+    alias,
+    decorate,
+    make_container,
+    provide,
+)
+from dishka.exceptions import InvalidGraphError, NoFactoryError
 
 
 class A:
@@ -113,3 +122,14 @@ def test_double_ok():
     assert isinstance(a, ADecorator)
     assert isinstance(a.a, ADecorator)
     assert isinstance(a.a.a, A)
+
+
+def test_missing_factory():
+    class MyProvider(Provider):
+        @decorate
+        def foo(self, a: int) -> int:
+            return a + 1
+
+    with pytest.raises(NoFactoryError) as e:
+        make_container(MyProvider())
+    assert e.value.requested == DependencyKey(int, component=DEFAULT_COMPONENT)

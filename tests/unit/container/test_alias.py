@@ -1,7 +1,15 @@
 import pytest
 
-from dishka import Provider, Scope, alias, make_container, provide
-from dishka.exceptions import CycleDependenciesError
+from dishka import (
+    DEFAULT_COMPONENT,
+    DependencyKey,
+    Provider,
+    Scope,
+    alias,
+    make_container,
+    provide,
+)
+from dishka.exceptions import CycleDependenciesError, NoFactoryError
 
 
 class AliasProvider(Provider):
@@ -32,3 +40,13 @@ class CycleProvider(Provider):
 def test_cycle():
     with pytest.raises(CycleDependenciesError):
         make_container(CycleProvider())
+
+
+def test_missing_factory():
+    p1 = Provider()
+    p1.alias(source=bool, provides=float)
+    p2 = Provider()
+    p2.alias(source=int, provides=bool)
+    with pytest.raises(NoFactoryError) as e:
+        make_container(p1, p2)
+    assert e.value.requested == DependencyKey(int, component=DEFAULT_COMPONENT)

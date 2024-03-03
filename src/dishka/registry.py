@@ -166,7 +166,7 @@ class RegistryBuilder:
     def _collect_provided_scopes(self) -> None:
         for provider in self.providers:
             for factory in provider.factories:
-                if factory.scope not in self.scopes:
+                if not isinstance(factory.scope, self.scopes):
                     raise UnknownScopeError(
                         f"Scope {factory.scope} is unknown, "
                         f"expected one of {self.scopes}",
@@ -174,7 +174,7 @@ class RegistryBuilder:
                 provides = factory.provides.with_component(provider.component)
                 self.dependency_scopes[provides] = factory.scope
             for context_var in provider.context_vars:
-                if context_var.scope not in self.scopes:
+                if not isinstance(context_var.scope, self.scopes):
                     raise UnknownScopeError(
                         f"Scope {context_var.scope} is unknown, "
                         f"expected one of {self.scopes}",

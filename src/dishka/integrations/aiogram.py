@@ -10,6 +10,7 @@ from collections.abc import Container
 from inspect import Parameter
 
 from aiogram import BaseMiddleware, Router
+from aiogram.dispatcher.event.handler import HandlerObject
 from aiogram.types import TelegramObject
 
 from dishka import AsyncContainer, FromDishka
@@ -50,12 +51,19 @@ class AutoInjectMiddleware(BaseMiddleware):
     async def __call__(
         self, handler, event, data,
     ):
-        old_handler = data["handler"]
+        old_handler: HandlerObject = data["handler"]
         if hasattr(old_handler.callback, "__dishka_injected__"):
             return await handler(event, data)
-
-        old_handler.callback = inject(old_handler.callback)
-        old_handler.__post_init__()
+        
+        new_handler = HandlerObject(
+            callback=inject(old_handler.callback),
+            filters=old_handler.filters,
+            flags=old_handler.flags,
+        )
+        old_handler.callback = new_handler.callback
+        old_handler.params = new_handler.params
+        old_handler.varkw = new_handler.varkw
+        old_handler.awaitable = new_handler.awaitable
         return await handler(event, data)
 
 

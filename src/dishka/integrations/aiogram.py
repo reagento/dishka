@@ -54,7 +54,7 @@ class AutoInjectMiddleware(BaseMiddleware):
         old_handler: HandlerObject = data["handler"]
         if hasattr(old_handler.callback, "__dishka_injected__"):
             return await handler(event, data)
-        
+
         new_handler = HandlerObject(
             callback=inject(old_handler.callback),
             filters=old_handler.filters,

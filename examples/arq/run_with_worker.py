@@ -2,10 +2,8 @@ import asyncio
 import logging
 from typing import Protocol, Annotated, Any
 
-from arq import Worker
-from arq.connections import RedisSettings
-from dishka import Provider, Scope, provide, make_async_container
-from dishka.integrations.base import Depends
+from arq.worker import create_worker
+from dishka import Provider, Scope, provide, make_async_container, FromDishka
 from dishka.integrations.arq import inject, setup_dishka
 
 logger = logging.getLogger(__name__)
@@ -27,10 +25,14 @@ class GatewayProvider(Provider):
 @inject
 async def get_content(
     context: dict[Any, Any],
-    gateway: Annotated[Gateway, Depends()],
+    gateway: Annotated[Gateway, FromDishka()],
 ):
     result = await gateway.get()
     logger.info(result)
+
+
+class WorkerSettings:
+    functions = [get_content]
 
 
 async def main():
@@ -39,10 +41,10 @@ async def main():
         format="%(asctime)s  %(process)-7s %(module)-20s %(message)s",
     )
 
-    worker = Worker(functions=[get_content], redis_settings=RedisSettings())  # type: ignore
+    worker = create_worker(WorkerSettings)  # type: ignore
 
     container = make_async_container(GatewayProvider())
-    setup_dishka(container=container, worker=worker)
+    setup_dishka(container=container, worker_settings=worker)
 
     try:
         await worker.async_run()

@@ -7,7 +7,7 @@ import logging
 from typing import Any, Final
 
 from arq import Worker
-from arq.typing import StartupShutdown
+from arq.typing import StartupShutdown, WorkerSettingsType
 
 from dishka.async_container import AsyncContainer
 from dishka.integrations.base import wrap_injection
@@ -31,7 +31,6 @@ def job_start(hook_func: StartupShutdown | None):
         container: AsyncContainer = context["__container__"]
         sub_container = await container().__aenter__()
         context[DISHKA_CONTAINER_KEY] = sub_container
-
         if hook_func:
             await hook_func(context)
 
@@ -49,7 +48,33 @@ def job_end(hook_func: StartupShutdown | None):
     return wrapper
 
 
-def setup_dishka(container: AsyncContainer, worker: Worker) -> None:
-    worker.ctx["__container__"] = container
-    worker.on_job_start = job_start(worker.on_job_start)
-    worker.on_job_end = job_end(worker.on_job_end)
+def setup_dishka(
+    container: AsyncContainer, worker_settings: WorkerSettingsType | Worker
+) -> None:
+    if isinstance(worker_settings, dict):
+        if worker_settings.get("ctx"):
+            worker_settings["ctx"]["__container__"] = container
+        else:
+            worker_settings["ctx"] = {"__container__": container}
+
+        worker_settings["ctx"] = worker_settings.get("ctx", {}).setdefault(
+            "__container__", container
+        )
+        worker_settings["on_job_start"] = job_start(worker_settings.get("on_job_start"))
+        worker_settings["on_job_end"] = job_end(worker_settings.get("on_job_end"))
+    else:
+        if hasattr(worker_settings, "ctx"):
+            worker_settings.ctx["__container__"] = container
+        else:
+            worker_settings.ctx = {"__container__": container}
+
+        worker_settings.on_job_start = (
+            job_start(worker_settings.on_job_start)
+            if hasattr(worker_settings, "on_job_start")
+            else job_start(None)
+        )
+        worker_settings.on_job_end = (
+            job_end(worker_settings.on_job_end)
+            if hasattr(worker_settings, "on_job_end")
+            else job_end(None)
+        )

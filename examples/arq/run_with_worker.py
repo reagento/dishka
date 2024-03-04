@@ -41,7 +41,7 @@ async def main():
         format="%(asctime)s  %(process)-7s %(module)-20s %(message)s",
     )
 
-    worker = create_worker(WorkerSettings)  # type: ignore
+    worker = create_worker(WorkerSettings)
 
     container = make_async_container(GatewayProvider())
     setup_dishka(container=container, worker_settings=worker)

@@ -39,4 +39,4 @@ logging.basicConfig(
 )
 
 container = make_async_container(GatewayProvider())
-setup_dishka(container=container, worker_settings=WorkerSettings)  # type: ignore
+setup_dishka(container=container, worker_settings=WorkerSettings)

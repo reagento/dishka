@@ -4,9 +4,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from dishka import make_async_container, FromDishka
-
-from dishka.integrations.arq import setup_dishka, inject
+from dishka import FromDishka, make_async_container
+from dishka.integrations.arq import inject, setup_dishka
 from ..common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
@@ -23,7 +22,7 @@ class WorkerSettings:
 @asynccontextmanager
 async def dishka_app(provider):
     container = make_async_container(provider)
-    setup_dishka(container, worker_settings=WorkerSettings)  # type: ignore
+    setup_dishka(container, worker_settings=WorkerSettings)
     yield WorkerSettings
     await container.close()
 

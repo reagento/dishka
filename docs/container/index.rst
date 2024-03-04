@@ -23,9 +23,9 @@ And async version correspondingly:
 
 .. code-block:: python
 
-    from dishka import make_container
+    from dishka import make_async_container
 
-    container = await make_async_container(provider)
+    container = make_async_container(provider)
 
 If you have not provided your own *scopes* enum, then default one will be used. Root container is attached to the first scope: Scope.APP by default.
 
@@ -96,7 +96,7 @@ To prevent such a condition you need to protect any session whose children can b
 
     import asyncio
 
-    container = await make_async_container(provider, lock_factory=asyncio.Lock)
+    container = make_async_container(provider, lock_factory=asyncio.Lock)
     async with container(lock_factory=asyncio.Lock) as nested_container:
         ...
 

@@ -1,3 +1,10 @@
+__all__ = (
+    "Depends",
+    "FromDishka",
+    "inject",
+    "setup_dishka",
+)
+
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Any, TypeVar
@@ -5,19 +12,13 @@ from typing import Any, TypeVar
 from faststream import BaseMiddleware, FastStream, context
 from faststream.types import DecodedMessage
 
-from dishka.async_container import AsyncContainer
+from dishka import AsyncContainer, FromDishka
 from dishka.integrations.base import Depends, wrap_injection
-
-__all__ = (
-    "Depends",
-    "inject",
-    "setup_dishka",
-)
 
 T = TypeVar("T")
 
 
-def inject(func: Callable[...,  Awaitable[T]]) -> Callable[...,  Awaitable[T]]:
+def inject(func: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:
     return wrap_injection(
         func=func,
         container_getter=lambda *_: context.get_local("dishka"),
@@ -36,9 +37,9 @@ class DishkaMiddleware(BaseMiddleware):
 
     @asynccontextmanager
     async def consume_scope(
-        self,
-        *args: Any,
-        **kwargs: Any,
+            self,
+            *args: Any,
+            **kwargs: Any,
     ) -> AsyncIterator[DecodedMessage]:
         async with self.container() as request_container:
             with context.scope("dishka", request_container):
@@ -47,10 +48,10 @@ class DishkaMiddleware(BaseMiddleware):
 
 
 def setup_dishka(
-    container: AsyncContainer,
-    app: FastStream,
-    *,
-    finalize_container: bool = True,
+        container: AsyncContainer,
+        app: FastStream,
+        *,
+        finalize_container: bool = True,
 ) -> None:
     assert app.broker, "You can't patch FastStream application without broker"  # noqa: S101
 

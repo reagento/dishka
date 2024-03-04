@@ -8,7 +8,7 @@ from aiogram import Dispatcher
 from aiogram.types import Chat, Message, Update, User
 
 from dishka import make_async_container
-from dishka.integrations.aiogram import FromDishka, inject, setup_dishka
+from dishka.integrations.aiogram import Depends, setup_dishka
 from ..common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
@@ -21,9 +21,9 @@ from ..common import (
 @asynccontextmanager
 async def dishka_app(handler, provider):
     dp = Dispatcher()
-    dp.message()(inject(handler))
+    dp.message()(handler)
     container = make_async_container(provider)
-    setup_dishka(container, router=dp)
+    setup_dishka(container, router=dp, auto_inject=True)
 
     await dp.emit_startup()
     yield dp
@@ -32,25 +32,27 @@ async def dishka_app(handler, provider):
 
 
 async def send_message(bot, dp):
-    await dp.feed_update(bot, Update(
-        update_id=1,
-        message=Message(
-            message_id=2,
-            date=datetime.fromtimestamp(1234567890, tz=timezone.utc),
-            chat=Chat(id=1, type="private"),
-            from_user=User(
-                id=1, is_bot=False,
-                first_name="User",
+    await dp.feed_update(
+        bot, Update(
+            update_id=1,
+            message=Message(
+                message_id=2,
+                date=datetime.fromtimestamp(1234567890, tz=timezone.utc),
+                chat=Chat(id=1, type="private"),
+                from_user=User(
+                    id=1, is_bot=False,
+                    first_name="User",
+                ),
+                text="/start",
             ),
-            text="/start",
         ),
-    ))
+    )
 
 
 async def handle_with_app(
-        _: Message,
-        a: Annotated[AppDep, FromDishka()],
-        mock: Annotated[Mock, FromDishka()],
+    _: Message,
+    a: Annotated[AppDep, Depends()],
+    mock: Annotated[Mock, Depends()],
 ) -> None:
     mock(a)
 
@@ -66,9 +68,9 @@ async def test_app_dependency(bot, app_provider: AppProvider):
 
 
 async def handle_with_request(
-        _: Message,
-        a: Annotated[RequestDep, FromDishka()],
-        mock: Annotated[Mock, FromDishka()],
+    _: Message,
+    a: Annotated[RequestDep, Depends()],
+    mock: Annotated[Mock, Depends()],
 ) -> None:
     mock(a)
 

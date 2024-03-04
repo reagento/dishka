@@ -72,13 +72,25 @@ async def test_from_component_async():
         await container.get(float)
 
 
+class SingleProvider(Provider):
+    scope = Scope.APP
+
+    def __init__(self, value: int, component: Component | None = None):
+        super().__init__(component=component)
+        self.value = value
+
+    @provide
+    def bar(self) -> int:
+        return self.value
+
+
 def test_change_component():
-    container = make_container(MainProvider(20).to_component("Y"))
+    container = make_container(SingleProvider(20).to_component("Y"))
     assert container.get(int, component="Y") == 20
 
 
 def test_set_component():
-    container = make_container(MainProvider(20, component="Y"))
+    container = make_container(SingleProvider(20, component="Y"))
     assert container.get(int, component="Y") == 20
 
 

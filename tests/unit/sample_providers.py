@@ -1,4 +1,11 @@
-from collections.abc import AsyncGenerator, AsyncIterable, Generator, Iterable
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    Generator,
+    Iterable,
+    Iterator,
+)
 from typing import Any
 
 from dishka import DependencyKey, Scope
@@ -21,6 +28,12 @@ def sync_iter_a(self, dep: int) -> Iterable[ClassA]:
     a.closed = True
 
 
+def sync_iterator_a(self, dep: int) -> Iterator[ClassA]:
+    a = ClassA(dep)
+    yield a
+    a.closed = True
+
+
 def sync_gen_a(self, dep: int) -> Generator[None, ClassA, None]:
     a = ClassA(dep)
     yield a
@@ -32,6 +45,12 @@ async def async_func_a(self, dep: int) -> ClassA:
 
 
 async def async_iter_a(self, dep: int) -> AsyncIterable[ClassA]:
+    a = ClassA(dep)
+    yield a
+    a.closed = True
+
+
+async def async_iterator_a(self, dep: int) -> AsyncIterator[ClassA]:
     a = ClassA(dep)
     yield a
     a.closed = True

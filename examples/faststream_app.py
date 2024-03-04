@@ -4,7 +4,7 @@ from faststream import FastStream
 from faststream.nats import NatsBroker
 
 from dishka import Provider, Scope, make_async_container, provide
-from dishka.integrations.faststream import Depends, inject, setup_dishka
+from dishka.integrations.faststream import FromDishka, inject, setup_dishka
 
 
 class A:
@@ -39,8 +39,8 @@ setup_dishka(container, app)
 @inject
 async def handler(
     msg: str,
-    a: Annotated[A, Depends()],
-    b: Annotated[B, Depends()],
+    a: Annotated[A, FromDishka()],
+    b: Annotated[B, FromDishka()],
 ):
     print(msg, a, b)
 

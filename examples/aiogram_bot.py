@@ -9,7 +9,7 @@ from aiogram import Bot, Dispatcher, Router
 from aiogram.types import Message, TelegramObject, User
 
 from dishka import Provider, Scope, make_async_container, provide
-from dishka.integrations.aiogram import Depends, inject, setup_dishka
+from dishka.integrations.aiogram import FromDishka, inject, setup_dishka
 
 # app dependency logic
 
@@ -35,8 +35,8 @@ router = Router()
 @inject
 async def start(
     message: Message,
-    user: Annotated[User, Depends()],
-    dispatcher: Annotated[Dispatcher, Depends()],
+    user: Annotated[User, FromDishka()],
+    value: Annotated[int, FromDishka()],
 ):
     await message.answer(f"Hello, {1}, {user.full_name}!")
 

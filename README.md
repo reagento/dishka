@@ -109,12 +109,12 @@ container.close()
 
 ```python
 from dishka.integrations.fastapi import (
-    Depends, inject, setup_dishka,
+    FromDishka, inject, setup_dishka,
 )
 
 @router.get("/")
 @inject
-async def index(a: Annotated[A, Depends()]) -> str:
+async def index(a: Annotated[A, FromDishka()]) -> str:
     ...
 
 ...
@@ -218,10 +218,22 @@ container = make_async_container(MyProvider())
 a = await container.get(A)
 ```
 
-* Having some data connected with scope which you want to use when solving dependencies? Set it when entering scope. These classes can be used as parameters of your `provide` methods
+* Having some data connected with scope which you want to use when solving dependencies? Set it when entering scope. These classes can be used as parameters of your `provide` methods. But you need to specify them in provider as retrieved form context.
 
 ```python
-container = make_async_container(MyProvider(), context={App: app})
+from dishka import from_context, Provider, provide, Scope
+
+class MyProvider(Provider):
+    scope = Scope.REQUEST
+
+    app = from_context(provides=App, scope=Scope.APP)
+    request = from_context(provides=RequestClass)
+
+    @provide
+    async def get_a(self, request: RequestClass, app: App) -> A:
+        ...
+
+container = make_container(MyProvider(), context={App: app})
 with container(context={RequestClass: request_instance}) as request_container:
     pass
 ```

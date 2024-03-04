@@ -1,6 +1,7 @@
 __all__ = [
     "Depends",
     "AutoInjectMiddleware",
+    "FromDishka",
     "inject",
     "setup_dishka",
 ]
@@ -11,7 +12,7 @@ from typing import Annotated, get_origin
 from aiogram import BaseMiddleware, Router
 from aiogram.types import TelegramObject
 
-from dishka import AsyncContainer
+from dishka import AsyncContainer, FromDishka
 from .base import Depends, wrap_injection
 
 CONTAINER_NAME = "dishka_container"

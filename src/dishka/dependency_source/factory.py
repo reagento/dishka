@@ -46,6 +46,8 @@ class FactoryType(Enum):
     FACTORY = "factory"
     ASYNC_FACTORY = "async_factory"
     VALUE = "value"
+    ALIAS = "alias"
+    CONTEXT = "context"
 
 
 def _is_bound_method(obj):
@@ -138,7 +140,7 @@ def _guess_factory_type(source):
 
 def _async_generator_result(possible_dependency: Any):
     origin = get_origin(possible_dependency)
-    if origin in (AsyncIterable, AsyncIterator, AsyncGenerator):
+    if origin is AsyncIterable:
         return get_args(possible_dependency)[0]
     elif origin is AsyncIterator:
         return get_args(possible_dependency)[0]
@@ -387,3 +389,7 @@ def provide(
         )
 
     return scoped
+
+
+def _context_stub():
+    raise NotImplementedError

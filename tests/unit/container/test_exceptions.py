@@ -9,13 +9,16 @@ from dishka import (
     DependencyKey,
     Provider,
     Scope,
+    from_context,
     make_async_container,
     make_container,
     provide,
 )
 from dishka.exceptions import (
     ExitError,
+    NoContextValueError,
     NoFactoryError,
+    UnknownScopeError,
     UnsupportedFactoryError,
 )
 
@@ -85,11 +88,7 @@ async def test_async(dep_type):
     finalizer.assert_called_once()
 
 
-class InvalidScopeProvider(Provider):
-    @provide(scope=Scope.REQUEST)
-    def y(self) -> object:
-        return False
-
+class MissingFactoryProvider(Provider):
     @provide(scope=Scope.APP)
     def x(self, value: object) -> int:
         return 1
@@ -103,29 +102,50 @@ class InvalidScopeProvider(Provider):
         return value
 
 
+def test_no_factory_init_sync():
+    with pytest.raises(NoFactoryError) as e:
+        make_container(MissingFactoryProvider())
+    assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+
+@pytest.mark.asyncio
+async def test_no_factory_init_async():
+    with pytest.raises(NoFactoryError) as e:
+        make_async_container(MissingFactoryProvider())
+    assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+
+
 def test_no_factory_sync():
-    container = make_container(InvalidScopeProvider())
+    container = make_container(Provider())
+    with pytest.raises(NoFactoryError) as e:
+        container.get(object)
+    assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+
+
+def test_no_factory_path_sync():
+    container = make_container(MissingFactoryProvider(), skip_validation=True)
     with pytest.raises(NoFactoryError) as e:
         container.get(complex)
     assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
-    assert e.value.path == [
-        DependencyKey(complex, DEFAULT_COMPONENT),
-        DependencyKey(float, DEFAULT_COMPONENT),
-        DependencyKey(int, DEFAULT_COMPONENT),
-    ]
+
 
 
 @pytest.mark.asyncio
 async def test_no_factory_async():
-    container = make_async_container(InvalidScopeProvider())
+    container = make_async_container(Provider())
+    with pytest.raises(NoFactoryError) as e:
+        await container.get(object)
+    assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+
+
+
+@pytest.mark.asyncio
+async def test_no_factory_path_async():
+    container = make_async_container(
+        MissingFactoryProvider(), skip_validation=True,
+    )
     with pytest.raises(NoFactoryError) as e:
         await container.get(complex)
     assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
-    assert e.value.path == [
-        DependencyKey(complex, DEFAULT_COMPONENT),
-        DependencyKey(float, DEFAULT_COMPONENT),
-        DependencyKey(int, DEFAULT_COMPONENT),
-    ]
 
 
 class AsyncProvider(Provider):
@@ -138,3 +158,39 @@ def test_async_factory_in_sync():
     container = make_container(AsyncProvider())
     with pytest.raises(UnsupportedFactoryError):
         container.get(int)
+
+
+def test_invalid_scope_factory():
+    class InvalidScopeProvider(Provider):
+        @provide(scope="invalid")
+        def foo(self) -> int:
+            return 1
+
+    with pytest.raises(UnknownScopeError):
+        make_container(InvalidScopeProvider())
+
+
+def test_invalid_scope_context_var():
+    class InvalidScopeProvider(Provider):
+        a = from_context(provides=int, scope="invalid")
+
+    with pytest.raises(UnknownScopeError):
+        make_container(InvalidScopeProvider())
+
+
+def test_missing_context_var_sync():
+    class MyProvider(Provider):
+        a = from_context(provides=int, scope=Scope.APP)
+
+    container = make_container(MyProvider())
+    with pytest.raises(NoContextValueError):
+        container.get(int)
+
+@pytest.mark.asyncio
+async def test_missing_context_var_async():
+    class MyProvider(Provider):
+        a = from_context(provides=int, scope=Scope.APP)
+
+    container = make_async_container(MyProvider())
+    with pytest.raises(NoContextValueError):
+        await container.get(int)

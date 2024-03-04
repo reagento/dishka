@@ -13,9 +13,11 @@ from .sample_providers import (
     async_func_a,
     async_gen_a,
     async_iter_a,
+    async_iterator_a,
     sync_func_a,
     sync_gen_a,
     sync_iter_a,
+    sync_iterator_a,
 )
 
 
@@ -37,9 +39,11 @@ def test_provider_init():
     [
         (sync_func_a, FactoryType.FACTORY, True),
         (sync_iter_a, FactoryType.GENERATOR, True),
+        (sync_iterator_a, FactoryType.GENERATOR, True),
         (sync_gen_a, FactoryType.GENERATOR, True),
         (async_func_a, FactoryType.ASYNC_FACTORY, True),
         (async_iter_a, FactoryType.ASYNC_GENERATOR, True),
+        (async_iterator_a, FactoryType.ASYNC_GENERATOR, True),
         (async_gen_a, FactoryType.ASYNC_GENERATOR, True),
     ],
 )
@@ -51,6 +55,22 @@ def test_parse_factory(source, provider_type, is_to_bound):
     assert factory.scope == Scope.REQUEST
     assert factory.source == source
     assert factory.type == provider_type
+
+
+def test_parse_factory_invalid_hint():
+    def foo() -> int:
+        yield 1
+
+    with pytest.raises(TypeError):
+        provide(foo)
+
+
+def test_parse_factory_invalid_hint_async():
+    async def foo() -> int:
+        yield 1
+
+    with pytest.raises(TypeError):
+        provide(foo)
 
 
 @pytest.mark.parametrize(

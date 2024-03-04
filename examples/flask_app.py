@@ -10,7 +10,7 @@ from dishka import (
     provide,
 )
 from dishka.integrations.flask import (
-    Depends,
+    FromDishka,
     inject,
     setup_dishka,
 )
@@ -55,7 +55,7 @@ app = Flask(__name__)
 @inject
 def index(
         *,
-        interactor: Annotated[Interactor, Depends()],
+        interactor: Annotated[Interactor, FromDishka()],
 ) -> str:
     result = interactor()
     return result

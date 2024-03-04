@@ -10,3 +10,10 @@ class Scope(BaseScope):
     REQUEST = "REQUEST"
     ACTION = "ACTION"
     STEP = "STEP"
+
+
+class InvalidScopes(BaseScope):
+    UNKNOWN_SCOPE = "<unknown scope>"
+
+    def __str__(self):
+        return self.value

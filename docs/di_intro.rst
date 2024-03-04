@@ -146,7 +146,7 @@ It works good. You have clean request handlers and you can change middlewares in
 
     @app.get("/")
     def index(request):
-        service = container.get_service()
+        service = request.state.container.get_service()
         service.action()
 
 Comparing to middleware it allows you to create only needed objects. But beware of accessing a container from handlers via global variable - that will make tests more difficult to maintain.

@@ -2,7 +2,8 @@ import asyncio
 import logging
 import os
 import random
-from typing import Annotated, AsyncIterable
+from collections.abc import AsyncIterator
+from typing import Annotated
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.types import Message, TelegramObject, User
@@ -14,7 +15,7 @@ from dishka.integrations.aiogram import Depends, inject, setup_dishka
 
 class MyProvider(Provider):
     @provide(scope=Scope.APP)
-    async def get_int(self) -> AsyncIterable[int]:
+    async def get_int(self) -> AsyncIterator[Dispatcher]:
         print("solve int")
         yield random.randint(0, 10000)
 
@@ -24,18 +25,20 @@ class MyProvider(Provider):
 
 
 # app
+
 API_TOKEN = os.getenv("BOT_TOKEN")
 router = Router()
 
 
 @router.message()
+# if auto_inject=True is specified in the setup_dishka, then you do not need to specify a decorator
 @inject
 async def start(
-        message: Message,
-        user: Annotated[User, Depends()],
-        value: Annotated[int, Depends()],
+    message: Message,
+    user: Annotated[User, Depends()],
+    dispatcher: Annotated[Dispatcher, Depends()],
 ):
-    await message.answer(f"Hello, {value}, {user.full_name}!")
+    await message.answer(f"Hello, {1}, {user.full_name}!")
 
 
 async def main():
@@ -54,5 +57,5 @@ async def main():
         await bot.session.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

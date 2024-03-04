@@ -71,7 +71,7 @@ class AutoInjectMiddleware(BaseMiddleware):
 def setup_dishka(
     container: AsyncContainer,
     router: Router,
-    auto_inject: bool = False,
+    auto_inject: bool | None = None,
 ) -> None:
     middleware = ContainerMiddleware(container)
     auto_inject_middleware = AutoInjectMiddleware()

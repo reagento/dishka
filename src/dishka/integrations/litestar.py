@@ -19,7 +19,7 @@ from dishka.integrations.base import Depends, wrap_injection
 def inject(func):
     hints = get_type_hints(func)
     request_param = next(
-        (name for name in hints.keys() if name == "request"),
+        (name for name in hints if name == "request"),
         None,
     )
     if request_param:

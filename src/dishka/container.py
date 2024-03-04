@@ -1,16 +1,20 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 from threading import Lock
-from typing import Any, Callable, List, Optional, Type, TypeVar
+from typing import Any, Optional, TypeVar
 
+from dishka.entities.component import DEFAULT_COMPONENT, Component
+from dishka.entities.key import DependencyKey
+from dishka.entities.scope import BaseScope, Scope
 from .dependency_source import Factory, FactoryType
 from .exceptions import (
     ExitError,
+    NoContextValueError,
     NoFactoryError,
     UnsupportedFactoryError,
 )
 from .provider import Provider
-from .registry import Registry, make_registries
-from .scope import BaseScope, Scope
+from .registry import Registry, RegistryBuilder
 
 T = TypeVar("T")
 
@@ -33,24 +37,28 @@ class Container:
             registry: Registry,
             *child_registries: Registry,
             parent_container: Optional["Container"] = None,
-            context: Optional[dict] = None,
+            context: dict | None = None,
             lock_factory: Callable[[], Lock] | None = None,
     ):
         self.registry = registry
         self.child_registries = child_registries
-        self.context = {type(self): self}
+        self.context = {DependencyKey(type(self), DEFAULT_COMPONENT): self}
         if context:
-            self.context.update(context)
+            for key, value in context.items():
+                if isinstance(key, DependencyKey):
+                    self.context[key] = value
+                else:
+                    self.context[DependencyKey(key, DEFAULT_COMPONENT)] = value
         self.parent_container = parent_container
         if lock_factory:
             self.lock = lock_factory()
         else:
             self.lock = None
-        self._exits: List[Exit] = []
+        self._exits: list[Exit] = []
 
     def _create_child(
             self,
-            context: Optional[dict],
+            context: dict | None,
             lock_factory: Callable[[], Lock] | None,
     ) -> "Container":
         return Container(
@@ -62,7 +70,7 @@ class Container:
 
     def __call__(
             self,
-            context: Optional[dict] = None,
+            context: dict | None = None,
             lock_factory: Callable[[], Lock] | None = None,
     ) -> "ContextWrapper":
         """
@@ -76,7 +84,7 @@ class Container:
         return ContextWrapper(self._create_child(context, lock_factory))
 
     def _get_from_self(
-            self, factory: Factory, dependency_type: Any,
+            self, factory: Factory, key: DependencyKey,
     ) -> T:
         try:
             sub_dependencies = [
@@ -84,7 +92,7 @@ class Container:
                 for dependency in factory.dependencies
             ]
         except NoFactoryError as e:
-            e.add_path(dependency_type)
+            e.add_path(factory)
             raise
 
         if factory.type is FactoryType.GENERATOR:
@@ -105,31 +113,44 @@ class Container:
             )
         elif factory.type is FactoryType.VALUE:
             solved = factory.source
+        elif factory.type is FactoryType.ALIAS:
+            solved = sub_dependencies[0]
+        elif factory.type is FactoryType.CONTEXT:
+            raise NoContextValueError(
+                f"Value for type {factory.provides.type_hint} is not found "
+                f"in container context with scope={factory.scope}",
+            )
         else:
             raise UnsupportedFactoryError(
                 f"Unsupported factory type {factory.type}. ",
             )
         if factory.cache:
-            self.context[dependency_type] = solved
+            self.context[key] = solved
         return solved
 
-    def get(self, dependency_type: Type[T]) -> T:
+    def get(
+            self,
+            dependency_type: type[T],
+            component: Component = DEFAULT_COMPONENT,
+    ) -> T:
         lock = self.lock
+        key = DependencyKey(dependency_type, component)
         if not lock:
-            return self._get_unlocked(dependency_type)
+            return self._get_unlocked(key)
         with lock:
-            return self._get_unlocked(dependency_type)
+            return self._get_unlocked(key)
 
-    def _get_unlocked(self, dependency_type: Type[T]) -> T:
-        if dependency_type in self.context:
-            return self.context[dependency_type]
-        factory = self.registry.get_factory(dependency_type)
+    def _get_unlocked(self, key: DependencyKey) -> Any:
+        if key in self.context:
+            return self.context[key]
+        factory = self.registry.get_factory(key)
         if not factory:
             if not self.parent_container:
-                raise NoFactoryError(dependency_type)
-            return self.parent_container.get(dependency_type)
-        solved = self._get_from_self(factory, dependency_type)
-        return solved
+                raise NoFactoryError(key)
+            return self.parent_container.get(
+                key.type_hint, key.component,
+            )
+        return self._get_from_self(factory, key)
 
     def close(self) -> None:
         errors = []
@@ -137,7 +158,7 @@ class Container:
             try:
                 if exit_generator.type is FactoryType.GENERATOR:
                     next(exit_generator.callable)
-            except StopIteration:
+            except StopIteration:  # noqa: PERF203
                 pass
             except Exception as err:  # noqa: BLE001
                 errors.append(err)
@@ -160,9 +181,15 @@ class ContextWrapper:
 
 def make_container(
         *providers: Provider,
-        scopes: Type[BaseScope] = Scope,
-        context: Optional[dict] = None,
+        scopes: type[BaseScope] = Scope,
+        context: dict | None = None,
         lock_factory: Callable[[], Lock] | None = None,
+        skip_validation: bool = False,
 ) -> Container:
-    registries = make_registries(*providers, scopes=scopes)
+    registries = RegistryBuilder(
+        scopes=scopes,
+        container_type=Container,
+        providers=providers,
+        skip_validation=skip_validation,
+    ).build()
     return Container(*registries, context=context, lock_factory=lock_factory)

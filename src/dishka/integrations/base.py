@@ -1,48 +1,54 @@
+import warnings
+from collections.abc import Awaitable, Callable, Sequence
 from inspect import Parameter, Signature, signature
 from typing import (
     Annotated,
     Any,
-    Awaitable,
-    Callable,
     Literal,
-    Sequence,
-    Type,
     get_args,
     get_origin,
     get_type_hints,
     overload,
 )
 
+from dishka import DEFAULT_COMPONENT, DependencyKey
 from dishka.async_container import AsyncContainer
 from dishka.container import Container
+from dishka.entities.depends_marker import FromDishka
 
 
-class Depends:
+class Depends(FromDishka):
     def __init__(self, param: Any = None):
-        self.param = param
+        super().__init__()
+        warnings.warn(
+            "'Depends()' is deprecated use `FromDishka()` instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
 
 def default_parse_dependency(
         parameter: Parameter,
         hint: Any,
-        depends_class: Type[Any] = Depends,
+        depends_class: type[Any] = FromDishka,
 ) -> Any:
-    """ Resolve dependency type or return None if it is not a dependency """
+    """Resolve dependency type or return None if it is not a dependency."""
     if get_origin(hint) is not Annotated:
         return None
+    args = get_args(hint)
     dep = next(
-        (arg for arg in get_args(hint) if isinstance(arg, depends_class)),
+        (arg for arg in args if isinstance(arg, depends_class)),
         None,
     )
     if not dep:
         return None
-    if dep.param is None:
-        return get_args(hint)[0]
+    if isinstance(dep, FromDishka):
+        return DependencyKey(args[0], dep.component)
     else:
-        return dep.param
+        return DependencyKey(args[0], DEFAULT_COMPONENT)
 
 
-DependencyParser = Callable[[Parameter, Any], Any]
+DependencyParser = Callable[[Parameter, Any], DependencyKey | None]
 
 
 @overload
@@ -74,7 +80,7 @@ def wrap_injection(
 def wrap_injection(
         *,
         func: Callable,
-        container_getter,
+        container_getter: Callable,
         is_async: bool = False,
         remove_depends: bool = True,
         additional_params: Sequence[Parameter] = (),
@@ -112,25 +118,19 @@ def wrap_injection(
             new_annotations[param.name] = param.annotation
 
     if is_async:
-        async def autoinjected_func(*args, **kwargs):
-            container = container_getter(args, kwargs)
-            for param in additional_params:
-                kwargs.pop(param.name)
-            solved = {
-                name: await container.get(dep)
-                for name, dep in dependencies.items()
-            }
-            return await func(*args, **kwargs, **solved)
+        autoinjected_func = _async_injection_wrapper(
+            container_getter=container_getter,
+            dependencies=dependencies,
+            func=func,
+            additional_params=additional_params,
+        )
     else:
-        def autoinjected_func(*args, **kwargs):
-            container = container_getter(args, kwargs)
-            for param in additional_params:
-                kwargs.pop(param.name)
-            solved = {
-                name: container.get(dep)
-                for name, dep in dependencies.items()
-            }
-            return func(*args, **kwargs, **solved)
+        autoinjected_func = _sync_injection_wrapper(
+            container_getter=container_getter,
+            dependencies=dependencies,
+            func=func,
+            additional_params=additional_params,
+        )
 
     autoinjected_func.__name__ = func.__name__
     autoinjected_func.__qualname__ = func.__qualname__
@@ -140,4 +140,42 @@ def wrap_injection(
         parameters=new_params,
         return_annotation=func_signature.return_annotation,
     )
+    return autoinjected_func
+
+
+def _async_injection_wrapper(
+        container_getter: Callable,
+        additional_params: Sequence[Parameter],
+        dependencies: dict[str, DependencyKey],
+        func: Callable,
+):
+    async def autoinjected_func(*args, **kwargs):
+        container = container_getter(args, kwargs)
+        for param in additional_params:
+            kwargs.pop(param.name)
+        solved = {
+            name: await container.get(dep.type_hint, component=dep.component)
+            for name, dep in dependencies.items()
+        }
+        return await func(*args, **kwargs, **solved)
+
+    return autoinjected_func
+
+
+def _sync_injection_wrapper(
+        container_getter: Callable,
+        additional_params: Sequence[Parameter],
+        dependencies: dict[str, DependencyKey],
+        func: Callable,
+):
+    def autoinjected_func(*args, **kwargs):
+        container = container_getter(args, kwargs)
+        for param in additional_params:
+            kwargs.pop(param.name)
+        solved = {
+            name: container.get(dep.type_hint, component=dep.component)
+            for name, dep in dependencies.items()
+        }
+        return func(*args, **kwargs, **solved)
+
     return autoinjected_func

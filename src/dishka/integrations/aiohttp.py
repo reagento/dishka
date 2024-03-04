@@ -1,8 +1,13 @@
 __all__ = [
-    "Depends", "DISHKA_CONTAINER_KEY", "inject", "setup_dishka",
+    "Depends",
+    "DISHKA_CONTAINER_KEY",
+    "FromDishka",
+    "inject",
+    "setup_dishka",
 ]
 
-from typing import Callable, Final
+from collections.abc import Callable
+from typing import Final
 
 from aiohttp import web
 from aiohttp.typedefs import Handler
@@ -10,10 +15,10 @@ from aiohttp.web_app import Application
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 
-from dishka.async_container import AsyncContainer
+from dishka import AsyncContainer, FromDishka
 from dishka.integrations.base import Depends, wrap_injection
 
-DISHKA_CONTAINER_KEY: Final = web.AppKey('dishka_container', AsyncContainer)
+DISHKA_CONTAINER_KEY: Final = web.AppKey("dishka_container", AsyncContainer)
 
 
 def inject(func: Callable) -> Callable:
@@ -32,8 +37,7 @@ async def container_middleware(
     container = request.app[DISHKA_CONTAINER_KEY]
     async with container(context={Request: request}) as request_container:
         request[DISHKA_CONTAINER_KEY] = request_container
-        res = await handler(request)
-    return res
+        return await handler(request)
 
 
 def setup_dishka(container: AsyncContainer, app: Application) -> None:

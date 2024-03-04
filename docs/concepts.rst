@@ -88,4 +88,35 @@ There are 3 special functions:
 
 * ``@provide`` is used to declare a factory providing a dependency. It can be used with some class or as a method decorator. :ref:`Read more<provide>`
 * ``alias`` is used to allow retrieving of the same object by different type hints. :ref:`Read more<alias>`
-* ``decorate`` is used to modify or wrap an object which is already configured in another ``Provider``. :ref:`Read more<decorate>`
+* ``from_context`` is used to mark a dependency as context data, which will be set manually when entering a scope. :ref:`Read more<from-context>`
+* ``@decorate`` is used to modify or wrap an object which is already configured in another ``Provider``. :ref:`Read more<decorate>`
+
+Component
+====================
+**Component** - is an isolated group of providers within the same container identified by a string. When dependency is requested it is searched only within the same component as its dependant, unless it is declared explicitly.
+
+This allows you to have multiple parts of application build separately without need to think if the use same types.
+
+.. code-block:: python
+
+    class MainProvider(Provider):
+
+        @provide(scope=Scope.APP)
+        def foo(self, a:Annotated[int, FromComponent("X")]) -> float:
+            return a/10
+
+        @provide(scope=Scope.APP)
+        def bar(self, a:int) -> complex:
+            return a + 0j
+
+
+    class AdditionalProvider(Provider):
+        component = "X"
+
+        @provide(scope=Scope.APP)
+        def foo(self) -> int:
+            return 1
+
+    container = make_container(MainProvider(), AdditionalProvider())
+    container.get(float)  # returns 0.1
+    container.get(complex)  # raises NoFactoryError

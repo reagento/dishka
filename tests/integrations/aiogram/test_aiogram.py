@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated
 from unittest.mock import Mock
 
@@ -8,7 +8,7 @@ from aiogram import Dispatcher
 from aiogram.types import Chat, Message, Update, User
 
 from dishka import make_async_container
-from dishka.integrations.aiogram import Depends, inject, setup_dishka
+from dishka.integrations.aiogram import FromDishka, inject, setup_dishka
 from ..common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
@@ -36,7 +36,7 @@ async def send_message(bot, dp):
         update_id=1,
         message=Message(
             message_id=2,
-            date=datetime.fromtimestamp(1234567890),
+            date=datetime.fromtimestamp(1234567890, tz=timezone.utc),
             chat=Chat(id=1, type="private"),
             from_user=User(
                 id=1, is_bot=False,
@@ -49,8 +49,8 @@ async def send_message(bot, dp):
 
 async def handle_with_app(
         _: Message,
-        a: Annotated[AppDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+        a: Annotated[AppDep, FromDishka()],
+        mock: Annotated[Mock, FromDishka()],
 ) -> None:
     mock(a)
 
@@ -67,8 +67,8 @@ async def test_app_dependency(bot, app_provider: AppProvider):
 
 async def handle_with_request(
         _: Message,
-        a: Annotated[RequestDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+        a: Annotated[RequestDep, FromDishka()],
+        mock: Annotated[Mock, FromDishka()],
 ) -> None:
     mock(a)
 

@@ -1,6 +1,14 @@
-from typing import Any, AsyncGenerator, AsyncIterable, Generator, Iterable
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    Generator,
+    Iterable,
+    Iterator,
+)
+from typing import Any
 
-from dishka import Scope
+from dishka import DependencyKey, Scope
 from dishka.dependency_source import Factory, FactoryType
 
 
@@ -15,6 +23,12 @@ def sync_func_a(self: Any, dep: int) -> ClassA:
 
 
 def sync_iter_a(self, dep: int) -> Iterable[ClassA]:
+    a = ClassA(dep)
+    yield a
+    a.closed = True
+
+
+def sync_iterator_a(self, dep: int) -> Iterator[ClassA]:
     a = ClassA(dep)
     yield a
     a.closed = True
@@ -36,6 +50,12 @@ async def async_iter_a(self, dep: int) -> AsyncIterable[ClassA]:
     a.closed = True
 
 
+async def async_iterator_a(self, dep: int) -> AsyncIterator[ClassA]:
+    a = ClassA(dep)
+    yield a
+    a.closed = True
+
+
 async def async_gen_a(self, dep: int) -> AsyncGenerator[ClassA, None]:
     a = ClassA(dep)
     yield a
@@ -44,11 +64,11 @@ async def async_gen_a(self, dep: int) -> AsyncGenerator[ClassA, None]:
 
 A_VALUE = ClassA(42)
 value_factory = Factory(
-    provides=ClassA,
+    provides=DependencyKey(ClassA, None),
     source=A_VALUE,
     dependencies=[],
-    type=FactoryType.VALUE,
+    type_=FactoryType.VALUE,
     scope=Scope.APP,
-    is_to_bound=False,
+    is_to_bind=False,
     cache=False,
 )

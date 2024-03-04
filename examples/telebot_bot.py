@@ -7,7 +7,7 @@ import telebot
 from telebot.types import Message
 
 from dishka import Provider, Scope, provide, make_container
-from dishka.integrations.telebot import Depends, inject, setup_dishka
+from dishka.integrations.telebot import FromDishka, inject, setup_dishka
 
 
 # app dependency logic
@@ -27,7 +27,7 @@ bot = telebot.TeleBot(API_TOKEN, use_class_middlewares=True)
 @inject
 def start(
         message: Message,
-        value: Annotated[int, Depends()],
+        value: Annotated[int, FromDishka()],
 ):
     bot.reply_to(message, f"Hello, {value}!")
 

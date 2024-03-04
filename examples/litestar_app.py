@@ -6,7 +6,7 @@ import uvicorn
 from litestar import Controller, Litestar, get
 
 from dishka import Provider, Scope, provide, make_async_container
-from dishka.integrations.base import Depends
+from dishka.integrations.base import FromDishka
 from dishka.integrations.litestar import inject, setup_dishka
 
 
@@ -47,7 +47,7 @@ class MainController(Controller):
     @get()
     @inject
     async def index(
-            self, *, interactor: Annotated[Interactor, Depends()],
+            self, *, interactor: Annotated[Interactor, FromDishka()],
     ) -> str:
         result = interactor()
         return result

@@ -1,6 +1,7 @@
 from typing import NewType
 
 from dishka import Container, Provider, Scope, make_container, provide
+from dishka.dependency_source import from_context
 
 Request = NewType("Request", int)
 
@@ -18,6 +19,7 @@ class A1(A):
 
 
 class MyProvider(Provider):
+    request = from_context(provides=Request, scope=Scope.REQUEST)
     a0 = provide(A0, scope=Scope.APP)
     a1 = provide(A1, scope=Scope.APP)
 

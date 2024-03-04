@@ -16,7 +16,7 @@ Quickstart
 
     provider = Provider()
 
-3. Register functions which provide dependencies. Do not forget to place correct typehints for parameters and result. We use ``scope=Scope.APP`` for dependencies which ar created only once in applicaiton lifetime, and ``scope=Scope.REQUEST`` for those which should be recreated for each processing request/event/etc.
+3. Register functions which provide dependencies. Do not forget to place correct typehints for parameters and result. We use ``scope=Scope.APP`` for dependencies which ar created only once in application lifetime, and ``scope=Scope.REQUEST`` for those which should be recreated for each processing request/event/etc.
 
 .. code-block:: python
 
@@ -87,12 +87,12 @@ This can be also rewritten using class:
 .. code-block:: python
 
     from dishka.integrations.fastapi import (
-        Depends, inject, setup_dishka,
+        FromDishka, inject, setup_dishka,
     )
 
     @router.get("/")
     @inject
-    async def index(a: Annotated[A, Depends()]) -> str:
+    async def index(a: Annotated[A, FromDishka()]) -> str:
         ...
 
     ...

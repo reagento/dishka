@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from dishka import make_async_container
 from dishka.integrations.fastapi import (
-    Depends,
+    FromDishka,
     inject,
     setup_dishka,
 )
@@ -36,8 +36,8 @@ async def dishka_app(view, provider) -> TestClient:
 
 
 async def get_with_app(
-        a: Annotated[AppDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+        a: Annotated[AppDep, FromDishka()],
+        mock: Annotated[Mock, FromDishka()],
 ) -> None:
     mock(a)
 
@@ -52,8 +52,8 @@ async def test_app_dependency(app_provider: AppProvider):
 
 
 async def get_with_request(
-        a: Annotated[RequestDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+        a: Annotated[RequestDep, FromDishka()],
+        mock: Annotated[Mock, FromDishka()],
 ) -> None:
     mock(a)
 
@@ -81,8 +81,8 @@ async def test_request_dependency2(app_provider: AppProvider):
 
 @inject
 async def additional(
-        a: Annotated[RequestDep, Depends()],
-        mock: Annotated[Mock, Depends()],
+        a: Annotated[RequestDep, FromDishka()],
+        mock: Annotated[Mock, FromDishka()],
 ):
     mock(a)
 

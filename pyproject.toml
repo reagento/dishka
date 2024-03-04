@@ -15,11 +15,15 @@ readme = "README.md"
 authors = [
     { name = "Andrey Tikhonov", email = "17@itishka.org" },
 ]
-license = { file = "LICENSE" }
+license = { text = "Apache-2.0" }
 description = "Minimal DI framework"
 requires-python = ">=3.10"
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+    "Typing :: Typed",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
@@ -29,7 +33,9 @@ dependencies = [
 ]
 
 [project.urls]
+"Source" = "https://github.com/reagento/dishka"
 "Homepage" = "https://github.com/reagento/dishka"
+"Documentation" = "https://dishka.readthedocs.io/en/stable/"
 "Bug Tracker" = "https://github.com/reagento/dishka/issues"
 
 

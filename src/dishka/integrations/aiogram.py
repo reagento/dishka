@@ -1,16 +1,17 @@
 __all__ = [
     "Depends",
+    "FromDishka",
     "inject",
     "setup_dishka",
 ]
 
+from collections.abc import Container
 from inspect import Parameter
-from typing import Container
 
 from aiogram import BaseMiddleware, Router
 from aiogram.types import TelegramObject
 
-from dishka import AsyncContainer
+from dishka import AsyncContainer, FromDishka
 from .base import Depends, wrap_injection
 
 CONTAINER_NAME = "dishka_container"

@@ -1,0 +1,1 @@
+Refer to [Contributing](https://dishka.readthedocs.io/en/latest/contributing.html) guidelines on the documentation website.

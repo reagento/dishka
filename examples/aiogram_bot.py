@@ -8,14 +8,19 @@ from typing import Annotated
 from aiogram import Bot, Dispatcher, Router
 from aiogram.types import Message, TelegramObject, User
 
-from dishka import Provider, Scope, make_async_container, provide
+from dishka import Provider, Scope, from_context, make_async_container, provide
 from dishka.integrations.aiogram import FromDishka, inject, setup_dishka
 
 # app dependency logic
 
 class MyProvider(Provider):
+    telegram_object = from_context(
+        provides=TelegramObject,
+        scope=Scope.REQUEST,
+    )
+
     @provide(scope=Scope.APP)
-    async def get_int(self) -> AsyncIterator[Dispatcher]:
+    async def get_int(self) -> AsyncIterator[int]:
         print("solve int")
         yield random.randint(0, 10000)
 
@@ -31,8 +36,7 @@ router = Router()
 
 
 @router.message()
-# if auto_inject=True is specified in the setup_dishka, then you do not need to specify a decorator
-@inject
+@inject # if auto_inject=True is specified in the setup_dishka, then you do not need to specify a decorator
 async def start(
     message: Message,
     user: Annotated[User, FromDishka()],

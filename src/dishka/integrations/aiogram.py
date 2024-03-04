@@ -5,9 +5,9 @@ __all__ = [
     "inject",
     "setup_dishka",
 ]
+
 from collections.abc import Container
 from inspect import Parameter
-from typing import Annotated, get_origin
 
 from aiogram import BaseMiddleware, Router
 from aiogram.types import TelegramObject
@@ -47,14 +47,6 @@ class ContainerMiddleware(BaseMiddleware):
 
 
 class AutoInjectMiddleware(BaseMiddleware):
-    @staticmethod
-    def _analysis_params(func) -> set[str]:
-        new_params = [CONTAINER_NAME]
-        for key, type_hint in func.__annotations__.items():
-            if get_origin(type_hint) != Annotated:
-                new_params.append(key)
-        return set(new_params)
-
     async def __call__(
         self, handler, event, data,
     ):
@@ -62,9 +54,8 @@ class AutoInjectMiddleware(BaseMiddleware):
         if hasattr(old_handler.callback, "__dishka_injected__"):
             return await handler(event, data)
 
-        new_handler = inject(old_handler.callback)
-        old_handler.params = self._analysis_params(old_handler.callback)
-        old_handler.callback = new_handler
+        old_handler.callback = inject(old_handler.callback)
+        old_handler.__post_init__()
         return await handler(event, data)
 
 

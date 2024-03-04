@@ -132,6 +132,7 @@ def wrap_injection(
             additional_params=additional_params,
         )
 
+    autoinjected_func.__dishka_injected__ = True
     autoinjected_func.__name__ = func.__name__
     autoinjected_func.__qualname__ = func.__qualname__
     autoinjected_func.__doc__ = func.__doc__

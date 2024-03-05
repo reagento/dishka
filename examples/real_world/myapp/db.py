@@ -1,6 +1,6 @@
 import logging
 
-from .use_cases import ProductGateway, UnitOfWork, User, UserGateway
+from .use_cases import ProductGateway, UnitOfWork, User, UserGateway, Product
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,8 @@ class FakeProductGateway(ProductGateway):
         self.unit_of_work = unit_of_work
         logger.info("init FakeProductGateway with %s", unit_of_work)
 
-    def add_product(self, user_id: int, product: str) -> None:
-        logger.info("add_product %s for user %s, by %s", product, user_id,
-                    self)
-
+    def add_product(self, product: Product) -> None:
+        logger.info(
+            "add_product %s for user %s, by %s",
+            product.name, product.owner_id, self,
+        )

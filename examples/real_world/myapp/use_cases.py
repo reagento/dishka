@@ -1,9 +1,16 @@
 from abc import abstractmethod
+from dataclasses import dataclass
 from typing import Protocol
 
 
 class User:
     pass
+
+
+@dataclass
+class Product:
+    owner_id: int
+    name: str
 
 
 class UserNotFoundError(Exception):
@@ -18,7 +25,7 @@ class UserGateway(Protocol):
 
 class ProductGateway(Protocol):
     @abstractmethod
-    def add_product(self, user_id: int, product: str) -> None:
+    def add_product(self, product: Product) -> None:
         raise NotImplementedError
 
 
@@ -51,10 +58,9 @@ class AddProductsInteractor:
         user = self.user_gateway.get_user(user_id)
         if user is None:
             raise UserNotFoundError
-        self.product_gateway.add_product(
-            user_id, self.warehouse_client.next_product(),
-        )
-        self.product_gateway.add_product(
-            user_id, self.warehouse_client.next_product(),
-        )
+
+        product = Product(user_id, self.warehouse_client.next_product())
+        self.product_gateway.add_product(product)
+        product2 = Product(user_id, self.warehouse_client.next_product())
+        self.product_gateway.add_product(product2)
         self.unit_of_work.commit()

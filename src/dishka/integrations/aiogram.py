@@ -76,6 +76,6 @@ def setup_dishka(
     auto_inject_middleware = AutoInjectMiddleware()
 
     for observer in router.observers.values():
-        observer.middleware(middleware)
+        observer.outer_middleware(middleware)
         if auto_inject and observer.event_name != "update":
             observer.middleware(auto_inject_middleware)

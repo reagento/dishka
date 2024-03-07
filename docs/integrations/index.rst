@@ -21,7 +21,7 @@ For FastAPI it will look like:
        result = interactor()
        return result
 
-   app = FastAPI(lifespan=lifespan)
+   app = FastAPI()
    container = make_async_container(provider)
    setup_dishka(container, app)
 

@@ -28,7 +28,8 @@ def container():
 def client(container):
     app = create_app()
     setup_dishka(container, app)
-    yield TestClient(app)
+    with TestClient(app) as client:
+        yield client
 
 
 @pytest_asyncio.fixture

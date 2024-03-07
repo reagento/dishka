@@ -5,12 +5,11 @@ from unittest.mock import Mock
 
 import pytest
 import pytest_asyncio
-from fastapi import FastAPI, APIRouter
+from fastapi import APIRouter, FastAPI
 from fastapi.testclient import TestClient
 
-from dishka import Provider, Scope, provide, make_async_container
-from dishka.integrations.fastapi import FromDishka, inject
-from dishka.integrations.fastapi import setup_dishka
+from dishka import Provider, Scope, make_async_container, provide
+from dishka.integrations.fastapi import FromDishka, inject, setup_dishka
 
 router = APIRouter()
 
@@ -66,7 +65,8 @@ async def container():
 def client(container):
     app = create_app()
     setup_dishka(container, app)
-    yield TestClient(app)
+    with TestClient(app) as client:
+        yield client
 
 
 @pytest_asyncio.fixture

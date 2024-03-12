@@ -13,7 +13,7 @@ from .exceptions import (
     NoFactoryError,
     UnsupportedFactoryError,
 )
-from .provider import Provider
+from .provider import BaseProvider
 from .registry import Registry, RegistryBuilder
 
 T = TypeVar("T")
@@ -180,7 +180,7 @@ class ContextWrapper:
 
 
 def make_container(
-        *providers: Provider,
+        *providers: BaseProvider,
         scopes: type[BaseScope] = Scope,
         context: dict | None = None,
         lock_factory: Callable[[], Lock] | None = None,

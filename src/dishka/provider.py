@@ -22,7 +22,17 @@ def is_dependency_source(attribute: Any) -> bool:
     return isinstance(attribute, DependencySource)
 
 
-class Provider:
+class BaseProvider:
+    def __init__(self, component: Component):
+        if component is not None:
+            self.component = component
+        self.factories: list[Factory] = []
+        self.aliases: list[Alias] = []
+        self.decorators: list[Decorator] = []
+        self.context_vars: list[ContextVariable] = []
+
+
+class Provider(BaseProvider):
     """
     A collection of dependency sources.
 
@@ -43,14 +53,9 @@ class Provider:
             scope: BaseScope | None = None,
             component: Component | None = None,
     ):
-        self.factories: list[Factory] = []
-        self.aliases: list[Alias] = []
-        self.decorators: list[Decorator] = []
-        self.context_vars: list[ContextVariable] = []
+        super().__init__(component)
         self._init_dependency_sources()
         self.scope = self.scope or scope
-        if component is not None:
-            self.component = component
 
     def _init_dependency_sources(self) -> None:
         processed_types = {}
@@ -120,15 +125,8 @@ class Provider:
         self.decorators.append(new_decorator)
         return new_decorator
 
-    def to_component(self, component: Component) -> "Provider":
-        provider = Provider(
-            scope=self.scope,
-            component=component,
-        )
-        provider.factories = self.factories
-        provider.aliases = self.aliases
-        provider.decorators = self.decorators
-        return provider
+    def to_component(self, component: Component) -> "ProviderWrapper":
+        return ProviderWrapper(component, self)
 
     def from_context(
             self, *, provides: Any, scope: BaseScope,
@@ -136,3 +134,11 @@ class Provider:
         context_var = from_context(provides=provides, scope=scope)
         self.context_vars.append(context_var)
         return context_var
+
+
+class ProviderWrapper(BaseProvider):
+    def __init__(self, component: Component, provider: Provider) -> None:
+        super().__init__(component)
+        self.factories.extend(provider.factories)
+        self.aliases.extend(provider.aliases)
+        self.decorators.extend(provider.decorators)

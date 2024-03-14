@@ -1,5 +1,6 @@
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Annotated, AsyncIterator
+from typing import Annotated
 
 import pytest
 from taskiq import AsyncBroker, InMemoryBroker
@@ -21,9 +22,9 @@ async def create_broker() -> AsyncIterator[AsyncBroker]:
     container = make_async_container(provider)
     setup_broker(
         broker,
-        container
+        container,
     )
-    
+
     await broker.startup()
     yield broker
     await broker.shutdown()

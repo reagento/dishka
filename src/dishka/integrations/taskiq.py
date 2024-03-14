@@ -1,8 +1,15 @@
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable, Generator
 from inspect import Parameter
-from typing import Annotated, Final
+from typing import Annotated, Any, Final
 
-from taskiq import AsyncBroker, Context, TaskiqDepends
+from taskiq import (
+    AsyncBroker,
+    Context,
+    TaskiqDepends,
+    TaskiqMessage,
+    TaskiqMiddleware,
+    TaskiqResult,
+)
 
 from dishka import AsyncContainer
 from dishka.integrations.base import wrap_injection
@@ -10,16 +17,44 @@ from dishka.integrations.base import wrap_injection
 CONTAINER_NAME: Final = "dishka_container"
 
 
-async def _open_container(
+class ContainerMiddleware(TaskiqMiddleware):
+    def __init__(self, container: AsyncContainer) -> None:
+        super().__init__()
+        self._container = container
+
+    async def pre_execute(
+        self,
+        message: TaskiqMessage,
+    ) -> TaskiqMessage:
+        container = await self._container().__aenter__()
+        message.labels[CONTAINER_NAME] = container
+        return TaskiqMessage(
+            task_id=message.task_id,
+            task_name=message.task_name,
+            labels=message.labels,
+            labels_types=message.labels_types,
+            args=message.args,
+            kwargs=message.kwargs,
+        )
+
+    async def post_execute(
+        self,
+        message: TaskiqMessage,
+        result: TaskiqResult[Any],
+    ) -> None:
+        await message.labels[CONTAINER_NAME].close()
+
+
+def _get_container(
     context: Annotated[Context, TaskiqDepends()],
-) -> AsyncGenerator[AsyncContainer, None]:
-    container: AsyncContainer = context.state.dishka_container
-    async with container() as new_container:
-        yield new_container
+) -> Generator[AsyncGenerator, None, None]:
+    yield context.message.labels[CONTAINER_NAME]
 
 
-def inject(func):
-    annotation = Annotated[AsyncContainer, TaskiqDepends(_open_container)]
+def inject(func: Callable[..., Any]) -> Callable[..., Any]:
+    annotation = Annotated[
+        AsyncContainer, TaskiqDepends(_get_container),
+    ]
     additional_params = [Parameter(
         name=CONTAINER_NAME,
         annotation=annotation,
@@ -28,10 +63,10 @@ def inject(func):
 
     return wrap_injection(
         func=func,
-        remove_depends=True,
-        container_getter=lambda _, p: p[CONTAINER_NAME],
-        additional_params=additional_params,
         is_async=True,
+        remove_depends=True,
+        additional_params=additional_params,
+        container_getter=lambda _, p: p[CONTAINER_NAME],
     )
 
 
@@ -39,4 +74,4 @@ def setup_broker(
     broker: AsyncBroker,
     container: AsyncContainer,
 ) -> None:
-    broker.state.dishka_container = container
+    broker.add_middlewares(ContainerMiddleware(container))

@@ -22,12 +22,11 @@ async def random_task(num: Annotated[float, FromDishka()]) -> float:
 async def main() -> None:
     container = make_async_container(provider)
     setup_broker(broker, container)
-    
     await broker.startup()
 
     task: AsyncTaskiqTask[float] = await random_task.kiq()
     result = await task.wait_result()
-    print(result.return_value)
+    print(result.return_value)  # noqa: T201
 
     await broker.shutdown()
     await container.close()

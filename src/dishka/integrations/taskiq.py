@@ -13,7 +13,7 @@ CONTAINER_NAME: Final = "dishka_container"
 async def _open_container(
     context: Annotated[Context, TaskiqDepends()],
 ) -> AsyncGenerator[AsyncContainer, None]:
-    container: AsyncContainer = context.state.dishka_containe
+    container: AsyncContainer = context.state.dishka_container
     async with container() as new_container:
         yield new_container
 

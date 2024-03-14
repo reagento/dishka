@@ -28,14 +28,7 @@ class ContainerMiddleware(TaskiqMiddleware):
     ) -> TaskiqMessage:
         container = await self._container().__aenter__()
         message.labels[CONTAINER_NAME] = container
-        return TaskiqMessage(
-            task_id=message.task_id,
-            task_name=message.task_name,
-            labels=message.labels,
-            labels_types=message.labels_types,
-            args=message.args,
-            kwargs=message.kwargs,
-        )
+        return message
 
     async def post_execute(
         self,

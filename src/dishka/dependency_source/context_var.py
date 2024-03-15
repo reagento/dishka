@@ -1,12 +1,10 @@
-from typing import (
-    Any,
-)
+from typing import Any
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
-from .alias import alias
 from .factory import Factory, FactoryType
+from .make_alias import alias
 
 
 def _context_stub() -> Any:
@@ -50,15 +48,3 @@ class ContextVariable:
             scope=scope,
             provides=self.provides,
         )
-
-
-def from_context(
-        *, provides: Any, scope: BaseScope | None = None,
-) -> ContextVariable:
-    return ContextVariable(
-        provides=DependencyKey(
-            type_hint=provides,
-            component=DEFAULT_COMPONENT,
-        ),
-        scope=scope,
-    )

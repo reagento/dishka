@@ -16,7 +16,6 @@ from .dependency_source import (
     provide,
 )
 from .dependency_source.composite import CompositeDependencySource
-from .exceptions import InvalidGraphError
 
 
 def is_dependency_source(attribute: Any) -> bool:
@@ -102,7 +101,7 @@ class Provider(BaseProvider):
             self,
             *,
             source: type,
-            provides: type,
+            provides: Any,
             cache: bool = True,
     ) -> CompositeDependencySource:
         composite = alias(

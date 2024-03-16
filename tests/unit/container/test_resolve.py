@@ -74,6 +74,18 @@ async def test_async(factory, closed):
     assert a.closed == closed
 
 
+def test_2decorators():
+    class MyProvider(Provider):
+        @provide(scope=Scope.APP)
+        @provide(provides=float, scope=Scope.APP)
+        def get(self) -> int:
+            return 100
+
+    container = make_container(MyProvider())
+    assert container.get(float) == 100
+    assert container.get(int) == 100
+
+
 def test_value():
     class MyProvider(Provider):
         factory = value_factory

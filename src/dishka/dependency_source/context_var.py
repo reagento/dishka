@@ -3,8 +3,8 @@ from typing import Any
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
+from .alias import Alias
 from .factory import Factory, FactoryType
-from .make_alias import alias
 
 
 def _context_stub() -> Any:
@@ -36,9 +36,11 @@ class ContextVariable:
                 cache=False,
             )
         else:
-            aliased = alias(
-                source=self.provides.type_hint,
-                component=DEFAULT_COMPONENT,
+            aliased = Alias(
+                source=self.provides.with_component(DEFAULT_COMPONENT),
+                provides=DependencyKey(self.provides.type_hint,
+                                       component=component),
+                cache=False,
             )
             return aliased.as_factory(scope=self.scope, component=component)
 

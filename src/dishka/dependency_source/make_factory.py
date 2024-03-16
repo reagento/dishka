@@ -35,7 +35,9 @@ from dishka._adaptix.type_tools.generic_resolver import (
 )
 from dishka.entities.key import DependencyKey, hints_to_dependency_keys
 from dishka.entities.scope import BaseScope
+from .composite import CompositeDependencySource, ensure_composite
 from .factory import Factory, FactoryType
+from .unpack_provides import unpack_factory
 
 
 def _is_bound_method(obj):
@@ -111,7 +113,7 @@ def _make_factory_by_class(
         scope: BaseScope | None,
         source: Callable,
         cache: bool,
-):
+) -> Factory:
     # we need to fix concrete generics and normal classes as well
     # as classes can be children of concrete generics
     res = GenericResolver(_get_init_members)
@@ -139,7 +141,7 @@ def _make_factory_by_method(
         scope: BaseScope | None,
         source: Callable | classmethod,
         cache: bool,
-):
+) -> Factory:
     if isinstance(source, classmethod):
         params = signature(source.__wrapped__).parameters
         factory_type = _guess_factory_type(source.__wrapped__)
@@ -161,7 +163,6 @@ def _make_factory_by_method(
     dependencies = list(hints.values())
     if not provides:
         provides = _clean_result_hint(factory_type, possible_dependency)
-
     return Factory(
         dependencies=hints_to_dependency_keys(dependencies),
         type_=factory_type,
@@ -179,7 +180,7 @@ def _make_factory_by_static_method(
         scope: BaseScope | None,
         source: staticmethod,
         cache: bool,
-):
+) -> Factory:
     factory_type = _guess_factory_type(source.__wrapped__)
     hints = get_type_hints(source, include_extras=True)
     possible_dependency = hints.pop("return", None)
@@ -191,7 +192,7 @@ def _make_factory_by_static_method(
         type_=factory_type,
         source=source,
         scope=scope,
-        provides=DependencyKey(provides, None),
+        provides=provides,
         is_to_bind=False,
         cache=cache,
     )
@@ -203,7 +204,7 @@ def _make_factory_by_other_callable(
         scope: BaseScope | None,
         source: Callable,
         cache: bool,
-):
+) -> Factory:
     if _is_bound_method(source):
         to_check = source.__func__
     else:
@@ -259,13 +260,28 @@ def make_factory(
         raise TypeError(f"Cannot use {type(source)} as a factory")
 
 
+def _provide(
+        *,
+        source: Callable | classmethod | staticmethod | type | None = None,
+        scope: BaseScope | None = None,
+        provides: Any = None,
+        cache: bool = True,
+):
+    composite = ensure_composite(source)
+    factory = make_factory(
+        provides=provides, scope=scope, source=composite.origin, cache=cache,
+    )
+    composite.dependency_sources.extend(unpack_factory(factory))
+    return composite
+
+
 @overload
 def provide(
         *,
         scope: BaseScope = None,
         provides: Any = None,
         cache: bool = True,
-) -> Callable[[Callable], Factory]:
+) -> Callable[[Callable], CompositeDependencySource]:
     ...
 
 
@@ -276,7 +292,7 @@ def provide(
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
-) -> Factory:
+) -> CompositeDependencySource:
     ...
 
 
@@ -286,7 +302,7 @@ def provide(
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
-) -> Factory | Callable[[Callable], Factory]:
+) -> Any:
     """
     Mark a method or class as providing some dependency.
 
@@ -308,12 +324,12 @@ def provide(
     :param cache: save created object to scope cache or not
     """
     if source is not None:
-        return make_factory(
+        return _provide(
             provides=provides, scope=scope, source=source, cache=cache,
         )
 
     def scoped(func):
-        return make_factory(
+        return _provide(
             provides=provides, scope=scope, source=func, cache=cache,
         )
 

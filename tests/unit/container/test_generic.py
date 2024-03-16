@@ -102,7 +102,7 @@ def test_generic_func():
         scope = Scope.APP
 
         @provide
-        def get_int(self) -> int:
+        def get_int(self) -> int | str:
             return 42
 
         @provide

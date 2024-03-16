@@ -10,6 +10,8 @@ DependencySource = Alias | Factory | Decorator | ContextVariable
 
 
 class CompositeDependencySource:
+    _instances = 0
+
     def __init__(
             self,
             origin: Callable,
@@ -17,10 +19,16 @@ class CompositeDependencySource:
     ) -> None:
         self.dependency_sources = list(dependency_sources)
         self.origin = origin
+        CompositeDependencySource._instances += 1
+        self.number = self._instances
 
     def __get__(self, instance, owner) -> "CompositeDependencySource":
+        try:
+            origin = self.origin.__get__(instance, owner)
+        except AttributeError:  # not a valid descriptor
+            origin = self.origin
         return CompositeDependencySource(
-            origin=self.origin.__get__(instance, owner),
+            origin=origin,
             dependency_sources=[
                 s.__get__(instance, owner) for s in self.dependency_sources
             ],

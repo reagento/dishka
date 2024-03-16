@@ -1,10 +1,7 @@
 from collections.abc import Sequence
-from typing import (
-    Union,
-)
 
-from dishka._adaptix.type_tools import normalize_type
 from dishka.entities.key import DependencyKey
+from dishka.entities.provides_marker import ProvideMultiple
 from .alias import Alias
 from .composite import DependencySource
 from .decorator import Decorator
@@ -12,11 +9,10 @@ from .factory import Factory
 
 
 def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
-    provides_normalized = normalize_type(factory.provides.type_hint)
-    if provides_normalized.origin is not Union:
+    if not isinstance(factory.provides.type_hint, ProvideMultiple):
         return [factory]
 
-    provides_first, *provides_others = provides_normalized.args
+    provides_first, *provides_others = factory.provides.type_hint.items
 
     res = []
     res.append(Factory(
@@ -24,16 +20,16 @@ def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
         type_=factory.type,
         source=factory.source,
         scope=factory.scope,
-        provides=DependencyKey(provides_first.source,
+        provides=DependencyKey(provides_first,
                                factory.provides.component),
         is_to_bind=factory.is_to_bind,
         cache=factory.cache,
     ))
     for provides_other in provides_others:
         res.append(Alias(
-            provides=DependencyKey(provides_other.source,
+            provides=DependencyKey(provides_other,
                                    factory.provides.component),
-            source=DependencyKey(provides_first.source,
+            source=DependencyKey(provides_first,
                                  factory.provides.component),
             cache=factory.cache,
         ))
@@ -41,28 +37,26 @@ def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
 
 
 def unpack_decorator(decorator: Decorator) -> Sequence[DependencySource]:
-    provides_normalized = normalize_type(decorator.provides.type_hint)
-    if provides_normalized.origin is not Union:
+    if not isinstance(decorator.provides.type_hint, ProvideMultiple):
         return [decorator]
 
     res = []
-    for provides in provides_normalized.args:
+    for provides in decorator.provides.type_hint.items:
         new_decorator = Decorator(decorator.factory)
-        new_decorator.provides = DependencyKey(provides.source,
+        new_decorator.provides = DependencyKey(provides,
                                                decorator.provides.component)
         res.append(new_decorator)
     return res
 
 
 def unpack_alias(alias: Alias) -> Sequence[DependencySource]:
-    provides_normalized = normalize_type(alias.provides.type_hint)
-    if provides_normalized.origin is not Union:
+    if not isinstance(alias.provides.type_hint, ProvideMultiple):
         return [alias]
 
     res = []
-    for provides in provides_normalized.args:
+    for provides in alias.provides.type_hint.items:
         res.append(Alias(
-            provides=DependencyKey(provides.source, alias.provides.component),
+            provides=DependencyKey(provides, alias.provides.component),
             source=alias.source,
             cache=alias.cache,
         ))

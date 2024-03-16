@@ -4,6 +4,7 @@ import pytest
 
 from dishka import Provider, Scope, alias, provide
 from dishka.dependency_source import FactoryType
+from dishka.dependency_source.make_factory import make_factory
 from dishka.entities.key import (
     hint_to_dependency_key,
     hints_to_dependency_keys,
@@ -48,7 +49,10 @@ def test_provider_init():
     ],
 )
 def test_parse_factory(source, provider_type, is_to_bound):
-    factory = provide(source, scope=Scope.REQUEST)
+    composite = provide(source, scope=Scope.REQUEST)
+    assert len(composite.dependency_sources) == 1
+    factory = composite.dependency_sources[0]
+
     assert factory.provides == hint_to_dependency_key(ClassA)
     assert factory.dependencies == hints_to_dependency_keys([Any, int])
     assert factory.is_to_bind == is_to_bound
@@ -80,7 +84,12 @@ def test_parse_factory_invalid_hint_async():
     ],
 )
 def test_parse_factory_cls(source, provider_type, is_to_bound):
-    factory = provide(source, scope=Scope.REQUEST)
+    factory = make_factory(
+        provides=None,
+        source=source,
+        cache=False,
+        scope=Scope.REQUEST,
+    )
     assert factory.provides == hint_to_dependency_key(ClassA)
     assert factory.dependencies == hints_to_dependency_keys([int])
     assert factory.is_to_bind == is_to_bound
@@ -98,7 +107,9 @@ def test_provider_class_scope():
             return f"{x}"
 
     provider = MyProvider()
-    assert provider.foo.scope == Scope.REQUEST
+    assert len(provider.factories) == 1
+    factory = provider.factories[0]
+    assert factory.scope == Scope.REQUEST
 
 
 def test_provider_instance_scope():
@@ -108,7 +119,9 @@ def test_provider_instance_scope():
             return f"{x}"
 
     provider = MyProvider(scope=Scope.REQUEST)
-    assert provider.foo.scope == Scope.REQUEST
+    assert len(provider.factories) == 1
+    factory = provider.factories[0]
+    assert factory.scope == Scope.REQUEST
 
 
 def test_provider_instance_braces():
@@ -118,7 +131,9 @@ def test_provider_instance_braces():
             return f"{x}"
 
     provider = MyProvider(scope=Scope.REQUEST)
-    assert provider.foo.scope == Scope.REQUEST
+    assert len(provider.factories) == 1
+    factory = provider.factories[0]
+    assert factory.scope == Scope.REQUEST
 
 
 def test_self_hint():
@@ -128,7 +143,9 @@ def test_self_hint():
             return "hello"
 
     provider = MyProvider(scope=Scope.REQUEST)
-    assert not provider.foo.dependencies
+    assert len(provider.factories) == 1
+    factory = provider.factories[0]
+    assert not factory.dependencies
 
 
 def test_staticmethod():
@@ -139,7 +156,9 @@ def test_staticmethod():
             return "hello"
 
     provider = MyProvider(scope=Scope.REQUEST)
-    assert not provider.foo.dependencies
+    assert len(provider.factories) == 1
+    factory = provider.factories[0]
+    assert not factory.dependencies
 
 
 def test_classmethod():
@@ -150,7 +169,9 @@ def test_classmethod():
             return "hello"
 
     provider = MyProvider(scope=Scope.REQUEST)
-    assert not provider.foo.dependencies
+    assert len(provider.factories) == 1
+    factory = provider.factories[0]
+    assert not factory.dependencies
 
 
 class MyCallable:
@@ -163,27 +184,39 @@ def test_callable():
         foo = provide(MyCallable())
 
     provider = MyProvider(scope=Scope.REQUEST)
-    assert provider.foo.provides == hint_to_dependency_key(str)
-    assert provider.foo.dependencies == hints_to_dependency_keys([int])
+    assert len(provider.factories) == 1
+    factory = provider.factories[0]
+    assert factory.provides == hint_to_dependency_key(str)
+    assert factory.dependencies == hints_to_dependency_keys([int])
 
 
 def test_provide_as_method():
     provider = Provider(scope=Scope.REQUEST)
+
     foo = provider.provide(MyCallable())
-    assert foo.provides == hint_to_dependency_key(str)
-    assert foo.dependencies == hints_to_dependency_keys([int])
+    assert len(provider.factories) == 1
+    assert len(foo.dependency_sources) == 1
+    factory = foo.dependency_sources[0]
+    assert factory.provides == hint_to_dependency_key(str)
+    assert factory.dependencies == hints_to_dependency_keys([int])
 
     foo = provider.provide(sync_func_a)
-    assert foo.provides == hint_to_dependency_key(ClassA)
-    assert foo.dependencies == hints_to_dependency_keys([Any, int])
+    assert len(foo.dependency_sources) == 1
+    factory = foo.dependency_sources[0]
+    assert factory.provides == hint_to_dependency_key(ClassA)
+    assert factory.dependencies == hints_to_dependency_keys([Any, int])
 
     foo = provider.alias(source=int, provides=str)
-    assert foo.provides == hint_to_dependency_key(str)
-    assert foo.source == hint_to_dependency_key(int)
+    assert len(foo.dependency_sources) == 1
+    factory = foo.dependency_sources[0]
+    assert factory.provides == hint_to_dependency_key(str)
+    assert factory.source == hint_to_dependency_key(int)
 
     foo = provider.decorate(sync_func_a)
-    assert foo.provides == hint_to_dependency_key(ClassA)
-    assert foo.factory.dependencies == hints_to_dependency_keys([Any, int])
+    assert len(foo.dependency_sources) == 1
+    factory = foo.dependency_sources[0]
+    assert factory.provides == hint_to_dependency_key(ClassA)
+    assert factory.factory.dependencies == hints_to_dependency_keys([Any, int])
 
 
 class OtherClass:
@@ -194,5 +227,7 @@ class OtherClass:
 def test_provide_external_method():
     provider = Provider(scope=Scope.REQUEST)
     foo = provider.provide(OtherClass().method)
-    assert foo.provides == hint_to_dependency_key(str)
-    assert foo.dependencies == []
+    assert len(foo.dependency_sources) == 1
+    factory = foo.dependency_sources[0]
+    assert factory.provides == hint_to_dependency_key(str)
+    assert factory.dependencies == []

@@ -55,7 +55,6 @@ class Provider(BaseProvider):
             component: Component | None = None,
     ):
         super().__init__(component)
-        self.processed_types = {}
         self.scope = self.scope or scope
         self._init_dependency_sources()
 
@@ -71,12 +70,6 @@ class Provider(BaseProvider):
             self, name: str, sources: Sequence[DependencySource],
     ) -> None:
         for source in sources:
-            if source.provides in self.processed_types:
-                raise InvalidGraphError(
-                    f"Type {source.provides} is registered multiple times "
-                    f"in the same {Provider} by attributes "
-                    f"{self.processed_types[source.provides]!r} and {name!r}",
-                )
             if isinstance(source, Alias):
                 self.aliases.append(source)
             if isinstance(source, Factory):
@@ -85,7 +78,6 @@ class Provider(BaseProvider):
                 self.decorators.append(source)
             if isinstance(source, ContextVariable):
                 self.context_vars.append(source)
-            self.processed_types[source.provides] = name
 
     def provide(
             self,

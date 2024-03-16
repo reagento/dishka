@@ -10,7 +10,7 @@ from dishka import (
     make_container,
     provide,
 )
-from dishka.exceptions import InvalidGraphError, NoFactoryError
+from dishka.exceptions import NoFactoryError
 
 
 class A:
@@ -97,14 +97,14 @@ def test_alias():
     assert a is a1
 
 
-def test_double_error():
+def test_double():
     class MyProvider(Provider):
         a = provide(A, scope=Scope.APP)
         ad = decorate(ADecorator, provides=A)
         ad2 = decorate(ADecorator, provides=A)
 
-    with pytest.raises(InvalidGraphError):
-        MyProvider()
+    provider = MyProvider()
+    assert len(provider.decorators) == 2
 
 
 def test_double_ok():

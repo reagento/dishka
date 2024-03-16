@@ -192,7 +192,7 @@ def _make_factory_by_static_method(
         type_=factory_type,
         source=source,
         scope=scope,
-        provides=provides,
+        provides=DependencyKey(provides, None),
         is_to_bind=False,
         cache=cache,
     )

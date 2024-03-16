@@ -16,7 +16,7 @@ from ..sample_providers import (
     sync_func_a,
     sync_gen_a,
     sync_iter_a,
-    value_factory,
+    value_source,
 )
 
 
@@ -88,7 +88,7 @@ def test_2decorators():
 
 def test_value():
     class MyProvider(Provider):
-        factory = value_factory
+        factory = value_source
 
     container = make_container(MyProvider())
     assert container.get(ClassA) is A_VALUE
@@ -97,7 +97,7 @@ def test_value():
 @pytest.mark.asyncio
 async def test_value_async():
     class MyProvider(Provider):
-        factory = value_factory
+        factory = value_source
 
     container = make_async_container(MyProvider())
     assert await container.get(ClassA) is A_VALUE

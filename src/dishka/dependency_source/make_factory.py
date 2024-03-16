@@ -266,7 +266,7 @@ def _provide(
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
-):
+) -> CompositeDependencySource:
     composite = ensure_composite(source)
     factory = make_factory(
         provides=provides, scope=scope, source=composite.origin, cache=cache,

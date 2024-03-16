@@ -7,7 +7,7 @@ from .alias import Alias
 from .factory import Factory, FactoryType
 
 
-def _context_stub() -> Any:
+def context_stub() -> Any:
     raise NotImplementedError
 
 
@@ -28,7 +28,7 @@ class ContextVariable:
         if component == DEFAULT_COMPONENT:
             return Factory(
                 scope=self.scope,
-                source=_context_stub,
+                source=context_stub,
                 provides=self.provides,
                 is_to_bind=False,
                 dependencies=[],

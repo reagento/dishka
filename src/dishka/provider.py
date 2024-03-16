@@ -19,7 +19,7 @@ from .dependency_source.composite import CompositeDependencySource
 
 
 def is_dependency_source(attribute: Any) -> bool:
-    return isinstance(attribute, DependencySource | CompositeDependencySource)
+    return isinstance(attribute, CompositeDependencySource)
 
 
 class BaseProvider:
@@ -58,12 +58,10 @@ class Provider(BaseProvider):
         self._init_dependency_sources()
 
     def _init_dependency_sources(self) -> None:
-        for name, composite in inspect.getmembers(self, is_dependency_source):
-            if isinstance(composite, CompositeDependencySource):
-                sources = composite.dependency_sources
-            else:
-                sources = [composite]
-            self._add_dependency_sources(name, sources)
+        sources = inspect.getmembers(self, is_dependency_source)
+        sources.sort(key=lambda s: s[1].number)
+        for name, composite in sources:
+            self._add_dependency_sources(name, composite.dependency_sources)
 
     def _add_dependency_sources(
             self, name: str, sources: Sequence[DependencySource],
@@ -131,9 +129,10 @@ class Provider(BaseProvider):
     def from_context(
             self, *, provides: Any, scope: BaseScope,
     ) -> ContextVariable:
-        context_var = from_context(provides=provides, scope=scope)
-        self.context_vars.append(context_var)
-        return context_var
+        composite = from_context(provides=provides, scope=scope)
+        self._add_dependency_sources(str(provides),
+                                     composite.dependency_sources)
+        return composite
 
 
 class ProviderWrapper(BaseProvider):

@@ -8,7 +8,6 @@ from .dependency_source import (
     ContextVariable,
     Decorator,
     Factory,
-    from_context,
 )
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.key import DependencyKey
@@ -195,8 +194,9 @@ class RegistryBuilder:
     def _init_registries(self) -> None:
         for scope in self.scopes:
             registry = Registry(scope)
-            context_var = from_context(
-                provides=self.container_type, scope=scope,
+            context_var = ContextVariable(
+                provides=DependencyKey(self.container_type, DEFAULT_COMPONENT),
+                scope=scope,
             )
             for component in self.components:
                 registry.add_factory(context_var.as_factory(component))

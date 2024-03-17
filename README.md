@@ -182,19 +182,33 @@ This allows you to have multiple parts of application build separately without n
     class MyProvider(Provider):
         a = provide(source=AChild, scope=Scope.REQUEST, provides=A)
     ```
-* Having multiple interfaces which can be created as a same class with defined provider? Use alias:
+* Having multiple interfaces which can be created as a same class? Use `AnyOf`:
 
     ```python
+    from dishka import AnyOf
+
     class MyProvider(Provider):
+        @provide
+        def p(self) -> AnyOf[A, AProtocol]:
+            return A()
+    ```
+
+Use alias if you want to add them in another `Provider`:
+
+    ```python
+    class MyProvider2(Provider):
         p = alias(source=A, provides=AProtocol)
     ```
-    it works the same way as
+
+In both cases it works the same way as
+
     ```python
     class MyProvider(Provider):
         @provide(scope=<Scope of A>)
         def p(self, a: A) -> AProtocol:
             return a
     ```
+
 
 * Want to apply decorator pattern and do not want to alter existing provide method? Use `decorate`. It will construct object using earlie defined provider and then pass it to your decorator before returning from the container.
 

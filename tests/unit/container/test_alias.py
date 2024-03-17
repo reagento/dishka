@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import pytest
 
 from dishka import (
-    ALL,
+    AnyOf,
     DEFAULT_COMPONENT,
     DependencyKey,
     Provider,
@@ -58,7 +58,7 @@ def test_missing_factory():
 def test_implicit():
     mock = Mock(return_value=42)
     provider = Provider(scope=Scope.APP)
-    provider.provide(source=lambda: mock(), provides=ALL[float, int])
+    provider.provide(source=lambda: mock(), provides=AnyOf[float, int])
     container = make_container(provider)
     assert container.get(float) == 42
     assert container.get(int) == 42
@@ -68,7 +68,7 @@ def test_implicit():
 def test_union_alias():
     provider = Provider(scope=Scope.APP)
     provider.provide(source=lambda: 42, provides=int)
-    provider.alias(source=int, provides=ALL[float, complex])
+    provider.alias(source=int, provides=AnyOf[float, complex])
     container = make_container(provider)
     assert container.get(float) == 42
     assert container.get(complex) == 42

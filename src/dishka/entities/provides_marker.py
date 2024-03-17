@@ -1,10 +1,9 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    pass
-
+    from typing import Union as AnyOF
 else:
-    class ALL:
+    class AnyOf:
         def __class_getitem__(cls, item):
             if isinstance(item, tuple):
                 return ProvideMultiple(item)

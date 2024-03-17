@@ -1,5 +1,5 @@
 __all__ = [
-    "ALL",
+    "AnyOf",
     "make_async_container", "AsyncContainer",
     "DEFAULT_COMPONENT", "Component",
     "make_container", "Container", "FromComponent",
@@ -20,6 +20,6 @@ from .dependency_source import (
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.depends_marker import FromDishka
 from .entities.key import DependencyKey, FromComponent
-from .entities.provides_marker import ALL
+from .entities.provides_marker import AnyOf
 from .entities.scope import BaseScope, Scope
 from .provider import Provider

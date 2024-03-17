@@ -1,7 +1,10 @@
+from unittest.mock import Mock
+
 import pytest
 
 from dishka import (
     DEFAULT_COMPONENT,
+    AnyOf,
     DependencyKey,
     Provider,
     Scope,
@@ -50,3 +53,22 @@ def test_missing_factory():
     with pytest.raises(NoFactoryError) as e:
         make_container(p1, p2)
     assert e.value.requested == DependencyKey(int, component=DEFAULT_COMPONENT)
+
+
+def test_implicit():
+    mock = Mock(return_value=42)
+    provider = Provider(scope=Scope.APP)
+    provider.provide(source=lambda: mock(), provides=AnyOf[float, int])
+    container = make_container(provider)
+    assert container.get(float) == 42
+    assert container.get(int) == 42
+    mock.assert_called_once()
+
+
+def test_union_alias():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(source=lambda: 42, provides=int)
+    provider.alias(source=int, provides=AnyOf[float, complex])
+    container = make_container(provider)
+    assert container.get(float) == 42
+    assert container.get(complex) == 42

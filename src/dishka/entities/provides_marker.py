@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Union as AnyOF
+    from typing import Union as AnyOf
 else:
     class AnyOf:
         def __class_getitem__(cls, item):

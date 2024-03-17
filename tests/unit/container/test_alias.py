@@ -3,8 +3,8 @@ from unittest.mock import Mock
 import pytest
 
 from dishka import (
-    AnyOf,
     DEFAULT_COMPONENT,
+    AnyOf,
     DependencyKey,
     Provider,
     Scope,

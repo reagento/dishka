@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from dishka import make_async_container
 from dishka.integrations.fastapi import (
+    DishkaRoute,
     FromDishka,
     inject,
     setup_dishka,
@@ -35,6 +36,19 @@ async def dishka_app(view, provider) -> TestClient:
     await container.close()
 
 
+@asynccontextmanager
+async def dishka_auto_app(view, provider) -> TestClient:
+    router = fastapi.APIRouter(route_class=DishkaRoute)
+    router.get("/")(view)
+    app = fastapi.FastAPI()
+    app.include_router(router)
+    container = make_async_container(provider)
+    setup_dishka(container, app)
+    async with LifespanManager(app):
+        yield fastapi.testclient.TestClient(app)
+    await container.close()
+
+
 async def get_with_app(
         a: Annotated[AppDep, FromDishka()],
         mock: Annotated[Mock, FromDishka()],
@@ -42,9 +56,12 @@ async def get_with_app(
     mock(a)
 
 
+@pytest.mark.parametrize("app_factory", [
+    dishka_app, dishka_auto_app,
+])
 @pytest.mark.asyncio
-async def test_app_dependency(app_provider: AppProvider):
-    async with dishka_app(get_with_app, app_provider) as client:
+async def test_app_dependency(app_provider: AppProvider, app_factory):
+    async with app_factory(get_with_app, app_provider) as client:
         client.get("/")
         app_provider.mock.assert_called_with(APP_DEP_VALUE)
         app_provider.app_released.assert_not_called()

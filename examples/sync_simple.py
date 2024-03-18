@@ -1,45 +1,69 @@
-from typing import Generator
+from collections.abc import Iterable
+from dataclasses import dataclass
+from typing import Protocol
 
 from dishka import Provider, Scope, alias, make_container, provide
 
 
-class BaseA:
+@dataclass
+class Config:
+    value: int
+
+
+class Gateway(Protocol):
     pass
 
 
-class A(BaseA):
-    def __init__(self, x: str):
-        self.x = x
+class Connection:
+    def close(self):
+        print("Connection closed")
+
+
+class GatewayImplementation(Gateway):
+    def __init__(self, config: Config, connection: Connection):
+        self.value = config.value
+        self.connection = connection
 
     def __repr__(self):
-        return f"A({self.x})"
+        return f"A(value={self.value}, connection={self.connection})"
 
 
 class MyProvider(Provider):
-    def __init__(self, a: int):
+    scope = Scope.REQUEST
+
+    def __init__(self, config: Config):
         super().__init__()
-        self.a = a
+        self.config = config
 
-    get_a = provide(A, scope=Scope.REQUEST)
-    get_basea = alias(source=A, provides=BaseA)
-
+    # simple factory with explicit scope
     @provide(scope=Scope.APP)
-    def get_int(self) -> int:
-        return self.a
+    def get_config(self) -> Config:
+        return self.config
 
-    @provide(scope=Scope.REQUEST)
-    def get_str(self, dep: int) -> Generator[None, str, None]:
-        yield f">{dep}<"
+    # object with finalization and provider-defined scope
+    @provide
+    def get_conn(self) -> Iterable[Connection]:
+        connection = Connection()
+        yield connection
+        connection.close()
+
+    # object by `__init__`
+    gw = provide(GatewayImplementation)
+    # another type for same object
+    base_gw = alias(source=GatewayImplementation, provides=Gateway)
 
 
 def main():
-    container = make_container(MyProvider(1))
+    config = Config(1)
+    provider = MyProvider(config)
+    container = make_container(provider)
 
-    print(container.get(int))
+    print(container.get(Config))
     with container() as c_request:
-        print(c_request.get(BaseA))
+        print(c_request.get(GatewayImplementation))
+        print(c_request.get(Gateway))
     with container() as c_request:
-        print(c_request.get(A))
+        print(c_request.get(Gateway))
 
     container.close()
 

@@ -193,17 +193,17 @@ This allows you to have multiple parts of application build separately without n
             return A()
     ```
 
-Use alias if you want to add them in another `Provider`:
+    Use alias if you want to add them in another `Provider`:
 
     ```python
     class MyProvider2(Provider):
         p = alias(source=A, provides=AProtocol)
     ```
 
-In both cases it works the same way as
+    In both cases it works the same way as
 
     ```python
-    class MyProvider(Provider):
+    class MyProvider2(Provider):
         @provide(scope=<Scope of A>)
         def p(self, a: A) -> AProtocol:
             return a

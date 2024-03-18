@@ -1,6 +1,4 @@
-from typing import (
-    Any,
-)
+from typing import Any
 
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
@@ -40,24 +38,3 @@ class Alias:
 
     def __get__(self, instance, owner):
         return self
-
-
-def alias(
-        *,
-        source: type,
-        provides: type | None = None,
-        cache: bool = True,
-        component: Component | None = None,
-) -> Alias:
-    if component is provides is None:
-        raise ValueError("Either component or provides must be set in alias")
-    if provides is None:
-        provides = source
-    return Alias(
-        source=DependencyKey(
-            type_hint=source,
-            component=component,
-        ),
-        provides=DependencyKey(provides, None),
-        cache=cache,
-    )

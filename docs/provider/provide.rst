@@ -73,3 +73,16 @@ By default the result is cached within scope. You can disable it providing ``cac
        @provide(scope=Scope.REQUEST)  # has own scope
        async def get_b(self) -> B:
           return B()
+
+* Having multiple interfaces which can be created as a same class? Use ``AnyOf`` as a result hint:
+
+.. code-block:: python
+
+    from dishka import AnyOf
+
+    class MyProvider(Provider):
+        @provide
+        def p(self) -> AnyOf[A, AProtocol]:
+            return A()
+
+It works similar to :ref:`alias`.

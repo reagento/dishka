@@ -10,6 +10,7 @@ from typing import Any
 
 from dishka import DependencyKey, Scope
 from dishka.dependency_source import Factory, FactoryType
+from dishka.dependency_source.composite import CompositeDependencySource
 
 
 class ClassA:
@@ -72,3 +73,4 @@ value_factory = Factory(
     is_to_bind=False,
     cache=False,
 )
+value_source = CompositeDependencySource(lambda: None, [value_factory])

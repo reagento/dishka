@@ -144,6 +144,10 @@ def wrap_injection(
     return autoinjected_func
 
 
+def is_dishka_injected(func):
+    return hasattr(func, "__dishka_injected__")
+
+
 def _async_injection_wrapper(
         container_getter: Callable,
         additional_params: Sequence[Parameter],

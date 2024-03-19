@@ -61,8 +61,17 @@ def index(
     return result
 
 
+@app.get("/auto")
+def auto(
+        *,
+        interactor: Annotated[Interactor, FromDishka()],
+) -> str:
+    result = interactor()
+    return result
+
+
 container = make_container(AdaptersProvider(), InteractorProvider())
-setup_dishka(container=container, app=app)
+setup_dishka(container=container, app=app, auto_inject=True)
 try:
     app.run()
 finally:

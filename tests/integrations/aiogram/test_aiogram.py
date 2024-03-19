@@ -31,6 +31,19 @@ async def dishka_app(handler, provider):
     await container.close()
 
 
+@asynccontextmanager
+async def dishka_auto_app(handler, provider):
+    dp = Dispatcher()
+    dp.message()(handler)
+    container = make_async_container(provider)
+    setup_dishka(container, router=dp, auto_inject=True)
+
+    await dp.emit_startup()
+    yield dp
+    await dp.emit_shutdown()
+    await container.close()
+
+
 async def send_message(bot, dp):
     await dp.feed_update(bot, Update(
         update_id=1,
@@ -55,9 +68,12 @@ async def handle_with_app(
     mock(a)
 
 
+@pytest.mark.parametrize("app_factory", [
+    dishka_app, dishka_auto_app,
+])
 @pytest.mark.asyncio
-async def test_app_dependency(bot, app_provider: AppProvider):
-    async with dishka_app(handle_with_app, app_provider) as dp:
+async def test_app_dependency(bot, app_provider: AppProvider, app_factory):
+    async with app_factory(handle_with_app, app_provider) as dp:
         await send_message(bot, dp)
         app_provider.mock.assert_called_with(APP_DEP_VALUE)
         app_provider.app_released.assert_not_called()

@@ -6,9 +6,10 @@ __all__ = [
 ]
 
 from flask import Flask, Request, g, request
+from flask.sansio.scaffold import Scaffold
 
 from dishka import Container, FromDishka
-from .base import Depends, wrap_injection
+from .base import Depends, is_dishka_injected, wrap_injection
 
 
 def inject(func):
@@ -33,7 +34,22 @@ class ContainerMiddleware:
         g.dishka_container.close()
 
 
-def setup_dishka(container: Container, app: Flask) -> Container:
+def _inject_routes(scaffold: Scaffold):
+    for key, func in scaffold.view_functions.items():
+        if not is_dishka_injected(func):
+            scaffold.view_functions[key] = inject(func)
+
+
+def setup_dishka(
+        container: Container,
+        app: Flask,
+        *,
+        auto_inject: bool = False,
+) -> None:
     middleware = ContainerMiddleware(container)
     app.before_request(middleware.enter_request)
     app.teardown_appcontext(middleware.exit_request)
+    if auto_inject:
+        _inject_routes(app)
+        for blueprint in app.blueprints.values():
+            _inject_routes(blueprint)

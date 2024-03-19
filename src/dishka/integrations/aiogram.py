@@ -14,7 +14,7 @@ from aiogram.dispatcher.event.handler import HandlerObject
 from aiogram.types import TelegramObject
 
 from dishka import AsyncContainer, FromDishka
-from .base import Depends, wrap_injection
+from .base import Depends, is_dishka_injected, wrap_injection
 
 CONTAINER_NAME = "dishka_container"
 
@@ -52,7 +52,7 @@ class AutoInjectMiddleware(BaseMiddleware):
         self, handler, event, data,
     ):
         old_handler: HandlerObject = data["handler"]
-        if hasattr(old_handler.callback, "__dishka_injected__"):
+        if is_dishka_injected(old_handler.callback):
             return await handler(event, data)
 
         new_handler = HandlerObject(
@@ -70,7 +70,8 @@ class AutoInjectMiddleware(BaseMiddleware):
 def setup_dishka(
     container: AsyncContainer,
     router: Router,
-    auto_inject: bool | None = None,
+    *,
+    auto_inject: bool = False,
 ) -> None:
     middleware = ContainerMiddleware(container)
     auto_inject_middleware = AutoInjectMiddleware()

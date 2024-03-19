@@ -1,14 +1,17 @@
 __all__ = [
     "Depends",
+    "DishkaRoute",
     "FromDishka",
     "inject",
     "setup_dishka",
 ]
 
+from collections.abc import Callable
 from inspect import Parameter
-from typing import get_type_hints
+from typing import Any, get_type_hints
 
 from fastapi import FastAPI, Request
+from fastapi.routing import APIRoute
 
 from dishka import AsyncContainer, FromDishka
 from .base import Depends, wrap_injection
@@ -38,6 +41,14 @@ def inject(func):
         additional_params=additional_params,
         is_async=True,
     )
+
+
+class DishkaRoute(APIRoute):
+    def __init__(
+            self, path: str, endpoint: Callable[..., Any], **kwargs,
+    ):
+        endpoint = inject(endpoint)
+        super().__init__(path, endpoint, **kwargs)
 
 
 def setup_dishka(container: AsyncContainer, app: FastAPI) -> None:

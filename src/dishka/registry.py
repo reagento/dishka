@@ -8,7 +8,6 @@ from .dependency_source import (
     ContextVariable,
     Decorator,
     Factory,
-    from_context,
 )
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.key import DependencyKey
@@ -19,7 +18,7 @@ from .exceptions import (
     NoFactoryError,
     UnknownScopeError,
 )
-from .provider import Provider
+from .provider import BaseProvider
 
 
 class Registry:
@@ -144,7 +143,7 @@ class RegistryBuilder:
             self,
             *,
             scopes: type[BaseScope],
-            providers: Sequence[Provider],
+            providers: Sequence[BaseProvider],
             container_type: type,
             skip_validation: bool,
     ) -> None:
@@ -195,21 +194,22 @@ class RegistryBuilder:
     def _init_registries(self) -> None:
         for scope in self.scopes:
             registry = Registry(scope)
-            context_var = from_context(
-                provides=self.container_type, scope=scope,
+            context_var = ContextVariable(
+                provides=DependencyKey(self.container_type, DEFAULT_COMPONENT),
+                scope=scope,
             )
             for component in self.components:
                 registry.add_factory(context_var.as_factory(component))
             self.registries[scope] = registry
 
     def _process_factory(
-            self, provider: Provider, factory: Factory,
+            self, provider: BaseProvider, factory: Factory,
     ) -> None:
         registry = self.registries[factory.scope]
         registry.add_factory(factory.with_component(provider.component))
 
     def _process_alias(
-            self, provider: Provider, alias: Alias,
+            self, provider: BaseProvider, alias: Alias,
     ) -> None:
         component = provider.component
         alias_source = alias.source.with_component(component)
@@ -243,7 +243,7 @@ class RegistryBuilder:
         registry.add_factory(factory)
 
     def _process_decorator(
-            self, provider: Provider, decorator: Decorator,
+            self, provider: BaseProvider, decorator: Decorator,
     ) -> None:
         provides = decorator.provides.with_component(provider.component)
         if provides not in self.dependency_scopes:
@@ -277,7 +277,7 @@ class RegistryBuilder:
         registry.add_factory(new_factory)
 
     def _process_context_var(
-            self, provider: Provider, context_var: ContextVariable,
+            self, provider: BaseProvider, context_var: ContextVariable,
     ) -> None:
         registry = self.registries[context_var.scope]
         for component in self.components:

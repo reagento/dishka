@@ -1,15 +1,13 @@
-from typing import (
-    Any,
-)
+from typing import Any
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
-from .alias import alias
+from .alias import Alias
 from .factory import Factory, FactoryType
 
 
-def _context_stub() -> Any:
+def context_stub() -> Any:
     raise NotImplementedError
 
 
@@ -30,7 +28,7 @@ class ContextVariable:
         if component == DEFAULT_COMPONENT:
             return Factory(
                 scope=self.scope,
-                source=_context_stub,
+                source=context_stub,
                 provides=self.provides,
                 is_to_bind=False,
                 dependencies=[],
@@ -38,9 +36,11 @@ class ContextVariable:
                 cache=False,
             )
         else:
-            aliased = alias(
-                source=self.provides.type_hint,
-                component=DEFAULT_COMPONENT,
+            aliased = Alias(
+                source=self.provides.with_component(DEFAULT_COMPONENT),
+                provides=DependencyKey(self.provides.type_hint,
+                                       component=component),
+                cache=False,
             )
             return aliased.as_factory(scope=self.scope, component=component)
 
@@ -50,15 +50,3 @@ class ContextVariable:
             scope=scope,
             provides=self.provides,
         )
-
-
-def from_context(
-        *, provides: Any, scope: BaseScope | None = None,
-) -> ContextVariable:
-    return ContextVariable(
-        provides=DependencyKey(
-            type_hint=provides,
-            component=DEFAULT_COMPONENT,
-        ),
-        scope=scope,
-    )

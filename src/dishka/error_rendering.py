@@ -43,7 +43,11 @@ class PathRenderer:
     ) -> str:
         return f"~~~ component={component!r}, {scope} ~~~\n"
 
-    def render(self, path: Sequence[Factory], last: DependencyKey = None):
+    def render(
+            self,
+            path: Sequence[Factory],
+            last: DependencyKey | None = None,
+    ):
         if last is None:
             _arrow = self._arrow_cycle
         else:

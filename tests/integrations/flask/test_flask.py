@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from typing import Annotated
 from unittest.mock import Mock
 
+import pytest
 from flask import Flask
 
 from dishka import make_container
@@ -25,6 +26,16 @@ def dishka_app(view, provider):
     container.close()
 
 
+@contextmanager
+def dishka_auto_app(view, provider):
+    app = Flask(__name__)
+    app.get("/")(view)
+    container = make_container(provider)
+    setup_dishka(container=container, app=app, auto_inject=True)
+    yield app
+    container.close()
+
+
 def handle_with_app(
         a: Annotated[AppDep, FromDishka()],
         mock: Annotated[Mock, FromDishka()],
@@ -32,8 +43,11 @@ def handle_with_app(
     mock(a)
 
 
-def test_app_dependency(app_provider: AppProvider):
-    with dishka_app(handle_with_app, app_provider) as app:
+@pytest.mark.parametrize("app_factory", [
+    dishka_app, dishka_auto_app,
+])
+def test_app_dependency(app_provider: AppProvider, app_factory):
+    with app_factory(handle_with_app, app_provider) as app:
         app.test_client().get("/")
         app_provider.mock.assert_called_with(APP_DEP_VALUE)
         app_provider.app_released.assert_not_called()

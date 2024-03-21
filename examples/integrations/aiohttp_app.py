@@ -38,7 +38,7 @@ router = RouteTableDef()
 @router.get('/')
 @inject
 async def endpoint(
-        request: str, gateway: Annotated[Gateway, FromDishka()],
+        request: str, gateway: FromDishka[Gateway],
 ) -> Response:
     data = await gateway.get()
     return Response(text=f'gateway data: {data}')

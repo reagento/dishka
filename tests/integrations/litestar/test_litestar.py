@@ -47,8 +47,8 @@ async def websocket_handler(data: str):
 def get_with_app(request_class: type[Request]):
     async def handler(
             request: request_class,
-            a: Annotated[AppDep, FromDishka()],
-            mock: Annotated[Mock, FromDishka()],
+            a: FromDishka[AppDep],
+            mock: FromDishka[Mock],
     ) -> None:
         mock(a)
 
@@ -58,8 +58,8 @@ def get_with_app(request_class: type[Request]):
 def get_with_request(request_class: type[Request]):
     async def handler(
             request: request_class,
-            a: Annotated[RequestDep, FromDishka()],
-            mock: Annotated[Mock, FromDishka()],
+            a: FromDishka[RequestDep],
+            mock: FromDishka[Mock],
     ) -> None:
         mock(a)
 

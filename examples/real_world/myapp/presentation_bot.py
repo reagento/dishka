@@ -13,7 +13,7 @@ router = Router()
 @inject
 async def start(
         message: Message,
-        interactor: Annotated[AddProductsInteractor, FromDishka()],
+        interactor: FromDishka[AddProductsInteractor],
 ):
     interactor(user_id=1)
     await message.answer("Products added!")

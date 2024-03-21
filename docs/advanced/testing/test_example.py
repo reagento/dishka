@@ -16,7 +16,7 @@ router = APIRouter()
 
 @router.get("/")
 @inject
-async def index(connection: Annotated[Connection, FromDishka()]) -> str:
+async def index(connection: FromDishka[Connection]) -> str:
     connection.execute("select 1")
     return "Ok"
 

@@ -62,8 +62,8 @@ async def send_message(bot, dp):
 
 async def handle_with_app(
         _: Message,
-        a: Annotated[AppDep, FromDishka()],
-        mock: Annotated[Mock, FromDishka()],
+        a: FromDishka[AppDep],
+        mock: FromDishka[Mock],
 ) -> None:
     mock(a)
 
@@ -83,8 +83,8 @@ async def test_app_dependency(bot, app_provider: AppProvider, app_factory):
 
 async def handle_with_request(
         _: Message,
-        a: Annotated[RequestDep, FromDishka()],
-        mock: Annotated[Mock, FromDishka()],
+        a: FromDishka[RequestDep],
+        mock: FromDishka[Mock],
 ) -> None:
     mock(a)
 

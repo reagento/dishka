@@ -50,8 +50,8 @@ async def dishka_auto_app(view, provider) -> TestClient:
 
 
 async def get_with_app(
-        a: Annotated[AppDep, FromDishka()],
-        mock: Annotated[Mock, FromDishka()],
+        a: FromDishka[AppDep],
+        mock: FromDishka[Mock],
 ) -> None:
     mock(a)
 
@@ -69,8 +69,8 @@ async def test_app_dependency(app_provider: AppProvider, app_factory):
 
 
 async def get_with_request(
-        a: Annotated[RequestDep, FromDishka()],
-        mock: Annotated[Mock, FromDishka()],
+        a: FromDishka[RequestDep],
+        mock: FromDishka[Mock],
 ) -> None:
     mock(a)
 
@@ -98,8 +98,8 @@ async def test_request_dependency2(app_provider: AppProvider):
 
 @inject
 async def additional(
-        a: Annotated[RequestDep, FromDishka()],
-        mock: Annotated[Mock, FromDishka()],
+        a: FromDishka[RequestDep],
+        mock: FromDishka[Mock],
 ):
     mock(a)
 

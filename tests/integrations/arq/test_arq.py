@@ -30,8 +30,8 @@ async def dishka_app(provider):
 @inject
 async def get_with_app(
     _: dict[str, Any],
-    a: Annotated[AppDep, FromDishka()],
-    mock: Annotated[Mock, FromDishka()],
+    a: FromDishka[AppDep],
+    mock: FromDishka[Mock],
 ) -> None:
     mock(a)
 
@@ -39,8 +39,8 @@ async def get_with_app(
 @inject
 async def get_with_request(
     _: dict[str, Any],
-    a: Annotated[RequestDep, FromDishka()],
-    mock: Annotated[Mock, FromDishka()],
+    a: FromDishka[RequestDep],
+    mock: FromDishka[Mock],
 ) -> None:
     mock(a)
 

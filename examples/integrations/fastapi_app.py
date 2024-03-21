@@ -59,7 +59,7 @@ router = APIRouter()
 @inject
 async def index(
         *,
-        interactor: Annotated[Interactor, FromDishka()],
+        interactor: FromDishka[Interactor],
 ) -> str:
     result = interactor()
     return result
@@ -72,7 +72,7 @@ second_router = APIRouter(route_class=DishkaRoute)
 @second_router.get("/auto")
 async def auto(
         *,
-        interactor: Annotated[Interactor, FromDishka()],
+        interactor: FromDishka[Interactor],
 ) -> str:
     result = interactor()
     return result

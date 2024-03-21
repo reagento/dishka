@@ -12,7 +12,7 @@ provider = Provider(scope=Scope.REQUEST)
 provider.provide(lambda: hash("adaptix"), provides=int)
 
 @inject
-async def task_handler(other_hash: Annotated[int, FromDishka()]) -> int:
+async def task_handler(other_hash: FromDishka[int]) -> int:
     return other_hash
 
 

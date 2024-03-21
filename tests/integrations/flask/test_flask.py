@@ -37,8 +37,8 @@ def dishka_auto_app(view, provider):
 
 
 def handle_with_app(
-        a: Annotated[AppDep, FromDishka()],
-        mock: Annotated[Mock, FromDishka()],
+        a: FromDishka[AppDep],
+        mock: FromDishka[Mock],
 ) -> None:
     mock(a)
 
@@ -55,8 +55,8 @@ def test_app_dependency(app_provider: AppProvider, app_factory):
 
 
 def handle_with_request(
-        a: Annotated[RequestDep, FromDishka()],
-        mock: Annotated[Mock, FromDishka()],
+        a: FromDishka[RequestDep],
+        mock: FromDishka[Mock],
 ) -> None:
     mock(a)
 

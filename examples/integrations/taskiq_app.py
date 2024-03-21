@@ -15,7 +15,7 @@ broker = InMemoryBroker()
 
 @broker.task
 @inject
-async def random_task(num: Annotated[float, FromDishka()]) -> float:
+async def random_task(num: FromDishka[float]) -> float:
     return num
 
 

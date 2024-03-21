@@ -92,7 +92,7 @@ This can be also rewritten using class:
 
     @router.get("/")
     @inject
-    async def index(a: Annotated[A, FromDishka()]) -> str:
+    async def index(a: FromDishka[A]) -> str:
         ...
 
     ...

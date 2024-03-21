@@ -109,3 +109,6 @@ Components can **link to each other**: each provider can add a component name wh
 
     a = alias(int, component="X")
 
+
+.. note::
+    In frameworks integrations ``FromDishka[T]`` is used to get an object from default component. To use other component you can use the same syntax with annotated ``Annotated[T, FromComponent("X")]``

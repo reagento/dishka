@@ -1,6 +1,5 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from typing import Annotated
 from unittest.mock import Mock
 
 import pytest

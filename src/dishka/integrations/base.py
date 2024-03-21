@@ -13,7 +13,7 @@ from typing import (
 from dishka.async_container import AsyncContainer
 from dishka.container import Container
 from dishka.entities.depends_marker import FromDishka
-from dishka.entities.key import FromComponent, DEFAULT_COMPONENT, DependencyKey
+from dishka.entities.key import DEFAULT_COMPONENT, DependencyKey, FromComponent
 
 
 def default_parse_dependency(

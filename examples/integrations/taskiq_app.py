@@ -5,7 +5,7 @@ from typing import Annotated
 from taskiq import AsyncTaskiqTask, InMemoryBroker
 
 from dishka import FromDishka, Provider, Scope, make_async_container
-from dishka.integrations.taskiq import inject, setup_broker
+from dishka.integrations.taskiq import inject, setup_dishka
 
 provider = Provider(scope=Scope.REQUEST)
 provider.provide(lambda: random.random(), provides=float)  # noqa: S311
@@ -21,7 +21,7 @@ async def random_task(num: FromDishka[float]) -> float:
 
 async def main() -> None:
     container = make_async_container(provider)
-    setup_broker(broker, container)
+    setup_dishka(container, broker)
     await broker.startup()
 
     task: AsyncTaskiqTask[float] = await random_task.kiq()

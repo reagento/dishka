@@ -1,3 +1,9 @@
+__all__ = [
+    "FromDishka",
+    "inject",
+    "setup_dishka",
+]
+
 from collections.abc import AsyncGenerator, Callable, Generator
 from inspect import Parameter
 from typing import Annotated, Any, Final
@@ -11,7 +17,7 @@ from taskiq import (
     TaskiqResult,
 )
 
-from dishka import AsyncContainer
+from dishka import AsyncContainer, FromDishka
 from dishka.integrations.base import wrap_injection
 
 CONTAINER_NAME: Final = "dishka_container"
@@ -63,8 +69,8 @@ def inject(func: Callable[..., Any]) -> Callable[..., Any]:
     )
 
 
-def setup_broker(
-    broker: AsyncBroker,
+def setup_dishka(
     container: AsyncContainer,
+    broker: AsyncBroker,
 ) -> None:
     broker.add_middlewares(ContainerMiddleware(container))

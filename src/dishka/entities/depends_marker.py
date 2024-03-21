@@ -1,5 +1,5 @@
 import warnings
-from typing import Annotated, TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
 from .component import DEFAULT_COMPONENT, Component
 from .key import FromComponent

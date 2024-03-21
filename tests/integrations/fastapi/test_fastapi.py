@@ -82,6 +82,20 @@ async def test_request_dependency(app_provider: AppProvider):
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
 
+async def get_compat(
+        a: Annotated[RequestDep, FromDishka()],
+        mock: Annotated[Mock, FromDishka()],
+) -> None:
+    mock(a)
+
+
+@pytest.mark.asyncio
+async def test_compat(app_provider: AppProvider):
+    async with dishka_app(get_compat, app_provider) as client:
+        client.get("/")
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_request_dependency2(app_provider: AppProvider):

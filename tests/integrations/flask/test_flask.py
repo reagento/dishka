@@ -1,5 +1,4 @@
 from contextlib import contextmanager
-from typing import Annotated
 from unittest.mock import Mock
 
 import pytest

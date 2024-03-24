@@ -59,7 +59,9 @@ VALUE = """
 """
 ALIAS = """
 {async}def get(getter, exits, context):
-    return {args}
+    solved = {args}
+    {cache}
+    return solved
 """
 CONTEXT = """
 {async}def get(getter, exits, context):
@@ -68,14 +70,21 @@ CONTEXT = """
 INVALID = """
 {async}def get(getter, exits, context):
     raise UnsupportedFactoryError(
-        f"Unsupported factory type {factory_type}.",
+        f"Unsupported factory type {{factory_type}}.",
     )
 """
 
-BODIES = {
+ASYNC_BODIES = {
     FactoryType.ASYNC_FACTORY: ASYNC_FACTORY,
     FactoryType.FACTORY: FACTORY,
     FactoryType.ASYNC_GENERATOR: ASYNC_GENERATOR,
+    FactoryType.GENERATOR: GENERATOR,
+    FactoryType.VALUE: VALUE,
+    FactoryType.CONTEXT: CONTEXT,
+    FactoryType.ALIAS: ALIAS,
+}
+SYNC_BODIES = {
+    FactoryType.FACTORY: FACTORY,
     FactoryType.GENERATOR: GENERATOR,
     FactoryType.VALUE: VALUE,
     FactoryType.CONTEXT: CONTEXT,
@@ -97,14 +106,15 @@ def compile_factory(*, factory: Factory, is_async: bool) -> Callable:
     if is_async:
         async_ = "async "
         await_ = "await"
+        body_template = ASYNC_BODIES.get(factory.type, INVALID)
     else:
         async_ = ""
         await_ = ""
+        body_template = SYNC_BODIES.get(factory.type, INVALID)
     if factory.cache:
         cache = CACHE
     else:
         cache = ""
-    body_template = BODIES.get(factory.type, INVALID)
 
     args = make_args(list(names)).format_map({"await": await_})
     body = body_template.format_map({

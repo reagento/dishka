@@ -29,15 +29,11 @@ from ..sample_providers import (
         (sync_gen_a, True),
     ],
 )
-@pytest.mark.parametrize(
-    "scope",
-    (Scope.RUNTIME, Scope.APP)
-)
-def test_sync(factory, closed, scope):
+def test_sync(factory, closed):
     class MyProvider(Provider):
-        a = provide(factory, scope=scope)
+        a = provide(factory, scope=Scope.APP)
 
-        @provide(scope=scope)
+        @provide(scope=Scope.APP)
         def get_int(self) -> int:
             return 100
 
@@ -62,16 +58,12 @@ def test_sync(factory, closed, scope):
         (async_gen_a, True),
     ],
 )
-@pytest.mark.parametrize(
-    "scope",
-    (Scope.RUNTIME, Scope.APP)
-)
 @pytest.mark.asyncio
-async def test_async(factory, closed, scope):
+async def test_async(factory, closed):
     class MyProvider(Provider):
-        a = provide(factory, scope=scope)
+        a = provide(factory, scope=Scope.APP)
 
-        @provide(scope=scope)
+        @provide(scope=Scope.APP)
         def get_int(self) -> int:
             return 100
 

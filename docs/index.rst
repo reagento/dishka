@@ -16,6 +16,7 @@ This library is targeting to provide only an IoC-container but make it really us
    container/index
    integrations/index
    advanced/components
+   advanced/scopes
    advanced/testing/index
    alternatives
    contributing

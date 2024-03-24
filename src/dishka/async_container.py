@@ -140,6 +140,11 @@ class AsyncContainer:
                 pass
             except Exception as err:  # noqa: BLE001
                 errors.append(err)
+        if self.close_parent:
+            try:
+                await self.parent_container.close()
+            except Exception as err:  # noqa: BLE001
+                errors.append(err)
         if errors:
             raise ExitError("Cleanup context errors", errors)
 
@@ -193,3 +198,4 @@ def make_async_container(
                 lock_factory=lock_factory,
                 close_parent=True,
             )
+    return container

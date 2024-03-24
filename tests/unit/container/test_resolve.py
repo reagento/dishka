@@ -29,15 +29,20 @@ from ..sample_providers import (
         (sync_gen_a, True),
     ],
 )
-def test_sync(factory, closed):
+@pytest.mark.parametrize(
+    "scope",
+    (Scope.RUNTIME, Scope.APP)
+)
+def test_sync(factory, closed, scope):
     class MyProvider(Provider):
-        a = provide(factory, scope=Scope.APP)
+        a = provide(factory, scope=scope)
 
-        @provide(scope=Scope.APP)
+        @provide(scope=scope)
         def get_int(self) -> int:
             return 100
 
     container = make_container(MyProvider())
+    assert container.registry.scope is Scope.APP
     a = container.get(ClassA)
     assert a
     assert a.dep == 100
@@ -57,16 +62,21 @@ def test_sync(factory, closed):
         (async_gen_a, True),
     ],
 )
+@pytest.mark.parametrize(
+    "scope",
+    (Scope.RUNTIME, Scope.APP)
+)
 @pytest.mark.asyncio
-async def test_async(factory, closed):
+async def test_async(factory, closed, scope):
     class MyProvider(Provider):
-        a = provide(factory, scope=Scope.APP)
+        a = provide(factory, scope=scope)
 
-        @provide(scope=Scope.APP)
+        @provide(scope=scope)
         def get_int(self) -> int:
             return 100
 
     container = make_async_container(MyProvider())
+    assert container.registry.scope is Scope.APP
     a = await container.get(ClassA)
     assert a
     assert a.dep == 100

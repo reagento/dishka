@@ -127,7 +127,7 @@ setup_dishka(container, app)
 **Dependency** is what you need for some part of your code to work. They are just object which you do not create in place and probably want to replace some day. At least for tests.
 Some of them can live while you application is running, others are destroyed and created on each request. Dependencies can depend on other objects, which are their dependencies.
 
-**Scope** is a lifespan of a dependency. Standard scopes are:
+**Scope** is a lifespan of a dependency. Standard scopes are (without skipped ones):
 
   `APP` -> `REQUEST` -> `ACTION` -> `STEP`.
 

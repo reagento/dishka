@@ -1,8 +1,9 @@
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any, NewType, TypeVar, get_args, get_origin
 
 from ._adaptix.type_tools.basic_utils import get_type_vars, is_generic
+from .container_objects import CompiledFactory
 from .dependency_source import (
     Alias,
     ContextVariable,
@@ -18,14 +19,17 @@ from .exceptions import (
     NoFactoryError,
     UnknownScopeError,
 )
+from .factory_compiler import compile_factory
 from .provider import BaseProvider
 
 
 class Registry:
-    __slots__ = ("scope", "factories")
+    __slots__ = ("scope", "factories", "compiled", "compiled_async")
 
     def __init__(self, scope: BaseScope):
         self.factories: dict[DependencyKey, Factory] = {}
+        self.compiled: dict[DependencyKey, Callable] = {}
+        self.compiled_async: dict[DependencyKey, Callable] = {}
         self.scope = scope
 
     def add_factory(self, factory: Factory):
@@ -35,6 +39,32 @@ class Registry:
                 origin_key = DependencyKey(origin, factory.provides.component)
                 self.factories[origin_key] = factory
         self.factories[factory.provides] = factory
+
+    def get_compiled(
+            self, dependency: DependencyKey,
+    ) -> CompiledFactory | None:
+        try:
+            return self.compiled[dependency]
+        except KeyError:
+            factory = self.get_factory(dependency)
+            if not factory:
+                return None
+            compiled = compile_factory(factory=factory, is_async=False)
+            self.compiled[dependency] = compiled
+            return compiled
+
+    def get_compiled_async(
+            self, dependency: DependencyKey,
+    ) -> CompiledFactory | None:
+        try:
+            return self.compiled[dependency]
+        except KeyError:
+            factory = self.get_factory(dependency)
+            if not factory:
+                return None
+            compiled = compile_factory(factory=factory, is_async=True)
+            self.compiled[dependency] = compiled
+            return compiled
 
     def get_factory(self, dependency: DependencyKey) -> Factory | None:
         try:
@@ -302,4 +332,4 @@ class RegistryBuilder:
         registries = list(self.registries.values())
         if not self.skip_validation:
             GraphValidator(registries).validate()
-        return registries
+        return tuple(registries)

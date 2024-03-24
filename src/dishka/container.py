@@ -1,29 +1,20 @@
 from collections.abc import Callable
-from dataclasses import dataclass
 from threading import Lock
 from typing import Any, Optional, TypeVar
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope, Scope
-from .dependency_source import Factory, FactoryType
+from .container_objects import Exit
+from .dependency_source import FactoryType
 from .exceptions import (
     ExitError,
-    NoContextValueError,
     NoFactoryError,
-    UnsupportedFactoryError,
 )
 from .provider import BaseProvider
 from .registry import Registry, RegistryBuilder
 
 T = TypeVar("T")
-
-
-@dataclass
-class Exit:
-    __slots__ = ("type", "callable")
-    type: FactoryType
-    callable: Callable
 
 
 class Container:
@@ -83,51 +74,6 @@ class Container:
             raise ValueError("No child scopes found")
         return ContextWrapper(self._create_child(context, lock_factory))
 
-    def _get_from_self(
-            self, factory: Factory, key: DependencyKey,
-    ) -> T:
-        try:
-            sub_dependencies = [
-                self._get_unlocked(dependency)
-                for dependency in factory.dependencies
-            ]
-        except NoFactoryError as e:
-            e.add_path(factory)
-            raise
-
-        if factory.type is FactoryType.GENERATOR:
-            generator = factory.source(*sub_dependencies)
-            self._exits.append(Exit(factory.type, generator))
-            solved = next(generator)
-        elif factory.type is FactoryType.FACTORY:
-            solved = factory.source(*sub_dependencies)
-        elif factory.type is FactoryType.ASYNC_GENERATOR:
-            raise UnsupportedFactoryError(
-                f"Unsupported factory type {factory.type}. "
-                f"Did you mean to use an async container?",
-            )
-        elif factory.type is FactoryType.ASYNC_FACTORY:
-            raise UnsupportedFactoryError(
-                f"Unsupported factory type {factory.type}. "
-                f"Did you mean to use an async container?",
-            )
-        elif factory.type is FactoryType.VALUE:
-            solved = factory.source
-        elif factory.type is FactoryType.ALIAS:
-            solved = sub_dependencies[0]
-        elif factory.type is FactoryType.CONTEXT:
-            raise NoContextValueError(
-                f"Value for type {factory.provides.type_hint} is not found "
-                f"in container context with scope={factory.scope}",
-            )
-        else:
-            raise UnsupportedFactoryError(
-                f"Unsupported factory type {factory.type}. ",
-            )
-        if factory.cache:
-            self.context[key] = solved
-        return solved
-
     def get(
             self,
             dependency_type: type[T],
@@ -143,14 +89,18 @@ class Container:
     def _get_unlocked(self, key: DependencyKey) -> Any:
         if key in self.context:
             return self.context[key]
-        factory = self.registry.get_factory(key)
-        if not factory:
+        compiled = self.registry.get_compiled(key)
+        if not compiled:
             if not self.parent_container:
                 raise NoFactoryError(key)
             return self.parent_container.get(
                 key.type_hint, key.component,
             )
-        return self._get_from_self(factory, key)
+        try:
+            return compiled(self._get_unlocked, self._exits, self.context)
+        except NoFactoryError as e:
+            e.add_path(self.registry.get_factory(key))
+            raise
 
     def close(self) -> None:
         errors = []

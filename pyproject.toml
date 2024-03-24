@@ -10,7 +10,7 @@ where = ["src"]
 
 [project]
 name = "dishka"
-version = "0.7.0"
+version = "0.8.0"
 readme = "README.md"
 authors = [
     { name = "Andrey Tikhonov", email = "17@itishka.org" },

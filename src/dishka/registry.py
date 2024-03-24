@@ -3,6 +3,7 @@ from collections.abc import Callable, Sequence
 from typing import Any, NewType, TypeVar, get_args, get_origin
 
 from ._adaptix.type_tools.basic_utils import get_type_vars, is_generic
+from .container_objects import CompiledFactory
 from .dependency_source import (
     Alias,
     ContextVariable,
@@ -39,7 +40,9 @@ class Registry:
                 self.factories[origin_key] = factory
         self.factories[factory.provides] = factory
 
-    def get_compiled(self, dependency: DependencyKey) -> Callable | None:
+    def get_compiled(
+            self, dependency: DependencyKey,
+    ) -> CompiledFactory | None:
         try:
             return self.compiled[dependency]
         except KeyError:
@@ -50,7 +53,9 @@ class Registry:
             self.compiled[dependency] = compiled
             return compiled
 
-    def get_compiled_async(self, dependency: DependencyKey) -> Callable | None:
+    def get_compiled_async(
+            self, dependency: DependencyKey,
+    ) -> CompiledFactory | None:
         try:
             return self.compiled[dependency]
         except KeyError:

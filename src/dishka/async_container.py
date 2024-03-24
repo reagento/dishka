@@ -1,11 +1,11 @@
 from asyncio import Lock
 from collections.abc import Callable
-from dataclasses import dataclass
 from typing import Any, Optional, TypeVar
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope, Scope
+from .container_objects import Exit
 from .dependency_source import FactoryType
 from .exceptions import (
     ExitError,
@@ -15,13 +15,6 @@ from .provider import BaseProvider
 from .registry import Registry, RegistryBuilder
 
 T = TypeVar("T")
-
-
-@dataclass
-class Exit:
-    __slots__ = ("type", "callable")
-    type: FactoryType
-    callable: Callable
 
 
 class AsyncContainer:
@@ -105,11 +98,11 @@ class AsyncContainer:
                 key.type_hint, key.component,
             )
         try:
-            return await compiled(self._get_unlocked, self._exits, self.context)
+            return await compiled(self._get_unlocked, self._exits,
+                                  self.context)
         except NoFactoryError as e:
             e.add_path(self.registry.get_factory(key))
             raise
-
 
     async def close(self):
         errors = []

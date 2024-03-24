@@ -1,11 +1,11 @@
 from collections.abc import Callable
-from dataclasses import dataclass
 from threading import Lock
 from typing import Any, Optional, TypeVar
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope, Scope
+from .container_objects import Exit
 from .dependency_source import FactoryType
 from .exceptions import (
     ExitError,
@@ -15,13 +15,6 @@ from .provider import BaseProvider
 from .registry import Registry, RegistryBuilder
 
 T = TypeVar("T")
-
-
-@dataclass
-class Exit:
-    __slots__ = ("type", "callable")
-    type: FactoryType
-    callable: Callable
 
 
 class Container:
@@ -108,7 +101,6 @@ class Container:
         except NoFactoryError as e:
             e.add_path(self.registry.get_factory(key))
             raise
-
 
     def close(self) -> None:
         errors = []

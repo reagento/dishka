@@ -1,19 +1,22 @@
 """
-globals expected:
-* source
+Compile call of factory acctording to its type
+
+For each template we expect global variables:
+* source - factory.source
+* factory_type - factory.type
+* provides - factory.provides
 * Exit
-* factory_type
-* provides
+* NoContextValueError
+* UnsupportedFactoryError
 
-format params:
-* await
-* async
-* args
-* cache
+When formatting substituted:
+* await - "async " for async container or empty string
+* async - "async " for async container or empty string
+* args - "getter(arg1), getter(arg2)..." or async version
+* cache - expression to save cache
 """
-from collections.abc import Callable
-from dataclasses import dataclass
 
+from .container_objects import CompiledFactory, Exit
 from .dependency_source import Factory, FactoryType
 from .exceptions import NoContextValueError, UnsupportedFactoryError
 
@@ -94,14 +97,7 @@ SYNC_BODIES = {
 CACHE = "context[provides] = solved"
 
 
-@dataclass
-class Exit:
-    __slots__ = ("type", "callable")
-    type: FactoryType
-    callable: Callable
-
-
-def compile_factory(*, factory: Factory, is_async: bool) -> Callable:
+def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
     names = {f"arg{i}": dep for i, dep in enumerate(factory.dependencies)}
     if is_async:
         async_ = "async "
@@ -126,11 +122,11 @@ def compile_factory(*, factory: Factory, is_async: bool) -> Callable:
     func_globals = {
         "source": factory.source,
         "provides": factory.provides,
-        "Exit": Exit,
         "factory_type": factory.type,
+        "Exit": Exit,
         "NoContextValueError": NoContextValueError,
         "UnsupportedFactoryError": UnsupportedFactoryError,
         **names,
     }
-    exec(body, func_globals)
+    exec(body, func_globals)  # noqa: S102
     return func_globals["get"]

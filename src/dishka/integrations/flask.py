@@ -1,5 +1,4 @@
 __all__ = [
-    "Depends",
     "FromDishka",
     "inject",
     "setup_dishka",
@@ -9,7 +8,7 @@ from flask import Flask, Request, g, request
 from flask.sansio.scaffold import Scaffold
 
 from dishka import Container, FromDishka
-from .base import Depends, is_dishka_injected, wrap_injection
+from .base import is_dishka_injected, wrap_injection
 
 
 def inject(func):

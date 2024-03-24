@@ -1,5 +1,4 @@
 from contextlib import asynccontextmanager
-from typing import Annotated
 from unittest.mock import Mock
 
 import pytest
@@ -42,8 +41,8 @@ async def dishka_app(view, provider) -> TestClient:
 
 async def get_with_app(
         _,
-        a: Annotated[AppDep, FromDishka()],
-        mock: Annotated[Mock, FromDishka()],
+        a: FromDishka[AppDep],
+        mock: FromDishka[Mock],
 ) -> Response:
     mock(a)
     return Response(text="passed")
@@ -60,8 +59,8 @@ async def test_app_dependency(app_provider: AppProvider):
 
 async def get_with_request(
         _,
-        a: Annotated[RequestDep, FromDishka()],
-        mock: Annotated[Mock, FromDishka()],
+        a: FromDishka[RequestDep],
+        mock: FromDishka[Mock],
 ) -> Response:
     mock(a)
     return Response(text="passed")

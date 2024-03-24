@@ -47,7 +47,7 @@ class MainController(Controller):
     @get()
     @inject
     async def index(
-            self, *, interactor: Annotated[Interactor, FromDishka()],
+            self, *, interactor: FromDishka[Interactor],
     ) -> str:
         result = interactor()
         return result

@@ -1,6 +1,5 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Annotated
 from unittest.mock import Mock
 
 import pytest
@@ -39,8 +38,8 @@ async def dishka_app(view, provider) -> AsyncIterator[NatsBroker]:
 
 
 async def get_with_app(
-    a: Annotated[AppDep, FromDishka()],
-    mock: Annotated[Mock, FromDishka()],
+    a: FromDishka[AppDep],
+    mock: FromDishka[Mock],
 ) -> str:
     mock(a)
     return "passed"
@@ -57,8 +56,8 @@ async def test_app_dependency(app_provider: AppProvider):
 
 
 async def get_with_request(
-    a: Annotated[RequestDep, FromDishka()],
-    mock: Annotated[Mock, FromDishka()],
+    a: FromDishka[RequestDep],
+    mock: FromDishka[Mock],
 ) -> str:
     mock(a)
     return "passed"

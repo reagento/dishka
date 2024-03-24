@@ -39,8 +39,8 @@ setup_dishka(container, app)
 @inject
 async def handler(
     msg: str,
-    a: Annotated[A, FromDishka()],
-    b: Annotated[B, FromDishka()],
+    a: FromDishka[A],
+    b: FromDishka[B],
 ):
     print(msg, a, b)
 

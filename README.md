@@ -114,7 +114,7 @@ from dishka.integrations.fastapi import (
 
 @router.get("/")
 @inject
-async def index(a: Annotated[A, FromDishka()]) -> str:
+async def index(a: FromDishka[A]) -> str:
     ...
 
 ...

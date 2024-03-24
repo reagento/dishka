@@ -25,7 +25,7 @@ class GatewayProvider(Provider):
 @inject
 async def get_content(
     context: dict[Any, Any],
-    gateway: Annotated[Gateway, FromDishka()],
+    gateway: FromDishka[Gateway],
 ):
     result = await gateway.get()
     logger.info(result)

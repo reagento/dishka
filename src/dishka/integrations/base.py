@@ -1,4 +1,3 @@
-import warnings
 from collections.abc import Awaitable, Callable, Sequence
 from inspect import Parameter, Signature, signature
 from typing import (
@@ -11,26 +10,16 @@ from typing import (
     overload,
 )
 
-from dishka import DEFAULT_COMPONENT, DependencyKey
 from dishka.async_container import AsyncContainer
 from dishka.container import Container
 from dishka.entities.depends_marker import FromDishka
-
-
-class Depends(FromDishka):
-    def __init__(self, param: Any = None):
-        super().__init__()
-        warnings.warn(
-            "'Depends()' is deprecated use `FromDishka()` instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+from dishka.entities.key import DEFAULT_COMPONENT, DependencyKey, FromComponent
 
 
 def default_parse_dependency(
         parameter: Parameter,
         hint: Any,
-        depends_class: type[Any] = FromDishka,
+        depends_class: type | Sequence[type] = (FromDishka, FromComponent),
 ) -> Any:
     """Resolve dependency type or return None if it is not a dependency."""
     if get_origin(hint) is not Annotated:
@@ -42,7 +31,7 @@ def default_parse_dependency(
     )
     if not dep:
         return None
-    if isinstance(dep, FromDishka):
+    if isinstance(dep, (FromDishka, FromComponent)):
         return DependencyKey(args[0], dep.component)
     else:
         return DependencyKey(args[0], DEFAULT_COMPONENT)

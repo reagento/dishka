@@ -27,7 +27,7 @@ bot = telebot.TeleBot(API_TOKEN, use_class_middlewares=True)
 @inject
 def start(
         message: Message,
-        value: Annotated[int, FromDishka()],
+        value: FromDishka[int],
 ):
     bot.reply_to(message, f"Hello, {value}!")
 

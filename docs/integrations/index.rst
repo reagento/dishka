@@ -24,7 +24,7 @@ For several frameworks library contains helper functions so you don't need to co
 To use framework integration you mainly need to do 3 things:
 
 * call ``setup_dishka`` on your container and framework entity
-* add ``Annotated[YourClass, FromDishka()]`` on you framework handlers (or view-functions)
+* add ``FromDishka[YourClass]`` on you framework handlers (or view-functions)
 * decorate your handlers with ``@inject`` before registering them in framework. Some integrations do not required it, see :ref:`autoinject`
 
 For FastAPI it will look like:
@@ -35,7 +35,7 @@ For FastAPI it will look like:
 
    @router.get("/")
    @inject
-   async def index(interactor: Annotated[Interactor, FromDishka()]) -> str:
+   async def index(interactor: FromDishka[Interactor]) -> str:
        result = interactor()
        return result
 
@@ -64,7 +64,7 @@ With some frameworks we provide an option to inject dependencies in handlers wit
     @router.message()
     async def start(
         message: Message,
-        user: Annotated[User, FromDishka()],
+        user: FromDishka[User],
     ):
         await message.answer(f"Hello, {1}, {user.full_name}!")
 
@@ -80,7 +80,7 @@ With some frameworks we provide an option to inject dependencies in handlers wit
     @app.get("/"
     def index(
             *,
-            interactor: Annotated[Interactor, FromDishka()],
+            interactor: FromDishka[Interactor],
     ) -> str:
         result = interactor()
         return result
@@ -98,7 +98,7 @@ With some frameworks we provide an option to inject dependencies in handlers wit
     @router.get("/")
     async def index(
             *,
-            interactor: Annotated[Interactor, FromDishka()],
+            interactor: FromDishka[Interactor],
     ) -> str:
         result = interactor()
         return result

@@ -1,5 +1,4 @@
 __all__ = [
-    "Depends",
     "AutoInjectMiddleware",
     "FromDishka",
     "inject",
@@ -14,7 +13,7 @@ from aiogram.dispatcher.event.handler import HandlerObject
 from aiogram.types import TelegramObject
 
 from dishka import AsyncContainer, FromDishka
-from .base import Depends, is_dishka_injected, wrap_injection
+from .base import is_dishka_injected, wrap_injection
 
 CONTAINER_NAME = "dishka_container"
 

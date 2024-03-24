@@ -1,5 +1,4 @@
 from contextlib import contextmanager
-from typing import Annotated
 from unittest.mock import Mock
 
 from telebot import TeleBot
@@ -41,8 +40,8 @@ def send_message(bot: TeleBot):
 
 def handle_with_app(
         _: Message,
-        a: Annotated[AppDep, FromDishka()],
-        mock: Annotated[Mock, FromDishka()],
+        a: FromDishka[AppDep],
+        mock: FromDishka[Mock],
 ) -> None:
     mock(a)
 
@@ -57,8 +56,8 @@ def test_app_dependency(app_provider: AppProvider):
 
 def handle_with_request(
         _: Message,
-        a: Annotated[RequestDep, FromDishka()],
-        mock: Annotated[Mock, FromDishka()],
+        a: FromDishka[RequestDep],
+        mock: FromDishka[Mock],
 ) -> None:
     mock(a)
 

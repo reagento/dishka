@@ -20,7 +20,7 @@ T = TypeVar("T")
 class AsyncContainer:
     __slots__ = (
         "registry", "child_registries", "context", "parent_container",
-        "lock", "_exits",
+        "lock", "_exits", "close_parent",
     )
 
     def __init__(
@@ -30,6 +30,7 @@ class AsyncContainer:
             parent_container: Optional["AsyncContainer"] = None,
             context: dict | None = None,
             lock_factory: Callable[[], Lock] | None = None,
+            close_parent: bool = False,
     ):
         self.registry = registry
         self.child_registries = child_registries
@@ -47,33 +48,54 @@ class AsyncContainer:
         else:
             self.lock = None
         self._exits: list[Exit] = []
-
-    def _create_child(
-            self,
-            context: dict | None,
-            lock_factory: Callable[[], Lock] | None,
-    ) -> "AsyncContainer":
-        return AsyncContainer(
-            *self.child_registries,
-            parent_container=self,
-            context=context,
-            lock_factory=lock_factory,
-        )
+        self.close_parent = close_parent
 
     def __call__(
             self,
             context: dict | None = None,
             lock_factory: Callable[[], Lock] | None = None,
+            scope: BaseScope | None = None,
     ) -> "AsyncContextWrapper":
         """
         Prepare container for entering the inner scope.
         :param context: Data which will available in inner scope
         :param lock_factory: Callable to create lock instance or None
+        :param scope: target scope or None to enter next non-skipped scope
         :return: async context manager for inner scope
         """
         if not self.child_registries:
             raise ValueError("No child scopes found")
-        return AsyncContextWrapper(self._create_child(context, lock_factory))
+
+        child = AsyncContainer(
+            *self.child_registries,
+            parent_container=self,
+            context=context,
+            lock_factory=lock_factory,
+        )
+        if scope is None:
+            while child.registry.scope.skip:
+                if not child.child_registries:
+                    raise ValueError("No non-skipped scopes found.")
+                child = AsyncContainer(
+                    *child.child_registries,
+                    parent_container=child,
+                    context=context,
+                    lock_factory=lock_factory,
+                    close_parent=True,
+                )
+        else:
+            while child.registry.scope is not scope:
+                if not child.child_registries:
+                    raise ValueError(f"Cannot find {scope} as a child of "
+                                     f"current {self.registry.scope}")
+                child = AsyncContainer(
+                    *child.child_registries,
+                    parent_container=child,
+                    context=context,
+                    lock_factory=lock_factory,
+                    close_parent=True,
+                )
+        return AsyncContextWrapper(child)
 
     async def get(
             self,
@@ -118,6 +140,11 @@ class AsyncContainer:
                 pass
             except Exception as err:  # noqa: BLE001
                 errors.append(err)
+        if self.close_parent:
+            try:
+                await self.parent_container.close()
+            except Exception as err:  # noqa: BLE001
+                errors.append(err)
         if errors:
             raise ExitError("Cleanup context errors", errors)
 
@@ -139,6 +166,7 @@ def make_async_container(
         context: dict | None = None,
         lock_factory: Callable[[], Lock] | None = Lock,
         skip_validation: bool = False,
+        start_scope: BaseScope | None = None,
 ) -> AsyncContainer:
     registries = RegistryBuilder(
         scopes=scopes,
@@ -146,8 +174,28 @@ def make_async_container(
         providers=providers,
         skip_validation=skip_validation,
     ).build()
-    return AsyncContainer(
+    container = AsyncContainer(
         *registries,
         context=context,
         lock_factory=lock_factory,
     )
+
+    if start_scope is None:
+        while container.registry.scope.skip:
+            container = AsyncContainer(
+                *container.child_registries,
+                parent_container=container,
+                context=context,
+                lock_factory=lock_factory,
+                close_parent=True,
+            )
+    else:
+        while container.registry.scope is not start_scope:
+            container = AsyncContainer(
+                *container.child_registries,
+                parent_container=container,
+                context=context,
+                lock_factory=lock_factory,
+                close_parent=True,
+            )
+    return container

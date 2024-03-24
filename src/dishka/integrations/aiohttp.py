@@ -1,5 +1,4 @@
 __all__ = [
-    "Depends",
     "DISHKA_CONTAINER_KEY",
     "FromDishka",
     "inject",
@@ -16,7 +15,7 @@ from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 
 from dishka import AsyncContainer, FromDishka
-from dishka.integrations.base import Depends, wrap_injection
+from dishka.integrations.base import wrap_injection
 
 DISHKA_CONTAINER_KEY: Final = web.AppKey("dishka_container", AsyncContainer)
 

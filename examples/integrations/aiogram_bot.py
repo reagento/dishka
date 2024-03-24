@@ -39,8 +39,8 @@ router = Router()
 @inject # if auto_inject=True is specified in the setup_dishka, then you do not need to specify a decorator
 async def start(
     message: Message,
-    user: Annotated[User, FromDishka()],
-    value: Annotated[int, FromDishka()],
+    user: FromDishka[User],
+    value: FromDishka[int],
 ):
     await message.answer(f"Hello, {1}, {user.full_name}!")
 

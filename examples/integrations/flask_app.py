@@ -55,7 +55,7 @@ app = Flask(__name__)
 @inject
 def index(
         *,
-        interactor: Annotated[Interactor, FromDishka()],
+        interactor: FromDishka[Interactor],
 ) -> str:
     result = interactor()
     return result
@@ -64,7 +64,7 @@ def index(
 @app.get("/auto")
 def auto(
         *,
-        interactor: Annotated[Interactor, FromDishka()],
+        interactor: FromDishka[Interactor],
 ) -> str:
     result = interactor()
     return result

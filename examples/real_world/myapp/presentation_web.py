@@ -15,7 +15,7 @@ router = APIRouter()
 @inject
 async def add_product(
         *,
-        interactor: Annotated[AddProductsInteractor, FromDishka()],
+        interactor: FromDishka[AddProductsInteractor],
 ) -> str:
     interactor(user_id=1)
     return "Ok"

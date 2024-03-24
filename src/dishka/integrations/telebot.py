@@ -1,5 +1,4 @@
 __all__ = [
-    "Depends",
     "FromDishka",
     "inject",
     "setup_dishka",
@@ -11,7 +10,7 @@ import telebot
 from telebot import BaseMiddleware, TeleBot
 
 from dishka import Container, FromDishka
-from .base import Depends, wrap_injection
+from .base import wrap_injection
 
 CONTAINER_NAME = "dishka_container"
 

@@ -1,18 +1,17 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Annotated
 
 import pytest
 from taskiq import AsyncBroker, InMemoryBroker
 
 from dishka import FromDishka, Provider, Scope, make_async_container
-from dishka.integrations.taskiq import inject, setup_broker
+from dishka.integrations.taskiq import inject, setup_dishka
 
 provider = Provider(scope=Scope.REQUEST)
 provider.provide(lambda: hash("adaptix"), provides=int)
 
 @inject
-async def task_handler(other_hash: Annotated[int, FromDishka()]) -> int:
+async def task_handler(other_hash: FromDishka[int]) -> int:
     return other_hash
 
 
@@ -20,9 +19,9 @@ async def task_handler(other_hash: Annotated[int, FromDishka()]) -> int:
 async def create_broker() -> AsyncIterator[AsyncBroker]:
     broker = InMemoryBroker()
     container = make_async_container(provider)
-    setup_broker(
-        broker,
+    setup_dishka(
         container,
+        broker,
     )
 
     await broker.startup()

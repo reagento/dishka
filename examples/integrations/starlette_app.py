@@ -46,7 +46,7 @@ class InteractorProvider(Provider):
 # presentation layer
 @inject
 async def index(
-        request: Request, *, interactor: Annotated[Interactor, FromDishka()],
+        request: Request, *, interactor: FromDishka[Interactor],
 ) -> PlainTextResponse:
     result = interactor()
     return PlainTextResponse(result)

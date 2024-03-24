@@ -1,5 +1,4 @@
 __all__ = [
-    "Depends",
     "DishkaRoute",
     "FromDishka",
     "inject",
@@ -14,7 +13,7 @@ from fastapi import FastAPI, Request
 from fastapi.routing import APIRoute
 
 from dishka import AsyncContainer, FromDishka
-from .base import Depends, wrap_injection
+from .base import wrap_injection
 from .starlette import ContainerMiddleware
 
 

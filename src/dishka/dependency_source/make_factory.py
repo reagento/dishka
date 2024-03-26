@@ -120,8 +120,9 @@ def _make_factory_by_class(
     try:
         hints = dict(res.get_resolved_members(source).members)
     except NameError as e:
+        name = f"{source.__module__}.{source.__qualname__}.__init__"
         raise NameError(
-            f"Failed to analyze `{source.__module__}.{source.__qualname__}.__init__`. \n"
+            f"Failed to analyze `{name}`. \n"
             f"Type '{e.name}' is not defined\n\n"
             f"If your are using `if TYPE_CHECKING` to import '{e.name}' "
             f"then try removing it. \n"

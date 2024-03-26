@@ -117,7 +117,17 @@ def _make_factory_by_class(
     # we need to fix concrete generics and normal classes as well
     # as classes can be children of concrete generics
     res = GenericResolver(_get_init_members)
-    hints = dict(res.get_resolved_members(source).members)
+    try:
+        hints = dict(res.get_resolved_members(source).members)
+    except NameError as e:
+        raise NameError(
+            f"Failed to analyze `{source.__module__}.{source.__qualname__}.__init__`. \n"
+            f"Type '{e.name}' is not defined\n\n"
+            f"If your are using `if TYPE_CHECKING` to import '{e.name}' "
+            f"then try removing it. \n"
+            f"Or, create a separate factory with all types imported.",
+            name=e.name,
+        ) from e
     hints.pop("return", None)
     dependencies = list(hints.values())
     if not provides:
@@ -149,7 +159,18 @@ def _make_factory_by_method(
         params = signature(source).parameters
         factory_type = _guess_factory_type(source)
 
-    hints = get_type_hints(source, include_extras=True)
+    try:
+        hints = get_type_hints(source, include_extras=True)
+    except NameError as e:
+        name = getattr(source, "__qualname__", "") or str(source)
+        raise NameError(
+            f"Failed to analyze `{name}`. \n"
+            f"Type '{e.name}' is not defined. \n\n"
+            f"If your are using `if TYPE_CHECKING` to import '{e.name}' "
+            f"then try removing it. \n"
+            f"Or, create a separate factory with all types imported.",
+            name=e.name,
+        ) from e
     self = next(iter(params.values()), None)
     if self:
         if self.name not in hints:
@@ -182,7 +203,18 @@ def _make_factory_by_static_method(
         cache: bool,
 ) -> Factory:
     factory_type = _guess_factory_type(source.__wrapped__)
-    hints = get_type_hints(source, include_extras=True)
+    try:
+        hints = get_type_hints(source, include_extras=True)
+    except NameError as e:
+        name = getattr(source, "__qualname__", "") or str(source)
+        raise NameError(
+            f"Failed to analyze `{name}`. \n"
+            f"Type '{e.name}' is not defined. \n\n"
+            f"If your are using `if TYPE_CHECKING` to import '{e.name}' "
+            f"then try removing it. \n"
+            f"Or, create a separate factory with all types imported.",
+            name=e.name,
+        ) from e
     possible_dependency = hints.pop("return", None)
     dependencies = list(hints.values())
     if not provides:

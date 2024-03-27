@@ -67,20 +67,35 @@ class Provider(BaseProvider):
         if type(self) is Provider:
             return str(self)
         else:
-            return f"`{type(self).__qualname__}`"
+            cls = type(self)
+            return f"`{cls.__module__}.{cls.__qualname__}`"
 
     def _source_name(self, factory: Factory) -> str:
         source = factory.source
         if source == factory.provides.type_hint:
-            return "provides()"
+            return "`provides()`"
         if func := getattr(source, "__func__", None):
-            return getattr(func, "__qualname__", None) or str(func)
+            name = getattr(func, "__qualname__", None)
+            if name:
+                return f"`{name}`"
+            return str(func)
+        elif isinstance(source, type):
+            name = getattr(source, "__qualname__", None)
+            if name:
+                return f"`{source.__module__}.{name}`"
+            return str(source)
         else:
+            name = getattr(source, "__qualname__", None)
+            if name:
+                return f"`{name}`"
             return str(source)
 
-    def _provides_name(self, factory: Factory|ContextVariable) -> str:
-        return getattr(factory.provides.type_hint, "__qualname__", None) or \
-            str(factory.provides.type_hint)
+    def _provides_name(self, factory: Factory | ContextVariable) -> str:
+        hint = factory.provides.type_hint
+        name = getattr(hint, "__qualname__", None)
+        if name:
+            return f"`{hint.__module__}.{name}`"
+        return str(hint)
 
     def _add_dependency_sources(
             self, name: str, sources: Sequence[DependencySource],
@@ -93,8 +108,8 @@ class Provider(BaseProvider):
                     src_name = self._source_name(source)
                     provides_name = self._provides_name(source)
                     raise ValueError(
-                        f"No scope is set for `{provides_name}`.\n"
-                        f"Set in provides() call for `{src_name}` or "
+                        f"No scope is set for {provides_name}.\n"
+                        f"Set in provide() call for {src_name} or "
                         f"within {self._name()}",
                     )
                 self.factories.append(source)
@@ -104,7 +119,7 @@ class Provider(BaseProvider):
                 if source.scope is None:
                     provides_name = self._provides_name(source)
                     raise ValueError(
-                        f"No scope is set for `{provides_name}`.\n"
+                        f"No scope is set for {provides_name}.\n"
                         f"Set in from_context() call or within {self._name()}",
                     )
                 self.context_vars.append(source)

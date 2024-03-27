@@ -1,6 +1,7 @@
 from collections.abc import Callable
+from contextlib import suppress
 from threading import Lock
-from typing import Any, Optional, TypeVar
+from typing import Any, Iterable, Literal, Optional, TypeVar, overload
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.key import DependencyKey
@@ -9,6 +10,7 @@ from .container_objects import Exit
 from .dependency_source import FactoryType
 from .exceptions import (
     ExitError,
+    NoContextValueError,
     NoFactoryError,
 )
 from .provider import BaseProvider
@@ -106,6 +108,45 @@ class Container:
             return self._get_unlocked(key)
         with lock:
             return self._get_unlocked(key)
+
+    @overload
+    def resolve_all(self, components: None = None) -> None: ...
+    @overload
+    def resolve_all(self, components: Literal[True]) -> None: ...
+    @overload
+    def resolve_all(self, components: Iterable[Component]) -> None: ...
+
+    def resolve_all(self, components: Any = None) -> None:
+        """
+        Resolve all container dependencies in the current scope for the given
+        components.
+
+        Examples:
+            >>> container.resolve_all()
+            Resolve all dependencies for the default component.
+
+            >>> container.resolve_all(True)
+            Resolve all dependencies for all components.
+
+            >>> container.resolve_all(['component1', 'component2'])
+            Resolve dependencies for 'component1' and 'component2'.
+        """
+        if not components:
+
+            def component_check(k: DependencyKey) -> bool:
+                return k.component == DEFAULT_COMPONENT
+        elif components is True:
+
+            def component_check(k: DependencyKey) -> bool:
+                return True
+        else:
+
+            def component_check(k: DependencyKey) -> bool:
+                return k.component in components
+
+        for key in filter(component_check, self.registry.factories):
+            with suppress(NoContextValueError):
+                self._get_unlocked(key)
 
     def _get_unlocked(self, key: DependencyKey) -> Any:
         if key in self.context:

@@ -9,7 +9,6 @@ from collections.abc import (
     Sequence,
 )
 from inspect import (
-    _empty,
     isasyncgenfunction,
     isclass,
     iscoroutinefunction,
@@ -41,7 +40,7 @@ from .composite import CompositeDependencySource, ensure_composite
 from .factory import Factory, FactoryType
 from .unpack_provides import unpack_factory
 
-MISSING_HINT = object()
+_empty = signature(lambda a: 0).parameters["a"].annotation
 
 
 def _is_bound_method(obj):
@@ -192,7 +191,7 @@ def _make_factory_by_class(
             f"Or, create a separate factory with all types imported.",
             name=e.name,
         ) from e
-    hints.pop("return", MISSING_HINT)
+    hints.pop("return", _empty)
     dependencies = list(hints.values())
     if not provides:
         provides = source
@@ -251,12 +250,12 @@ def _make_factory_by_method(
         is_to_bind = True
     else:
         is_to_bind = False
-    possible_dependency = hints.pop("return", MISSING_HINT)
+    possible_dependency = hints.pop("return", _empty)
     dependencies = list(hints.values())
     if not provides:
-        if possible_dependency is MISSING_HINT:
+        if possible_dependency is _empty:
             name = getattr(source, "__qualname__", "") or str(source)
-            raise ValueError(f"Failed to analyze `{name}`. "
+            raise ValueError(f"Failed to analyze `{name}`. \n"
                              f"Missing return type hint.")
         try:
             provides = _clean_result_hint(factory_type, possible_dependency)
@@ -301,12 +300,12 @@ def _make_factory_by_static_method(
             f"Or, create a separate factory with all types imported.",
             name=e.name,
         ) from e
-    possible_dependency = hints.pop("return", MISSING_HINT)
+    possible_dependency = hints.pop("return", _empty)
     dependencies = list(hints.values())
     if not provides:
-        if possible_dependency is MISSING_HINT:
+        if possible_dependency is _empty:
             name = getattr(source, "__qualname__", "") or str(source)
-            raise ValueError(f"Failed to analyze `{name}`. "
+            raise ValueError(f"Failed to analyze `{name}`. \n"
                              f"Missing return type hint.")
         try:
             provides = _clean_result_hint(factory_type, possible_dependency)

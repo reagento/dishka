@@ -39,6 +39,7 @@ from .composite import CompositeDependencySource, ensure_composite
 from .factory import Factory, FactoryType
 from .unpack_provides import unpack_factory
 
+MISSING_HINT = object()
 
 def _is_bound_method(obj):
     return ismethod(obj) and obj.__self__
@@ -169,7 +170,7 @@ def _make_factory_by_class(
             f"Or, create a separate factory with all types imported.",
             name=e.name,
         ) from e
-    hints.pop("return", None)
+    hints.pop("return", MISSING_HINT)
     dependencies = list(hints.values())
     if not provides:
         provides = source
@@ -221,9 +222,13 @@ def _make_factory_by_method(
         is_to_bind = True
     else:
         is_to_bind = False
-    possible_dependency = hints.pop("return", None)
+    possible_dependency = hints.pop("return", MISSING_HINT)
     dependencies = list(hints.values())
     if not provides:
+        if possible_dependency is MISSING_HINT:
+            name = getattr(source, "__qualname__", "") or str(source)
+            raise ValueError(f"Failed to analyze `{name}`. "
+                             f"Missing return type hint.")
         try:
             provides = _clean_result_hint(factory_type, possible_dependency)
         except TypeError as e:
@@ -260,9 +265,13 @@ def _make_factory_by_static_method(
             f"Or, create a separate factory with all types imported.",
             name=e.name,
         ) from e
-    possible_dependency = hints.pop("return", None)
+    possible_dependency = hints.pop("return", MISSING_HINT)
     dependencies = list(hints.values())
     if not provides:
+        if possible_dependency is MISSING_HINT:
+            name = getattr(source, "__qualname__", "") or str(source)
+            raise ValueError(f"Failed to analyze `{name}`. "
+                             f"Missing return type hint.")
         try:
             provides = _clean_result_hint(factory_type, possible_dependency)
         except TypeError as e:

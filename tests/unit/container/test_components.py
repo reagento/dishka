@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 import pytest
 
@@ -55,12 +55,55 @@ class XProvider(Provider):
         return a + 1
 
 
+class YProvider(Provider):
+    scope = Scope.APP
+    component = "Y"
+
+    @provide
+    def foo(self) -> float:
+        return 42
+
+
+class ZProvider(Provider):
+    scope = Scope.APP
+    component = "Z"
+
+    @provide
+    def foo(self) -> bool:
+        return True
+
+
 def test_from_component():
     container = make_container(MainProvider(20), XProvider())
     assert container.get(complex) == 210
     assert container.get(float, component="X") == 21
     with pytest.raises(NoFactoryError):
         container.get(float)
+
+
+@pytest.mark.parametrize(
+    ("component", "expected_count"),
+    [
+        (None, 4),
+        (("",), 4),
+        (True, 6),
+        (("X",), 3),
+        (("X", ""), 4),
+        (("X", "Y"), 4),
+        (("X", "Y", ""), 5),
+        (("X", "Y", "Z"), 5),
+        (("X", "Y", "Z", ""), 6),
+    ],
+)
+def test_from_component_resolve_all(
+    component: Literal[True] | tuple[Component] | None, expected_count: int
+):
+    container = make_container(
+        MainProvider(20), XProvider(), YProvider(), ZProvider()
+    )
+    assert len(container.context) == 1
+    container.resolve_all(component)
+    assert len(container.context) == expected_count
 
 
 @pytest.mark.asyncio()
@@ -70,6 +113,32 @@ async def test_from_component_async():
     assert await container.get(float, component="X") == 21
     with pytest.raises(NoFactoryError):
         await container.get(float)
+
+
+@pytest.mark.parametrize(
+    ("component", "expected_count"),
+    [
+        (None, 4),
+        (("",), 4),
+        (True, 6),
+        (("X",), 3),
+        (("X", ""), 4),
+        (("X", "Y"), 4),
+        (("X", "Y", ""), 5),
+        (("X", "Y", "Z"), 5),
+        (("X", "Y", "Z", ""), 6),
+    ],
+)
+@pytest.mark.asyncio
+async def test_from_component_resolve_all_async(
+    component: Literal[True] | tuple[Component] | None, expected_count: int
+):
+    container = make_async_container(
+        MainProvider(20), XProvider(), YProvider(), ZProvider()
+    )
+    assert len(container.context) == 1
+    await container.resolve_all(component)
+    assert len(container.context) == expected_count
 
 
 class SingleProvider(Provider):

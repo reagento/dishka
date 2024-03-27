@@ -68,35 +68,75 @@ def _guess_factory_type(source):
     else:
         return FactoryType.FACTORY
 
+def _type_repr(hint: Any) -> str:
+    if hint is type(None):
+        return "None"
+    module = getattr(hint, "__module__", "")
+    if module == "builtins":
+        module = ""
+    elif module:
+        module += "."
+    try:
+        return f"{module}{hint.__qualname__}"
+    except AttributeError:
+        return str(hint)
 
-def _async_generator_result(possible_dependency: Any):
-    origin = get_origin(possible_dependency)
+def _async_generator_result(hint: Any):
+    origin = get_origin(hint)
     if origin is AsyncIterable:
-        return get_args(possible_dependency)[0]
+        return get_args(hint)[0]
     elif origin is AsyncIterator:
-        return get_args(possible_dependency)[0]
+        return get_args(hint)[0]
     elif origin is AsyncGenerator:
-        return get_args(possible_dependency)[0]
-    else:
-        raise TypeError(
-            f"Unsupported return type {possible_dependency} {origin} "
-            f"for async generator",
-        )
-
-
-def _generator_result(possible_dependency: Any):
-    origin = get_origin(possible_dependency)
+        return get_args(hint)[0]
+    # errors
+    name = _type_repr(hint)
     if origin is Iterable:
-        return get_args(possible_dependency)[0]
+        args = ", ".join(_type_repr(a) for a in get_args(hint))
+        guess = "AsyncIterable"
     elif origin is Iterator:
-        return get_args(possible_dependency)[0]
+        args = ", ".join(_type_repr(a) for a in get_args(hint))
+        guess = "AsyncIterator"
     elif origin is Generator:
-        return get_args(possible_dependency)[1]
+        args = ", ".join(_type_repr(a) for a in get_args(hint)[:2])
+        guess = "AsyncGenerator"
     else:
-        raise TypeError(
-            f"Unsupported return type {possible_dependency} {origin}"
-            f" for generator",
-        )
+        args = name
+        guess = "AsyncIterable"
+
+    raise TypeError(
+        f"Unsupported return type `{name}` for async generator. "
+        f"Did you mean {guess}[{args}]?",
+    )
+
+
+def _generator_result(hint: Any):
+    origin = get_origin(hint)
+    if origin is Iterable:
+        return get_args(hint)[0]
+    elif origin is Iterator:
+        return get_args(hint)[0]
+    elif origin is Generator:
+        return get_args(hint)[1]
+    # errors
+    name = _type_repr(hint)
+    if origin is AsyncIterable:
+        args = ", ".join(_type_repr(a) for a in get_args(hint))
+        guess = "Iterable"
+    elif origin is AsyncIterator:
+        args = ", ".join(_type_repr(a) for a in get_args(hint))
+        guess = "Iterator"
+    elif origin is AsyncGenerator:
+        args = ", ".join(_type_repr(a) for a in get_args(hint)) + ", None"
+        guess = "Generator"
+    else:
+        args = name
+        guess = "Iterable"
+
+    raise TypeError(
+        f"Unsupported return type `{name}` for generator. "
+        f"Did you mean {guess}[{args}]?",
+    )
 
 
 def _clean_result_hint(factory_type: FactoryType, possible_dependency: Any):
@@ -184,7 +224,11 @@ def _make_factory_by_method(
     possible_dependency = hints.pop("return", None)
     dependencies = list(hints.values())
     if not provides:
-        provides = _clean_result_hint(factory_type, possible_dependency)
+        try:
+            provides = _clean_result_hint(factory_type, possible_dependency)
+        except TypeError as e:
+            name = getattr(source, "__qualname__", "") or str(source)
+            raise TypeError(f"Failed to analyze `{name}`. \n"+str(e)) from e
     return Factory(
         dependencies=hints_to_dependency_keys(dependencies),
         type_=factory_type,
@@ -219,7 +263,11 @@ def _make_factory_by_static_method(
     possible_dependency = hints.pop("return", None)
     dependencies = list(hints.values())
     if not provides:
-        provides = _clean_result_hint(factory_type, possible_dependency)
+        try:
+            provides = _clean_result_hint(factory_type, possible_dependency)
+        except TypeError as e:
+            name = getattr(source, "__qualname__", "") or str(source)
+            raise TypeError(f"Failed to analyze `{name}`. \n"+str(e)) from e
     return Factory(
         dependencies=hints_to_dependency_keys(dependencies),
         type_=factory_type,

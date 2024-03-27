@@ -74,21 +74,19 @@ class Provider(BaseProvider):
         source = factory.source
         if source == factory.provides.type_hint:
             return "`provides()`"
-        if func := getattr(source, "__func__", None):
+        elif func := getattr(source, "__func__", None):
             name = getattr(func, "__qualname__", None)
             if name:
                 return f"`{name}`"
-            return str(func)
         elif isinstance(source, type):
             name = getattr(source, "__qualname__", None)
             if name:
                 return f"`{source.__module__}.{name}`"
-            return str(source)
         else:
             name = getattr(source, "__qualname__", None)
             if name:
                 return f"`{name}`"
-            return str(source)
+        return str(source)
 
     def _provides_name(self, factory: Factory | ContextVariable) -> str:
         hint = factory.provides.type_hint

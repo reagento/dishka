@@ -6,8 +6,10 @@ from collections.abc import (
     Generator,
     Iterable,
     Iterator,
+    Sequence,
 )
 from inspect import (
+    _empty,
     isasyncgenfunction,
     isclass,
     iscoroutinefunction,
@@ -41,6 +43,7 @@ from .unpack_provides import unpack_factory
 
 MISSING_HINT = object()
 
+
 def _is_bound_method(obj):
     return ismethod(obj) and obj.__self__
 
@@ -69,6 +72,7 @@ def _guess_factory_type(source):
     else:
         return FactoryType.FACTORY
 
+
 def _type_repr(hint: Any) -> str:
     if hint is type(None):
         return "None"
@@ -81,6 +85,7 @@ def _type_repr(hint: Any) -> str:
         return f"{module}{hint.__qualname__}"
     except AttributeError:
         return str(hint)
+
 
 def _async_generator_result(hint: Any):
     origin = get_origin(hint)
@@ -148,6 +153,16 @@ def _clean_result_hint(factory_type: FactoryType, possible_dependency: Any):
     return possible_dependency
 
 
+def _params_without_hints(func, *, skip_self: bool) -> Sequence[str]:
+    params = signature(func).parameters
+    return [
+        p.name
+        for i, p in enumerate(params.values())
+        if p.annotation is _empty
+        if i > 0 or not skip_self
+    ]
+
+
 def _make_factory_by_class(
         *,
         provides: Any,
@@ -155,6 +170,13 @@ def _make_factory_by_class(
         source: Callable,
         cache: bool,
 ) -> Factory:
+    if missing_hints := _params_without_hints(source.__init__, skip_self=True):
+        name = f"{source.__module__}.{source.__qualname__}.__init__"
+        missing = ", ".join(missing_hints)
+        raise ValueError(
+            f"Failed to analyze `{name}`. \n"
+            f"Some parameters do not have type hints: {missing}\n",
+        )
     # we need to fix concrete generics and normal classes as well
     # as classes can be children of concrete generics
     res = GenericResolver(_get_init_members)
@@ -194,6 +216,13 @@ def _make_factory_by_method(
         source: Callable | classmethod,
         cache: bool,
 ) -> Factory:
+    if missing_hints := _params_without_hints(source, skip_self=True):
+        name = getattr(source, "__qualname__", "") or str(source)
+        missing = ", ".join(missing_hints)
+        raise ValueError(
+            f"Failed to analyze `{name}`. \n"
+            f"Some parameters do not have type hints: {missing}\n",
+        )
     if isinstance(source, classmethod):
         params = signature(source.__wrapped__).parameters
         factory_type = _guess_factory_type(source.__wrapped__)
@@ -233,7 +262,7 @@ def _make_factory_by_method(
             provides = _clean_result_hint(factory_type, possible_dependency)
         except TypeError as e:
             name = getattr(source, "__qualname__", "") or str(source)
-            raise TypeError(f"Failed to analyze `{name}`. \n"+str(e)) from e
+            raise TypeError(f"Failed to analyze `{name}`. \n" + str(e)) from e
     return Factory(
         dependencies=hints_to_dependency_keys(dependencies),
         type_=factory_type,
@@ -252,6 +281,13 @@ def _make_factory_by_static_method(
         source: staticmethod,
         cache: bool,
 ) -> Factory:
+    if missing_hints := _params_without_hints(source, skip_self=False):
+        name = getattr(source, "__qualname__", "") or str(source)
+        missing = ", ".join(missing_hints)
+        raise ValueError(
+            f"Failed to analyze `{name}`. \n"
+            f"Some parameters do not have type hints: {missing}\n",
+        )
     factory_type = _guess_factory_type(source.__wrapped__)
     try:
         hints = get_type_hints(source, include_extras=True)
@@ -276,7 +312,7 @@ def _make_factory_by_static_method(
             provides = _clean_result_hint(factory_type, possible_dependency)
         except TypeError as e:
             name = getattr(source, "__qualname__", "") or str(source)
-            raise TypeError(f"Failed to analyze `{name}`. \n"+str(e)) from e
+            raise TypeError(f"Failed to analyze `{name}`. \n" + str(e)) from e
     return Factory(
         dependencies=hints_to_dependency_keys(dependencies),
         type_=factory_type,

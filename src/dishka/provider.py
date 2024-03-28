@@ -11,11 +11,11 @@ from .dependency_source import (
     DependencySource,
     Factory,
     alias,
-    decorate,
     from_context,
-    provide,
 )
 from .dependency_source.composite import CompositeDependencySource
+from .dependency_source.make_decorator import decorate_on_instance
+from .dependency_source.make_factory import provide_on_instance
 
 
 def is_dependency_source(attribute: Any) -> bool:
@@ -132,7 +132,7 @@ class Provider(BaseProvider):
     ) -> CompositeDependencySource:
         if scope is None:
             scope = self.scope
-        composite = provide(
+        composite = provide_on_instance(
             source=source,
             scope=scope,
             provides=provides,
@@ -162,7 +162,7 @@ class Provider(BaseProvider):
             *,
             provides: Any = None,
     ) -> CompositeDependencySource:
-        composite = decorate(
+        composite = decorate_on_instance(
             source=source,
             provides=provides,
         )

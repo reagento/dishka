@@ -10,10 +10,13 @@ from .unpack_provides import unpack_decorator
 def _decorate(
         source: Callable | type | None = None,
         provides: Any = None,
+        *,
+        is_in_class: bool = True,
 ) -> CompositeDependencySource:
     composite = ensure_composite(source)
     decorator = Decorator(make_factory(
         provides=provides, scope=None, source=source, cache=False,
+        is_in_class=is_in_class,
     ))
     composite.dependency_sources.extend(unpack_decorator(decorator))
     return composite
@@ -39,12 +42,19 @@ def decorate(
 def decorate(
         source: Callable | type | None = None,
         provides: Any = None,
-) -> CompositeDependencySource | Callable[
-    [Callable], CompositeDependencySource]:
+) -> Any:
     if source is not None:
-        return _decorate(source, provides)
+        return _decorate(source, provides, is_in_class=True)
 
     def scoped(func):
-        return _decorate(func, provides)
+        return _decorate(func, provides, is_in_class=True)
 
     return scoped
+
+
+def decorate_on_instance(
+        source: Callable | type | None = None,
+        provides: Any = None,
+) -> CompositeDependencySource:
+    return _decorate(source, provides, is_in_class=False)
+

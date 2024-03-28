@@ -16,6 +16,7 @@ from inspect import (
     isgeneratorfunction,
     ismethod,
     signature,
+    unwrap,
 )
 from typing import (
     Any,
@@ -29,6 +30,7 @@ from dishka._adaptix.type_tools.basic_utils import (
     get_all_type_hints,
     get_type_vars,
     is_bare_generic,
+    strip_alias,
 )
 from dishka._adaptix.type_tools.generic_resolver import (
     GenericResolver,
@@ -153,6 +155,8 @@ def _clean_result_hint(factory_type: FactoryType, possible_dependency: Any):
 
 
 def _params_without_hints(func, *, skip_self: bool) -> Sequence[str]:
+    if func is object.__init__:
+        return []
     params = signature(func).parameters
     return [
         p.name
@@ -169,7 +173,8 @@ def _make_factory_by_class(
         source: Callable,
         cache: bool,
 ) -> Factory:
-    if missing_hints := _params_without_hints(source.__init__, skip_self=True):
+    init = strip_alias(source).__init__
+    if missing_hints := _params_without_hints(init, skip_self=True):
         name = f"{source.__module__}.{source.__qualname__}.__init__"
         missing = ", ".join(missing_hints)
         raise ValueError(
@@ -214,20 +219,20 @@ def _make_factory_by_method(
         scope: BaseScope | None,
         source: Callable | classmethod,
         cache: bool,
+        is_in_class: bool,
 ) -> Factory:
-    if missing_hints := _params_without_hints(source, skip_self=True):
+    raw_source = unwrap(source)
+    missing_hints = _params_without_hints(raw_source, skip_self=is_in_class)
+    if missing_hints:
         name = getattr(source, "__qualname__", "") or str(source)
         missing = ", ".join(missing_hints)
         raise ValueError(
             f"Failed to analyze `{name}`. \n"
             f"Some parameters do not have type hints: {missing}\n",
         )
-    if isinstance(source, classmethod):
-        params = signature(source.__wrapped__).parameters
-        factory_type = _guess_factory_type(source.__wrapped__)
-    else:
-        params = signature(source).parameters
-        factory_type = _guess_factory_type(source)
+
+    params = signature(raw_source).parameters
+    factory_type = _guess_factory_type(raw_source)
 
     try:
         hints = get_type_hints(source, include_extras=True)
@@ -241,15 +246,12 @@ def _make_factory_by_method(
             f"Or, create a separate factory with all types imported.",
             name=e.name,
         ) from e
-    self = next(iter(params.values()), None)
-    if self:
-        if self.name not in hints:
+    if is_in_class:
+        self = next(iter(params.values()), None)
+        if self and self.name not in hints:
             # add self to dependencies, so it can be easily removed
             # if we will bind factory to provider instance
             hints = {self.name: Any, **hints}
-        is_to_bind = True
-    else:
-        is_to_bind = False
     possible_dependency = hints.pop("return", _empty)
     dependencies = list(hints.values())
     if not provides:
@@ -268,7 +270,7 @@ def _make_factory_by_method(
         source=source,
         scope=scope,
         provides=DependencyKey(provides, None),
-        is_to_bind=is_to_bind,
+        is_to_bind=is_in_class,
         cache=cache,
     )
 
@@ -339,6 +341,7 @@ def _make_factory_by_other_callable(
         source=to_check,
         cache=cache,
         scope=scope,
+        is_in_class=True,
     )
     if factory.is_to_bind:
         dependencies = factory.dependencies[1:]  # remove `self`
@@ -361,6 +364,7 @@ def make_factory(
         scope: BaseScope | None,
         source: Callable,
         cache: bool,
+        is_in_class: bool,
 ) -> Factory:
     if is_bare_generic(source):
         source = source[get_type_vars(source)]
@@ -372,6 +376,7 @@ def make_factory(
     elif isfunction(source) or isinstance(source, classmethod):
         return _make_factory_by_method(
             provides=provides, scope=scope, source=source, cache=cache,
+            is_in_class=is_in_class,
         )
     elif isinstance(source, staticmethod):
         return _make_factory_by_static_method(
@@ -391,13 +396,29 @@ def _provide(
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
+        is_in_class: bool = True,
 ) -> CompositeDependencySource:
     composite = ensure_composite(source)
     factory = make_factory(
-        provides=provides, scope=scope, source=composite.origin, cache=cache,
+        provides=provides, scope=scope,
+        source=composite.origin, cache=cache,
+        is_in_class=is_in_class,
     )
     composite.dependency_sources.extend(unpack_factory(factory))
     return composite
+
+
+def provide_on_instance(
+        *,
+        source: Callable | classmethod | staticmethod | type | None = None,
+        scope: BaseScope | None = None,
+        provides: Any = None,
+        cache: bool = True,
+) -> CompositeDependencySource:
+    return _provide(
+        provides=provides, scope=scope, source=source, cache=cache,
+        is_in_class=False,
+    )
 
 
 @overload
@@ -451,11 +472,13 @@ def provide(
     if source is not None:
         return _provide(
             provides=provides, scope=scope, source=source, cache=cache,
+            is_in_class=True,
         )
 
     def scoped(func):
         return _provide(
             provides=provides, scope=scope, source=func, cache=cache,
+            is_in_class=True,
         )
 
     return scoped

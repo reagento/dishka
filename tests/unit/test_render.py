@@ -23,6 +23,7 @@ def test_cycle(renderer):
         source=foo,
         cache=False,
         scope=None,
+        is_in_class=True,
     )
 
     res = renderer.render([factory, factory, factory])
@@ -42,6 +43,7 @@ def test_cycle_1(renderer):
         source=foo,
         cache=False,
         scope=None,
+        is_in_class=True,
     )
 
     res = renderer.render([factory])
@@ -59,6 +61,7 @@ def test_linear(renderer):
         source=foo,
         cache=False,
         scope=None,
+        is_in_class=True,
     )
 
     res = renderer.render([factory, factory], last=factory.provides)

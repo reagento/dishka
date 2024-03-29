@@ -7,7 +7,7 @@ The difference from normal factories is that they are not created inside some ``
 
 Working with context data consists of three parts:
 
-1. Declaration that object is received from context using :ref:`from-context`. You need to provide the type and scope. Context data is available across all components.
+1. Declaration that object is received from context using :ref:`from-context`. You need to provide the type and scope.
 2. Usage of that object in providers. There is now difference how the object is
 3. Passing actual values on scope entrance. It can be container creation for top level scope or container calls for nested ones. Use it in form ``context={Type: value,...}``
 
@@ -35,3 +35,7 @@ Working with context data consists of three parts:
         # provide REQUEST-scoped context variable
         with container(context={Request:request}) as request_container:
              a = request_container.get(A)
+
+.. note::
+
+    If your are using *multiple components*, you need to specify ``from_context`` in them separately though the context is shared. Context data is always stored in default component, so, other components may not use it and have factories instead.

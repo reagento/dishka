@@ -57,3 +57,25 @@ async def test_2components():
 
     container = make_async_container(MyProvider(), context={int: 1})
     assert await container.get(float, component="XXX") == 1
+
+
+@pytest.mark.asyncio
+async def test_2components_factory():
+    class DefaultProvider(Provider):
+        scope = Scope.APP
+        a = from_context(provides=int)
+
+    class MyProvider(Provider):
+        scope = Scope.APP
+        component = "XXX"
+
+        @provide
+        def get_int(self) -> int:
+            return 100
+
+        @provide
+        def foo(self, a: int) -> float:
+            return a
+
+    container = make_async_container(MyProvider(), context={int: 1})
+    assert await container.get(float, component="XXX") == 100

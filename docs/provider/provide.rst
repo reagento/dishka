@@ -32,6 +32,20 @@ By default the result is cached within scope. You can disable it providing ``cac
             yield a
             a.close()
 
+Also, if an error occurs during process handling (inside the ``with`` block), it will be sent to the generator:
+
+.. code-block:: python
+
+    class MyProvider(Provider):
+        @provide(scope=Scope.REQUEST)
+        def get_a(self) -> Iterable[A]:
+            a = A()
+            exc = yield a
+            # exc will be None if an exception has not occurred
+            if exc:
+                print("Some exception while process handling: ", exc)
+            a.close()
+
 * Do not have any specific logic and just want to create class using its ``__init__``? Then add a provider attribute using ``provide`` as function passing that class.
 
 .. code-block:: python

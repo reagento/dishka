@@ -11,11 +11,11 @@ from .dependency_source import (
     DependencySource,
     Factory,
     alias,
-    decorate,
     from_context,
-    provide,
 )
 from .dependency_source.composite import CompositeDependencySource
+from .dependency_source.make_decorator import decorate_on_instance
+from .dependency_source.make_factory import provide_on_instance
 
 
 def is_dependency_source(attribute: Any) -> bool:
@@ -63,6 +63,38 @@ class Provider(BaseProvider):
         for name, composite in sources:
             self._add_dependency_sources(name, composite.dependency_sources)
 
+    def _name(self):
+        if type(self) is Provider:
+            return str(self)
+        else:
+            cls = type(self)
+            return f"`{cls.__module__}.{cls.__qualname__}`"
+
+    def _source_name(self, factory: Factory) -> str:
+        source = factory.source
+        if source == factory.provides.type_hint:
+            return "`provides()`"
+        elif func := getattr(source, "__func__", None):
+            name = getattr(func, "__qualname__", None)
+            if name:
+                return f"`{name}`"
+        elif isinstance(source, type):
+            name = getattr(source, "__qualname__", None)
+            if name:
+                return f"`{source.__module__}.{name}`"
+        else:
+            name = getattr(source, "__qualname__", None)
+            if name:
+                return f"`{name}`"
+        return str(source)
+
+    def _provides_name(self, factory: Factory | ContextVariable) -> str:
+        hint = factory.provides.type_hint
+        name = getattr(hint, "__qualname__", None)
+        if name:
+            return f"`{hint.__module__}.{name}`"
+        return str(hint)
+
     def _add_dependency_sources(
             self, name: str, sources: Sequence[DependencySource],
     ) -> None:
@@ -70,10 +102,24 @@ class Provider(BaseProvider):
             if isinstance(source, Alias):
                 self.aliases.append(source)
             if isinstance(source, Factory):
+                if source.scope is None:
+                    src_name = self._source_name(source)
+                    provides_name = self._provides_name(source)
+                    raise ValueError(
+                        f"No scope is set for {provides_name}.\n"
+                        f"Set in provide() call for {src_name} or "
+                        f"within {self._name()}",
+                    )
                 self.factories.append(source)
             if isinstance(source, Decorator):
                 self.decorators.append(source)
             if isinstance(source, ContextVariable):
+                if source.scope is None:
+                    provides_name = self._provides_name(source)
+                    raise ValueError(
+                        f"No scope is set for {provides_name}.\n"
+                        f"Set in from_context() call or within {self._name()}",
+                    )
                 self.context_vars.append(source)
 
     def provide(
@@ -86,7 +132,7 @@ class Provider(BaseProvider):
     ) -> CompositeDependencySource:
         if scope is None:
             scope = self.scope
-        composite = provide(
+        composite = provide_on_instance(
             source=source,
             scope=scope,
             provides=provides,
@@ -116,7 +162,7 @@ class Provider(BaseProvider):
             *,
             provides: Any = None,
     ) -> CompositeDependencySource:
-        composite = decorate(
+        composite = decorate_on_instance(
             source=source,
             provides=provides,
         )

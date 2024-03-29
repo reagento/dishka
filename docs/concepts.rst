@@ -47,6 +47,8 @@ If you are developing web application, you would enter ``APP`` scope on startup,
 
 You can provide your own Scopes class if you are not satisfied with standard flow.
 
+:ref:`Read more about custom and hidden scopes<scopes>`
+
 Container
 ==================
 
@@ -70,6 +72,9 @@ According to scopes order container can be used to get dependencies from its and
 Async container is working in the same manner, but you should use async context manager and await the result of get
 
 Some containers are concurrently safe, others are not: it is configured when you call a context manager. For web applications it is good to have APP-scoped container thread/task-safe, but REQUEST-scoped containers do not it, and it is default behavior.
+
+
+:ref:`Read more about container API<container>`
 
 Provider
 ===============
@@ -120,3 +125,5 @@ This allows you to have multiple parts of application build separately without n
     container = make_container(MainProvider(), AdditionalProvider())
     container.get(float)  # returns 0.1
     container.get(complex)  # raises NoFactoryError
+
+:ref:`Read more about components management<components>`

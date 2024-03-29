@@ -36,6 +36,8 @@ Technical requirements
 
 1. Dependencies which require some cleanup must be cleaned up on the scope exit
 2. Dependencies which do not require cleanup should somehow be supported
+3. Dependencies are cleaned in reverse order as they created
+4. Exceptions should not prevent cleaning of then rest of dependencies
 
 5. Context data
 ================
@@ -59,6 +61,9 @@ Technical requirements
 2. When creating a dependency there should be a way to decide which subtype is used and request only its dependencies
 3. There should be a way to reuse same object for multiple requested types
 4. There should be a way to decorate dependency just adding new providers
+5. There should be a way to enter multiple scopes with single call. The last of those scopes is used when dependencies are requested.
+6. Container user errors must be clear and contain information necessary for resolution
+7. Dependency graph should be prematurely analyzed to detect most obvious errors
 
 8. Integration
 ================

@@ -14,7 +14,7 @@ Cute DI framework with scopes and agreeable API.
 
 ### Purpose
 
-This library is targeting to provide only an IoC-container but make it really useful. If you are tired manually passing objects to create others objects which are only used to create more object - we have a solution. Not all project require an IoC-container, but check what we have.
+This library is targeting to provide only an IoC-container but make it really useful. If you are tired manually passing objects to create others objects which are only used to create more objects - we have a solution. Not all project require an IoC-container, but check what we have.
 
 Unlike other instruments we are not trying to solve tasks not related to dependency injection. We want to keep DI in place, not soiling you code with global variables and additional specifiers in all places.
 

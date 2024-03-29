@@ -1,4 +1,5 @@
 .. include:: <isonum.txt>
+.. _scopes:
 
 Scope management
 *************************

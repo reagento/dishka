@@ -1,3 +1,5 @@
+.. _container:
+
 Container
 *******************
 
@@ -103,26 +105,3 @@ To prevent such a condition you need to protect any session whose children can b
 
 .. note::
     Do not worry, lock is set by default for top level (``Scope.APP``) container. So, if you are not using other scopes concurrently you do not need any changes. (E.g. if you are not using multiple ``Scope.ACTION`` containers at a same time within one ``Scope.REQUEST`` container)
-
-Context data
-====================
-
-Often, your scopes are assigned with some external events: HTTP-requests, message from queue, callbacks from framework. You can use those objects when creating dependencies. The difference from normal factories is that they are not created inside some ``Provider``, but passed to the scope. You need explicitly tell dishka which dependencies are expected to be received from context using ``from_context``
-
-.. code-block:: python
-
-    from framework import Request
-
-    class MyProvider:
-        request = from_context(provides=Request, scope=Scope.REQUEST)
-
-        @provide(scope=Scope.REQUEST)
-        def a(self, request: Request) -> A:
-            return A(data=request.contents)
-
-    container = make_container(MyProvider())
-
-    while True:
-        request = connection.recv()
-        with container(context={Request:request}) as request_container:
-             a = request_container.get(A)

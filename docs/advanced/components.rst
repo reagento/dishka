@@ -1,3 +1,5 @@
+.. _components:
+
 Components and providers isolation
 ****************************************
 

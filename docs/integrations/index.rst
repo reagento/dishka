@@ -106,6 +106,27 @@ With some frameworks we provide an option to inject dependencies in handlers wit
     setup_dishka(container, app)
 
 
+Context data
+====================
+
+As ``REQUEST`` scope is entered automatically you cannot pass context data directly, but integrations do it for you:
+
+This objects are passed to context:
+
+* aiohttp - ``aiohttp.web_request.Request``
+* Flask - ``flask.Request``
+* Fastapi - ``fastapi.Request``
+* Litestar - ``litestar.Request``
+* Starlette - ``starlette.requests.Request``
+* Aiogram - ``aiogram.types.TelegramObject``
+* pyTelegramBotAPI - actual type of event (like ``Message``) is used.
+* Arq - no objects
+* FastStream - no objects
+* TaskIq - no objects
+
+To use such objects you need to declare them in your provider using :ref:`from-context` and then they will be available as factories params.
+
+
 Adding integrations
 ===========================
 

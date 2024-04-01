@@ -5,7 +5,9 @@ from .component import DEFAULT_COMPONENT, Component
 from .key import FromComponent
 
 if TYPE_CHECKING:
-    from typing import Union as FromDishka
+    from typing import TypeVar, Union
+    T = TypeVar("T")
+    FromDishka = Union[T, T]  # noqa: UP007,PYI016
 else:
     class FromDishka:
         def __init__(self, component: Component = None):

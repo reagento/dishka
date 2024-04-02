@@ -20,6 +20,7 @@ from inspect import (
 )
 from typing import (
     Any,
+    Protocol,
     get_args,
     get_origin,
     get_type_hints,
@@ -43,6 +44,7 @@ from .factory import Factory, FactoryType
 from .unpack_provides import unpack_factory
 
 _empty = signature(lambda a: 0).parameters["a"].annotation
+_protocol_init = type("_stub_proto", (Protocol,), {}).__init__
 
 
 def _is_bound_method(obj):
@@ -157,6 +159,8 @@ def _clean_result_hint(factory_type: FactoryType, possible_dependency: Any):
 def _params_without_hints(func, *, skip_self: bool) -> Sequence[str]:
     if func is object.__init__:
         return []
+    if func is _protocol_init:
+        return []
     params = signature(func).parameters
     return [
         p.name
@@ -200,15 +204,14 @@ def _make_factory_by_class(
     dependencies = list(hints.values())
     if not provides:
         provides = source
-    is_to_bind = False
-    factory_type = FactoryType.FACTORY
+
     return Factory(
         dependencies=hints_to_dependency_keys(dependencies),
-        type_=factory_type,
+        type_=FactoryType.FACTORY,
         source=source,
         scope=scope,
         provides=DependencyKey(provides, None),
-        is_to_bind=is_to_bind,
+        is_to_bind=False,
         cache=cache,
     )
 

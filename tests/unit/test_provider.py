@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Protocol
 
 import pytest
 
@@ -231,4 +231,19 @@ def test_provide_external_method():
     assert len(foo.dependency_sources) == 1
     factory = foo.dependency_sources[0]
     assert factory.provides == hint_to_dependency_key(str)
+    assert factory.dependencies == []
+
+
+def test_provide_protocol_impl():
+    class MyProto(Protocol):
+        pass
+
+    class MyImpl(MyProto):
+        pass
+
+    provider = Provider(scope=Scope.REQUEST)
+    impl = provider.provide(MyImpl)
+    assert len(impl.dependency_sources) == 1
+    factory = impl.dependency_sources[0]
+    assert factory.provides == hint_to_dependency_key(MyImpl)
     assert factory.dependencies == []

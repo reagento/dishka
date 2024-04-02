@@ -16,6 +16,8 @@ By default the result is cached within scope. You can disable it providing ``cac
 
 .. code-block:: python
 
+    from dishka import provide, Provider, Scope
+
     class MyProvider(Provider):
         @provide(scope=Scope.REQUEST)
         def get_a(self) -> A:
@@ -24,6 +26,8 @@ By default the result is cached within scope. You can disable it providing ``cac
 * Want some finalization when exiting the scope? Make that method generator:
 
 .. code-block:: python
+
+    from dishka import provide, Provider, Scope
 
     class MyProvider(Provider):
         @provide(scope=Scope.REQUEST)
@@ -36,12 +40,16 @@ By default the result is cached within scope. You can disable it providing ``cac
 
 .. code-block:: python
 
+    from dishka import provide, Provider, Scope
+
     class MyProvider(Provider):
         a = provide(A, scope=Scope.REQUEST)
 
 * Want to create a child class instance when parent is requested? Add a ``source`` attribute to ``provide`` function with a parent class while passing child as a first parameter
 
 .. code-block:: python
+
+    from dishka import provide, Provider, Scope
 
     class MyProvider(Provider):
         a = provide(source=AChild, scope=Scope.REQUEST, provides=A)
@@ -50,6 +58,8 @@ By default the result is cached within scope. You can disable it providing ``cac
 * Want to go ``async``? Make provide methods asynchronous. Create async container. Use ``async with`` and await ``get`` calls:
 
 .. code-block:: python
+
+    from dishka import provide, Provider, Scope
 
     class MyProvider(Provider):
        @provide(scope=Scope.APP)
@@ -62,6 +72,8 @@ By default the result is cached within scope. You can disable it providing ``cac
 * Tired of providing ``scope=`` for each dependency? Set it inside your ``Provider`` class and all factories with no scope will use it.
 
 .. code-block:: python
+
+    from dishka import provide, Provider, Scope
 
     class MyProvider(Provider):
        scope=Scope.APP
@@ -78,9 +90,11 @@ By default the result is cached within scope. You can disable it providing ``cac
 
 .. code-block:: python
 
-    from dishka import AnyOf
+    from dishka import AnyOf, provide, Provider, Scope
 
     class MyProvider(Provider):
+        scope=Scope.APP
+
         @provide
         def p(self) -> AnyOf[A, AProtocol]:
             return A()

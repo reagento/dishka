@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from typing import Any, TypeVar
 
 from faststream import BaseMiddleware, FastStream, context
+from faststream.broker.message import StreamMessage
 from faststream.types import DecodedMessage
 
 from dishka import AsyncContainer, FromDishka
@@ -40,7 +41,12 @@ class DishkaMiddleware(BaseMiddleware):
             *args: Any,
             **kwargs: Any,
     ) -> AsyncIterator[DecodedMessage]:
-        async with self.container() as request_container:
+        message = context.get_local("message")
+
+        async with self.container({
+            StreamMessage: message,
+            type(message): message,
+        }) as request_container:
             with context.scope("dishka", request_container):
                 async with super().consume_scope(*args, **kwargs) as result:
                     yield result

@@ -35,6 +35,8 @@ Component is **set for the whole provider**, but single provider can be used in 
 
 .. code-block:: python
 
+    from dishka import make_container, Provider
+
     # default component is used when not specified
     provider0 = Provider()
 
@@ -52,9 +54,11 @@ Component is **set for the whole provider**, but single provider can be used in 
 
     container = make_container(provider0, provider1, provider2, provider3)
 
-Components are **isolated**: provider cannot implicitly request an object from another component. In the following code ``MainProvider.foo`` requests integer value which is only provided in separate component.
+Components are **isolated**: provider cannot implicitly request an object from another component. In the following code ``MainProvider.foo`` requests integer value which is only provided in separate component. In the code below there is an error in dependency graph, so we will disable validation to show runtime behavior:
 
 .. code-block:: python
+
+    from dishka import make_container, Provider, provide, Scope
 
     class MainProvider(Provider):
         # default component is used here
@@ -71,9 +75,10 @@ Components are **isolated**: provider cannot implicitly request an object from a
         def foo(self) -> int:
             return 1
 
-    container = make_container(MainProvider(), AdditionalProvider())
+    # we will get error immediately during container creation, skip validation for demo needs
+    container = make_container(MainProvider(), AdditionalProvider(), skip_validation=True)
     # retrieve from component "X"
-    container.get(int, component="X")  # value 1 is returned
+    container.get(int, component="X")  # value 1 would be returned
     # retrieve from default component
     container.get(float)  # raises NoFactoryError because int is in another component
 
@@ -85,7 +90,7 @@ Components can **link to each other**: each provider can add a component name wh
 .. code-block:: python
 
     from typing import Annotated
-    from dishka import FromComponent
+    from dishka import FromComponent, make_container, Provider, provide, Scope
 
     class MainProvider(Provider):
 

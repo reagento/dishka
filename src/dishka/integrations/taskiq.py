@@ -32,16 +32,27 @@ class ContainerMiddleware(TaskiqMiddleware):
         self,
         message: TaskiqMessage,
     ) -> TaskiqMessage:
-        container = await self._container().__aenter__()
-        message.labels[CONTAINER_NAME] = container
+        message.labels[CONTAINER_NAME] = await self._container().__aenter__()
         return message
+
+    async def on_error(
+        self,
+        message: TaskiqMessage,
+        result: TaskiqResult[Any],
+        exception: BaseException,
+    ) -> None:
+        if CONTAINER_NAME in result.labels:
+            await result.labels[CONTAINER_NAME].close()
+            del result.labels[CONTAINER_NAME]
 
     async def post_execute(
         self,
         message: TaskiqMessage,
         result: TaskiqResult[Any],
     ) -> None:
-        await message.labels[CONTAINER_NAME].close()
+        if CONTAINER_NAME in result.labels:
+            await result.labels[CONTAINER_NAME].close()
+            del result.labels[CONTAINER_NAME]
 
 
 def _get_container(

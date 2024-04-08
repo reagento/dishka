@@ -101,7 +101,7 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
     names = {f"arg{i}": dep for i, dep in enumerate(factory.dependencies)}
     if is_async:
         async_ = "async "
-        await_ = "await"
+        await_ = "await "
         body_template = ASYNC_BODIES.get(factory.type, INVALID)
     else:
         async_ = ""

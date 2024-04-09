@@ -1,0 +1,3 @@
+-r asgi.txt
+sanic==23.12.1
+sanic-testing

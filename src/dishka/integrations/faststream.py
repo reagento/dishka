@@ -4,13 +4,12 @@ __all__ = (
     "setup_dishka",
 )
 
-from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import asynccontextmanager
+from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
 
 from faststream import BaseMiddleware, FastStream, context
 from faststream.broker.message import StreamMessage
-from faststream.types import DecodedMessage
+from faststream.utils.context.repository import ContextRepo
 
 from dishka import AsyncContainer, FromDishka
 from dishka.integrations.base import wrap_injection
@@ -35,21 +34,18 @@ class DishkaMiddleware(BaseMiddleware):
         self.msg = msg
         return self
 
-    @asynccontextmanager
     async def consume_scope(
             self,
-            *args: Any,
-            **kwargs: Any,
-    ) -> AsyncIterator[DecodedMessage]:
-        message = context.get_local("message")
-
+            call_next: Callable[[Any], Awaitable[Any]],
+            message: Any,
+    ) -> Any:
         async with self.container({
             StreamMessage: message,
             type(message): message,
+            ContextRepo: context,
         }) as request_container:
             with context.scope("dishka", request_container):
-                async with super().consume_scope(*args, **kwargs) as result:
-                    yield result
+                return await call_next(message)
 
 
 def setup_dishka(
@@ -57,13 +53,18 @@ def setup_dishka(
         app: FastStream,
         *,
         finalize_container: bool = True,
+        auto_inject: bool = False,
 ) -> None:
     assert app.broker, "You can't patch FastStream application without broker"  # noqa: S101
 
     if finalize_container:
         app.after_shutdown(container.close)
 
-    app.broker.middlewares = (
-        *app.broker.middlewares,
+    if auto_inject:
+        app.broker._call_decorators = (inject,)  # noqa: SLF001
+
+    app.broker._middlewares = (  # noqa: SLF001
+        *app.broker._middlewares,  # noqa: SLF001
         DishkaMiddleware(container),
     )
+    app.broker.setup()

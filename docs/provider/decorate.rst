@@ -12,6 +12,8 @@ If you want to apply decorator pattern and do not want to alter existing provide
 
 .. code-block:: python
 
+    from dishka import decorate, Provider
+
     class MyProvider(Provider):
         @decorate
         def decorate_a(self, a: A) -> A:
@@ -20,6 +22,8 @@ If you want to apply decorator pattern and do not want to alter existing provide
 Such decorator function can also have additional parameters.
 
 .. code-block:: python
+
+    from dishka import decorate, Provider
 
     class MyProvider(Provider):
         @decorate

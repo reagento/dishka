@@ -1,6 +1,5 @@
 import asyncio
 import random
-from typing import Annotated
 
 from taskiq import AsyncTaskiqTask, InMemoryBroker
 
@@ -16,7 +15,7 @@ broker = InMemoryBroker()
 @broker.task
 @inject
 async def random_task(num: FromDishka[float]) -> float:
-    return num
+    raise ValueError
 
 
 async def main() -> None:

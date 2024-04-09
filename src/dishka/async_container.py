@@ -126,14 +126,14 @@ class AsyncContainer:
             e.add_path(self.registry.get_factory(key))
             raise
 
-    async def close(self):
+    async def close(self, exception: Exception | None = None):
         errors = []
         for exit_generator in self._exits[::-1]:
             try:
                 if exit_generator.type is FactoryType.ASYNC_GENERATOR:
-                    await anext(exit_generator.callable)
+                    await exit_generator.callable.asend(exception)
                 elif exit_generator.type is FactoryType.GENERATOR:
-                    next(exit_generator.callable)
+                    exit_generator.callable.send(exception)
             except StopIteration:  # noqa: PERF203
                 pass
             except StopAsyncIteration:
@@ -142,7 +142,7 @@ class AsyncContainer:
                 errors.append(err)
         if self.close_parent:
             try:
-                await self.parent_container.close()
+                await self.parent_container.close(exception)
             except Exception as err:  # noqa: BLE001
                 errors.append(err)
         if errors:
@@ -157,7 +157,7 @@ class AsyncContextWrapper:
         return self.container
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.container.close()
+        await self.container.close(exception=exc_val)
 
 
 def make_async_container(

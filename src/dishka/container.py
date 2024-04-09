@@ -123,19 +123,19 @@ class Container:
             e.add_path(self.registry.get_factory(key))
             raise
 
-    def close(self) -> None:
+    def close(self, exception: Exception | None = None) -> None:
         errors = []
         for exit_generator in self._exits[::-1]:
             try:
                 if exit_generator.type is FactoryType.GENERATOR:
-                    next(exit_generator.callable)
+                    exit_generator.callable.send(exception)
             except StopIteration:  # noqa: PERF203
                 pass
             except Exception as err:  # noqa: BLE001
                 errors.append(err)
         if self.close_parent:
             try:
-                self.parent_container.close()
+                self.parent_container.close(exception)
             except Exception as err:  # noqa: BLE001
                 errors.append(err)
 
@@ -153,7 +153,7 @@ class ContextWrapper:
         return self.container
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.container.close()
+        self.container.close(exception=exc_val)
 
 
 def make_container(

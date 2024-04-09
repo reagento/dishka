@@ -9,6 +9,8 @@ Provider object has also a ``.alias`` method with the same logic.
 
 .. code-block:: python
 
+    from dishka import alias, provide, Provider, Scope
+
     class MyProvider(Provider):
         @provide(scope=Scope.REQUEST)
         def get_a(self) -> A:

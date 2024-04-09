@@ -16,6 +16,8 @@ By default the result is cached within scope. You can disable it providing ``cac
 
 .. code-block:: python
 
+    from dishka import provide, Provider, Scope
+
     class MyProvider(Provider):
         @provide(scope=Scope.REQUEST)
         def get_a(self) -> A:
@@ -25,6 +27,8 @@ By default the result is cached within scope. You can disable it providing ``cac
 
 .. code-block:: python
 
+    from dishka import provide, Provider, Scope
+
     class MyProvider(Provider):
         @provide(scope=Scope.REQUEST)
         def get_a(self) -> Iterable[A]:
@@ -32,9 +36,25 @@ By default the result is cached within scope. You can disable it providing ``cac
             yield a
             a.close()
 
+Also, if an error occurs during process handling (inside the ``with`` block), it will be sent to the generator:
+
+.. code-block:: python
+
+    class MyProvider(Provider):
+        @provide(scope=Scope.REQUEST)
+        def get_a(self) -> Iterable[A]:
+            a = A()
+            exc = yield a
+            # exc will be None if an exception has not occurred
+            if exc:
+                print("Some exception while process handling: ", exc)
+            a.close()
+
 * Do not have any specific logic and just want to create class using its ``__init__``? Then add a provider attribute using ``provide`` as function passing that class.
 
 .. code-block:: python
+
+    from dishka import provide, Provider, Scope
 
     class MyProvider(Provider):
         a = provide(A, scope=Scope.REQUEST)
@@ -43,6 +63,8 @@ By default the result is cached within scope. You can disable it providing ``cac
 
 .. code-block:: python
 
+    from dishka import provide, Provider, Scope
+
     class MyProvider(Provider):
         a = provide(source=AChild, scope=Scope.REQUEST, provides=A)
 
@@ -50,6 +72,8 @@ By default the result is cached within scope. You can disable it providing ``cac
 * Want to go ``async``? Make provide methods asynchronous. Create async container. Use ``async with`` and await ``get`` calls:
 
 .. code-block:: python
+
+    from dishka import provide, Provider, Scope
 
     class MyProvider(Provider):
        @provide(scope=Scope.APP)
@@ -62,6 +86,8 @@ By default the result is cached within scope. You can disable it providing ``cac
 * Tired of providing ``scope=`` for each dependency? Set it inside your ``Provider`` class and all factories with no scope will use it.
 
 .. code-block:: python
+
+    from dishka import provide, Provider, Scope
 
     class MyProvider(Provider):
        scope=Scope.APP
@@ -78,9 +104,11 @@ By default the result is cached within scope. You can disable it providing ``cac
 
 .. code-block:: python
 
-    from dishka import AnyOf
+    from dishka import AnyOf, provide, Provider, Scope
 
     class MyProvider(Provider):
+        scope=Scope.APP
+
         @provide
         def p(self) -> AnyOf[A, AProtocol]:
             return A()

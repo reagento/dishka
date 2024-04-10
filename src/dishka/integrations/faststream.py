@@ -57,7 +57,10 @@ def setup_dishka(
     if finalize_container:
         app.after_shutdown(container.close)
 
+    middlewares = getattr(app.broker, "middlewares", None)
+    middlewares = middlewares or getattr(app.broker, "_middlewares", None)
+
     app.broker.middlewares = (
-        *app.broker.middlewares,
+        *middlewares,
         DishkaMiddleware(container),
     )

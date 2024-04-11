@@ -4,20 +4,25 @@ __all__ = (
     "setup_dishka",
 )
 
-from collections.abc import Awaitable, Callable
-from typing import Any, TypeVar
+import warnings
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
+from typing import Any
 
 from faststream import BaseMiddleware, FastStream, context
+from faststream.__about__ import __version__
 from faststream.broker.message import StreamMessage
-from faststream.utils.context.repository import ContextRepo
+from faststream.types import DecodedMessage
+from faststream.utils.context import ContextRepo
 
-from dishka import AsyncContainer, FromDishka
+from dishka import AsyncContainer, FromDishka, Scope
+from dishka.dependency_source import ContextVariable
+from dishka.entities.component import DEFAULT_COMPONENT
+from dishka.entities.key import DependencyKey
 from dishka.integrations.base import wrap_injection
 
-T = TypeVar("T")
 
-
-def inject(func: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:
+def inject(func):
     return wrap_injection(
         func=func,
         container_getter=lambda *_: context.get_local("dishka"),
@@ -26,45 +31,97 @@ def inject(func: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:
     )
 
 
-class DishkaMiddleware(BaseMiddleware):
+FASTSTREAM_OLD_MIDDLEWARES = __version__ < "0.5"
+
+
+class _DishkaBaseMiddleware(BaseMiddleware):
     def __init__(self, container: AsyncContainer) -> None:
         self.container = container
 
-    def __call__(self, msg: Any | None = None) -> "DishkaMiddleware":
+    def __call__(self, msg: Any | None = None) -> "_DishkaBaseMiddleware":
         self.msg = msg
         return self
 
-    async def consume_scope(
+
+if FASTSTREAM_OLD_MIDDLEWARES:
+
+    class DishkaMiddleware(_DishkaBaseMiddleware):
+        @asynccontextmanager
+        async def consume_scope(
+            self,
+            *args: Any,
+            **kwargs: Any,
+        ) -> AsyncIterator[DecodedMessage]:
+            async with self.container() as request_container:
+                with context.scope("dishka", request_container):
+                    async with super().consume_scope(
+                        *args, **kwargs
+                    ) as result:
+                        yield result
+
+else:
+
+    class DishkaMiddleware(_DishkaBaseMiddleware):
+        async def consume_scope(
             self,
             call_next: Callable[[Any], Awaitable[Any]],
-            message: Any,
-    ) -> Any:
-        async with self.container({
-            StreamMessage: message,
-            type(message): message,
-            ContextRepo: context,
-        }) as request_container:
-            with context.scope("dishka", request_container):
-                return await call_next(message)
+            msg: StreamMessage[any],
+        ) -> AsyncIterator[DecodedMessage]:
+            async with self.container(
+                {
+                    StreamMessage: msg,
+                    type(msg): msg,
+                    ContextRepo: context,
+                }
+            ) as request_container:
+                with context.scope("dishka", request_container):
+                    return await call_next(msg)
 
 
 def setup_dishka(
-        container: AsyncContainer,
-        app: FastStream,
-        *,
-        finalize_container: bool = True,
-        auto_inject: bool = False,
+    container: AsyncContainer,
+    app: FastStream,
+    *,
+    finalize_container: bool = True,
+    auto_inject: bool = False,
 ) -> None:
     assert app.broker, "You can't patch FastStream application without broker"  # noqa: S101
+
+    container.registry.add_factory(
+        ContextVariable(
+            provides=DependencyKey(AsyncContainer, DEFAULT_COMPONENT),
+            scope=Scope.REQUEST,
+        ).as_factory("ContextRepo")
+    )
 
     if finalize_container:
         app.after_shutdown(container.close)
 
-    if auto_inject:
-        app.broker._call_decorators = (inject,)  # noqa: SLF001
+    if FASTSTREAM_OLD_MIDDLEWARES:
+        app.broker.middlewares = (
+            DishkaMiddleware(container),
+            *app.broker.middlewares,
+        )
 
-    app.broker._middlewares = (  # noqa: SLF001
-        *app.broker._middlewares,  # noqa: SLF001
-        DishkaMiddleware(container),
-    )
-    app.broker.setup()
+        if auto_inject:
+            warnings.warn(
+                (
+                    "\nAuto injection is not supported for FastStream version less than 0.5.0"
+                    "\nPlease, update your FastStream installation"
+                    "\nor use @inject at each subscriber manually."
+                ),
+                category=RuntimeWarning,
+                stacklevel=1,
+            )
+
+    else:
+        app.broker._middlewares = (  # noqa: SLF001
+            DishkaMiddleware(container),
+            *app.broker._middlewares,  # noqa: SLF001
+        )
+
+        if auto_inject:
+            app.broker._call_decorators = (  # noqa: SLF001
+                inject,
+                *app.broker._call_decorators,  # noqa: SLF001
+            )

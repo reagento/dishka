@@ -55,7 +55,7 @@ if FASTSTREAM_OLD_MIDDLEWARES:
             async with self.container() as request_container:
                 with context.scope("dishka", request_container):
                     async with super().consume_scope(
-                        *args, **kwargs
+                        *args, **kwargs,
                     ) as result:
                         yield result
 
@@ -72,7 +72,7 @@ else:
                     StreamMessage: msg,
                     type(msg): msg,
                     ContextRepo: context,
-                }
+                },
             ) as request_container:
                 with context.scope("dishka", request_container):
                     return await call_next(msg)
@@ -91,7 +91,7 @@ def setup_dishka(
         ContextVariable(
             provides=DependencyKey(AsyncContainer, DEFAULT_COMPONENT),
             scope=Scope.REQUEST,
-        ).as_factory("ContextRepo")
+        ).as_factory("ContextRepo"),
     )
 
     if finalize_container:
@@ -105,14 +105,15 @@ def setup_dishka(
 
         if auto_inject:
             warnings.warn(
-                (
-                    "\nAuto injection is not supported for FastStream version less than 0.5.0"
-                    "\nPlease, update your FastStream installation"
-                    "\nor use @inject at each subscriber manually."
-                ),
+                """
+Auto injection is not supported for FastStream version less than 0.5.0
+Please, update your FastStream installation
+or use @inject at each subscriber manually.
+            """,
                 category=RuntimeWarning,
                 stacklevel=1,
             )
+
 
     else:
         app.broker._middlewares = (  # noqa: SLF001

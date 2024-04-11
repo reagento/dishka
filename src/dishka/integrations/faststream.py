@@ -15,10 +15,7 @@ from faststream.broker.message import StreamMessage
 from faststream.types import DecodedMessage
 from faststream.utils.context import ContextRepo
 
-from dishka import AsyncContainer, FromDishka, Scope
-from dishka.dependency_source import ContextVariable
-from dishka.entities.component import DEFAULT_COMPONENT
-from dishka.entities.key import DependencyKey
+from dishka import AsyncContainer, FromDishka
 from dishka.integrations.base import wrap_injection
 
 
@@ -86,13 +83,6 @@ def setup_dishka(
     auto_inject: bool = False,
 ) -> None:
     assert app.broker, "You can't patch FastStream application without broker"  # noqa: S101
-
-    container.registry.add_factory(
-        ContextVariable(
-            provides=DependencyKey(AsyncContainer, DEFAULT_COMPONENT),
-            scope=Scope.REQUEST,
-        ).as_factory("ContextRepo"),
-    )
 
     if finalize_container:
         app.after_shutdown(container.close)

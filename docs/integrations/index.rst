@@ -141,7 +141,7 @@ This objects are passed to context:
 * Aiogram - ``aiogram.types.TelegramObject``
 * pyTelegramBotAPI - actual type of event (like ``Message``) is used.
 * Arq - no objects
-* FastStream - ``faststream.broker.message.StreamMessage`` or ``faststream.[broker].[Broker]Message``, ``faststream.ContextRepo`` 
+* FastStream - ``faststream.broker.message.StreamMessage`` or ``faststream.[broker].[Broker]Message``, ``faststream.utils.ContextRepo`` 
 * TaskIq - no objects
 
 To use such objects you need to declare them in your provider using :ref:`from-context` and then they will be available as factories params.

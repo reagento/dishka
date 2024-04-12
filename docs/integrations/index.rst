@@ -111,11 +111,12 @@ With some frameworks we provide an option to inject dependencies in handlers wit
 
     from faststream import FastStream
     from faststream.nats import NatsBroker, NatsMessage
-    from dishka.integrations.faststream import FromDishka, setup_dishka
+    from dishka import make_async_container
+    from dishka.integrations.faststream import FastStreamProvider, FromDishka, setup_dishka
 
     broker = NatsBroker()
     app = FastStream(broker)
-    setup_dishka(container, app, auto_inject=True)
+    setup_dishka(make_async_container(..., FastStreamProvider), app, auto_inject=True)
 
     @broker.subscriber("/")
     def index(

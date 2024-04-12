@@ -77,7 +77,7 @@ With some frameworks we provide an option to inject dependencies in handlers wit
 
     from dishka.integrations.flask import FromDishka, setup_dishka
 
-    @app.get("/"
+    @app.get("/")
     def index(
             *,
             interactor: FromDishka[Interactor],
@@ -91,7 +91,7 @@ With some frameworks we provide an option to inject dependencies in handlers wit
 
 .. code-block:: python
 
-    from dishka.integrations.fastapi import FromDishka, setup_dishka
+    from dishka.integrations.fastapi import FromDishka, DishkaRoute, setup_dishka
 
     router = APIRouter(route_class=DishkaRoute)
 
@@ -104,6 +104,27 @@ With some frameworks we provide an option to inject dependencies in handlers wit
         return result
 
     setup_dishka(container, app)
+
+* For **FasStream** (**0.5.0** version and higher) you need to provide ``auto_inject=True`` when calling ``setup_dishka``. It is important here to call it before registering any subscribers or router include:
+
+.. code-block:: python
+
+    from faststream import FastStream
+    from faststream.nats import NatsBroker, NatsMessage
+    from dishka import make_async_container
+    from dishka.integrations.faststream import FastStreamProvider, FromDishka, setup_dishka
+
+    broker = NatsBroker()
+    app = FastStream(broker)
+    setup_dishka(make_async_container(..., FastStreamProvider), app, auto_inject=True)
+
+    @broker.subscriber("/")
+    def index(
+            *,
+            message: FromDishka[NatsMessage],
+    ) -> str:
+        await message.ack()
+        return message.body
 
 
 Context data
@@ -121,7 +142,7 @@ This objects are passed to context:
 * Aiogram - ``aiogram.types.TelegramObject``
 * pyTelegramBotAPI - actual type of event (like ``Message``) is used.
 * Arq - no objects
-* FastStream - no objects
+* FastStream - ``faststream.broker.message.StreamMessage`` or ``faststream.[broker].[Broker]Message``, ``faststream.utils.ContextRepo`` 
 * TaskIq - no objects
 
 To use such objects you need to declare them in your provider using :ref:`from-context` and then they will be available as factories params.

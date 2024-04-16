@@ -47,7 +47,7 @@ Or using inheritance:
             yield conn
             conn.close()
 
-        gateway = provider.provide(Gateway)
+        gateway = provide(Gateway)
 
     container = make_container(MyProvider(scope=Scope.APP))
 

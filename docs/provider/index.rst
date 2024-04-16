@@ -63,7 +63,7 @@ Your class-based provider can have ``__init__`` method and methods access ``self
 
         @provide
         def get_connection(self) -> Iterable[Connection]:
-            conn = connect(self.uri)  #
+            conn = connect(self.uri)  # use passed configuration
             yield conn
             conn.close()
 

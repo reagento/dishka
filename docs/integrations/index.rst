@@ -132,7 +132,7 @@ Context data
 
 As ``REQUEST`` scope is entered automatically you cannot pass context data directly, but integrations do it for you:
 
-This objects are passed to context:
+These objects are passed to context:
 
 * aiohttp - ``aiohttp.web_request.Request``
 * Flask - ``flask.Request``

@@ -8,7 +8,7 @@ Quickstart
     pip install dishka
 
 
-2. Create Provider instance. It is only used co setup all factories providing your objects.
+2. Create Provider instance. It is only used to setup all factories providing your objects.
 
 .. code-block:: python
 

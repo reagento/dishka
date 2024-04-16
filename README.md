@@ -36,7 +36,7 @@ See more in [technical requirements](https://dishka.readthedocs.io/en/latest/req
 pip install dishka
 ```
 
-2. Create `Provider` instance. It is only used co setup all factories providing your objects.
+2. Create `Provider` instance. It is only used to setup all factories providing your objects.
 
 ```python
 from dishka import Provider

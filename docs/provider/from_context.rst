@@ -17,7 +17,7 @@ You can put some data manually when entering scope and rely on it in your provid
         request = from_context(provides=RequestClass)
 
         @provide
-        async def get_a(self, request: RequestClass, app: App) -> A:
+        def get_a(self, request: RequestClass, app: App) -> A:
             ...
 
     container = make_container(MyProvider(), context={App: app})

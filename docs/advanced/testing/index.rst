@@ -24,7 +24,7 @@ And a container:
 
 .. literalinclude:: ./container_before.py
 
-First of all - split your application factory and and container setup.
+First of all - split your application factory and container setup.
 
 .. literalinclude:: ./app_factory.py
 

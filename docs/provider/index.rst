@@ -52,7 +52,7 @@ Or using inheritance:
     container = make_container(MyProvider(scope=Scope.APP))
 
 
-You class-based provider can have ``__init__`` method and methods access ``self`` as usual. It can be useful for passing configuration:
+Your class-based provider can have ``__init__`` method and methods access ``self`` as usual. It can be useful for passing configuration:
 
 .. code-block:: python
 

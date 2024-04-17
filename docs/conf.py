@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'dishka'
-copyright = '2022, reagento'
+copyright = '2024, reagento'
 author = 'Tishka17'
 master_doc = 'index'
 

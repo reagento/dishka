@@ -16,7 +16,8 @@ from .dependency_source import (
 from .dependency_source.composite import CompositeDependencySource
 from .dependency_source.make_decorator import decorate_on_instance
 from .dependency_source.make_factory import (
-    provide_on_instance, provide_all_on_instance,
+    provide_all_on_instance,
+    provide_on_instance,
 )
 
 
@@ -151,7 +152,9 @@ class Provider(BaseProvider):
     ) -> CompositeDependencySource:
         if scope is None:
             scope = self.scope
-        composite = provide_all_on_instance(*provides, scope=scope, cache=cache)
+        composite = provide_all_on_instance(
+            *provides, scope=scope, cache=cache,
+        )
         self._add_dependency_sources("?", composite.dependency_sources)
         return composite
 

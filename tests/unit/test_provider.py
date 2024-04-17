@@ -249,10 +249,12 @@ def test_provide_protocol_impl():
     assert factory.dependencies == []
 
 
-class A: pass
+class A:
+    pass
 
 
-class B: pass
+class B:
+    pass
 
 
 def test_provide_all_cls():

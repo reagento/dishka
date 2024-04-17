@@ -488,6 +488,7 @@ def provide(
 
 
 def _provide_all(
+        *,
         provides: Sequence[Any],
         scope: BaseScope | None,
         cache: bool,
@@ -509,7 +510,10 @@ def provide_all(
         scope: BaseScope | None = None,
         cache: bool = True,
 ) -> CompositeDependencySource:
-    return _provide_all(provides, scope=scope, cache=cache, is_in_class=True)
+    return _provide_all(
+        provides=provides, scope=scope,
+        cache=cache, is_in_class=True,
+    )
 
 
 def provide_all_on_instance(
@@ -517,4 +521,7 @@ def provide_all_on_instance(
         scope: BaseScope | None = None,
         cache: bool = True,
 ) -> CompositeDependencySource:
-    return _provide_all(provides, scope=scope, cache=cache, is_in_class=False)
+    return _provide_all(
+        provides=provides, scope=scope,
+        cache=cache, is_in_class=False,
+    )

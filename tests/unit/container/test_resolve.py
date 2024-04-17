@@ -1,3 +1,5 @@
+from typing import Any, Callable
+
 import pytest
 
 from dishka import (
@@ -129,3 +131,66 @@ def test_external_method(method):
 
     container = make_container(provider)
     assert container.get(ClassA) is A_VALUE
+
+
+@pytest.mark.parametrize(
+    ("factory", "cache", "expected_count"),
+    [
+        (ClassA, True, 3),
+        (ClassA, False, 2),
+        (sync_func_a, True, 3),
+        (sync_func_a, False, 2),
+        (sync_iter_a, True, 3),
+        (sync_iter_a, False, 2),
+        (sync_gen_a, True, 3),
+        (sync_gen_a, False, 2),
+    ],
+)
+def test_sync_resolve_all(
+    factory: Callable[..., Any], cache: bool, expected_count: int
+):
+    class MyProvider(Provider):
+        a = provide(factory, scope=Scope.APP, cache=cache)
+
+        @provide(scope=Scope.APP)
+        def get_int(self) -> int:
+            return 100
+
+    container = make_container(MyProvider())
+    assert container.registry.scope is Scope.APP
+    assert len(container.context) == 1
+    container.resolve_all()
+    assert len(container.context) == expected_count
+    container.close()
+
+
+@pytest.mark.parametrize(
+    ("factory", "cache", "expected_count"),
+    [
+        (ClassA, True, 3),
+        (ClassA, False, 2),
+        (async_func_a, True, 3),
+        (async_func_a, False, 2),
+        (async_iter_a, True, 3),
+        (async_iter_a, False, 2),
+        (async_gen_a, True, 3),
+        (async_gen_a, False, 2),
+    ],
+)
+@pytest.mark.asyncio
+async def test_async_resolve_all(
+    factory: Callable[..., Any], cache: bool, expected_count: int
+):
+    class MyProvider(Provider):
+        a = provide(factory, scope=Scope.APP, cache=cache)
+
+        @provide(scope=Scope.APP)
+        def get_int(self) -> int:
+            return 100
+
+    container = make_async_container(MyProvider())
+    assert container.registry.scope is Scope.APP
+    assert len(container.context) == 1
+    await container.resolve_all()
+    assert len(container.context) == expected_count
+    await container.close()

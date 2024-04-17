@@ -4,7 +4,8 @@ __all__ = [
     "DEFAULT_COMPONENT", "Component",
     "make_container", "Container", "FromComponent",
     "Provider",
-    "alias", "decorate", "from_context", "provide", "DependencyKey",
+    "alias", "decorate", "from_context", "provide", "provide_all",
+    "DependencyKey",
     "FromDishka",
     "BaseScope", "Scope", "new_scope",
 ]
@@ -16,6 +17,7 @@ from .dependency_source import (
     decorate,
     from_context,
     provide,
+    provide_all,
 )
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.depends_marker import FromDishka

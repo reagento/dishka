@@ -1,6 +1,6 @@
 .. _decorate:
 
-@decorate
+decorate
 *********************
 
 ``decorate`` is used to modify or wrap an object which is already configured in another ``Provider``.

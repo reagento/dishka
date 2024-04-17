@@ -47,12 +47,12 @@ Or using inheritance:
             yield conn
             conn.close()
 
-        gateway = provider.provide(Gateway)
+        gateway = provide(Gateway)
 
     container = make_container(MyProvider(scope=Scope.APP))
 
 
-You class-based provider can have ``__init__`` method and methods access ``self`` as usual. It can be useful for passing configuration:
+Your class-based provider can have ``__init__`` method and methods access ``self`` as usual. It can be useful for passing configuration:
 
 .. code-block:: python
 
@@ -63,7 +63,7 @@ You class-based provider can have ``__init__`` method and methods access ``self`
 
         @provide
         def get_connection(self) -> Iterable[Connection]:
-            conn = connect(self.uri)  #
+            conn = connect(self.uri)  # use passed configuration
             yield conn
             conn.close()
 

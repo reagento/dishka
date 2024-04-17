@@ -36,7 +36,7 @@ See more in [technical requirements](https://dishka.readthedocs.io/en/latest/req
 pip install dishka
 ```
 
-2. Create `Provider` instance. It is only used co setup all factories providing your objects.
+2. Create `Provider` instance. It is only used to setup all factories providing your objects.
 
 ```python
 from dishka import Provider
@@ -244,7 +244,7 @@ class MyProvider(Provider):
     request = from_context(provides=RequestClass)
 
     @provide
-    async def get_a(self, request: RequestClass, app: App) -> A:
+    def get_a(self, request: RequestClass, app: App) -> A:
         ...
 
 container = make_container(MyProvider(), context={App: app})

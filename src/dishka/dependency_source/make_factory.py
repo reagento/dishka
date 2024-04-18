@@ -487,5 +487,41 @@ def provide(
     return scoped
 
 
-def _context_stub():
-    raise NotImplementedError
+def _provide_all(
+        *,
+        provides: Sequence[Any],
+        scope: BaseScope | None,
+        cache: bool,
+        is_in_class: bool,
+) -> CompositeDependencySource:
+    composite = CompositeDependencySource(None)
+    for single_provides in provides:
+        factory = make_factory(
+            provides=single_provides, scope=scope,
+            source=single_provides, cache=cache,
+            is_in_class=is_in_class,
+        )
+        composite.dependency_sources.extend(unpack_factory(factory))
+    return composite
+
+
+def provide_all(
+        *provides: Any,
+        scope: BaseScope | None = None,
+        cache: bool = True,
+) -> CompositeDependencySource:
+    return _provide_all(
+        provides=provides, scope=scope,
+        cache=cache, is_in_class=True,
+    )
+
+
+def provide_all_on_instance(
+        *provides: Any,
+        scope: BaseScope | None = None,
+        cache: bool = True,
+) -> CompositeDependencySource:
+    return _provide_all(
+        provides=provides, scope=scope,
+        cache=cache, is_in_class=False,
+    )

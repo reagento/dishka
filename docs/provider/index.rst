@@ -100,6 +100,7 @@ Though it is a normal object, not all attributes are analyzed by ``Container``, 
 .. toctree::
 
    provide
+   provide_all
    alias
    from_context
    decorate

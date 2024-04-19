@@ -3,12 +3,13 @@ import pytest
 from dishka import (
     Provider,
     Scope,
+    decorate,
     make_async_container,
     make_container,
     provide,
 )
 from dishka.dependency_source import from_context
-from dishka.exceptions import NoContextValueError
+from dishka.exceptions import InvalidGraphError, NoContextValueError
 
 
 def test_simple():
@@ -61,10 +62,6 @@ async def test_2components():
 
 @pytest.mark.asyncio
 async def test_2components_factory():
-    class DefaultProvider(Provider):
-        scope = Scope.APP
-        a = from_context(provides=int)
-
     class MyProvider(Provider):
         scope = Scope.APP
         component = "XXX"
@@ -79,3 +76,17 @@ async def test_2components_factory():
 
     container = make_async_container(MyProvider(), context={int: 1})
     assert await container.get(float, component="XXX") == 100
+
+
+def test_decorate():
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        i = from_context(provides=int)
+
+        @decorate
+        def ii(self, i: int) -> int:
+            return i + 1
+
+    with pytest.raises(InvalidGraphError):
+        make_container(MyProvider(), context={int: 1})

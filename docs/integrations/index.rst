@@ -15,6 +15,7 @@ Built-in frameworks integrations:
 * Arq
 * FastStream
 * TaskIq
+* Sanic
 
 Common approach
 =====================
@@ -126,6 +127,23 @@ With some frameworks we provide an option to inject dependencies in handlers wit
         await message.ack()
         return message.body
 
+* For **Sanic** you need to provide ``auto_inject=True`` when calling ``setup_dishka``. It is important here to call it after registering all views and blueprints. E.g:
+
+.. code-block:: python
+
+    from sanic import Sanic, Request, HTTPResponse
+    from dishka.integrations.sanic import FromDishka, setup_dishka
+
+    app = Sanic(__name__)
+
+    @app.get("/")
+    async def index(
+        request: Request,
+        interactor: FromDishka[Interactor],
+    ) -> HTTPResponse:
+        return HTTPResponse(interactor())
+
+    setup_dishka(container=container, app=app, auto_inject=True)
 
 Context data
 ====================
@@ -144,6 +162,7 @@ These objects are passed to context:
 * Arq - no objects
 * FastStream - ``faststream.broker.message.StreamMessage`` or ``faststream.[broker].[Broker]Message``, ``faststream.utils.ContextRepo`` 
 * TaskIq - no objects
+* Sanic - ``sanic.request.Request``
 
 To use such objects you need to declare them in your provider using :ref:`from-context` and then they will be available as factories params.
 

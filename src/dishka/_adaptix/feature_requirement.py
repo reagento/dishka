@@ -17,7 +17,7 @@ def _false():
 
 
 class Requirement(ABC):
-    __slots__ = ('is_meet', '__bool__', '__dict__')
+    __slots__ = ("is_meet", "__bool__", "__dict__")
 
     def __init__(self):
         self.is_meet = self._evaluate()
@@ -60,7 +60,7 @@ class DistributionRequirement(Requirement):
 
     @property
     def fail_reason(self) -> str:
-        return f'Installed distribution {self.distribution_name!r} is required'
+        return f"Installed distribution {self.distribution_name!r} is required"
 
 
 class DistributionVersionRequirement(DistributionRequirement):
@@ -124,15 +124,15 @@ class DistributionVersionRequirement(DistributionRequirement):
         if match is None:
             raise ValueError
         return (
-            match.group('epoch') or 0,
-            self._remove_trailing_zeros(int(i) for i in match.group('release').split('.')),
-            match.group('pre') is not None,
-            match.group('dev') is not None,
+            match.group("epoch") or 0,
+            self._remove_trailing_zeros(int(i) for i in match.group("release").split(".")),
+            match.group("pre") is not None,
+            match.group("dev") is not None,
         )
 
     @property
     def fail_reason(self) -> str:
-        return f'Installed distribution {self.distribution_name!r} of {self.min_version!r} is required'
+        return f"Installed distribution {self.distribution_name!r} of {self.min_version!r} is required"
 
 
 class PythonImplementationRequirement(Requirement):
@@ -145,7 +145,7 @@ class PythonImplementationRequirement(Requirement):
 
     @property
     def fail_reason(self) -> str:
-        return f'{self.implementation_name} is required'
+        return f"{self.implementation_name} is required"
 
 
 HAS_PY_39 = PythonVersionRequirement((3, 9))
@@ -168,11 +168,14 @@ HAS_UNPACK = HAS_PY_311
 HAS_PY_312 = PythonVersionRequirement((3, 12))
 HAS_TV_SYNTAX = HAS_PY_312
 
-HAS_SUPPORTED_ATTRS_PKG = DistributionVersionRequirement('attrs', '21.3.0')
-HAS_ATTRS_PKG = DistributionRequirement('attrs')
+HAS_SUPPORTED_ATTRS_PKG = DistributionVersionRequirement("attrs", "21.3.0")
+HAS_ATTRS_PKG = DistributionRequirement("attrs")
 
-HAS_SUPPORTED_SQLALCHEMY_PKG = DistributionVersionRequirement('sqlalchemy', '2.0.0')
-HAS_SQLALCHEMY_PKG = DistributionRequirement('sqlalchemy')
+HAS_SUPPORTED_SQLALCHEMY_PKG = DistributionVersionRequirement("sqlalchemy", "2.0.0")
+HAS_SQLALCHEMY_PKG = DistributionRequirement("sqlalchemy")
 
-IS_CPYTHON = PythonImplementationRequirement('cpython')
-IS_PYPY = PythonImplementationRequirement('pypy')
+HAS_SUPPORTED_PYDANTIC_PKG = DistributionVersionRequirement("pydantic", "2.0.0")
+HAS_PYDANTIC_PKG = DistributionRequirement("pydantic")
+
+IS_CPYTHON = PythonImplementationRequirement("cpython")
+IS_PYPY = PythonImplementationRequirement("pypy")

@@ -1,16 +1,17 @@
 import typing
 from dataclasses import dataclass, replace
 from itertools import chain
-from typing import Callable, Collection, Dict, Generic, Hashable, Mapping, TypeVar, get_args
+from typing import Callable, Collection, Dict, Generic, Hashable, Mapping, TypeVar
 
 from ..common import TypeHint
 from ..feature_requirement import HAS_TV_TUPLE, HAS_UNPACK
+from . import get_generic_args
 from .basic_utils import get_type_vars, get_type_vars_of_parametrized, is_generic, is_parametrized, strip_alias
 from .implicit_params import fill_implicit_params
 from .normalize_type import normalize_type
 
-M = TypeVar('M')
-K = TypeVar('K', bound=Hashable)
+M = TypeVar("M")
+K = TypeVar("K", bound=Hashable)
 
 
 @dataclass
@@ -36,14 +37,14 @@ class GenericResolver(Generic[K, M]):
         members_storage = self._get_members_by_parents(origin)
         type_var_to_actual = self._get_type_var_to_actual(
             get_type_vars(origin),
-            self._unpack_args(get_args(parametrized_generic)),
+            self._unpack_args(get_generic_args(parametrized_generic)),
         )
         return replace(
             members_storage,
             members={
                 key: self._parametrize_by_dict(type_var_to_actual, tp)
                 for key, tp in members_storage.members.items()
-            }
+            },
         )
 
     def _unpack_args(self, args):
@@ -81,7 +82,7 @@ class GenericResolver(Generic[K, M]):
             for tp in members_storage.members.values()
         ):
             return members_storage
-        if not hasattr(tp, '__orig_bases__'):
+        if not hasattr(tp, "__orig_bases__"):
             return members_storage
 
         bases_members: Dict[K, TypeHint] = {}

@@ -262,7 +262,7 @@ container = make_container(MyProvider(), OtherProvider())
 
 ```python
 class MyProvider(Provider):
-   scope=Scope.APP
+   scope = Scope.APP
 
    @provide
    async def get_a(self) -> A:

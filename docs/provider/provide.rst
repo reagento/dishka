@@ -1,6 +1,6 @@
 .. _provide:
 
-@provide
+provide
 ******************
 
 ``provide`` function is used to declare a factory providing a dependency. It can be used with some class or as a method decorator (either sync or async). It supports finalization of dependency if you make it a generator.

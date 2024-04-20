@@ -9,6 +9,7 @@ from .dependency_source import (
     ContextVariable,
     Decorator,
     Factory,
+    FactoryType,
 )
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.key import DependencyKey
@@ -16,6 +17,7 @@ from .entities.scope import BaseScope, InvalidScopes
 from .exceptions import (
     CycleDependenciesError,
     GraphMissingFactoryError,
+    InvalidGraphError,
     NoFactoryError,
     UnknownScopeError,
 )
@@ -294,6 +296,10 @@ class RegistryBuilder:
         )
         self.decorator_depth[provides] += 1
         old_factory = registry.get_factory(provides)
+        if old_factory.type is FactoryType.CONTEXT:
+            raise InvalidGraphError(
+                f"Cannot apply decorator to context data {provides}",
+            )
         old_factory.provides = DependencyKey(
             undecorated_type, old_factory.provides.component,
         )

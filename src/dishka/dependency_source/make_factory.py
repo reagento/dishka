@@ -29,10 +29,12 @@ from typing import (
 )
 
 from dishka._adaptix.type_tools.basic_utils import (
-    get_all_type_hints,
     get_type_vars,
     is_bare_generic,
     strip_alias,
+)
+from dishka._adaptix.type_tools.fundamentals import (
+    get_all_type_hints,
 )
 from dishka._adaptix.type_tools.generic_resolver import (
     GenericResolver,

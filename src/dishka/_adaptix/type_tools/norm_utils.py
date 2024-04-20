@@ -23,7 +23,7 @@ def strip_tags(norm: BaseNormType) -> BaseNormType:
     return norm
 
 
-N = TypeVar('N', bound=BaseNormType)
+N = TypeVar("N", bound=BaseNormType)
 
 
 def strip_annotated(value: N) -> N:

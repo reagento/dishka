@@ -28,6 +28,11 @@ To use framework integration you mainly need to do 3 things:
 * add ``FromDishka[YourClass]`` on you framework handlers (or view-functions)
 * decorate your handlers with ``@inject`` before registering them in framework. Some integrations do not required it, see :ref:`autoinject`
 
+.. note::
+   ``FromDishka[T]`` is basically a synonym for ``Annotated[T, FromComponent()]`` and is used to get an object from default component. To use other component you can use the same syntax with annotated ``Annotated[T, FromComponent("X")]``.
+
+   For more details on components see :ref:`components`
+
 For FastAPI it will look like:
 
 .. code-block:: python

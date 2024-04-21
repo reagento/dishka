@@ -24,7 +24,7 @@ class ImplicitParamsGetter:
                 tuple(
                     self._process_limit_element(type_var, constraint)
                     for constraint in type_var.__constraints__
-                )
+                ),
             )
         if type_var.__bound__ is None:
             return Any
@@ -46,4 +46,4 @@ def fill_implicit_params(tp: TypeHint) -> TypeHint:
     params = ImplicitParamsGetter().get_implicit_params(strip_alias(tp))
     if params:
         return tp[params]
-    raise ValueError(f'Can not derive implicit parameters for {tp}')
+    raise ValueError(f"Can not derive implicit parameters for {tp}")

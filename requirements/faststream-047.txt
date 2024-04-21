@@ -1,0 +1,3 @@
+-r test.txt
+
+faststream[nats]==0.4.7

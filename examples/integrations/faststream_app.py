@@ -1,10 +1,8 @@
-from typing import Annotated
-
-from faststream import FastStream
-from faststream.nats import NatsBroker
+from faststream import ContextRepo, FastStream
+from faststream.nats import NatsBroker, NatsMessage
 
 from dishka import Provider, Scope, make_async_container, provide
-from dishka.integrations.faststream import FromDishka, inject, setup_dishka
+from dishka.integrations.faststream import FromDishka, setup_dishka
 
 
 class A:
@@ -32,15 +30,16 @@ container = make_async_container(provider)
 
 broker = NatsBroker()
 app = FastStream(broker)
-setup_dishka(container, app)
+setup_dishka(container, app, auto_inject=True)
 
 
 @broker.subscriber("test")
-@inject
 async def handler(
     msg: str,
     a: FromDishka[A],
     b: FromDishka[B],
+    raw_message: FromDishka[NatsMessage],
+    faststream_context: FromDishka[ContextRepo],
 ):
     print(msg, a, b)
 

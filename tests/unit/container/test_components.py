@@ -214,3 +214,24 @@ def test_decorator():
     container = make_container(provider, x_provider, dec_provider)
     assert container.get(int, component="X") == 2
     assert container.get(int) == 100
+
+
+class ResultProvider(Provider):
+    scope = Scope.APP
+    component = "X"
+
+    @provide
+    def foo(self) -> int:
+        return 42
+
+    @provide
+    def bar(self, x: int) -> Annotated[float, FromComponent()]:
+        return x
+
+
+def test_result_component():
+    container = make_container(ResultProvider())
+    assert container.get(float) == 42
+
+    container = make_container(ResultProvider().to_component("YYY"))
+    assert container.get(float) == 42

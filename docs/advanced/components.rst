@@ -64,7 +64,7 @@ Components are **isolated**: provider cannot implicitly request an object from a
         # default component is used here
 
         @provide(scope=Scope.APP)
-        def foo(self, a:int) -> float:
+        def foo(self, a: int) -> float:
             return a/10
 
 
@@ -95,7 +95,7 @@ Components can **link to each other**: each provider can add a component name wh
     class MainProvider(Provider):
 
         @provide(scope=Scope.APP)
-        def foo(self, a:Annotated[int, FromComponent("X")]) -> float:
+        def foo(self, a: Annotated[int, FromComponent("X")]) -> float:
             return a/10
 
 

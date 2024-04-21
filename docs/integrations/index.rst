@@ -15,6 +15,7 @@ Built-in frameworks integrations:
 * Arq
 * FastStream
 * TaskIq
+* Sanic
 
 Common approach
 =====================
@@ -26,6 +27,11 @@ To use framework integration you mainly need to do 3 things:
 * call ``setup_dishka`` on your container and framework entity
 * add ``FromDishka[YourClass]`` on you framework handlers (or view-functions)
 * decorate your handlers with ``@inject`` before registering them in framework. Some integrations do not required it, see :ref:`autoinject`
+
+.. note::
+   ``FromDishka[T]`` is basically a synonym for ``Annotated[T, FromComponent()]`` and is used to get an object from default component. To use other component you can use the same syntax with annotated ``Annotated[T, FromComponent("X")]``.
+
+   For more details on components see :ref:`components`
 
 For FastAPI it will look like:
 
@@ -77,7 +83,7 @@ With some frameworks we provide an option to inject dependencies in handlers wit
 
     from dishka.integrations.flask import FromDishka, setup_dishka
 
-    @app.get("/"
+    @app.get("/")
     def index(
             *,
             interactor: FromDishka[Interactor],
@@ -91,7 +97,7 @@ With some frameworks we provide an option to inject dependencies in handlers wit
 
 .. code-block:: python
 
-    from dishka.integrations.fastapi import FromDishka, setup_dishka
+    from dishka.integrations.fastapi import FromDishka, DishkaRoute, setup_dishka
 
     router = APIRouter(route_class=DishkaRoute)
 
@@ -105,13 +111,51 @@ With some frameworks we provide an option to inject dependencies in handlers wit
 
     setup_dishka(container, app)
 
+* For **FasStream** (**0.5.0** version and higher) you need to provide ``auto_inject=True`` when calling ``setup_dishka``. It is important here to call it before registering any subscribers or router include:
+
+.. code-block:: python
+
+    from faststream import FastStream
+    from faststream.nats import NatsBroker, NatsMessage
+    from dishka import make_async_container
+    from dishka.integrations.faststream import FastStreamProvider, FromDishka, setup_dishka
+
+    broker = NatsBroker()
+    app = FastStream(broker)
+    setup_dishka(make_async_container(..., FastStreamProvider), app, auto_inject=True)
+
+    @broker.subscriber("/")
+    def index(
+            *,
+            message: FromDishka[NatsMessage],
+    ) -> str:
+        await message.ack()
+        return message.body
+
+* For **Sanic** you need to provide ``auto_inject=True`` when calling ``setup_dishka``. It is important here to call it after registering all views and blueprints. E.g:
+
+.. code-block:: python
+
+    from sanic import Sanic, Request, HTTPResponse
+    from dishka.integrations.sanic import FromDishka, setup_dishka
+
+    app = Sanic(__name__)
+
+    @app.get("/")
+    async def index(
+        request: Request,
+        interactor: FromDishka[Interactor],
+    ) -> HTTPResponse:
+        return HTTPResponse(interactor())
+
+    setup_dishka(container=container, app=app, auto_inject=True)
 
 Context data
 ====================
 
 As ``REQUEST`` scope is entered automatically you cannot pass context data directly, but integrations do it for you:
 
-This objects are passed to context:
+These objects are passed to context:
 
 * aiohttp - ``aiohttp.web_request.Request``
 * Flask - ``flask.Request``
@@ -121,8 +165,9 @@ This objects are passed to context:
 * Aiogram - ``aiogram.types.TelegramObject``
 * pyTelegramBotAPI - actual type of event (like ``Message``) is used.
 * Arq - no objects
-* FastStream - no objects
+* FastStream - ``faststream.broker.message.StreamMessage`` or ``faststream.[broker].[Broker]Message``, ``faststream.utils.ContextRepo`` 
 * TaskIq - no objects
+* Sanic - ``sanic.request.Request``
 
 To use such objects you need to declare them in your provider using :ref:`from-context` and then they will be available as factories params.
 

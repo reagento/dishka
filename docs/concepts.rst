@@ -107,11 +107,11 @@ This allows you to have multiple parts of application build separately without n
     class MainProvider(Provider):
 
         @provide(scope=Scope.APP)
-        def foo(self, a:Annotated[int, FromComponent("X")]) -> float:
+        def foo(self, a: Annotated[int, FromComponent("X")]) -> float:
             return a/10
 
         @provide(scope=Scope.APP)
-        def bar(self, a:int) -> complex:
+        def bar(self, a: int) -> complex:
             return a + 0j
 
 

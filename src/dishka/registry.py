@@ -158,7 +158,8 @@ class GraphValidator:
 
     def validate(self):
         for registry_index, registry in enumerate(self.registries):
-            for factory in registry.factories.values():
+            factories = tuple(registry.factories.values())
+            for factory in factories:
                 self.path = {}
                 try:
                     self._validate_factory(factory, registry_index)

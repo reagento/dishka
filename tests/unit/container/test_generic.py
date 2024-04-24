@@ -113,3 +113,29 @@ def test_generic_func():
     a = container.get(A[int])
     assert isinstance(a, A)
     assert a.x == 42
+
+
+class Event:
+    pass
+
+
+EventsT = TypeVar("EventsT")
+
+
+class EventEmitter(Generic[EventsT]):
+    pass
+
+
+class EventEmitterImpl(EventEmitter[EventsT]):
+    pass
+
+
+def factory(event_emitter: EventEmitter[Event]) -> int:
+    return 1
+
+
+def test_generic_validation():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(EventEmitterImpl, provides=EventEmitter)
+    provider.provide(factory)
+    assert make_container(provider)

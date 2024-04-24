@@ -1,3 +1,4 @@
+from random import random
 from typing import Any, Protocol
 
 import pytest
@@ -273,3 +274,9 @@ def test_provide_all_instance():
     assert len(provider.factories) == 2
     provides = [f.provides.type_hint for f in provider.factories]
     assert provides == [A, B]
+
+
+def test_privde_random():
+    source = provide(source=random, provides=float)
+    assert len(source.dependency_sources) == 1
+    assert not source.dependency_sources[0].dependencies

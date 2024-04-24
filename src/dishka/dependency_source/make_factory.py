@@ -10,6 +10,7 @@ from collections.abc import (
 )
 from inspect import (
     isasyncgenfunction,
+    isbuiltin,
     isclass,
     iscoroutinefunction,
     isfunction,
@@ -226,7 +227,7 @@ def _make_factory_by_class(
     )
 
 
-def _make_factory_by_method(
+def _make_factory_by_function(
         *,
         provides: Any,
         scope: BaseScope | None,
@@ -387,9 +388,14 @@ def make_factory(
             provides=provides, scope=scope, source=source, cache=cache,
         )
     elif isfunction(source) or isinstance(source, classmethod):
-        return _make_factory_by_method(
+        return _make_factory_by_function(
             provides=provides, scope=scope, source=source, cache=cache,
             is_in_class=is_in_class,
+        )
+    elif isbuiltin(source):
+        return _make_factory_by_function(
+            provides=provides, scope=scope, source=source, cache=cache,
+            is_in_class=False,
         )
     elif isinstance(source, staticmethod):
         return _make_factory_by_static_method(

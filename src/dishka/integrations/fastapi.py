@@ -9,7 +9,7 @@ from collections.abc import Callable
 from inspect import Parameter
 from typing import Any, get_type_hints
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, WebSocket
 from fastapi.routing import APIRoute
 
 from dishka import AsyncContainer, FromDishka
@@ -20,7 +20,7 @@ from .starlette import ContainerMiddleware
 def inject(func):
     hints = get_type_hints(func)
     request_param = next(
-        (name for name, hint in hints.items() if hint is Request),
+        (name for name, hint in hints.items() if hint in (Request, WebSocket)),
         None,
     )
     if request_param:

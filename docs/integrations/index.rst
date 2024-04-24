@@ -159,9 +159,9 @@ These objects are passed to context:
 
 * aiohttp - ``aiohttp.web_request.Request``
 * Flask - ``flask.Request``
-* Fastapi - ``fastapi.Request``
+* Fastapi - ``fastapi.Request`` or ``fastapi.WebSocket`` if you are using web sockets
 * Litestar - ``litestar.Request``
-* Starlette - ``starlette.requests.Request``
+* Starlette - ``starlette.requests.Request`` or ``starlette.websockets.WebSocket`` if you are using web sockets
 * Aiogram - ``aiogram.types.TelegramObject``
 * pyTelegramBotAPI - actual type of event (like ``Message``) is used.
 * Arq - no objects

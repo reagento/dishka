@@ -40,3 +40,31 @@ class AppProvider(Provider):
     @provide(scope=Scope.REQUEST)
     def mock(self) -> Mock:
         return self.mock
+
+
+class WebSocketAppProvider(Provider):
+    def __init__(self):
+        super().__init__()
+        self.app_released = Mock()
+        self.request_released = Mock()
+        self.websocket_released = Mock()
+        self.mock = Mock()
+
+    @provide(scope=Scope.APP)
+    def app(self) -> Iterable[AppDep]:
+        yield APP_DEP_VALUE
+        self.app_released()
+
+    @provide(scope=Scope.SESSION)
+    def request(self) -> Iterable[RequestDep]:
+        yield REQUEST_DEP_VALUE
+        self.request_released()
+
+    @provide(scope=Scope.SESSION)
+    def websocket(self) -> Iterable[WebSocketDep]:
+        yield WS_DEP_VALUE
+        self.websocket_released()
+
+    @provide(scope=Scope.SESSION)
+    def mock(self) -> Mock:
+        return self.mock

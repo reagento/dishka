@@ -20,8 +20,8 @@ from ..common import (
     REQUEST_DEP_VALUE,
     WS_DEP_VALUE,
     AppDep,
-    AppProvider,
     RequestDep,
+    WebSocketAppProvider,
     WebSocketDep,
 )
 
@@ -48,15 +48,15 @@ async def get_with_app(
 
 
 @pytest.mark.asyncio
-async def test_app_dependency(app_provider: AppProvider):
-    async with dishka_app(get_with_app, app_provider) as client:
+async def test_app_dependency(ws_app_provider: WebSocketAppProvider):
+    async with dishka_app(get_with_app, ws_app_provider) as client:
         with client.websocket_connect("/") as connection:
             connection.send_text("...")
             assert connection.receive_text() == "passed"
 
-        app_provider.mock.assert_called_with(APP_DEP_VALUE)
-        app_provider.app_released.assert_not_called()
-    app_provider.app_released.assert_called()
+        ws_app_provider.mock.assert_called_with(APP_DEP_VALUE)
+        ws_app_provider.app_released.assert_not_called()
+    ws_app_provider.app_released.assert_called()
 
 
 async def get_with_request(
@@ -71,31 +71,31 @@ async def get_with_request(
 
 
 @pytest.mark.asyncio
-async def test_request_dependency(app_provider: AppProvider):
-    async with dishka_app(get_with_request, app_provider) as client:
+async def test_request_dependency(ws_app_provider: WebSocketAppProvider):
+    async with dishka_app(get_with_request, ws_app_provider) as client:
         with client.websocket_connect("/") as connection:
             connection.send_text("...")
             assert connection.receive_text() == "passed"
-        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
-        app_provider.request_released.assert_called_once()
+        ws_app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        ws_app_provider.request_released.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_request_dependency2(app_provider: AppProvider):
-    async with dishka_app(get_with_request, app_provider) as client:
+async def test_request_dependency2(ws_app_provider: WebSocketAppProvider):
+    async with dishka_app(get_with_request, ws_app_provider) as client:
         with client.websocket_connect("/") as connection:
             connection.send_text("...")
             assert connection.receive_text() == "passed"
 
-        app_provider.request_released.assert_called_once()
-        app_provider.request_released.reset_mock()
+        ws_app_provider.request_released.assert_called_once()
+        ws_app_provider.request_released.reset_mock()
 
         with client.websocket_connect("/") as connection:
             connection.send_text("...")
             assert connection.receive_text() == "passed"
 
-        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
-        app_provider.request_released.assert_called_once()
+        ws_app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        ws_app_provider.request_released.assert_called_once()
 
 
 async def get_with_websocket(
@@ -110,11 +110,11 @@ async def get_with_websocket(
 
 
 @pytest.mark.asyncio
-async def test_websocket_dependency(app_provider: AppProvider):
-    async with dishka_app(get_with_websocket, app_provider) as client:
+async def test_websocket_dependency(ws_app_provider: WebSocketAppProvider):
+    async with dishka_app(get_with_websocket, ws_app_provider) as client:
         with client.websocket_connect("/") as connection:
             connection.send_text("...")
             assert connection.receive_text() == "passed"
 
-        app_provider.mock.assert_called_with(WS_DEP_VALUE)
-        app_provider.websocket_released.assert_called_once()
+        ws_app_provider.mock.assert_called_with(WS_DEP_VALUE)
+        ws_app_provider.websocket_released.assert_called_once()

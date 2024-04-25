@@ -19,24 +19,29 @@ from .starlette import ContainerMiddleware
 
 def inject(func):
     hints = get_type_hints(func)
-    request_param = next(
-        (name for name, hint in hints.items() if hint in (Request, WebSocket)),
+    request_hint = next(
+        (name for name, hint in hints.items() if hint is Request),
         None,
     )
-    if request_param:
-        additional_params = []
+    websocket_hint = next(
+        (name for name, hint in hints.items() if hint is WebSocket),
+        None,
+    )
+    if request_hint is None and websocket_hint is None:
+        additional_params = [
+            Parameter(
+                name="___dishka_request",
+                annotation=Request,
+                kind=Parameter.KEYWORD_ONLY,
+            ),
+        ]
     else:
-        request_param = "____dishka_request"
-        additional_params = [Parameter(
-            name=request_param,
-            annotation=Request,
-            kind=Parameter.KEYWORD_ONLY,
-        )]
-
+        additional_params = []
+    param_name = request_hint or websocket_hint or "___dishka_request"
     return wrap_injection(
         func=func,
         remove_depends=True,
-        container_getter=lambda _, p: p[request_param].state.dishka_container,
+        container_getter=lambda _, p: p[param_name].state.dishka_container,
         additional_params=additional_params,
         is_async=True,
     )
@@ -44,7 +49,10 @@ def inject(func):
 
 class DishkaRoute(APIRoute):
     def __init__(
-            self, path: str, endpoint: Callable[..., Any], **kwargs,
+        self,
+        path: str,
+        endpoint: Callable[..., Any],
+        **kwargs,
     ):
         endpoint = inject(endpoint)
         super().__init__(path, endpoint, **kwargs)

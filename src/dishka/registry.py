@@ -88,8 +88,13 @@ class Registry:
             self, factory: Factory, dependency_key: DependencyKey,
     ) -> Factory:
         dependency = dependency_key.type_hint
+        type_var_deps = (
+            d.type_hint
+            for d in factory.dependencies
+            if isinstance(d.type_hint, TypeVar)
+        )
         params_replacement = dict(zip(
-            get_args(factory.provides.type_hint),
+            type_var_deps,
             get_args(dependency),
             strict=False,
         ))
@@ -158,7 +163,8 @@ class GraphValidator:
 
     def validate(self):
         for registry_index, registry in enumerate(self.registries):
-            for factory in registry.factories.values():
+            factories = tuple(registry.factories.values())
+            for factory in factories:
                 self.path = {}
                 try:
                     self._validate_factory(factory, registry_index)

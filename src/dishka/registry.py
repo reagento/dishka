@@ -88,8 +88,13 @@ class Registry:
             self, factory: Factory, dependency_key: DependencyKey,
     ) -> Factory:
         dependency = dependency_key.type_hint
+        type_var_deps = (
+            d.type_hint
+            for d in factory.dependencies
+            if isinstance(d.type_hint, TypeVar)
+        )
         params_replacement = dict(zip(
-            get_args(factory.provides.type_hint),
+            type_var_deps,
             get_args(dependency),
             strict=False,
         ))

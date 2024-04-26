@@ -3,6 +3,7 @@ from typing import Generic, TypeVar
 import pytest
 
 from dishka import Provider, Scope, make_container, provide
+from dishka.exceptions import GraphMissingFactoryError
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -127,15 +128,37 @@ class EventEmitter(Generic[EventsT]):
 
 
 class EventEmitterImpl(EventEmitter[EventsT]):
-    pass
+    def __init__(self, x: EventsT) -> None:
+        pass
 
 
 def factory(event_emitter: EventEmitter[Event]) -> int:
     return 1
 
 
-def test_generic_validation():
+def factory_invalid(event_emitter: EventEmitter[str]) -> int:
+    return 1
+
+
+def test_generic_validation_ok():
     provider = Provider(scope=Scope.APP)
     provider.provide(EventEmitterImpl, provides=EventEmitter)
+    provider.provide(source=lambda: None, provides=Event)
     provider.provide(factory)
     assert make_container(provider)
+
+
+def test_generic_validation_typevar_ok():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(EventEmitterImpl[EventsT], provides=EventEmitter[EventsT])
+    provider.provide(source=lambda: None, provides=Event)
+    provider.provide(factory)
+    assert make_container(provider)
+
+
+def test_generic_validation_fail():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(EventEmitterImpl, provides=EventEmitter)
+    provider.provide(factory_invalid)
+    with pytest.raises(GraphMissingFactoryError):
+        assert make_container(provider)

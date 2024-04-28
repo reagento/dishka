@@ -1,3 +1,5 @@
+.. include:: <isonum.txt>
+
 Using with frameworks
 *******************************
 
@@ -170,6 +172,35 @@ These objects are passed to context:
 * Sanic - ``sanic.request.Request``
 
 To use such objects you need to declare them in your provider using :ref:`from-context` and then they will be available as factories params.
+
+Websocket support
+=============================
+
+Injection is working with webosckets in these frameworks:
+
+* FastAPI
+* Starlette
+
+For most cases we operate single events like HTTP-requests. In this case we operate only 2 scopes: ``APP`` and ``REQUEST``. Websockets are different: for one application you have multiple connections (one per client) and each connection delivers multiple messages. To support this we use additional scope: ``SESSION``:
+
+    ``APP`` |rarr| ``SESSION`` |rarr| ``REQUEST``
+
+In frameworks like FastAPI and Starlette your view function is called once per connection and then you retrieve messages in loop. So, ``inject`` decorator can be only used to retrieve SESSION-scoped objects. To achieve REQUEST-scope you can enter in manually:
+
+.. code-block:: python
+
+    @inject
+    async def get_with_request(
+        websocket: WebSocket,
+        a: FromDishka[A],  # object with Scope.Session
+        container: FromDishka[AsyncContainer],  # container for Scope.SESSION
+    ) -> None:
+        await websocket.accept()
+        while True:
+            data = await websocket.receive_text()
+            # enter the nested scope, which is Scope.REQUEST
+            with container() as request_container:
+                b = request_container.get(B)  # object with Scope.REQUEST
 
 
 Adding integrations

@@ -44,7 +44,7 @@ from dishka import Provider
 provider = Provider()
 ```
 
-3. Register functions which provide dependencies. Do not forget to place correct typehints for parameters and result. We use `scope=Scope.APP` for dependencies which ar created only once in applicaiton lifetime, and `scope=Scope.REQUEST` for those which should be recreated for each processing request/event/etc.
+3. Register functions which provide dependencies. Do not forget to place correct typehints for parameters and result. We use `scope=Scope.APP` for dependencies which ar created only once in application lifetime, and `scope=Scope.REQUEST` for those which should be recreated for each processing request/event/etc.
 
 ```python
 from dishka import Provider, Scope
@@ -144,7 +144,7 @@ Provider itself is a class with some attributes and methods. Each of them is eit
 
 `@provide` can be used as a decorator for some method. This method will be called when corresponding dependency has to be created. Name of the method is not important: just check that it is different form other `Provider` attributes. Type hints do matter: they show what this method creates and what does it require. All method parameters are treated as other dependencies and created using container.
 
-If `provide` is used with some class then that class itself is treated as a factory (`__init__` is analyzed for parameters). But do not forget to assing that call to some attribute otherwise it will be ignored.
+If `provide` is used with some class then that class itself is treated as a factory (`__init__` is analyzed for parameters). But do not forget to assign that call to some attribute otherwise it will be ignored.
 
 **Component** - is an isolated group of providers within the same container identified by a string. When dependency is requested it is searched only within the same component as its dependant, unless it is declared explicitly.
 
@@ -252,13 +252,13 @@ with container(context={RequestClass: request_instance}) as request_container:
     pass
 ```
 
-* Having to many dependencies? Or maybe want to replace only part of them in tests keeping others? Create multiple `Provider` classes
+* Having too many dependencies? Or maybe want to replace only part of them in tests keeping others? Create multiple `Provider` classes
 
 ```python
 container = make_container(MyProvider(), OtherProvider())
 ```
 
-* Tired of providing `scope==` for each depedency? Set it inside your `Provider` class and all dependencies with no scope will use it.
+* Tired of providing `scope` for each dependency? Set it inside your `Provider` class and all dependencies with no scope will use it.
 
 ```python
 class MyProvider(Provider):

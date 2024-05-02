@@ -17,7 +17,7 @@ from .base import wrap_injection
 from .starlette import ContainerMiddleware
 
 
-def inject(func):
+def inject(func: Callable) -> Callable:
     hints = get_type_hints(func)
     request_hint = next(
         (name for name, hint in hints.items() if hint is Request),

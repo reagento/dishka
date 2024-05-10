@@ -25,9 +25,11 @@ class DishkaContainer:
 
     async def resolve(self, obj_type, *args) -> T:
         if isinstance(self._container, AsyncContainer):
-            return await self._container.get(obj_type)
+            async with self._container() as request_container:
+                return await request_container.get(obj_type)
         else:
-            return self._container.get(obj_type)
+            with self._container() as request_container:
+                return request_container.get(obj_type)
 
     def __contains__(self, item) -> bool:
         for registry in (

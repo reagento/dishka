@@ -1,5 +1,6 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from inspect import isfunction
 from unittest.mock import Mock
 
 import pytest
@@ -11,22 +12,29 @@ from blacksheep.testing import TestClient
 
 from dishka import make_async_container
 from dishka.integrations.blacksheep import setup_dishka
-from ..common import AppDep, AppProvider
+from ..common import APP_DEP_VALUE, AppDep, AppProvider
 
 
 @asynccontextmanager
-async def dishka_app(view, provider) -> AsyncGenerator[TestClient, None]:
+async def dishka_app(
+    view_or_controller,
+    provider,
+) -> AsyncGenerator[TestClient, None]:
     app = Blacksheep()
 
     container = make_async_container(provider)
     setup_dishka(container, app)
 
-    if not issubclass(view, APIController):
-        app.router.add_get("/", view)
+    if isfunction(view_or_controller):
+        app.router.add_get("/", view_or_controller)
+    else:
+        assert issubclass(view_or_controller, APIController)
 
     await app.start()
     yield TestClient(app)
     await app.stop()
+
+    await container.close()
 
 
 async def get_with_app(a: AppDep, mock: Mock) -> None:
@@ -50,6 +58,9 @@ class TestController(APIController):
 async def test_app_dependency(app_provider: AppProvider, app_factory):
     async with app_factory(get_with_app, app_provider) as client:
         await client.get("/")
+        app_provider.mock.assert_called_with(APP_DEP_VALUE)
+        app_provider.app_released.assert_not_called()
+    app_provider.app_released.assert_called()
 
 
 @pytest.mark.parametrize("app_factory", [dishka_app])

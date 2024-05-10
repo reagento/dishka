@@ -1,11 +1,13 @@
 __all__ = ["DishkaContainer", "setup_dishka"]
 
 import inspect
+import time
 from typing import Any, TypeVar
 
 from blacksheep import Application as Blacksheep
 
 from dishka import AsyncContainer, Container, Scope, provide
+from dishka.dependency_source.factory import Factory
 
 T = TypeVar("T")
 
@@ -13,23 +15,48 @@ T = TypeVar("T")
 class DishkaContainer:
     def __init__(self, container: AsyncContainer | Container) -> None:
         self._container = container
+        self._context = {}
 
     def register(
         self,
         obj_type,
-        scope: Scope = Scope.APP,
+        *args,
+        scope: Scope = Scope.REQUEST,
         provides: Any = None,
     ) -> None:
-        factory = provide(obj_type, provides=provides).dependency_sources[0]
-        self._container.registry.add_factory(factory)
+        self._context[obj_type] = provide(
+            obj_type,
+            scope=scope,
+            provides=provides,
+        ).dependency_sources[0]
 
-    async def resolve(self, obj_type, *args) -> T:
+    async def resolve(self, obj_type: type[T], scope) -> T:
+        resolved = None
+
         if isinstance(self._container, AsyncContainer):
-            async with self._container() as request_container:
-                return await request_container.get(obj_type)
+            async with self._container(
+                context=self._context,
+            ) as request_container:
+                resolved = await request_container.get(obj_type)
+
+                if isinstance(resolved, Factory):
+                    dependencies = [
+                        await request_container.get(dependency.type_hint)
+                        for dependency in resolved.dependencies
+                    ]
+                    resolved = resolved.source(*dependencies)
         else:
-            with self._container() as request_container:
-                return request_container.get(obj_type)
+            with self._container(context=self._context) as request_container:
+                resolved = request_container.get(obj_type)
+
+                if isinstance(resolved, Factory):
+                    dependencies = [
+                        request_container.get(dependency.type_hint)
+                        for dependency in resolved.dependencies
+                    ]
+                    resolved = resolved.source(*dependencies)
+
+        return resolved
 
     def __contains__(self, item) -> bool:
         for registry in (

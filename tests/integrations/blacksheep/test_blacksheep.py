@@ -42,7 +42,9 @@ async def get_with_app(a: AppDep, mock: Mock) -> None:
 
 
 class TestController(APIController):
-    mock: Mock
+    def __init__(self, a: AppDep, mock: Mock) -> None:
+        self.a = a
+        self.mock = mock
 
     @classmethod
     def route(cls) -> str:
@@ -50,7 +52,8 @@ class TestController(APIController):
 
     @controller_get("/")
     async def index(self) -> Response:
-        return self.ok("hi")
+        self.mock(self.a)
+        return self.ok()
 
 
 @pytest.mark.parametrize("app_factory", [dishka_app])
@@ -70,5 +73,7 @@ async def test_app_controller_dependency(
     app_factory,
 ):
     async with app_factory(TestController, app_provider) as client:
-        resp = await client.get("/controller")
-        assert resp.status == 200
+        await client.get("/controller")
+        app_provider.mock.assert_called_with(APP_DEP_VALUE)
+        app_provider.app_released.assert_not_called()
+    app_provider.app_released.assert_called()

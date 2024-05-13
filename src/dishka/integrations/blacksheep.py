@@ -1,7 +1,6 @@
 __all__ = ["DishkaContainer", "setup_dishka"]
 
 import inspect
-import time
 from typing import Any, TypeVar
 
 from blacksheep import Application as Blacksheep
@@ -75,10 +74,11 @@ def setup_dishka(
 ) -> None:
     _temp_monkey_patch()
 
-    app._services = DishkaContainer(container)
+    app._services = DishkaContainer(container)  # noqa: SLF001
 
 
-# FIXME: temp monkey patching. Fixes in https://github.com/Neoteroi/BlackSheep/pull/497
+# TODO(edpyt): temp monkey patching.  # noqa: FIX002
+# https://github.com/Neoteroi/BlackSheep/pull/497
 def _temp_monkey_patch() -> None:
     from blacksheep import Request
     from blacksheep.server.bindings import ServiceBinder
@@ -86,12 +86,12 @@ def _temp_monkey_patch() -> None:
 
     async def _get_value(self, request: Request) -> Any:
         try:
-            scope = request._di_scope  # type: ignore
+            scope = request._di_scope  # type: ignore  # noqa: PGH003, SLF001
         except AttributeError:
             # no support for scoped services
             # (across parameters and middlewares)
             scope = None
-        assert self.services is not None
+        assert self.services is not None  # noqa: S101
         try:
             if inspect.iscoroutinefunction(self.services.resolve):
                 return await self.services.resolve(self.expected_type, scope)

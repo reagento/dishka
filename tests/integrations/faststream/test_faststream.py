@@ -63,7 +63,6 @@ async def get_with_request(
     return "passed"
 
 
-
 @pytest.mark.asyncio
 async def test_request_dependency(app_provider: AppProvider):
     async with dishka_app(get_with_request, app_provider) as client:
@@ -71,3 +70,41 @@ async def test_request_dependency(app_provider: AppProvider):
 
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_autoinject_before_subscriber(app_provider: AppProvider):
+    broker = NatsBroker()
+    app = FastStream(broker)
+
+    container = make_async_container(app_provider)
+    setup_dishka(container, app=app, auto_inject=True)
+
+    broker.subscriber("test")(get_with_request)
+
+    async with TestNatsBroker(broker) as br:
+        assert await br.publish("", "test", rpc=True) == "passed"
+
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()
+
+    await container.close()
+
+
+@pytest.mark.asyncio
+async def test_autoinject_after_subscriber(app_provider: AppProvider):
+    broker = NatsBroker()
+    app = FastStream(broker)
+
+    broker.subscriber("test")(get_with_request)
+
+    container = make_async_container(app_provider)
+    setup_dishka(container, app=app, auto_inject=True)
+
+    async with TestNatsBroker(broker) as br:
+        assert await br.publish("", "test", rpc=True) == "passed"
+
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()
+
+    await container.close()

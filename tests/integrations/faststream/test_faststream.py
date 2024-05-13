@@ -11,6 +11,7 @@ from dishka.integrations.faststream import (
     FromDishka,
     inject,
     setup_dishka,
+    FASTSTREAM_OLD_MIDDLEWARES,
 )
 from ..common import (
     APP_DEP_VALUE,
@@ -73,6 +74,7 @@ async def test_request_dependency(app_provider: AppProvider):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(FASTSTREAM_OLD_MIDDLEWARES, reason="Requires FastStream 0.5.0+")
 async def test_autoinject_before_subscriber(app_provider: AppProvider):
     broker = NatsBroker()
     app = FastStream(broker)
@@ -92,6 +94,7 @@ async def test_autoinject_before_subscriber(app_provider: AppProvider):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(FASTSTREAM_OLD_MIDDLEWARES, reason="Requires FastStream 0.5.0+")
 async def test_autoinject_after_subscriber(app_provider: AppProvider):
     broker = NatsBroker()
     app = FastStream(broker)

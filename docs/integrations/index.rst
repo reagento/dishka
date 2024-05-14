@@ -113,7 +113,7 @@ With some frameworks we provide an option to inject dependencies in handlers wit
 
     setup_dishka(container, app)
 
-* For **FasStream** (**0.5.0** version and higher) you need to provide ``auto_inject=True`` when calling ``setup_dishka``. It is important here to call it before registering any subscribers or router include:
+* For **FasStream** (**0.5.0** version and higher) you need to provide ``auto_inject=True`` when calling ``setup_dishka``. E.g:
 
 .. code-block:: python
 

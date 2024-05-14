@@ -108,6 +108,18 @@ or use @inject at each subscriber manually.
             *app.broker._middlewares,  # noqa: SLF001
         )
 
+        for subscriber in app.broker._subscribers.values():  # noqa: SLF001
+            subscriber._broker_middlewares = (  # noqa: SLF001
+                DishkaMiddleware(container),
+                *subscriber._broker_middlewares,  # noqa: SLF001
+            )
+
+        for publisher in app.broker._publishers.values():  # noqa: SLF001
+            publisher._broker_middlewares = (  # noqa: SLF001
+                DishkaMiddleware(container),
+                *publisher._broker_middlewares,  # noqa: SLF001
+            )
+
         if auto_inject:
             app.broker._call_decorators = (  # noqa: SLF001
                 inject,

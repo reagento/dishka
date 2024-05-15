@@ -60,7 +60,7 @@ else:
         async def consume_scope(
                 self,
                 call_next: Callable[[Any], Awaitable[Any]],
-                msg: StreamMessage[any],
+                msg: StreamMessage[Any],
         ) -> AsyncIterator[DecodedMessage]:
             async with self.container(
                 {

@@ -168,6 +168,11 @@ class GraphValidator:
                 # ignore TypeVar parameters
                 if not isinstance(dep.type_hint, TypeVar):
                     self._validate_key(dep, registry_index)
+            for dep in factory.kw_dependencies.values():
+                # ignore TypeVar parameters
+                if not isinstance(dep.type_hint, TypeVar):
+                    self._validate_key(dep, registry_index)
+
         except NoFactoryError as e:
             e.add_path(factory)
             raise

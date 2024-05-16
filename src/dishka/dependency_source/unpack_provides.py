@@ -24,6 +24,7 @@ def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
     ]
     res.append(Factory(
         dependencies=factory.dependencies,
+        kw_dependencies=factory.kw_dependencies,
         type_=factory.type,
         source=factory.source,
         scope=factory.scope,

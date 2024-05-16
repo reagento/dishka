@@ -58,6 +58,22 @@ def test_decorator():
     assert isinstance(a.a, A)
 
 
+def kwarg_decorator(x: int, *, a: A) -> A:
+    return ADecorator(a)
+
+
+def test_kwargs():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(A)
+    provider.decorate(kwarg_decorator)
+    provider.provide(lambda: 1, provides=int)
+
+    container = make_container(provider)
+    a = container.get(A)
+    assert isinstance(a, ADecorator)
+    assert isinstance(a.a, A)
+
+
 def test_decorator_with_provides():
     class MyProvider(Provider):
         a = provide(A, scope=Scope.APP)

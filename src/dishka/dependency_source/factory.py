@@ -1,10 +1,9 @@
 from collections.abc import (
+    Mapping,
     Sequence,
 )
 from enum import Enum
-from typing import (
-    Any,
-)
+from typing import Any
 
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
@@ -23,7 +22,8 @@ class FactoryType(Enum):
 
 class Factory:
     __slots__ = (
-        "dependencies", "source", "provides", "scope", "type",
+        "dependencies", "kw_dependencies",
+        "source", "provides", "scope", "type",
         "is_to_bind", "cache",
     )
 
@@ -31,6 +31,7 @@ class Factory:
             self,
             *,
             dependencies: Sequence[DependencyKey],
+            kw_dependencies: Mapping[str, DependencyKey],
             source: Any,
             provides: DependencyKey,
             scope: BaseScope | None,
@@ -39,6 +40,7 @@ class Factory:
             cache: bool,
     ):
         self.dependencies = dependencies
+        self.kw_dependencies = kw_dependencies
         self.source = source
         self.provides = provides
         self.scope = scope
@@ -58,6 +60,7 @@ class Factory:
             dependencies = self.dependencies[:]
         return Factory(
             dependencies=dependencies,
+            kw_dependencies=self.kw_dependencies,
             source=source,
             provides=self.provides,
             scope=scope,
@@ -71,6 +74,10 @@ class Factory:
             dependencies=[
                 d.with_component(component) for d in self.dependencies
             ],
+            kw_dependencies={
+                name: d.with_component(component)
+                for name, d in self.kw_dependencies.items()
+            },
             source=self.source,
             provides=self.provides.with_component(component),
             scope=self.scope,

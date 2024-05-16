@@ -23,7 +23,7 @@ from .exceptions import NoContextValueError, UnsupportedFactoryError
 
 def make_args(names: list[str]):
     return ", ".join(
-        "{await} getter(%s)" % arg
+        "{await} getter(%s)" % arg  # noqa: UP031
         for arg in names
     )
 

@@ -32,6 +32,7 @@ class ContextVariable:
                 provides=self.provides,
                 is_to_bind=False,
                 dependencies=[],
+                kw_dependencies={},
                 type_=FactoryType.CONTEXT,
                 cache=False,
             )

@@ -9,6 +9,7 @@ from collections.abc import (
     Sequence,
 )
 from inspect import (
+    Parameter,
     isasyncgenfunction,
     isbuiltin,
     isclass,
@@ -214,10 +215,17 @@ def _make_factory_by_class(
         ) from e
 
     hints.pop("return", _empty)
+    params = signature(init).parameters
+    kw_dependency_keys = {
+        name: hint_to_dependency_key(hints.pop(name))
+        for name, param in params.items()
+        if param.kind is Parameter.KEYWORD_ONLY
+    }
     dependencies = list(hints.values())
 
     return Factory(
         dependencies=hints_to_dependency_keys(dependencies),
+        kw_dependencies=kw_dependency_keys,
         type_=FactoryType.FACTORY,
         source=source,
         scope=scope,
@@ -267,7 +275,14 @@ def _make_factory_by_function(
             # if we will bind factory to provider instance
             hints = {self.name: Any, **hints}
     possible_dependency = hints.pop("return", _empty)
+
+    kw_dependency_keys = {
+        name: hint_to_dependency_key(hints.pop(name))
+        for name, param in params.items()
+        if param.kind is Parameter.KEYWORD_ONLY
+    }
     dependencies = list(hints.values())
+
     if not provides:
         if possible_dependency is _empty:
             name = getattr(source, "__qualname__", "") or str(source)
@@ -280,6 +295,7 @@ def _make_factory_by_function(
             raise TypeError(f"Failed to analyze `{name}`. \n" + str(e)) from e
     return Factory(
         dependencies=hints_to_dependency_keys(dependencies),
+        kw_dependencies=kw_dependency_keys,
         type_=factory_type,
         source=source,
         scope=scope,
@@ -316,8 +332,17 @@ def _make_factory_by_static_method(
             f"Or, create a separate factory with all types imported.",
             name=e.name,
         ) from e
+
     possible_dependency = hints.pop("return", _empty)
+
+    params = signature(source).parameters
+    kw_dependency_keys = {
+        name: hint_to_dependency_key(hints.pop(name))
+        for name, param in params.items()
+        if param.kind is Parameter.KEYWORD_ONLY
+    }
     dependencies = list(hints.values())
+
     if not provides:
         if possible_dependency is _empty:
             name = getattr(source, "__qualname__", "") or str(source)
@@ -330,6 +355,7 @@ def _make_factory_by_static_method(
             raise TypeError(f"Failed to analyze `{name}`. \n" + str(e)) from e
     return Factory(
         dependencies=hints_to_dependency_keys(dependencies),
+        kw_dependencies=kw_dependency_keys,
         type_=factory_type,
         source=source,
         scope=scope,
@@ -363,6 +389,7 @@ def _make_factory_by_other_callable(
         dependencies = factory.dependencies
     return Factory(
         dependencies=dependencies,
+        kw_dependencies=factory.kw_dependencies,
         type_=factory.type,
         source=source,
         scope=scope,

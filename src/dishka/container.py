@@ -1,4 +1,5 @@
-from collections.abc import Callable
+import warnings
+from collections.abc import Callable, MutableMapping
 from threading import Lock
 from typing import Any, Optional, TypeVar
 
@@ -6,6 +7,7 @@ from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope, Scope
 from .container_objects import Exit
+from .context_proxy import ContextProxy
 from .dependency_source import FactoryType
 from .exceptions import (
     ExitError,
@@ -19,8 +21,8 @@ T = TypeVar("T")
 
 class Container:
     __slots__ = (
-        "registry", "child_registries", "context", "parent_container",
-        "lock", "_exits", "close_parent",
+        "registry", "child_registries", "parent_container",
+        "lock", "_exits", "close_parent", "_cache", "_context",
     )
 
     def __init__(
@@ -34,13 +36,13 @@ class Container:
     ):
         self.registry = registry
         self.child_registries = child_registries
-        self.context = {DependencyKey(type(self), DEFAULT_COMPONENT): self}
+        self._context = {DependencyKey(type(self), DEFAULT_COMPONENT): self}
         if context:
             for key, value in context.items():
-                if isinstance(key, DependencyKey):
-                    self.context[key] = value
-                else:
-                    self.context[DependencyKey(key, DEFAULT_COMPONENT)] = value
+                if not isinstance(key, DependencyKey):
+                    key = DependencyKey(key, DEFAULT_COMPONENT)
+                self._context[key] = value
+        self._cache = {**self._context}
         self.parent_container = parent_container
         if lock_factory:
             self.lock = lock_factory()
@@ -48,6 +50,15 @@ class Container:
             self.lock = None
         self._exits: list[Exit] = []
         self.close_parent = close_parent
+
+    @property
+    def context(self) -> MutableMapping[DependencyKey, Any]:
+        warnings.warn(
+            "`container.context` is deprecated",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return ContextProxy(cache=self._cache, context=self._context)
 
     def __call__(
             self,
@@ -108,8 +119,8 @@ class Container:
             return self._get_unlocked(key)
 
     def _get_unlocked(self, key: DependencyKey) -> Any:
-        if key in self.context:
-            return self.context[key]
+        if key in self._cache:
+            return self._cache[key]
         compiled = self.registry.get_compiled(key)
         if not compiled:
             if not self.parent_container:
@@ -118,7 +129,7 @@ class Container:
                 key.type_hint, key.component,
             )
         try:
-            return compiled(self._get_unlocked, self._exits, self.context)
+            return compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:
             e.add_path(self.registry.get_factory(key))
             raise
@@ -133,6 +144,7 @@ class Container:
                 pass
             except Exception as err:  # noqa: BLE001
                 errors.append(err)
+        self._cache = {**self._context}
         if self.close_parent:
             try:
                 self.parent_container.close(exception)

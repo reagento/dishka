@@ -1,3 +1,5 @@
+.. include:: <isonum.txt>
+
 Using with frameworks
 *******************************
 
@@ -111,7 +113,7 @@ With some frameworks we provide an option to inject dependencies in handlers wit
 
     setup_dishka(container, app)
 
-* For **FasStream** (**0.5.0** version and higher) you need to provide ``auto_inject=True`` when calling ``setup_dishka``. It is important here to call it before registering any subscribers or router include:
+* For **FasStream** (**0.5.0** version and higher) you need to provide ``auto_inject=True`` when calling ``setup_dishka``. E.g:
 
 .. code-block:: python
 
@@ -159,9 +161,9 @@ These objects are passed to context:
 
 * aiohttp - ``aiohttp.web_request.Request``
 * Flask - ``flask.Request``
-* Fastapi - ``fastapi.Request``
+* Fastapi - ``fastapi.Request`` or ``fastapi.WebSocket`` if you are using web sockets
 * Litestar - ``litestar.Request``
-* Starlette - ``starlette.requests.Request``
+* Starlette - ``starlette.requests.Request`` or ``starlette.websockets.WebSocket`` if you are using web sockets
 * Aiogram - ``aiogram.types.TelegramObject``
 * pyTelegramBotAPI - actual type of event (like ``Message``) is used.
 * Arq - no objects
@@ -171,6 +173,53 @@ These objects are passed to context:
 
 To use such objects you need to declare them in your provider using :ref:`from-context` and then they will be available as factories params.
 
+Websocket support
+=============================
+
+Injection is working with webosckets in these frameworks:
+
+* FastAPI
+* Starlette
+* aiohttp
+
+For most cases we operate single events like HTTP-requests. In this case we operate only 2 scopes: ``APP`` and ``REQUEST``. Websockets are different: for one application you have multiple connections (one per client) and each connection delivers multiple messages. To support this we use additional scope: ``SESSION``:
+
+    ``APP`` |rarr| ``SESSION`` |rarr| ``REQUEST``
+
+In frameworks like FastAPI and Starlette your view function is called once per connection and then you retrieve messages in loop. So, ``inject`` decorator can be only used to retrieve SESSION-scoped objects. To achieve REQUEST-scope you can enter in manually:
+
+.. code-block:: python
+
+    @inject
+    async def get_with_request(
+        websocket: WebSocket,
+        a: FromDishka[A],  # object with Scope.SESSION
+        container: FromDishka[AsyncContainer],  # container for Scope.SESSION
+    ) -> None:
+        await websocket.accept()
+        while True:
+            data = await websocket.receive_text()
+            # enter the nested scope, which is Scope.REQUEST
+            async with container() as request_container:
+                b = await request_container.get(B)  # object with Scope.REQUEST
+
+This is how it works with aiohttp
+
+.. code-block:: python
+
+    @inject
+    async def get_with_request(
+        request: web.Request, 
+        a: FromDishka[A],  # object with Scope.SESSION
+        container: FromDishka[AsyncContainer],  # container for Scope.SESSION
+    ) -> web.WebsocketResponse:
+        websocket = web.WebsocketResponse()
+        await websocket.prepare(request)
+
+        async for message in weboscket:
+            # enter the nested scope, which is Scope.REQUEST
+            async with container() as request_container:
+                b = await request_container.get(B)  # object with Scope.REQUEST
 
 Adding integrations
 ===========================

@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterable
 from contextlib import asynccontextmanager
 from unittest.mock import Mock
 
@@ -23,7 +24,7 @@ from ..common import (
 
 
 @asynccontextmanager
-async def dishka_app(view, provider) -> TestClient:
+async def dishka_app(view, provider) -> AsyncIterable[TestClient]:
     app = Application()
 
     router = RouteTableDef()
@@ -32,6 +33,21 @@ async def dishka_app(view, provider) -> TestClient:
     app.add_routes(router)
     container = make_async_container(provider)
     setup_dishka(container, app=app)
+    client = TestClient(TestServer(app))
+    await client.start_server()
+    yield client
+    await client.close()
+    await container.close()
+
+
+@asynccontextmanager
+async def dishka_auto_app(view, provider) -> AsyncIterable[TestClient]:
+    app = Application()
+
+    app.router.add_get("/", view)
+
+    container = make_async_container(provider)
+    setup_dishka(container, app=app, auto_inject=True)
     client = TestClient(TestServer(app))
     await client.start_server()
     yield client
@@ -48,9 +64,12 @@ async def get_with_app(
     return Response(text="passed")
 
 
+@pytest.mark.parametrize("app_factory", [
+    dishka_app, dishka_auto_app,
+])
 @pytest.mark.asyncio
-async def test_app_dependency(app_provider: AppProvider):
-    async with dishka_app(get_with_app, app_provider) as client:
+async def test_app_dependency(app_provider: AppProvider, app_factory):
+    async with app_factory(get_with_app, app_provider) as client:
         await client.get("/")
         app_provider.mock.assert_called_with(APP_DEP_VALUE)
         app_provider.app_released.assert_not_called()
@@ -66,18 +85,23 @@ async def get_with_request(
     return Response(text="passed")
 
 
-
+@pytest.mark.parametrize("app_factory", [
+    dishka_app, dishka_auto_app,
+])
 @pytest.mark.asyncio
-async def test_request_dependency(app_provider: AppProvider):
-    async with dishka_app(get_with_request, app_provider) as client:
+async def test_request_dependency(app_provider: AppProvider, app_factory):
+    async with app_factory(get_with_request, app_provider) as client:
         await client.get("/")
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
 
 
+@pytest.mark.parametrize("app_factory", [
+    dishka_app, dishka_auto_app,
+])
 @pytest.mark.asyncio
-async def test_request_dependency2(app_provider: AppProvider):
-    async with dishka_app(get_with_request, app_provider) as client:
+async def test_request_dependency2(app_provider: AppProvider, app_factory):
+    async with app_factory(get_with_request, app_provider) as client:
         await client.get("/")
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.mock.reset_mock()

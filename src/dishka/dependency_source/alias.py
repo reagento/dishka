@@ -32,6 +32,7 @@ class Alias:
             provides=self.provides.with_component(component),
             is_to_bind=False,
             dependencies=[self.source.with_component(component)],
+            kw_dependencies={},
             type_=FactoryType.ALIAS,
             cache=self.cache,
         )

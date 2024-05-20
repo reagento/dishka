@@ -1,6 +1,8 @@
 import pytest
 
 from dishka import (
+    DEFAULT_COMPONENT,
+    DependencyKey,
     Provider,
     Scope,
     decorate,
@@ -15,16 +17,28 @@ from dishka.exceptions import InvalidGraphError, NoContextValueError
 def test_simple():
     provider = Provider()
     provider.from_context(provides=int, scope=Scope.APP)
+    provider.from_context(provides=float, scope=Scope.APP)
     container = make_container(provider, context={int: 1})
+    container.context[DependencyKey(float, DEFAULT_COMPONENT)] = 2
     assert container.get(int) == 1
+    assert container.get(float) == 2
+    container.close()
+    assert container.get(int) == 1
+    assert container.get(float) == 2
 
 
 @pytest.mark.asyncio
 async def test_simple_async():
     provider = Provider()
     provider.from_context(provides=int, scope=Scope.APP)
+    provider.from_context(provides=float, scope=Scope.APP)
     container = make_async_container(provider, context={int: 1})
+    container.context[DependencyKey(float, DEFAULT_COMPONENT)] = 2
     assert await container.get(int) == 1
+    assert await container.get(float) == 2
+    await container.close()
+    assert await container.get(int) == 1
+    assert await container.get(float) == 2
 
 
 def test_not_found():

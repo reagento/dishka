@@ -111,10 +111,24 @@ class Registry:
             new_dependencies.append(DependencyKey(
                 hint, source_dependency.component,
             ))
+        new_kw_dependencies: dict[str, DependencyKey] = {}
+        for name, source_dependency in factory.kw_dependencies.items():
+            hint = source_dependency.type_hint
+            if isinstance(hint, TypeVar):
+                hint = params_replacement[hint]
+            elif get_origin(hint):
+                hint = hint[tuple(
+                    params_replacement[param]
+                    for param in get_type_vars(hint)
+                )]
+            new_kw_dependencies[name] = DependencyKey(
+                hint, source_dependency.component,
+            )
         return Factory(
             source=factory.source,
             provides=dependency_key,
             dependencies=new_dependencies,
+            kw_dependencies=new_kw_dependencies,
             is_to_bind=factory.is_to_bind,
             type_=factory.type,
             scope=factory.scope,
@@ -154,6 +168,11 @@ class GraphValidator:
                 # ignore TypeVar parameters
                 if not isinstance(dep.type_hint, TypeVar):
                     self._validate_key(dep, registry_index)
+            for dep in factory.kw_dependencies.values():
+                # ignore TypeVar parameters
+                if not isinstance(dep.type_hint, TypeVar):
+                    self._validate_key(dep, registry_index)
+
         except NoFactoryError as e:
             e.add_path(factory)
             raise

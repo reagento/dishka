@@ -41,6 +41,12 @@ def test_sync_create(provide_scope, start_scope, expected_scope):
     container.close()
     assert a.closed
 
+    a2 = container.get(ClassA)
+    assert a2 is not a
+    assert a.dep == 100
+    container.close()
+    assert a2.closed
+
 
 @pytest.mark.parametrize(
     ("provide_scope", "start_scope", "expected_scope"),
@@ -66,6 +72,12 @@ async def test_async_create(provide_scope, start_scope, expected_scope):
     assert a.dep == 100
     await container.close()
     assert a.closed
+
+    a2 = await container.get(ClassA)
+    assert a2 is not a
+    assert a.dep == 100
+    await container.close()
+    assert a2.closed
 
 
 @pytest.mark.parametrize(

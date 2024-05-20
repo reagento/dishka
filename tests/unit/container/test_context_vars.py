@@ -17,6 +17,8 @@ def test_simple():
     provider.from_context(provides=int, scope=Scope.APP)
     container = make_container(provider, context={int: 1})
     assert container.get(int) == 1
+    container.close()
+    assert container.get(int) == 1
 
 
 @pytest.mark.asyncio
@@ -24,6 +26,8 @@ async def test_simple_async():
     provider = Provider()
     provider.from_context(provides=int, scope=Scope.APP)
     container = make_async_container(provider, context={int: 1})
+    assert await container.get(int) == 1
+    await container.close()
     assert await container.get(int) == 1
 
 

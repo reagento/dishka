@@ -1,3 +1,4 @@
 -r test.txt
 
 faststream[nats]==0.5.0rc2
+typing-extensions==4.11.0

@@ -83,7 +83,7 @@ dialog = Dialog(
         Const("test"),
         Start(
             Const("test"),
-            id='sub',
+            id="sub",
             state=SubSG.start,
             on_click=on_click,
         ),
@@ -135,4 +135,4 @@ async def test_dialog(
 
     await bot.click(first_message, InlineButtonTextLocator("test"))
     last_message = message_manager.last_message()
-    await bot.click(last_message, InlineButtonTextLocator('Cancel'))
+    await bot.click(last_message, InlineButtonTextLocator("Cancel"))

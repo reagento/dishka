@@ -104,3 +104,4 @@ Though it is a normal object, not all attributes are analyzed by ``Container``, 
    alias
    from_context
    decorate
+   join_providers

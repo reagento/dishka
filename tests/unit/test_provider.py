@@ -276,7 +276,17 @@ def test_provide_all_instance():
     assert provides == [A, B]
 
 
-def test_privde_random():
+def test_provide_random():
     source = provide(source=random, provides=float)
     assert len(source.dependency_sources) == 1
     assert not source.dependency_sources[0].dependencies
+
+
+def test_provide_join_provides_cls():
+    class MyProvider(Provider):
+        x = provide(A) + provide(B)
+
+    provider = MyProvider(scope=Scope.APP)
+    assert len(provider.factories) == 2
+    provides = [f.provides.type_hint for f in provider.factories]
+    assert provides == [A, B]

@@ -13,6 +13,7 @@ Built-in frameworks integrations:
 * Litestar
 * Starlette
 * Aiogram
+* Aiogram_dialog
 * pyTelegramBotAPI
 * Arq
 * FastStream

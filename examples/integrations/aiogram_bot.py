@@ -3,7 +3,6 @@ import logging
 import os
 import random
 from collections.abc import AsyncIterator
-from typing import Annotated
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.types import Message, TelegramObject, User
@@ -25,8 +24,8 @@ class MyProvider(Provider):
         yield random.randint(0, 10000)
 
     @provide(scope=Scope.REQUEST)
-    async def get_name(self, request: TelegramObject) -> User:
-        return request.from_user
+    async def get_user(self, obj: TelegramObject) -> User:
+        return obj.from_user
 
 
 # app
@@ -42,7 +41,7 @@ async def start(
     user: FromDishka[User],
     value: FromDishka[int],
 ):
-    await message.answer(f"Hello, {1}, {user.full_name}!")
+    await message.answer(f"Hello, {value}, {user.full_name}!")
 
 
 async def main():

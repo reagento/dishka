@@ -32,7 +32,7 @@ def hint_to_dependency_key(hint: Any) -> DependencyKey:
         None,
     )
     if from_component is None:
-        return DependencyKey(hint, None)
+        return DependencyKey(args[0], None)
     return DependencyKey(args[0], from_component.component)
 
 

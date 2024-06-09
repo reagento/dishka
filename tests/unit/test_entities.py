@@ -13,7 +13,6 @@ class TestDependencyKey:
             (str, str, None),
             (Annotated[str, {"foo": "bar"}], str, None),
             (Annotated[str, FromComponent("baz")], str, "baz"),
-            (Annotated[str, FromComponent("baz")], str, "baz"),
         ],
     )
     def test_hint_to_dependency_key(

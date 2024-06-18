@@ -16,7 +16,8 @@ try:
     from grpc._utilities import first_version_is_lower
 
     _version_not_supported = first_version_is_lower(
-        GRPC_VERSION, GRPC_GENERATED_VERSION
+        GRPC_VERSION,
+        GRPC_GENERATED_VERSION,
     )
 except ImportError:
     _version_not_supported = True
@@ -26,15 +27,15 @@ if _version_not_supported:
         f"The grpc package installed is at version {GRPC_VERSION},"  # noqa: ISC003
         + " but the generated code in my_grpc_service_pb2_grpc.py depends on"
         + f" grpcio>={GRPC_GENERATED_VERSION}."
-        + f" Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}"
-        + f" or downgrade your generated code using grpcio-tools<={GRPC_VERSION}."
+        + f" Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}"  # noqa: E501
+        + f" or downgrade your generated code using grpcio-tools<={GRPC_VERSION}."  # noqa: E501
         + f" This warning will become an error in {EXPECTED_ERROR_RELEASE},"
         + f" scheduled for release on {SCHEDULED_RELEASE_DATE}.",
         RuntimeWarning,
     )
 
 
-class MyServiceStub(object):
+class MyServiceStub:
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -51,17 +52,17 @@ class MyServiceStub(object):
         )
 
 
-class MyServiceServicer(object):
+class MyServiceServicer:
     """Missing associated documentation comment in .proto file."""
 
-    def MyMethod(self, request, context):
+    def MyMethod(self, request, context):  # noqa: N802
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
 
-def add_MyServiceServicer_to_server(servicer, server):
+def add_MyServiceServicer_to_server(servicer, server):  # noqa: N802
     rpc_method_handlers = {
         "MyMethod": grpc.unary_unary_rpc_method_handler(
             servicer.MyMethod,
@@ -70,26 +71,28 @@ def add_MyServiceServicer_to_server(servicer, server):
         ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-        "my_grpc_service.MyService", rpc_method_handlers
+        "my_grpc_service.MyService",
+        rpc_method_handlers,
     )
     server.add_generic_rpc_handlers((generic_handler,))
     server.add_registered_method_handlers(
-        "my_grpc_service.MyService", rpc_method_handlers
+        "my_grpc_service.MyService",
+        rpc_method_handlers,
     )
 
 
 # This class is part of an EXPERIMENTAL API.
-class MyService(object):
+class MyService:
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def MyMethod(
+    def MyMethod(  # noqa: N802
         request,
         target,
         options=(),
         channel_credentials=None,
         call_credentials=None,
-        insecure=False,
+        insecure=False,  # noqa: FBT002
         compression=None,
         wait_for_ready=None,
         timeout=None,

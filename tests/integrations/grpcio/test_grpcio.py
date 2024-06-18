@@ -23,7 +23,7 @@ from .my_grpc_service_pb2_grpc import (
 
 class MyService(MyServiceServicer):
     @inject
-    def MyMethod(
+    def MyMethod(  # noqa: N802
         self,
         request: MyRequest,
         context,
@@ -62,7 +62,7 @@ def test_grpc_app_dependency(app_provider: AppProvider):
 
 class MyRequestService(MyServiceServicer):
     @inject
-    def MyMethod(
+    def MyMethod(  # noqa: N802
         self,
         request: MyRequest,
         context,

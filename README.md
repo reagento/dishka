@@ -240,8 +240,8 @@ from dishka import from_context, Provider, provide, Scope
 class MyProvider(Provider):
     scope = Scope.REQUEST
 
-    app = from_context(provides=App, scope=Scope.APP)
-    request = from_context(provides=RequestClass)
+    app = from_context(App, scope=Scope.APP)
+    request = from_context(RequestClass)
 
     @provide
     def get_a(self, request: RequestClass, app: App) -> A:

@@ -10,7 +10,7 @@ from .context_var import ContextVariable, context_stub
 
 
 def from_context(
-        *, provides: Any, scope: BaseScope | None = None,
+        provides: Any, *, scope: BaseScope | None = None,
 ) -> CompositeDependencySource:
     composite = CompositeDependencySource(origin=context_stub)
     composite.dependency_sources.append(ContextVariable(

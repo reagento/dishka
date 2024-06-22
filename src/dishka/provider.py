@@ -192,7 +192,7 @@ class Provider(BaseProvider):
     def from_context(
             self, *, provides: Any, scope: BaseScope,
     ) -> CompositeDependencySource:
-        composite = from_context(provides=provides, scope=scope)
+        composite = from_context(provides, scope=scope)
         self._add_dependency_sources(str(provides),
                                      composite.dependency_sources)
         return composite

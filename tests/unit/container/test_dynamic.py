@@ -19,7 +19,7 @@ class A1(A):
 
 
 class MyProvider(Provider):
-    request = from_context(provides=Request, scope=Scope.REQUEST)
+    request = from_context(Request, scope=Scope.REQUEST)
     a0 = provide(A0, scope=Scope.APP)
     a1 = provide(A1, scope=Scope.APP)
 

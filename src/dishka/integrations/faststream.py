@@ -21,8 +21,8 @@ from dishka.integrations.base import wrap_injection
 
 
 class FastStreamProvider(Provider):
-    context = from_context(provides=ContextRepo, scope=Scope.REQUEST)
-    message = from_context(provides=StreamMessage, scope=Scope.REQUEST)
+    context = from_context(ContextRepo, scope=Scope.REQUEST)
+    message = from_context(StreamMessage, scope=Scope.REQUEST)
 
 
 FASTSTREAM_OLD_MIDDLEWARES = __version__ < "0.5"

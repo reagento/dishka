@@ -199,7 +199,7 @@ def test_invalid_scope_factory():
 
 def test_invalid_scope_context_var():
     class InvalidScopeProvider(Provider):
-        a = from_context(provides=int, scope="invalid")
+        a = from_context(int, scope="invalid")
 
     with pytest.raises(UnknownScopeError):
         make_container(InvalidScopeProvider())
@@ -207,7 +207,7 @@ def test_invalid_scope_context_var():
 
 def test_missing_context_var_sync():
     class MyProvider(Provider):
-        a = from_context(provides=int, scope=Scope.APP)
+        a = from_context(int, scope=Scope.APP)
 
     container = make_container(MyProvider())
     with pytest.raises(NoContextValueError):
@@ -217,7 +217,7 @@ def test_missing_context_var_sync():
 @pytest.mark.asyncio
 async def test_missing_context_var_async():
     class MyProvider(Provider):
-        a = from_context(provides=int, scope=Scope.APP)
+        a = from_context(int, scope=Scope.APP)
 
     container = make_async_container(MyProvider())
     with pytest.raises(NoContextValueError):

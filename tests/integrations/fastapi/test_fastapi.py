@@ -83,8 +83,8 @@ async def test_request_dependency(app_provider: AppProvider):
         app_provider.request_released.assert_called_once()
 
 async def get_compat(
-        a: Annotated[RequestDep, FromDishka()],
-        mock: Annotated[Mock, FromDishka()],
+        a: FromDishka[RequestDep],
+        mock: FromDishka[Mock],
 ) -> None:
     mock(a)
 

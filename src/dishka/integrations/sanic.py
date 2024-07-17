@@ -4,22 +4,26 @@ __all__ = [
     "setup_dishka",
 ]
 
-from collections.abc import Awaitable, Callable, Iterable
+import typing
+from collections.abc import Iterable
 
 from sanic import HTTPResponse, Request, Sanic
+from sanic.models.handler_types import RouteHandler
 from sanic_routing import Route
 
 from dishka import AsyncContainer, FromDishka
 from dishka.integrations.base import is_dishka_injected, wrap_injection
 
 
-def inject(func: Callable) -> Awaitable:
-    return wrap_injection(
-        func=func,
-        remove_depends=True,
-        container_getter=lambda args, _: args[0].ctx.dishka_container,
-        is_async=True,
-    )
+def inject(func: RouteHandler) -> RouteHandler:
+    return typing.cast(
+        RouteHandler,
+        wrap_injection(
+            func=func,
+            remove_depends=True,
+            container_getter=lambda args, _: args[0].ctx.dishka_container,
+            is_async=True,
+        ))
 
 
 class ContainerMiddleware:

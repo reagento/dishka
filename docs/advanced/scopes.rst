@@ -8,7 +8,7 @@ In dishka scope determines a lifespan of dependency. Firstly, when creating prov
 
 The set of scopes is defined once per container and providers should use the same scopes. You are not limited to standard scopes and can create custom ones, but it is hardly ever needed.
 
-In most cases you need only 2 scopes. ``APP``-scope is usually entered on container creation and ``REQUEST``-scope is the on you go into during some event processing:
+In most cases you need only 2 scopes. ``APP``-scope is usually entered on container creation and ``REQUEST``-scope is the one you go into during some event processing:
 
     ``APP`` |rarr| ``REQUEST``
 

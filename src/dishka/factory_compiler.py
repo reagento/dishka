@@ -78,7 +78,7 @@ ALIAS = """
 """
 CONTEXT = """
 {async}def get(getter, exits, context):
-    raise NoContextValueError()
+    raise NoContextValueError(provides.type_hint)
 """
 INVALID = """
 {async}def get(getter, exits, context):

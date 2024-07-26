@@ -163,6 +163,11 @@ class GraphValidator:
             self, factory: Factory, registry_index: int,
     ):
         self.path[factory.provides] = factory
+        if (
+            factory.provides in factory.kw_dependencies.values() or
+            factory.provides in factory.dependencies
+        ):
+            raise CycleDependenciesError([factory])
         try:
             for dep in factory.dependencies:
                 # ignore TypeVar parameters

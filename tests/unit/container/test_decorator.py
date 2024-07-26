@@ -10,7 +10,7 @@ from dishka import (
     make_container,
     provide,
 )
-from dishka.exceptions import NoFactoryError
+from dishka.exceptions import CycleDependenciesError, NoFactoryError
 
 
 class A:
@@ -149,3 +149,19 @@ def test_missing_factory():
     with pytest.raises(NoFactoryError) as e:
         make_container(MyProvider())
     assert e.value.requested == DependencyKey(int, component=DEFAULT_COMPONENT)
+
+
+def test_expected_decorator():
+    class MyProvider(Provider):
+        scope = Scope.REQUEST
+
+        @provide(scope=Scope.APP)
+        def bar(self) -> A:
+            return A()
+
+        @provide
+        def foo(self, a: A) -> A:
+            return a
+
+    with pytest.raises(CycleDependenciesError):
+        make_container(MyProvider())

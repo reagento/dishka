@@ -30,7 +30,12 @@ class CycleDependenciesError(InvalidGraphError):
         self.path = path
 
     def __str__(self):
-        return "Cycle dependencies detected.\n" + _renderer.render(self.path)
+        if len(self.path) == 1:
+            hint = " Did you mean @decorate instead of @provide?"
+        else:
+            hint = ""
+        details = _renderer.render(self.path)
+        return f"Cycle dependencies detected.{hint}\n{details}"
 
 
 class ExitError(ExceptionGroup, DishkaError):

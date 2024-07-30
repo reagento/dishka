@@ -10,9 +10,10 @@ For each template we expect global variables:
 * UnsupportedFactoryError
 
 When formatting substituted:
-* await - "async " for async container or empty string
+* await - "await " for async container or empty string
 * async - "async " for async container or empty string
 * args - "getter(arg1), getter(arg2)..." or async version
+* kwargs - "arg1=getter(arg1), arg2=getter(arg2)..." or async version
 * cache - expression to save cache
 """
 
@@ -21,11 +22,20 @@ from .dependency_source import Factory, FactoryType
 from .exceptions import NoContextValueError, UnsupportedFactoryError
 
 
-def make_args(names: list[str]):
-    return ", ".join(
-        "{await} getter(%s)" % arg
-        for arg in names
+def make_args(args: list[str], kwargs: list[str]) -> str:
+    res = ", ".join(
+        f"{{await}}getter({arg})"
+        for arg in args
     )
+    if not kwargs:
+        return res
+    if res:
+        res += ", "
+    res += ", ".join(
+        f"{arg}={{await}}getter({arg})"
+        for arg in kwargs
+    )
+    return res
 
 
 GENERATOR = """
@@ -68,7 +78,7 @@ ALIAS = """
 """
 CONTEXT = """
 {async}def get(getter, exits, context):
-    raise NoContextValueError()
+    raise NoContextValueError(provides.type_hint)
 """
 INVALID = """
 {async}def get(getter, exits, context):
@@ -98,10 +108,15 @@ CACHE = "context[provides] = solved"
 
 
 def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
-    names = {f"arg{i}": dep for i, dep in enumerate(factory.dependencies)}
+    args = {
+        f"_dishka_arg{i}": dep
+        for i, dep in enumerate(factory.dependencies)
+    }
+    kwargs = factory.kw_dependencies
+
     if is_async:
         async_ = "async "
-        await_ = "await"
+        await_ = "await "
         body_template = ASYNC_BODIES.get(factory.type, INVALID)
     else:
         async_ = ""
@@ -112,11 +127,13 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
     else:
         cache = ""
 
-    args = make_args(list(names)).format_map({"await": await_})
+    args_str = make_args(list(args), list(kwargs)).format_map({
+        "await": await_,
+    })
     body = body_template.format_map({
         "async": async_,
         "await": await_,
-        "args": args,
+        "args": args_str,
         "cache": cache,
     })
     func_globals = {
@@ -126,7 +143,8 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
         "Exit": Exit,
         "NoContextValueError": NoContextValueError,
         "UnsupportedFactoryError": UnsupportedFactoryError,
-        **names,
+        **args,
+        **kwargs,
     }
     exec(body, func_globals)  # noqa: S102
     return func_globals["get"]

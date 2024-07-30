@@ -1,10 +1,11 @@
+from random import random
 from typing import Any, Protocol
 
 import pytest
 
 from dishka import Provider, Scope, alias, provide
 from dishka.dependency_source import FactoryType
-from dishka.dependency_source.make_factory import make_factory
+from dishka.dependency_source.make_factory import make_factory, provide_all
 from dishka.entities.key import (
     hint_to_dependency_key,
     hints_to_dependency_keys,
@@ -247,3 +248,45 @@ def test_provide_protocol_impl():
     factory = impl.dependency_sources[0]
     assert factory.provides == hint_to_dependency_key(MyImpl)
     assert factory.dependencies == []
+
+
+class A:
+    pass
+
+
+class B:
+    pass
+
+
+def test_provide_all_cls():
+    class MyProvider(Provider):
+        x = provide_all(A, B)
+
+    provider = MyProvider(scope=Scope.APP)
+    assert len(provider.factories) == 2
+    provides = [f.provides.type_hint for f in provider.factories]
+    assert provides == [A, B]
+
+
+def test_provide_all_instance():
+    provider = Provider(scope=Scope.APP)
+    provider.provide_all(A, B)
+    assert len(provider.factories) == 2
+    provides = [f.provides.type_hint for f in provider.factories]
+    assert provides == [A, B]
+
+
+def test_provide_random():
+    source = provide(source=random, provides=float)
+    assert len(source.dependency_sources) == 1
+    assert not source.dependency_sources[0].dependencies
+
+
+def test_provide_join_provides_cls():
+    class MyProvider(Provider):
+        x = provide(A) + provide(B)
+
+    provider = MyProvider(scope=Scope.APP)
+    assert len(provider.factories) == 2
+    provides = [f.provides.type_hint for f in provider.factories]
+    assert provides == [A, B]

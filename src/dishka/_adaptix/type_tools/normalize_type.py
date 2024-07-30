@@ -1,4 +1,4 @@
-# pylint: disable=inconsistent-return-statements,comparison-with-callable
+# ruff: noqa: RET503
 import dataclasses
 import sys
 import types
@@ -29,7 +29,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    get_args,
     overload,
 )
 
@@ -49,6 +48,7 @@ from ..feature_requirement import (
     HAS_UNPACK,
 )
 from .basic_utils import create_union, eval_forward_ref, is_new_type, is_subclass_soft, strip_alias
+from .fundamentals import get_generic_args
 from .implicit_params import ImplicitParamsGetter
 
 
@@ -69,11 +69,11 @@ class BaseNormType(Hashable, ABC):
         ...
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class _BasicNormType(BaseNormType, ABC):
-    __slots__ = ('_source', '_args')
+    __slots__ = ("_source", "_args")
 
     def __init__(self, args: VarTuple[Any], *, source: TypeHint):
         self._source = source
@@ -103,11 +103,11 @@ class _BasicNormType(BaseNormType, ABC):
 
     def __repr__(self):
         args_str = f" {list(self.args)}," if self.args else ""
-        return f'<{type(self).__name__}({self.origin},{args_str} source={self._source})>'
+        return f"<{type(self).__name__}({self.origin},{args_str} source={self._source})>"
 
 
 class _NormType(_BasicNormType):
-    __slots__ = _BasicNormType.__slots__ + ('_source',)
+    __slots__ = (*_BasicNormType.__slots__, "_source")
 
     def __init__(self, origin: TypeHint, args: VarTuple[Any], *, source: TypeHint):
         self._origin = origin
@@ -177,7 +177,7 @@ class _AnnotatedNormType(_BasicNormType):
     def origin(self) -> Any:
         return typing.Annotated
 
-    __slots__ = _BasicNormType.__slots__ + ('_hash',)
+    __slots__ = (*_BasicNormType.__slots__, "_hash")
 
     def __init__(self, args: VarTuple[Hashable], *, source: TypeHint):
         super().__init__(args, source=source)
@@ -206,7 +206,7 @@ class Variance(Enum):
     INFERRED = 3
 
     def __repr__(self):
-        return f'{type(self).__name__}.{self.name}'
+        return f"{type(self).__name__}.{self.name}"
 
 
 @dataclass
@@ -219,11 +219,11 @@ class Constraints:
     value: VarTuple[BaseNormType]
 
 
-TypeVarLimit = Union[Bound, Constraints]  # pylint: disable=invalid-name
+TypeVarLimit = Union[Bound, Constraints]
 
 
 class NormTV(BaseNormType):
-    __slots__ = ('_var', '_limit', '_variance', '_source')
+    __slots__ = ("_var", "_limit", "_variance", "_source")
 
     def __init__(self, var: Any, limit: TypeVarLimit, *, source: TypeHint):
         self._var = var
@@ -234,7 +234,7 @@ class NormTV(BaseNormType):
             self._variance = Variance.COVARIANT
         if var.__contravariant__:
             self._variance = Variance.CONTRAVARIANT
-        if getattr(var, '__infer_variance__', False):
+        if getattr(var, "__infer_variance__", False):
             self._variance = Variance.INFERRED
         self._variance = Variance.INVARIANT
 
@@ -263,7 +263,7 @@ class NormTV(BaseNormType):
         return self._limit
 
     def __repr__(self):
-        return f'<{type(self).__name__}({self._var})>'
+        return f"<{type(self).__name__}({self._var})>"
 
     def __hash__(self):
         return hash(self._var)
@@ -277,7 +277,7 @@ class NormTV(BaseNormType):
 
 
 class NormTVTuple(BaseNormType):
-    __slots__ = ('_var', '_source')
+    __slots__ = ("_var", "_source")
 
     def __init__(self, var: Any, *, source: TypeHint):
         self._var = var
@@ -300,7 +300,7 @@ class NormTVTuple(BaseNormType):
         return self._var.__name__
 
     def __repr__(self):
-        return f'<{type(self).__name__}({self._var})>'
+        return f"<{type(self).__name__}({self._var})>"
 
     def __hash__(self):
         return hash(self._var)
@@ -314,7 +314,7 @@ class NormTVTuple(BaseNormType):
 
 
 class NormParamSpecMarker(BaseNormType, ABC):
-    __slots__ = ('_param_spec', '_source')
+    __slots__ = ("_param_spec", "_source")
 
     def __init__(self, param_spec: Any, *, source: TypeHint):
         self._param_spec = param_spec
@@ -359,7 +359,7 @@ AnyNormTypeVarLike = Union[NormTV, NormTVTuple]
 
 
 class NormTypeAlias(BaseNormType):
-    __slots__ = ('_type_alias', '_args', '_norm_type_vars')
+    __slots__ = ("_type_alias", "_args", "_norm_type_vars")
 
     def __init__(self, type_alias, args: VarTuple[BaseNormType], type_vars: VarTuple[AnyNormTypeVarLike]):
         self._type_alias = type_alias
@@ -404,11 +404,11 @@ class NormTypeAlias(BaseNormType):
 _PARAM_SPEC_MARKER_TYPES = (typing.ParamSpecArgs, typing.ParamSpecKwargs) if HAS_PARAM_SPEC else ()
 
 
-def make_norm_type(  # noqa: CCR001
+def make_norm_type(
     origin: TypeHint,
     args: VarTuple[Hashable],
     *,
-    source: TypeHint
+    source: TypeHint,
 ) -> BaseNormType:
     if origin == Union:
         if not all(isinstance(arg, BaseNormType) for arg in args):
@@ -468,7 +468,7 @@ def _replace_source_with_union(norm: BaseNormType, sources: list) -> BaseNormTyp
     )
 
 
-NormAspect = Callable[['TypeNormalizer', Any, Any, tuple], Optional[BaseNormType]]
+NormAspect = Callable[["TypeNormalizer", Any, Any, tuple], Optional[BaseNormType]]
 
 
 class AspectStorage(List[str]):
@@ -488,7 +488,7 @@ class AspectStorage(List[str]):
             self.append(func.__name__)
         return func
 
-    def copy(self) -> 'AspectStorage':
+    def copy(self) -> "AspectStorage":
         return type(self)(super().copy())
 
 
@@ -496,8 +496,8 @@ class NotSubscribedError(ValueError):
     pass
 
 
-N = TypeVar('N', bound=BaseNormType)
-TN = TypeVar('TN', bound='TypeNormalizer')
+N = TypeVar("N", bound=BaseNormType)
+TN = TypeVar("TN", bound="TypeNormalizer")
 
 
 class TypeNormalizer:
@@ -506,7 +506,6 @@ class TypeNormalizer:
         self._namespace: Optional[Dict[str, Any]] = None
 
     def _with_namespace(self: TN, namespace: Dict[str, Any]) -> TN:
-        # pylint: disable=protected-access
         self_copy = copy(self)
         self_copy._namespace = namespace
         return self_copy
@@ -528,7 +527,7 @@ class TypeNormalizer:
 
     def normalize(self, tp: TypeHint) -> BaseNormType:
         origin = strip_alias(tp)
-        args = get_args(tp)
+        args = get_generic_args(tp)
 
         result = self._norm_forward_ref(tp)
         if result is not None:
@@ -551,10 +550,10 @@ class TypeNormalizer:
             if isinstance(tp, ForwardRef):
                 return _replace_source(
                     self.normalize(eval_forward_ref(self._namespace, tp)),
-                    source=tp
+                    source=tp,
                 )
         elif isinstance(tp, (str, ForwardRef)):
-            raise ValueError(f'Can not normalize value {tp!r}, there are no namespace to evaluate types')
+            raise ValueError(f"Can not normalize value {tp!r}, there are no namespace to evaluate types")
 
     _aspect_storage = AspectStorage()
 
@@ -578,7 +577,7 @@ class TypeNormalizer:
             raise NotSubscribedError(f"{tp} must be subscribed")
 
         if tp in (NewType, TypeVar):
-            raise ValueError(f'{origin} must be instantiating')
+            raise ValueError(f"{origin} must be instantiated")
 
     @_aspect_storage.add
     def _norm_none(self, tp, origin, args):
@@ -590,7 +589,7 @@ class TypeNormalizer:
         if origin == typing.Annotated:
             return _AnnotatedNormType(
                 (self.normalize(args[0]), *args[1:]),
-                source=tp
+                source=tp,
             )
 
     def _get_bound(self, type_var) -> Bound:
@@ -602,16 +601,15 @@ class TypeNormalizer:
 
     @_aspect_storage.add
     def _norm_type_var(self, tp, origin, args):
-        # pylint: disable=protected-access
         if isinstance(origin, TypeVar):
             namespaced = self._with_module_namespace(origin.__module__)
             limit = (
                 Constraints(
                     tuple(
                         namespaced._dedup_union_args(
-                            namespaced._norm_iter(origin.__constraints__)
-                        )
-                    )
+                            namespaced._norm_iter(origin.__constraints__),
+                        ),
+                    ),
                 )
                 if origin.__constraints__ else
                 namespaced._get_bound(origin)
@@ -635,13 +633,13 @@ class TypeNormalizer:
             namespaced = self._with_module_namespace(origin.__module__)
             return NormTV(
                 var=origin,
-                limit=namespaced._get_bound(origin),  # pylint: disable=protected-access
+                limit=namespaced._get_bound(origin),
                 source=tp,
             )
 
     @_aspect_storage.add(condition=HAS_TV_SYNTAX)
     def _norm_type_alias_type(self, tp, origin, args):
-        if isinstance(origin, typing.TypeAliasType):  # pylint: disable=no-member
+        if isinstance(origin, typing.TypeAliasType):
             return NormTypeAlias(
                 origin,
                 self._norm_iter(args),
@@ -655,7 +653,7 @@ class TypeNormalizer:
             return _NormType(
                 InitVar,
                 (self.normalize(origin.type),),
-                source=tp
+                source=tp,
             )
 
     @_aspect_storage.add
@@ -670,7 +668,7 @@ class TypeNormalizer:
                 return _NormType(
                     tuple,
                     (ANY_NT, ...),
-                    source=tp
+                    source=tp,
                 )
 
             # >>> Tuple[()].__args__ == ((),)
@@ -715,7 +713,7 @@ class TypeNormalizer:
         if origin == c_abc.Callable:
             if not args:
                 return _NormType(
-                    c_abc.Callable, (..., ANY_NT), source=tp
+                    c_abc.Callable, (..., ANY_NT), source=tp,
                 )
 
             if args[0] is Ellipsis:
@@ -727,7 +725,7 @@ class TypeNormalizer:
             else:
                 call_args = normalize_type(args[0])
             return _NormType(
-                c_abc.Callable, (call_args, self.normalize(args[-1])), source=tp
+                c_abc.Callable, (call_args, self.normalize(args[-1])), source=tp,
             )
 
     @_aspect_storage.add
@@ -745,7 +743,7 @@ class TypeNormalizer:
                         _NormType(None, (), source=Literal[None]),
                         _create_norm_literal(args_without_none),
                     ),
-                    source=tp
+                    source=tp,
                 )
 
             return _LiteralNormType(args, source=tp)
@@ -813,7 +811,7 @@ class TypeNormalizer:
                         _NormType(type, (arg,), source=Type[arg.source])
                         for arg in norm.args
                     ),
-                    source=tp
+                    source=tp,
                 )
 
     ALLOWED_ZERO_PARAMS_ORIGINS = {Any, NoReturn}
@@ -854,7 +852,7 @@ class TypeNormalizer:
             or isinstance(origin, type)
             or origin in self.ALLOWED_ZERO_PARAMS_ORIGINS
         ):
-            raise ValueError(f'Can not normalize value {tp!r}')
+            raise ValueError(f"Can not normalize value {tp!r}")
 
         return _NormType(
             origin,

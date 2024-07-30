@@ -129,3 +129,18 @@ def test_external_method(method):
 
     container = make_container(provider)
     assert container.get(ClassA) is A_VALUE
+
+
+def kwarg_factory(a: int, /, b: float, c: complex) -> str:
+    return "ok"
+
+
+def test_kwargs():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(kwarg_factory)
+    provider.provide(lambda: 1, provides=int)
+    provider.provide(lambda: 1.0, provides=float)
+    provider.provide(lambda: 1j, provides=complex)
+
+    container = make_container(provider)
+    assert container.get(str) == "ok"

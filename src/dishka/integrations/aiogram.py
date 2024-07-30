@@ -1,5 +1,6 @@
 __all__ = [
     "AutoInjectMiddleware",
+    "CONTAINER_NAME",
     "FromDishka",
     "inject",
     "setup_dishka",

@@ -15,7 +15,10 @@ from .dependency_source import (
 )
 from .dependency_source.composite import CompositeDependencySource
 from .dependency_source.make_decorator import decorate_on_instance
-from .dependency_source.make_factory import provide_on_instance
+from .dependency_source.make_factory import (
+    provide_all_on_instance,
+    provide_on_instance,
+)
 
 
 def is_dependency_source(attribute: Any) -> bool:
@@ -141,6 +144,20 @@ class Provider(BaseProvider):
         self._add_dependency_sources(str(source), composite.dependency_sources)
         return composite
 
+    def provide_all(
+            self,
+            *provides: Any,
+            scope: BaseScope | None = None,
+            cache: bool = True,
+    ) -> CompositeDependencySource:
+        if scope is None:
+            scope = self.scope
+        composite = provide_all_on_instance(
+            *provides, scope=scope, cache=cache,
+        )
+        self._add_dependency_sources("?", composite.dependency_sources)
+        return composite
+
     def alias(
             self,
             *,
@@ -174,8 +191,8 @@ class Provider(BaseProvider):
 
     def from_context(
             self, *, provides: Any, scope: BaseScope,
-    ) -> ContextVariable:
-        composite = from_context(provides=provides, scope=scope)
+    ) -> CompositeDependencySource:
+        composite = from_context(provides, scope=scope)
         self._add_dependency_sources(str(provides),
                                      composite.dependency_sources)
         return composite

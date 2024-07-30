@@ -1,6 +1,6 @@
 .. _alias:
 
-@alias
+alias
 ****************
 
 ``alias`` is used to allow retrieving of the same object by different type hints. E.g. you have configured how to provide ``A`` object and want to use it as AProtocol: ``container.get(A)==container.get(AProtocol)``.

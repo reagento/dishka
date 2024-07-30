@@ -37,6 +37,15 @@ class CompositeDependencySource:
     def __call__(self, *args, **kwargs) -> Any:
         return self.origin(*args, **kwargs)
 
+    def __add__(
+            self, other: "CompositeDependencySource",
+    ) -> "CompositeDependencySource":
+        dependency_sources = self.dependency_sources + other.dependency_sources
+        return CompositeDependencySource(
+            origin=None,
+            dependency_sources=dependency_sources,
+        )
+
 
 def ensure_composite(
         origin: Callable | CompositeDependencySource,

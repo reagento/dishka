@@ -7,8 +7,10 @@ __all__ = [
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.websockets import WebSocket
 
 from dishka import AsyncContainer, FromDishka
+from dishka import Scope as DIScope
 from .base import wrap_injection
 
 
@@ -29,12 +31,21 @@ class ContainerMiddleware:
     async def __call__(
             self, scope: Scope, receive: Receive, send: Send,
     ) -> None:
-        if scope["type"] != "http":
+        if scope["type"] not in ("http", "websocket"):
             return await self.app(scope, receive, send)
 
-        request = Request(scope)
+        if scope["type"] == "http":
+            request = Request(scope)
+            context = {Request: request}
+            di_scope = DIScope.REQUEST
+
+        else:
+            request = WebSocket(scope, receive, send)
+            context = {WebSocket: request}
+            di_scope = DIScope.SESSION
+
         async with request.app.state.dishka_container(
-                {Request: request},
+            context, scope=di_scope,
         ) as request_container:
             request.state.dishka_container = request_container
             return await self.app(scope, receive, send)

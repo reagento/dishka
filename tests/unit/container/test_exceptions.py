@@ -88,6 +88,34 @@ async def test_async(dep_type):
     finalizer.assert_called_once()
 
 
+def test_no_factory_cls_sync():
+    class A:
+        def __init__(self, *, x: object):
+            pass
+    provider = Provider(scope=Scope.APP)
+    provider.provide(A)
+    with pytest.raises(NoFactoryError) as e:
+        make_container(provider)
+    assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+
+def test_invalid_type_sync():
+    class A:
+        def __init__(self, x: "B"):  # noqa: F821
+            pass
+    provider = Provider(scope=Scope.APP)
+    with pytest.raises(NameError):
+        provider.provide(A)
+
+
+def test_no_type_sync():
+    class A:
+        def __init__(self, x):
+            pass
+    provider = Provider(scope=Scope.APP)
+    with pytest.raises(ValueError):  # noqa: PT011
+        provider.provide(A)
+
+
 class MissingFactoryProvider(Provider):
     @provide(scope=Scope.APP)
     def x(self, value: object) -> int:
@@ -98,7 +126,7 @@ class MissingFactoryProvider(Provider):
         return value
 
     @provide(scope=Scope.APP)
-    def b(self, value: float) -> complex:
+    def b(self, *, value: float) -> complex:
         return value
 
 
@@ -106,6 +134,7 @@ def test_no_factory_init_sync():
     with pytest.raises(NoFactoryError) as e:
         make_container(MissingFactoryProvider())
     assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+
 
 @pytest.mark.asyncio
 async def test_no_factory_init_async():
@@ -128,14 +157,12 @@ def test_no_factory_path_sync():
     assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
 
 
-
 @pytest.mark.asyncio
 async def test_no_factory_async():
     container = make_async_container(Provider())
     with pytest.raises(NoFactoryError) as e:
         await container.get(object)
     assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
-
 
 
 @pytest.mark.asyncio
@@ -172,7 +199,7 @@ def test_invalid_scope_factory():
 
 def test_invalid_scope_context_var():
     class InvalidScopeProvider(Provider):
-        a = from_context(provides=int, scope="invalid")
+        a = from_context(int, scope="invalid")
 
     with pytest.raises(UnknownScopeError):
         make_container(InvalidScopeProvider())
@@ -180,17 +207,28 @@ def test_invalid_scope_context_var():
 
 def test_missing_context_var_sync():
     class MyProvider(Provider):
-        a = from_context(provides=int, scope=Scope.APP)
+        a = from_context(int, scope=Scope.APP)
 
     container = make_container(MyProvider())
     with pytest.raises(NoContextValueError):
         container.get(int)
 
+
 @pytest.mark.asyncio
 async def test_missing_context_var_async():
     class MyProvider(Provider):
-        a = from_context(provides=int, scope=Scope.APP)
+        a = from_context(int, scope=Scope.APP)
 
     container = make_async_container(MyProvider())
     with pytest.raises(NoContextValueError):
         await container.get(int)
+
+
+def test_no_scope():
+    class NoScopeProvider(Provider):
+        @provide
+        def x(self) -> int:
+            return 1
+
+    with pytest.raises(ValueError):  # noqa: PT011
+        NoScopeProvider()

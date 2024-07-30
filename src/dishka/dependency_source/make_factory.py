@@ -9,7 +9,9 @@ from collections.abc import (
     Sequence,
 )
 from inspect import (
+    Parameter,
     isasyncgenfunction,
+    isbuiltin,
     isclass,
     iscoroutinefunction,
     isfunction,
@@ -19,6 +21,7 @@ from inspect import (
     unwrap,
 )
 from typing import (
+    Annotated,
     Any,
     Protocol,
     get_args,
@@ -28,16 +31,21 @@ from typing import (
 )
 
 from dishka._adaptix.type_tools.basic_utils import (
-    get_all_type_hints,
     get_type_vars,
     is_bare_generic,
     strip_alias,
+)
+from dishka._adaptix.type_tools.fundamentals import (
+    get_all_type_hints,
 )
 from dishka._adaptix.type_tools.generic_resolver import (
     GenericResolver,
     MembersStorage,
 )
-from dishka.entities.key import DependencyKey, hints_to_dependency_keys
+from dishka.entities.key import (
+    hint_to_dependency_key,
+    hints_to_dependency_keys,
+)
 from dishka.entities.scope import BaseScope
 from .composite import CompositeDependencySource, ensure_composite
 from .factory import Factory, FactoryType
@@ -177,6 +185,11 @@ def _make_factory_by_class(
         source: Callable,
         cache: bool,
 ) -> Factory:
+    if not provides:
+        provides = source
+
+    if get_origin(source) is Annotated:
+        source = get_args(source)[0]
     init = strip_alias(source).__init__
     if missing_hints := _params_without_hints(init, skip_self=True):
         name = f"{source.__module__}.{source.__qualname__}.__init__"
@@ -200,23 +213,29 @@ def _make_factory_by_class(
             f"Or, create a separate factory with all types imported.",
             name=e.name,
         ) from e
+
     hints.pop("return", _empty)
+    params = signature(init).parameters
+    kw_dependency_keys = {
+        name: hint_to_dependency_key(hints.pop(name))
+        for name, param in params.items()
+        if param.kind is Parameter.KEYWORD_ONLY
+    }
     dependencies = list(hints.values())
-    if not provides:
-        provides = source
 
     return Factory(
         dependencies=hints_to_dependency_keys(dependencies),
+        kw_dependencies=kw_dependency_keys,
         type_=FactoryType.FACTORY,
         source=source,
         scope=scope,
-        provides=DependencyKey(provides, None),
+        provides=hint_to_dependency_key(provides),
         is_to_bind=False,
         cache=cache,
     )
 
 
-def _make_factory_by_method(
+def _make_factory_by_function(
         *,
         provides: Any,
         scope: BaseScope | None,
@@ -256,7 +275,14 @@ def _make_factory_by_method(
             # if we will bind factory to provider instance
             hints = {self.name: Any, **hints}
     possible_dependency = hints.pop("return", _empty)
+
+    kw_dependency_keys = {
+        name: hint_to_dependency_key(hints.pop(name))
+        for name, param in params.items()
+        if param.kind is Parameter.KEYWORD_ONLY
+    }
     dependencies = list(hints.values())
+
     if not provides:
         if possible_dependency is _empty:
             name = getattr(source, "__qualname__", "") or str(source)
@@ -269,10 +295,11 @@ def _make_factory_by_method(
             raise TypeError(f"Failed to analyze `{name}`. \n" + str(e)) from e
     return Factory(
         dependencies=hints_to_dependency_keys(dependencies),
+        kw_dependencies=kw_dependency_keys,
         type_=factory_type,
         source=source,
         scope=scope,
-        provides=DependencyKey(provides, None),
+        provides=hint_to_dependency_key(provides),
         is_to_bind=is_in_class,
         cache=cache,
     )
@@ -305,8 +332,17 @@ def _make_factory_by_static_method(
             f"Or, create a separate factory with all types imported.",
             name=e.name,
         ) from e
+
     possible_dependency = hints.pop("return", _empty)
+
+    params = signature(source).parameters
+    kw_dependency_keys = {
+        name: hint_to_dependency_key(hints.pop(name))
+        for name, param in params.items()
+        if param.kind is Parameter.KEYWORD_ONLY
+    }
     dependencies = list(hints.values())
+
     if not provides:
         if possible_dependency is _empty:
             name = getattr(source, "__qualname__", "") or str(source)
@@ -319,10 +355,11 @@ def _make_factory_by_static_method(
             raise TypeError(f"Failed to analyze `{name}`. \n" + str(e)) from e
     return Factory(
         dependencies=hints_to_dependency_keys(dependencies),
+        kw_dependencies=kw_dependency_keys,
         type_=factory_type,
         source=source,
         scope=scope,
-        provides=DependencyKey(provides, None),
+        provides=hint_to_dependency_key(provides),
         is_to_bind=False,
         cache=cache,
     )
@@ -352,6 +389,7 @@ def _make_factory_by_other_callable(
         dependencies = factory.dependencies
     return Factory(
         dependencies=dependencies,
+        kw_dependencies=factory.kw_dependencies,
         type_=factory.type,
         source=source,
         scope=scope,
@@ -377,9 +415,14 @@ def make_factory(
             provides=provides, scope=scope, source=source, cache=cache,
         )
     elif isfunction(source) or isinstance(source, classmethod):
-        return _make_factory_by_method(
+        return _make_factory_by_function(
             provides=provides, scope=scope, source=source, cache=cache,
             is_in_class=is_in_class,
+        )
+    elif isbuiltin(source):
+        return _make_factory_by_function(
+            provides=provides, scope=scope, source=source, cache=cache,
+            is_in_class=False,
         )
     elif isinstance(source, staticmethod):
         return _make_factory_by_static_method(
@@ -487,5 +530,41 @@ def provide(
     return scoped
 
 
-def _context_stub():
-    raise NotImplementedError
+def _provide_all(
+        *,
+        provides: Sequence[Any],
+        scope: BaseScope | None,
+        cache: bool,
+        is_in_class: bool,
+) -> CompositeDependencySource:
+    composite = CompositeDependencySource(None)
+    for single_provides in provides:
+        factory = make_factory(
+            provides=single_provides, scope=scope,
+            source=single_provides, cache=cache,
+            is_in_class=is_in_class,
+        )
+        composite.dependency_sources.extend(unpack_factory(factory))
+    return composite
+
+
+def provide_all(
+        *provides: Any,
+        scope: BaseScope | None = None,
+        cache: bool = True,
+) -> CompositeDependencySource:
+    return _provide_all(
+        provides=provides, scope=scope,
+        cache=cache, is_in_class=True,
+    )
+
+
+def provide_all_on_instance(
+        *provides: Any,
+        scope: BaseScope | None = None,
+        cache: bool = True,
+) -> CompositeDependencySource:
+    return _provide_all(
+        provides=provides, scope=scope,
+        cache=cache, is_in_class=False,
+    )

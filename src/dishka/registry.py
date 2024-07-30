@@ -9,6 +9,7 @@ from .dependency_source import (
     ContextVariable,
     Decorator,
     Factory,
+    FactoryType,
 )
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.key import DependencyKey
@@ -16,6 +17,7 @@ from .entities.scope import BaseScope, InvalidScopes
 from .exceptions import (
     CycleDependenciesError,
     GraphMissingFactoryError,
+    InvalidGraphError,
     NoFactoryError,
     UnknownScopeError,
 )
@@ -86,8 +88,13 @@ class Registry:
             self, factory: Factory, dependency_key: DependencyKey,
     ) -> Factory:
         dependency = dependency_key.type_hint
+        type_var_deps = (
+            d.type_hint
+            for d in factory.dependencies
+            if isinstance(d.type_hint, TypeVar)
+        )
         params_replacement = dict(zip(
-            get_args(factory.provides.type_hint),
+            type_var_deps,
             get_args(dependency),
             strict=False,
         ))
@@ -104,10 +111,24 @@ class Registry:
             new_dependencies.append(DependencyKey(
                 hint, source_dependency.component,
             ))
+        new_kw_dependencies: dict[str, DependencyKey] = {}
+        for name, source_dependency in factory.kw_dependencies.items():
+            hint = source_dependency.type_hint
+            if isinstance(hint, TypeVar):
+                hint = params_replacement[hint]
+            elif get_origin(hint):
+                hint = hint[tuple(
+                    params_replacement[param]
+                    for param in get_type_vars(hint)
+                )]
+            new_kw_dependencies[name] = DependencyKey(
+                hint, source_dependency.component,
+            )
         return Factory(
             source=factory.source,
             provides=dependency_key,
             dependencies=new_dependencies,
+            kw_dependencies=new_kw_dependencies,
             is_to_bind=factory.is_to_bind,
             type_=factory.type,
             scope=factory.scope,
@@ -142,11 +163,21 @@ class GraphValidator:
             self, factory: Factory, registry_index: int,
     ):
         self.path[factory.provides] = factory
+        if (
+            factory.provides in factory.kw_dependencies.values() or
+            factory.provides in factory.dependencies
+        ):
+            raise CycleDependenciesError([factory])
         try:
             for dep in factory.dependencies:
                 # ignore TypeVar parameters
                 if not isinstance(dep.type_hint, TypeVar):
                     self._validate_key(dep, registry_index)
+            for dep in factory.kw_dependencies.values():
+                # ignore TypeVar parameters
+                if not isinstance(dep.type_hint, TypeVar):
+                    self._validate_key(dep, registry_index)
+
         except NoFactoryError as e:
             e.add_path(factory)
             raise
@@ -156,7 +187,8 @@ class GraphValidator:
 
     def validate(self):
         for registry_index, registry in enumerate(self.registries):
-            for factory in registry.factories.values():
+            factories = tuple(registry.factories.values())
+            for factory in factories:
                 self.path = {}
                 try:
                     self._validate_factory(factory, registry_index)
@@ -294,6 +326,10 @@ class RegistryBuilder:
         )
         self.decorator_depth[provides] += 1
         old_factory = registry.get_factory(provides)
+        if old_factory.type is FactoryType.CONTEXT:
+            raise InvalidGraphError(
+                f"Cannot apply decorator to context data {provides}",
+            )
         old_factory.provides = DependencyKey(
             undecorated_type, old_factory.provides.component,
         )

@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package my_grpc_service;
+
+message MyRequest { string name = 1; }
+
+message MyResponse { string message = 1; }
+
+service MyService { rpc MyMethod(MyRequest) returns(MyResponse); }

@@ -68,6 +68,7 @@ value_factory = Factory(
     provides=DependencyKey(ClassA, None),
     source=A_VALUE,
     dependencies=[],
+    kw_dependencies={},
     type_=FactoryType.VALUE,
     scope=Scope.APP,
     is_to_bind=False,

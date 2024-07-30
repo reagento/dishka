@@ -160,7 +160,7 @@ Fastapi depends provides simple but effective API to inject dependencies, but th
 * It can be used only inside fastapi.
 * You cannot use it for lazy initialization of singletons
 * It mixes up Dependency Injection and Request decomposition. That leads to incorrect openapi specification or even broken app.
-* You have to declare each dependencies with ``Depends`` on each level of application. So ether you business logic contains details of IoC-container or you have to duplicate constructor signatures.
+* You have to declare each dependency with ``Depends`` on each level of application. So either your business logic contains details of IoC-container or you have to duplicate constructor signatures.
 * It is not very fast in runtime, though you might never notice that
 * Almost all examples in documentation ignore ``dependency_overrides``, which is actually a main thing to use fastapi as IoC-container.
 
@@ -169,14 +169,14 @@ Why not svcs?
 
 On first approach ``dishka`` and ``svcs`` have similar api, but ``svcs`` does much less automation:
 
-1. In svcs all binding between classes is done manually by calling ``container`` inside ach factory. In dishka you can just add class if you have type-hinted its ``__init__``. Additionally, in ``svsc`` you cannot use this information to validate graph or somehow visualize.
+1. In svcs all binding between classes is done manually by calling ``container`` inside each factory. In dishka you can just add class if you have type-hinted its ``__init__``. Additionally, in ``svsc`` you cannot use this information to validate graph or somehow visualize.
 2. While ``svsc`` caches dependencies there is no scope hierarchy. You can create multiple containers to make lazy singletons, but they are not thread-safe.
 3. There are no predefined patterns like multiple providers and class-based providers. So the only way to make your container modular you need to decide how to do it. With ``dishka`` you can reuse ``providers`` making different combinations for different environments or cases.
 
 Why not rodi?
 =============================
 
-``Rodi`` is pretty simple and fast. Though is misses most of the useful features.
+``Rodi`` is pretty simple and fast. Though it misses most of the useful features.
 
 * It has auto-wiring, but no isolated components.
 * No resources finalization. You can somehow track what to finalize using your instance of ``ActivationScope``, but you have to write it on your own.

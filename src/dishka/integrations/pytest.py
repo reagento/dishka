@@ -1,30 +1,32 @@
-from inspect import signature
+from inspect import Parameter
 from typing import Any
 
 import pytest
 
 from dishka import Container
-from .base import default_parse_dependency, get_type_hints
+from .base import wrap_injection
+
+CONTAINER_NAME = "dishka_container"
 
 
-@pytest.fixture(autouse=True)
-def _dishka_inject(
-        request: pytest.FixtureRequest,
-):
-    dependencies = {}
-    parse_dependency = default_parse_dependency
-    hints = get_type_hints(request.function, include_extras=True)
-    func_signature = signature(request.function)
-    for name, param in func_signature.parameters.items():
-        hint = hints.get(name, Any)
-        dep = parse_dependency(param, hint)
-        if dep is None:
-            continue
-        dependencies[name] = dep
+def dishka_fixture(name: str, cls: Any):
+    def temp_fixture(dishka_container):
+        return dishka_container.get(cls)
 
-    if dependencies:
-        container: Container = request.getfixturevalue("dishka_container")
-        for name, dep in dependencies.items():
-            request.node.funcargs[name] = container.get(
-                dep.type_hint, component=dep.component,
-            )
+    temp_fixture.__name__ = name
+    return pytest.fixture(temp_fixture)
+
+
+def inject(func):
+    additional_params = [Parameter(
+        name=CONTAINER_NAME,
+        annotation=Container,
+        kind=Parameter.KEYWORD_ONLY,
+    )]
+    return wrap_injection(
+        func=func,
+        remove_depends=True,
+        container_getter=lambda _, p: p[CONTAINER_NAME],
+        additional_params=additional_params,
+        is_async=False,
+    )

@@ -20,6 +20,7 @@ Built-in frameworks integrations:
 * TaskIq
 * Sanic
 * grpcio
+* Click
 
 Common approach
 =====================
@@ -154,6 +155,28 @@ With some frameworks we provide an option to inject dependencies in handlers wit
 
     setup_dishka(container=container, app=app, auto_inject=True)
 
+* For **Click** you need to provide ``auto_inject=True`` when calling ``setup_dishka``. E.g:
+
+.. code-block:: python
+
+    import click
+    from dishka.integrations.click import FromDishka, setup_dishka
+
+    @click.group()
+    def cli(): ...
+
+
+    @cli.command()
+    @click.option("--count", default=1, help="Number of greetings.")
+    def hello(count: int, interactor: FromDishka[Interactor]):
+        """Simple program that greets NAME for a total of COUNT times."""
+        for x in range(count):
+            click.echo(f"Hello {interactor()}!")
+
+
+    setup_dishka(container=container, command=cli, auto_inject=True)
+
+
 Context data
 ====================
 
@@ -173,6 +196,7 @@ These objects are passed to context:
 * TaskIq - no objects
 * Sanic - ``sanic.request.Request``
 * grpcio - ``grpcio.ServicerContext`` to get the current context and ``google.protobuf.message.Message`` to get the current request
+* Click - ``click.Context``
 
 To use such objects you need to declare them in your provider using :ref:`from-context` and then they will be available as factories params.
 

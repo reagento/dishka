@@ -2,16 +2,19 @@ from abc import ABC, ABCMeta
 from enum import Enum
 from types import GenericAlias
 from typing import (
-    _BaseGenericAlias,
+    TYPE_CHECKING,
     Final,
     Generic,
-    get_args,
-    get_origin as typing_get_origin,
     TypeVar,
+    _BaseGenericAlias,
+    get_args,
+)
+from typing import (
+    get_origin as typing_get_origin,
 )
 
 from dishka._adaptix.type_tools import is_generic
-
+from dishka.entities.provides_marker import ProvideMultiple
 
 IGNORE_TYPES: Final = (
     type,
@@ -54,11 +57,11 @@ def get_type_vars_map(obj):
     origin_obj = get_origin(obj)
     if not get_parameters(origin_obj):
         return {}
-    
+
     return dict(
         zip(
             parse_parameters_names(origin_obj),
-            get_not_null_args(obj),
+            get_not_null_args(obj), strict=False,
         ),
     )
 
@@ -78,37 +81,42 @@ def recursion_get_parents_for_generic_class(obj, parents, type_vars_map):
     origin_obj = get_origin(obj)
     if is_ignore_type(origin_obj):
         return
-    
+
     type_vars_map.update(get_type_vars_map(obj))
     for obj in origin_obj.__orig_bases__:
         origin_obj = get_origin(obj)
         if is_ignore_type(origin_obj):
             continue
-        
+
         type_vars_map.update(get_type_vars_map(obj))
         parents.append(create_generic(origin_obj, type_vars_map) or obj)
         recursion_get_parents_for_generic_class(obj, parents, type_vars_map)
 
 
-def get_parents_for_generic_class(obj):
-    res = []
-    type_vars_map = get_type_vars_map(obj)
-    res.append(create_generic(get_origin(obj), type_vars_map) or obj)
-    recursion_get_parents_for_generic_class(obj, res, type_vars_map)
-    return res
-
-def get_parents_for_
-
 def get_parents(obj):
     if is_ignore_type(get_origin(obj)):
-        raise ValueError('The starting class %r is in ignored types' % obj)
-    
+        raise ValueError("The starting class %r is in ignored types" % obj)
+
     if isinstance(obj, (_BaseGenericAlias, GenericAlias)):
-        res = get_parents_for_generic_class(obj)
+        res = []
+        type_vars_map = get_type_vars_map(obj)
+        res.append(create_generic(get_origin(obj), type_vars_map) or obj)
+        recursion_get_parents_for_generic_class(obj, res, type_vars_map)
     elif hasattr(obj, "__orig_bases__"):
         res = []
         res.append(obj)
-        get_parents_for_generic(obj, res, {})
+        recursion_get_parents_for_generic_class(obj, res, {})
     else:
         res = [obj_ for obj_ in obj.mro() if not is_ignore_type(obj_)]
-    return tuple(res)
+    return res
+
+
+if TYPE_CHECKING:
+    from typing import Union as WithParents
+else:
+    class WithParents:
+        def __class_getitem__(cls, item):
+            parents = get_parents(item)
+            if len(parents) > 1:
+                return ProvideMultiple(parents)
+            return item

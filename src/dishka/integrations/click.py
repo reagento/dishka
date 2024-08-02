@@ -4,8 +4,6 @@ __all__ = [
     "setup_dishka",
 ]
 
-from typing import Optional, Any
-
 from click import (
     Command,
     Context,
@@ -13,7 +11,7 @@ from click import (
     get_current_context,
 )
 
-from dishka import Container, FromDishka, Scope
+from dishka import Container, FromDishka
 from .base import is_dishka_injected, wrap_injection
 
 CONTAINER_NAME = "dishka_container"
@@ -31,7 +29,9 @@ def inject(func):
 
 
 def _inject_commands(context: Context, command: Command) -> None:
-    if isinstance(command, Command) and not is_dishka_injected(command.callback):
+    if isinstance(command, Command) and not is_dishka_injected(
+        command.callback,
+    ):
         command.callback = inject(command.callback)
 
     if isinstance(command, Group):
@@ -40,29 +40,17 @@ def _inject_commands(context: Context, command: Command) -> None:
             _inject_commands(context, child_command)
 
 
-class DishkaContext(Context):
-    def __init__(
-        self,
-        *args: Any,
-        dishka_container: Optional[Container] = None,
-        dishka_auto_inject: bool = False,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        request_container = self.with_resource(
-            dishka_container({Context: self}, scope=Scope.REQUEST)
-        )
-        self.meta[CONTAINER_NAME] = request_container
-        if dishka_auto_inject:
-            _inject_commands(self, self.command)
-
-
 def setup_dishka(
     container: Container,
-    command: Command,
+    context: Context,
     *,
+    finalize_container: bool = True,
     auto_inject: bool = False,
 ) -> None:
-    command.context_class = DishkaContext
-    command.context_settings["dishka_container"] = container
-    command.context_settings["dishka_auto_inject"] = auto_inject
+    context.meta[CONTAINER_NAME] = container
+
+    if finalize_container:
+        context.call_on_close(container.close)
+
+    if auto_inject:
+        _inject_commands(context, context.command)

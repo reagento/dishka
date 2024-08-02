@@ -27,20 +27,23 @@ class Interactor:
 
 
 class AdaptersProvider(Provider):
-    @provide(scope=Scope.REQUEST)
+    @provide(scope=Scope.APP)
     def get_db(self) -> DbGateway:
         return FakeDbGateway()
 
 
 class InteractorProvider(Provider):
-    i1 = provide(Interactor, scope=Scope.REQUEST)
+    i1 = provide(Interactor, scope=Scope.APP)
 
 
 @click.group()
-def cli(): ...
+@click.pass_context
+def main(context: click.Context):
+    container = make_container(AdaptersProvider(), InteractorProvider())
+    setup_dishka(container=container, context=context, auto_inject=True)
 
 
-@cli.command()
+@click.command()
 @click.option("--count", default=1, help="Number of greetings.")
 @click.option("--name", prompt="Your name", help="The person to greet.")
 def hello(count: int, name: str, interactor: FromDishka[Interactor]):
@@ -50,10 +53,7 @@ def hello(count: int, name: str, interactor: FromDishka[Interactor]):
         click.echo(interactor())
 
 
+main.add_command(hello, name="hello")
+
 if __name__ == "__main__":
-    container = make_container(AdaptersProvider(), InteractorProvider())
-    setup_dishka(container=container, command=cli, auto_inject=True)
-    try:
-        cli()
-    finally:
-        container.close()
+    main()

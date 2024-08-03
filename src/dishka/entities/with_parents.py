@@ -18,7 +18,6 @@ from dishka._adaptix.type_tools import (
     get_type_vars,
     is_generic,
     is_named_tuple_class,
-    is_protocol,
     is_typed_dict_class,
     strip_alias,
 )
@@ -36,6 +35,10 @@ IGNORE_TYPES: Final = (
     BaseException,
 )
 TypeVarsMap: TypeAlias = dict[TypeVar | TypeVarTuple, TypeHint]
+
+
+def has_orig_bases(obj: TypeHint) -> bool:
+    return hasattr(obj, '__orig_bases__')
 
 
 def is_ignore_type(origin_obj: TypeHint) -> bool:
@@ -109,6 +112,10 @@ def recursion_get_parents_for_generic_class(
         return
 
     type_vars_map.update(create_type_vars_map(obj))
+    if not has_orig_bases(origin_obj):
+        parents.extend(get_parents_for_mro(origin_obj))
+        return None
+    
     for obj in origin_obj.__orig_bases__:
         origin_obj = strip_alias(obj)
         if is_ignore_type(origin_obj):
@@ -121,6 +128,13 @@ def recursion_get_parents_for_generic_class(
             parents,
             type_vars_map.copy(),
         )
+
+
+def get_parents_for_mro(obj: TypeHint) -> list[TypeHint]:
+    return [
+        obj_ for obj_ in obj.mro()
+        if not is_ignore_type(strip_alias(obj_))
+    ]
 
 
 def get_parents(obj: TypeHint) -> list[TypeHint]:
@@ -140,7 +154,7 @@ def get_parents(obj: TypeHint) -> list[TypeHint]:
             parents=parents,
             type_vars_map=type_vars_map,
         )
-    elif hasattr(obj, "__orig_bases__"):
+    elif has_orig_bases(obj):
         parents = [obj]
         recursion_get_parents_for_generic_class(
             obj=obj,
@@ -148,10 +162,7 @@ def get_parents(obj: TypeHint) -> list[TypeHint]:
             type_vars_map={},
         )
     else:
-        parents = [
-            obj_ for obj_ in obj.mro()
-            if not is_ignore_type(strip_alias(obj_))
-        ]
+        parents = get_parents_for_mro(obj)
     return parents
 
 

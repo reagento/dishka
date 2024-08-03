@@ -8,11 +8,10 @@ from typing import (
     Protocol,
     TypeAlias,
     TypeVar,
-    TypeVarTuple,
-    cast,
 )
 
 from dishka._adaptix.common import TypeHint
+from dishka._adaptix.feature_requirement import HAS_PY_311
 from dishka._adaptix.type_tools import (
     get_generic_args,
     get_type_vars,
@@ -32,16 +31,18 @@ IGNORE_TYPES: Final = (
     Exception,
     BaseException,
 )
-TypeVarsMap: TypeAlias = dict[TypeVar | TypeVarTuple, TypeHint]
+TypeVarsMap: TypeAlias = dict[TypeHint, TypeHint]
 
 
 def has_orig_bases(obj: TypeHint) -> bool:
     return hasattr(obj, "__orig_bases__")
 
-
-def is_type_var_tuple(obj: TypeHint) -> bool:
-    return getattr(obj, "__typing_is_unpacked_typevartuple__", False)
-
+if HAS_PY_311:
+    def is_type_var_tuple(obj: TypeHint) -> bool:
+        return getattr(obj, "__typing_is_unpacked_typevartuple__", False)
+else:
+    def is_type_var_tuple(obj: TypeHint) -> bool:
+        return False
 
 def is_ignore_type(origin_obj: TypeHint) -> bool:
     return origin_obj in IGNORE_TYPES
@@ -50,7 +51,7 @@ def is_ignore_type(origin_obj: TypeHint) -> bool:
 def get_filled_arguments(obj: TypeHint) -> list[TypeHint]:
     filled_arguments = []
     for arg in get_generic_args(obj):
-        if isinstance(arg, (TypeVar, TypeVarTuple)):
+        if isinstance(arg, TypeVar):
             continue
         if is_type_var_tuple(arg):
            continue
@@ -63,13 +64,13 @@ def create_type_vars_map(obj: TypeHint) -> TypeVarsMap:
     if not get_type_vars(origin_obj):
         return {}
 
-    type_vars_map = {}
     type_vars = list(get_type_vars(origin_obj))
     filled_arguments = get_filled_arguments(obj)
 
     if not filled_arguments or not type_vars:
         return {}
 
+    type_vars_map = {}
     reversed_arguments = False
     while True:
         if len(type_vars) == 0:
@@ -88,7 +89,7 @@ def create_type_vars_map(obj: TypeHint) -> TypeVarsMap:
             filled_arguments.reverse()
             reversed_arguments = not reversed_arguments
 
-    return cast(TypeVarsMap, type_vars_map)
+    return type_vars_map
 
 
 def create_generic_class(

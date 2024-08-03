@@ -17,8 +17,6 @@ from dishka._adaptix.type_tools import (
     get_generic_args,
     get_type_vars,
     is_generic,
-    is_named_tuple_class,
-    is_typed_dict_class,
     strip_alias,
 )
 from dishka.entities.provides_marker import ProvideMultiple
@@ -46,13 +44,7 @@ def is_type_var_tuple(obj: TypeHint) -> bool:
 
 
 def is_ignore_type(origin_obj: TypeHint) -> bool:
-    if origin_obj in IGNORE_TYPES:
-        return True
-    if is_named_tuple_class(origin_obj):
-        return True
-    if is_typed_dict_class(origin_obj):
-        return True
-    return False
+    return origin_obj in IGNORE_TYPES
 
 
 def get_filled_arguments(obj: TypeHint) -> list[TypeHint]:
@@ -129,15 +121,15 @@ def recursion_get_parents_for_generic_class(
         parents.extend(get_parents_for_mro(origin_obj))
         return
 
-    for obj in origin_obj.__orig_bases__:
-        origin_obj = strip_alias(obj)
+    for obj_ in origin_obj.__orig_bases__:
+        origin_obj = strip_alias(obj_)
         if is_ignore_type(origin_obj):
             continue
 
-        type_vars_map.update(create_type_vars_map(obj))
-        parents.append(create_generic_class(origin_obj, type_vars_map) or obj)
+        type_vars_map.update(create_type_vars_map(obj_))
+        parents.append(create_generic_class(origin_obj, type_vars_map) or obj_)
         recursion_get_parents_for_generic_class(
-            obj,
+            obj_,
             parents,
             type_vars_map.copy(),
         )

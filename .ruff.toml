@@ -25,7 +25,6 @@ lint.ignore = [
    "UP038",
    "TCH001",
    "SIM103",
-   "PLR1704",
 ]
 
 [lint.per-file-ignores]

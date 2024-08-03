@@ -1,5 +1,7 @@
-from enum import Enum
-from typing import Generic, NamedTuple, Protocol, TypeVar, TypeVarTuple
+from abc import ABC
+from typing import Any, Generic, Protocol, TypeVar, TypeVarTuple
+
+import pytest
 
 from dishka import Provider, Scope, make_container
 from dishka.entities.with_parents import WithParents
@@ -15,38 +17,30 @@ def test_simple_inheritance() -> None:
     class A3(A2): ...
 
     provider = Provider(scope=Scope.APP)
-    provider.provide(lambda: 1, provides=WithParents[A3])
+    provider.provide(lambda: A3(), provides=WithParents[A3])
     container = make_container(provider)
-    assert container.get(A3) == 1
-    assert container.get(A2) == 1
-    assert container.get(A1) == 1
+    assert (
+        container.get(A3)
+        is container.get(A2)
+        is container.get(A1)
+    )
 
 
-def test_ignore_parent_type() -> None:
-    class A1(Protocol): ...
-    class A2(Enum): ...
-    class A3(NamedTuple): ...
-
+@pytest.mark.parametrize(
+    ("obj", "value"),
+    [
+        (type("A1", (Protocol,), {}), Protocol),
+        (type("A2", (object,), {}), object),
+        (type("A3", (ABC,), {}), ABC),
+    ],
+)
+def test_ignore_parent_type(obj: Any, value: Any) -> None:
     provider = Provider(scope=Scope.APP)
-    provider.provide(lambda: 1, provides=WithParents[A1])
-    provider.provide(lambda: 1, provides=WithParents[A2])
-    try:
-        provider.provide(lambda: 1, provides=WithParents[A3])
-    except ValueError:
-        pass
-    else:
-        raise AssertionError
+    provider.provide(lambda: obj(), provides=WithParents[obj])
     container = make_container(provider)
 
     try:
-        container.get(Protocol)
-    except NoFactoryError:
-        pass
-    else:
-        raise AssertionError
-
-    try:
-        container.get(Enum)
+        container.get(value)
     except NoFactoryError:
         pass
     else:
@@ -59,25 +53,28 @@ def test_type_var() -> None:
     class A2(A1[str]): ...
 
     provider = Provider(scope=Scope.APP)
-    provider.provide(lambda: 1, provides=WithParents[A2])
+    provider.provide(lambda: A2(), provides=WithParents[A2])
 
     container = make_container(provider)
 
-    assert container.get(A2) == 1
-    assert container.get(A1[str]) == 1
-
+    assert(
+        container.get(A2)
+        is container.get(A1[str])
+    )
 
 def test_type_var_tuple() -> None:
     class A1(Generic[*TS]): ...
     class A2(A1[str, int, type]): ...
 
     provider = Provider(scope=Scope.APP)
-    provider.provide(lambda: 1, provides=WithParents[A2])
+    provider.provide(lambda: A2(), provides=WithParents[A2])
 
     container = make_container(provider)
 
-    assert container.get(A2) == 1
-    assert container.get(A1[str, int, type]) == 1
+    assert (
+        container.get(A2)
+        is container.get(A1[str, int, type])
+    )
 
 
 def test_type_var_and_type_var_tuple() -> None:
@@ -92,22 +89,27 @@ def test_type_var_and_type_var_tuple() -> None:
 
 
     provider = Provider(scope=Scope.APP)
-    provider.provide(lambda: 1, provides=WithParents[A2])
-    provider.provide(lambda: 1, provides=WithParents[B2])
-    provider.provide(lambda: 1, provides=WithParents[C2])
+    provider.provide(lambda: A2(), provides=WithParents[A2])
+    provider.provide(lambda: B2(), provides=WithParents[B2])
+    provider.provide(lambda: C2(), provides=WithParents[C2])
 
     container = make_container(provider)
 
-    assert container.get(A2) == 1
-    assert container.get(A1[str, int, type]) == 1
+    assert (
+        container.get(A2)
+        is container.get(A1[str, int, type])
+    )
 
-    assert container.get(B2) == 1
-    assert container.get(B1[int, tuple[str, ...], type]) == 1
-    assert container.get(int) == 1
+    assert (
+        container.get(B2)
+        is container.get(B1[int, tuple[str, ...], type])
+        is container.get(int)
+    )
 
-    assert container.get(C2) == 1
-    assert container.get(C1[int, type, str, tuple[str, ...]]) == 1
-
+    assert (
+        container.get(C2)
+        is container.get(C1[int, type, str, tuple[str, ...]])
+    )
 
 def test_deep_inheritance() -> None:
     class A1(Generic[*TS]): ...
@@ -121,14 +123,16 @@ def test_deep_inheritance() -> None:
     class D1(A2[int, type, str], C1[str]): ...
 
     provider = Provider(scope=Scope.APP)
-    provider.provide(lambda: 1, provides=WithParents[D1])
+    provider.provide(lambda: D1(), provides=WithParents[D1])
     container = make_container(provider)
 
-    assert container.get(D1) == 1
-    assert container.get(A2[int, type, str]) == 1
-    assert container.get(A1[int, type]) == 1
-    assert container.get(C1[str]) == 1
-    assert container.get(B3) == 1
-    assert container.get(B2) == 1
-    assert container.get(B1) == 1
-    assert container.get(D1) == 1
+    assert(
+        container.get(D1)
+        is container.get(A2[int, type, str])
+        is container.get(A1[int, type])
+        is container.get(C1[str])
+        is container.get(B3)
+        is container.get(B2)
+        is container.get(B1)
+        is container.get(D1)
+    )

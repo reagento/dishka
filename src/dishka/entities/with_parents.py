@@ -41,8 +41,6 @@ TypeVarsMap: TypeAlias = dict[TypeVar | TypeVarTuple, TypeHint]
 def is_ignore_type(origin_obj: TypeHint) -> bool:
     if origin_obj in IGNORE_TYPES:
         return True
-    if is_protocol(origin_obj):
-        return True
     if is_named_tuple_class(origin_obj):
         return True
     if is_typed_dict_class(origin_obj):

@@ -38,7 +38,11 @@ TypeVarsMap: TypeAlias = dict[TypeVar | TypeVarTuple, TypeHint]
 
 
 def has_orig_bases(obj: TypeHint) -> bool:
-    return hasattr(obj, '__orig_bases__')
+    return hasattr(obj, "__orig_bases__")
+
+
+def is_type_var_tuple(obj: TypeHint) -> bool:
+    return getattr(obj, "__typing_is_unpacked_typevartuple__", False)
 
 
 def is_ignore_type(origin_obj: TypeHint) -> bool:
@@ -52,11 +56,14 @@ def is_ignore_type(origin_obj: TypeHint) -> bool:
 
 
 def get_filled_arguments(obj: TypeHint) -> list[TypeHint]:
-    return [
-        arg
-        for arg in get_generic_args(obj)
-        if not isinstance(arg, (TypeVar, TypeVarTuple))
-    ]
+    filled_arguments = []
+    for arg in get_generic_args(obj):
+        if isinstance(arg, (TypeVar, TypeVarTuple)):
+            continue
+        if is_type_var_tuple(arg):
+           continue
+        filled_arguments.append(arg)
+    return filled_arguments
 
 
 def create_type_vars_map(obj: TypeHint) -> TypeVarsMap:
@@ -67,22 +74,28 @@ def create_type_vars_map(obj: TypeHint) -> TypeVarsMap:
     type_vars_map = {}
     type_vars = list(get_type_vars(origin_obj))
     filled_arguments = get_filled_arguments(obj)
+
     if not filled_arguments or not type_vars:
         return {}
 
+    reversed_arguments = False
     while True:
         if len(type_vars) == 0:
             break
         type_var = type_vars[0]
-        if isinstance(type_var, TypeVarTuple):
-            type_vars.reverse()
-            if len(type_vars) == 1:
-                type_vars_map[type_var] = filled_arguments
-                break
-            filled_arguments.reverse()
-        else:
+        if isinstance(type_var, TypeVar):
             del type_vars[0]
             type_vars_map[type_var] = filled_arguments.pop(0)
+        else:
+            if len(type_vars) == 1:
+                if reversed_arguments:
+                    filled_arguments.reverse()
+                type_vars_map[type_var] = filled_arguments
+                break
+            type_vars.reverse()
+            filled_arguments.reverse()
+            reversed_arguments = not reversed_arguments
+
     return cast(TypeVarsMap, type_vars_map)
 
 
@@ -90,16 +103,17 @@ def create_generic_class(
     origin_obj: TypeHint,
     type_vars_map: TypeVarsMap,
 ) -> TypeHint | None:
-    if is_generic(origin_obj):
-        generic_args = []
-        for type_var in get_type_vars(origin_obj):
-            arg = type_vars_map[type_var]
-            if isinstance(arg, list):
-                generic_args.extend(arg)
-            else:
-                generic_args.append(arg)
-        return origin_obj[*generic_args]
-    return None
+    if not is_generic(origin_obj):
+        return None
+
+    generic_args = []
+    for type_var in get_type_vars(origin_obj):
+        arg = type_vars_map[type_var]
+        if isinstance(arg, list):
+            generic_args.extend(arg)
+        else:
+            generic_args.append(arg)
+    return origin_obj[*generic_args]
 
 
 def recursion_get_parents_for_generic_class(
@@ -111,11 +125,10 @@ def recursion_get_parents_for_generic_class(
     if is_ignore_type(origin_obj):
         return
 
-    type_vars_map.update(create_type_vars_map(obj))
     if not has_orig_bases(origin_obj):
         parents.extend(get_parents_for_mro(origin_obj))
-        return None
-    
+        return
+
     for obj in origin_obj.__orig_bases__:
         origin_obj = strip_alias(obj)
         if is_ignore_type(origin_obj):
@@ -139,7 +152,7 @@ def get_parents_for_mro(obj: TypeHint) -> list[TypeHint]:
 
 def get_parents(obj: TypeHint) -> list[TypeHint]:
     if is_ignore_type(strip_alias(obj)):
-        raise ValueError("The starting class %r is in ignored types" % obj)
+        raise ValueError(f"The starting class {obj!r} is in ignored types")
 
     if isinstance(obj, GenericAlias):
         type_vars_map = create_type_vars_map(obj)
@@ -176,4 +189,4 @@ else:
             parents = get_parents(item)
             if len(parents) > 1:
                 return ProvideMultiple(parents)
-            return item
+            return parents[0]

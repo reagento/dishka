@@ -114,3 +114,22 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
             return A()
 
 It works similar to :ref:`alias`.
+
+* Do you want to get dependencies by parents? Use ``WithParents`` as a result hint:
+
+.. code-block:: python
+
+    from dishka import WithParents, provide, Provider, Scope
+
+    class A(Protocol): ...
+    class AImpl(A): ...
+
+    class MyProvider(Provider):
+        scope=Scope.APP
+
+        @provide
+        def a(self) -> WithParents[A]:
+            return A()
+
+This is similar to ``AnyOf[AImpl, A]``. The following parents are ignored: ``type``, ``object``, ``Enum``, ``ABC``, ``ABCMeta``, ``Generic``, ``Protocol``, ``Exception``, ``BaseException``
+

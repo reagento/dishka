@@ -106,10 +106,7 @@ def create_generic_class(
             generic_args.extend(arg)
         else:
             generic_args.append(arg)
-    if HAS_PY_311:
-        return origin_obj[*generic_args]
-    else:
-        return origin_obj.__class_getitem__(*generic_args)
+    return origin_obj.__class_getitem__(*generic_args)
 
 
 def recursion_get_parents_for_generic_class(

@@ -13,6 +13,8 @@ REQUEST_DEP_VALUE = "REQUEST"
 WebSocketDep = NewType("WebSocketDep", str)
 WS_DEP_VALUE = "WS"
 
+AppMock = NewType("AppMock", Mock)
+
 
 class AppProvider(Provider):
     def __init__(self):
@@ -21,6 +23,7 @@ class AppProvider(Provider):
         self.request_released = Mock()
         self.websocket_released = Mock()
         self.mock = Mock()
+        self.app_mock = AppMock(Mock())
 
     @provide(scope=Scope.APP)
     def app(self) -> Iterable[AppDep]:
@@ -40,6 +43,10 @@ class AppProvider(Provider):
     @provide(scope=Scope.REQUEST)
     def mock(self) -> Mock:
         return self.mock
+
+    @provide(scope=Scope.APP)
+    def app_mock(self) -> AppMock:
+        return self.app_mock
 
 
 class WebSocketAppProvider(Provider):

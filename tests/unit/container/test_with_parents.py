@@ -1,6 +1,5 @@
 from abc import ABC
-from typing import Any, Generic, Protocol, TypeVar, TypeVarTuple
-
+from typing import Any, Generic, Protocol, TypeVar
 import pytest
 
 from dishka import Provider, Scope, make_container
@@ -10,8 +9,6 @@ from dishka.exceptions import NoFactoryError
 
 T = TypeVar("T")
 B = TypeVar("B")
-if HAS_PY_311:
-    TS = TypeVarTuple("TS")
 
 def test_simple_inheritance() -> None:
     class A1: ...
@@ -65,8 +62,11 @@ def test_type_var() -> None:
     )
 
 if HAS_PY_311:
+    from typing import TypeVarTuple, Unpack
+    Ts = TypeVarTuple("TS")
+    
     def test_type_var_tuple() -> None:
-        class A1(Generic[*TS]): ...
+        class A1(Generic[Unpack[Ts]]): ...
         class A2(A1[str, int, type]): ...
 
         provider = Provider(scope=Scope.APP)
@@ -79,13 +79,13 @@ if HAS_PY_311:
             is container.get(A1[str, int, type])
         )
 
-    class A1(Generic[T, *TS]): ...
+    class A1(Generic[T, Unpack[Ts]]): ...
     class A2(A1[str, int, type], int): ...
 
-    class B1(Generic[*TS, T], int): ...
+    class B1(Generic[Unpack[Ts], T], int): ...
     class B2(B1[int, tuple[str, ...], type], int): ...
 
-    class C1(Generic[B, *TS, T]): ...
+    class C1(Generic[B, Unpack[Ts], T]): ...
     class C2(C1[int, type, str, tuple[str, ...]], int): ...
 
     @pytest.mark.parametrize(

@@ -128,8 +128,13 @@ It works similar to :ref:`alias`.
         scope=Scope.APP
 
         @provide
-        def a(self) -> WithParents[A]:
+        def a(self) -> WithParents[AImpl]:
             return A()
 
-This is similar to ``AnyOf[AImpl, A]``. The following parents are ignored: ``type``, ``object``, ``Enum``, ``ABC``, ``ABCMeta``, ``Generic``, ``Protocol``, ``Exception``, ``BaseException``
+    container = make_async_container(MyProvider())
+    a = await container.get(A)
+    a = await container.get(AImpl)
+    a is a # True
 
+
+WithParents generates only one factory and many aliases and is equivalent to ``AnyOf[AImpl, A]``. The following parents are ignored: ``type``, ``object``, ``Enum``, ``ABC``, ``ABCMeta``, ``Generic``, ``Protocol``, ``Exception``, ``BaseException``

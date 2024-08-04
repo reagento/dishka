@@ -55,13 +55,8 @@ def test_ignore_parent_type(obj: Any, value: Any, component: Any) -> None:
     )
     container = make_container(provider)
 
-    try:
+    with pytest.raises(NoFactoryError):
         container.get(value, component=component)
-    except NoFactoryError:
-        pass
-    else:
-        raise AssertionError
-
 
 
 def test_type_var() -> None:

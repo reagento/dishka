@@ -200,8 +200,9 @@ These objects are passed to context:
 * FastStream - ``faststream.broker.message.StreamMessage`` or ``faststream.[broker].[Broker]Message``, ``faststream.utils.ContextRepo`` 
 * TaskIq - no objects
 * Sanic - ``sanic.request.Request``
-* grpcio - ``grpcio.ServicerContext`` to get the current context and ``google.protobuf.message.Message`` to get the current request
+* grpcio - ``grpcio.ServicerContext`` to get the current context and ``google.protobuf.message.Message`` to get the current request(Only for unary unary rpc methods)
 * Click - no objects
+
 
 To use such objects you need to declare them in your provider using :ref:`from-context` and then they will be available as factories params.
 

@@ -1,11 +1,15 @@
+from dishka import Provider, Scope
+
 from grpcio.services.uuid_service import UUIDService, UUIDServiceImpl
 
-from dishka import Provider, Scope, provide
 
+def service_provider() -> Provider:
+    provider = Provider()
 
-class ServicesProvider(Provider):
-    scope = Scope.REQUEST
+    provider.provide(
+        UUIDServiceImpl,
+        scope=Scope.REQUEST,
+        provides=UUIDService,
+    )
 
-    @provide(provides=UUIDService)
-    def service_factory(self) -> UUIDServiceImpl:
-        return UUIDServiceImpl()
+    return provider

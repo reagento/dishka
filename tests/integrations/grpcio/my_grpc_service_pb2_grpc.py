@@ -6,10 +6,10 @@ import grpc
 
 from . import my_grpc_service_pb2 as my__grpc__service__pb2
 
-GRPC_GENERATED_VERSION = "1.64.1"
+GRPC_GENERATED_VERSION = "1.65.4"
 GRPC_VERSION = grpc.__version__
-EXPECTED_ERROR_RELEASE = "1.65.0"
-SCHEDULED_RELEASE_DATE = "June 25, 2024"
+EXPECTED_ERROR_RELEASE = "1.66.0"
+SCHEDULED_RELEASE_DATE = "August 6, 2024"
 _version_not_supported = False
 
 try:
@@ -50,6 +50,24 @@ class MyServiceStub:
             response_deserializer=my__grpc__service__pb2.MyResponse.FromString,
             _registered_method=True,
         )
+        self.MyUnaryStreamMethod = channel.unary_stream(
+            "/my_grpc_service.MyService/MyUnaryStreamMethod",
+            request_serializer=my__grpc__service__pb2.MyRequest.SerializeToString,
+            response_deserializer=my__grpc__service__pb2.MyResponse.FromString,
+            _registered_method=True,
+        )
+        self.MyStreamUnaryMethod = channel.stream_unary(
+            "/my_grpc_service.MyService/MyStreamUnaryMethod",
+            request_serializer=my__grpc__service__pb2.MyRequest.SerializeToString,
+            response_deserializer=my__grpc__service__pb2.MyResponse.FromString,
+            _registered_method=True,
+        )
+        self.MyStreamStreamMethod = channel.stream_stream(
+            "/my_grpc_service.MyService/MyStreamStreamMethod",
+            request_serializer=my__grpc__service__pb2.MyRequest.SerializeToString,
+            response_deserializer=my__grpc__service__pb2.MyResponse.FromString,
+            _registered_method=True,
+        )
 
 
 class MyServiceServicer:
@@ -61,11 +79,44 @@ class MyServiceServicer:
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
+    def MyUnaryStreamMethod(self, request, context):  # noqa: N802
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
+    def MyStreamUnaryMethod(self, request_iterator, context):  # noqa: N802
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
+    def MyStreamStreamMethod(self, request_iterator, context):  # noqa: N802
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
 
 def add_MyServiceServicer_to_server(servicer, server):  # noqa: N802
     rpc_method_handlers = {
         "MyMethod": grpc.unary_unary_rpc_method_handler(
             servicer.MyMethod,
+            request_deserializer=my__grpc__service__pb2.MyRequest.FromString,
+            response_serializer=my__grpc__service__pb2.MyResponse.SerializeToString,
+        ),
+        "MyUnaryStreamMethod": grpc.unary_stream_rpc_method_handler(
+            servicer.MyUnaryStreamMethod,
+            request_deserializer=my__grpc__service__pb2.MyRequest.FromString,
+            response_serializer=my__grpc__service__pb2.MyResponse.SerializeToString,
+        ),
+        "MyStreamUnaryMethod": grpc.stream_unary_rpc_method_handler(
+            servicer.MyStreamUnaryMethod,
+            request_deserializer=my__grpc__service__pb2.MyRequest.FromString,
+            response_serializer=my__grpc__service__pb2.MyResponse.SerializeToString,
+        ),
+        "MyStreamStreamMethod": grpc.stream_stream_rpc_method_handler(
+            servicer.MyStreamStreamMethod,
             request_deserializer=my__grpc__service__pb2.MyRequest.FromString,
             response_serializer=my__grpc__service__pb2.MyResponse.SerializeToString,
         ),
@@ -102,6 +153,96 @@ class MyService:
             request,
             target,
             "/my_grpc_service.MyService/MyMethod",
+            my__grpc__service__pb2.MyRequest.SerializeToString,
+            my__grpc__service__pb2.MyResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True,
+        )
+
+    @staticmethod
+    def MyUnaryStreamMethod(  # noqa: N802
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,  # noqa: FBT002
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            "/my_grpc_service.MyService/MyUnaryStreamMethod",
+            my__grpc__service__pb2.MyRequest.SerializeToString,
+            my__grpc__service__pb2.MyResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True,
+        )
+
+    @staticmethod
+    def MyStreamUnaryMethod(  # noqa: N802
+        request_iterator,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,  # noqa: FBT002
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.stream_unary(
+            request_iterator,
+            target,
+            "/my_grpc_service.MyService/MyStreamUnaryMethod",
+            my__grpc__service__pb2.MyRequest.SerializeToString,
+            my__grpc__service__pb2.MyResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True,
+        )
+
+    @staticmethod
+    def MyStreamStreamMethod(  # noqa: N802
+        request_iterator,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,  # noqa: FBT002
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.stream_stream(
+            request_iterator,
+            target,
+            "/my_grpc_service.MyService/MyStreamStreamMethod",
             my__grpc__service__pb2.MyRequest.SerializeToString,
             my__grpc__service__pb2.MyResponse.FromString,
             options,

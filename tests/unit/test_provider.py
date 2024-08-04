@@ -3,7 +3,7 @@ from typing import Any, Protocol
 
 import pytest
 
-from dishka import Provider, Scope, alias, provide
+from dishka import Provider, Scope, alias, decorate, provide
 from dishka.dependency_source import FactoryType
 from dishka.dependency_source.make_factory import make_factory, provide_all
 from dishka.entities.key import (
@@ -214,12 +214,6 @@ def test_provide_as_method():
     assert factory.provides == hint_to_dependency_key(str)
     assert factory.source == hint_to_dependency_key(int)
 
-    foo = provider.decorate(sync_func_a)
-    assert len(foo.dependency_sources) == 1
-    factory = foo.dependency_sources[0]
-    assert factory.provides == hint_to_dependency_key(ClassA)
-    assert factory.factory.dependencies == hints_to_dependency_keys([Any, int])
-
 
 class OtherClass:
     def method(self) -> str:
@@ -290,3 +284,24 @@ def test_provide_join_provides_cls():
     assert len(provider.factories) == 2
     provides = [f.provides.type_hint for f in provider.factories]
     assert provides == [A, B]
+
+
+def test_decorator():
+    def sync_func_a(self: ClassA, dep: int) -> ClassA:
+        return ClassA(dep)
+
+    provider = Provider(scope=Scope.REQUEST)
+    foo = provider.decorate(sync_func_a)
+    assert len(foo.dependency_sources) == 1
+    factory = foo.dependency_sources[0]
+    assert factory.provides == hint_to_dependency_key(ClassA)
+    expected_deps = hints_to_dependency_keys([ClassA, int])
+    assert factory.factory.dependencies == expected_deps
+
+
+def test_invalid_decorator():
+    def decorator(param: int) -> str:
+        return "hello"
+
+    with pytest.raises(ValueError):  # noqa: PT011
+        decorate(decorator)

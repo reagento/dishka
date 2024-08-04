@@ -18,6 +18,16 @@ def _decorate(
         provides=provides, scope=None, source=source, cache=False,
         is_in_class=is_in_class,
     ))
+    if (
+        decorator.provides not in decorator.factory.kw_dependencies.values()
+        and decorator.provides not in decorator.factory.dependencies
+    ):
+        name = getattr(source, "__qualname__", "") or str(source)
+        raise ValueError(
+            f"Decorator {name} does not depends on provided type.\n"
+            f"Did you mean @provide instead of @decorate?",
+        )
+
     composite.dependency_sources.extend(unpack_decorator(decorator))
     return composite
 

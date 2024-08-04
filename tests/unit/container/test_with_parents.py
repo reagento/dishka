@@ -1,5 +1,6 @@
 from abc import ABC
 from typing import Any, Generic, Protocol, TypeVar
+
 import pytest
 
 from dishka import Provider, Scope, make_container
@@ -63,8 +64,8 @@ def test_type_var() -> None:
 
 if HAS_PY_311:
     from typing import TypeVarTuple, Unpack
-    Ts = TypeVarTuple("TS")
-    
+    Ts = TypeVarTuple("TS")  # noqa: PLC0132
+
     def test_type_var_tuple() -> None:
         class A1(Generic[Unpack[Ts]]): ...
         class A2(A1[str, int, type]): ...

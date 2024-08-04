@@ -106,7 +106,7 @@ def create_generic_class(
             generic_args.extend(arg)
         else:
             generic_args.append(arg)
-    return origin_obj.__class_getitem__(*generic_args)
+    return origin_obj[tuple(generic_args)]
 
 
 def recursion_get_parents_for_generic_class(

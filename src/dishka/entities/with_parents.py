@@ -44,7 +44,7 @@ else:
     def is_type_var_tuple(obj: TypeHint) -> bool:
         return False
 
-def is_ignore_type(origin_obj: TypeHint) -> bool:
+def is_ignored_type(origin_obj: TypeHint) -> bool:
     return origin_obj in IGNORE_TYPES
 
 
@@ -115,7 +115,7 @@ def recursion_get_parents_for_generic_class(
     type_vars_map: TypeVarsMap,
 ) -> None:
     origin_obj = strip_alias(obj)
-    if is_ignore_type(origin_obj):
+    if is_ignored_type(origin_obj):
         return
 
     if not has_orig_bases(origin_obj):
@@ -124,7 +124,7 @@ def recursion_get_parents_for_generic_class(
 
     for obj_ in origin_obj.__orig_bases__:
         origin_obj = strip_alias(obj_)
-        if is_ignore_type(origin_obj):
+        if is_ignored_type(origin_obj):
             continue
 
         type_vars_map.update(create_type_vars_map(obj_))
@@ -139,12 +139,12 @@ def recursion_get_parents_for_generic_class(
 def get_parents_for_mro(obj: TypeHint) -> list[TypeHint]:
     return [
         obj_ for obj_ in obj.mro()
-        if not is_ignore_type(strip_alias(obj_))
+        if not is_ignored_type(strip_alias(obj_))
     ]
 
 
 def get_parents(obj: TypeHint) -> list[TypeHint]:
-    if is_ignore_type(strip_alias(obj)):
+    if is_ignored_type(strip_alias(obj)):
         raise ValueError(f"The starting class {obj!r} is in ignored types")
 
     if isinstance(obj, GenericAlias):

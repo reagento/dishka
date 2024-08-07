@@ -9,11 +9,11 @@ from aiogram_dialog.test_tools import BotClient, MockMessageManager
 from aiogram_dialog.test_tools.keyboard import InlineButtonTextLocator
 from aiogram_dialog.widgets.kbd import Cancel, Start
 from aiogram_dialog.widgets.text import Const
-from tests.integrations.aiogram_dialog.conftest import AppProvider, RequestDep
 
 from dishka import FromDishka, make_async_container
 from dishka.integrations.aiogram import setup_dishka
 from dishka.integrations.aiogram_dialog import inject
+from .conftest import AppProvider, RequestDep
 
 
 class MainSG(StatesGroup):

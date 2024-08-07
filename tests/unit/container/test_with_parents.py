@@ -11,7 +11,12 @@ from dishka import (
     make_container,
 )
 from dishka._adaptix.feature_requirement import HAS_PY_311
-from dishka.entities.with_parents import WithParents
+from dishka.entities.with_parents import (
+    WithParents,
+    get_filled_arguments,
+    get_parents,
+    is_type_var_tuple,
+)
 from dishka.exceptions import NoFactoryError
 
 if HAS_PY_311:
@@ -21,6 +26,14 @@ if HAS_PY_311:
 
 T = TypeVar("T")
 B = TypeVar("B")
+
+
+@pytest.mark.skipif(
+    not HAS_PY_311,
+    reason="test for python >= 3.11",
+)
+def test_is_type_var_tuple() -> None:
+    assert is_type_var_tuple(Unpack[Ts])
 
 
 def test_simple_inheritance() -> None:
@@ -60,7 +73,7 @@ def test_ignore_parent_type(obj: Any, value: Any, component: Any) -> None:
 
 
 def test_type_var() -> None:
-    class A1(Generic[T]): ...
+    class A1(Protocol[T]): ...
     class A2(A1[str]): ...
 
     provider = Provider(scope=Scope.APP)
@@ -116,7 +129,7 @@ else:
 )
 @pytest.mark.skipif(
     not HAS_PY_311,
-reason="test for python >= 3.11",
+    reason="test for python >= 3.11",
 )
 def test_type_var_and_type_var_tuple(
     obj: Any,
@@ -159,3 +172,31 @@ def test_deep_inheritance() -> None:
         is container.get(B1)
         is container.get(D1)
     )
+
+
+def test_get_parents_by_generic_alias() -> None:
+    class A1(Generic[T], float): ...
+    class A2(A1[T], Generic[T]): ...
+
+    provider = Provider(scope=Scope.APP)
+    provider.provide(lambda: A2(), provides=WithParents[A2[int]])
+    container = make_container(provider)
+
+    assert (
+        container.get(A2[int])
+        is container.get(A1[int])
+        is container.get(float)
+    )
+
+def test_using_ignoring_type() -> None:
+    with pytest.raises(ValueError):  # noqa: PT011
+        get_parents(object)
+
+@pytest.mark.skipif(
+    not HAS_PY_311,
+    reason="test for python >= 3.11",
+)
+def test_ignore_get_filled_arguments() -> None:
+    class Test(Generic[T, Unpack[Ts]]): ...
+
+    assert not get_filled_arguments(Test[T, Unpack[Ts]])

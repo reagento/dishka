@@ -1,6 +1,5 @@
 from abc import ABC, ABCMeta
 from enum import Enum
-from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
     Final,
@@ -15,7 +14,7 @@ from dishka._adaptix.feature_requirement import HAS_PY_311
 from dishka._adaptix.type_tools import (
     get_generic_args,
     get_type_vars,
-    is_generic,
+    is_parametrized,
     strip_alias,
 )
 from dishka.entities.provides_marker import ProvideMultiple
@@ -92,15 +91,17 @@ def create_type_vars_map(obj: TypeHint) -> TypeVarsMap:
     return type_vars_map
 
 
-def create_generic_class(
-    origin_obj: TypeHint,
+def create_type(
+    obj: TypeHint,
     type_vars_map: TypeVarsMap,
-) -> TypeHint | None:
-    if not is_generic(origin_obj):
-        return None
+) -> TypeHint:
+    origin_obj = strip_alias(obj)
+    type_vars = get_type_vars(origin_obj) or get_type_vars(obj)
+    if not type_vars:
+        return origin_obj
 
     generic_args = []
-    for type_var in get_type_vars(origin_obj):
+    for type_var in type_vars:
         arg = type_vars_map[type_var]
         if isinstance(arg, list):
             generic_args.extend(arg)
@@ -115,9 +116,6 @@ def recursion_get_parents_for_generic_class(
     type_vars_map: TypeVarsMap,
 ) -> None:
     origin_obj = strip_alias(obj)
-    if is_ignored_type(origin_obj):
-        return
-
     if not has_orig_bases(origin_obj):
         parents.extend(get_parents_for_mro(origin_obj))
         return
@@ -128,7 +126,7 @@ def recursion_get_parents_for_generic_class(
             continue
 
         type_vars_map.update(create_type_vars_map(obj_))
-        parents.append(create_generic_class(origin_obj, type_vars_map) or obj_)
+        parents.append(create_type(obj_, type_vars_map))
         recursion_get_parents_for_generic_class(
             obj_,
             parents,
@@ -147,13 +145,13 @@ def get_parents(obj: TypeHint) -> list[TypeHint]:
     if is_ignored_type(strip_alias(obj)):
         raise ValueError(f"The starting class {obj!r} is in ignored types")
 
-    if isinstance(obj, GenericAlias):
+    if is_parametrized(obj):
         type_vars_map = create_type_vars_map(obj)
         parents = [
-            create_generic_class(
-                origin_obj=strip_alias(obj),
+            create_type(
+                obj=obj,
                 type_vars_map=type_vars_map,
-            ) or obj,
+            ),
         ]
         recursion_get_parents_for_generic_class(
             obj=obj,

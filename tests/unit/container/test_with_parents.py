@@ -1,5 +1,12 @@
 from abc import ABC
-from typing import Annotated, Any, Generic, Protocol, TypeVar
+from collections.abc import Sequence
+from typing import (
+    Annotated,
+    Any,
+    Generic,
+    Protocol,
+    TypeVar,
+)
 
 import pytest
 
@@ -10,11 +17,11 @@ from dishka import (
     Scope,
     make_container,
 )
+from dishka._adaptix.common import TypeHint
 from dishka._adaptix.feature_requirement import HAS_PY_311
 from dishka.entities.with_parents import (
+    ParentsResolver,
     WithParents,
-    get_filled_arguments,
-    get_parents,
     is_type_var_tuple,
 )
 from dishka.exceptions import NoFactoryError
@@ -188,15 +195,30 @@ def test_get_parents_by_generic_alias() -> None:
         is container.get(float)
     )
 
+
 def test_using_ignoring_type() -> None:
     with pytest.raises(ValueError):  # noqa: PT011
-        get_parents(object)
+        ParentsResolver().get_parents(object)
 
-@pytest.mark.skipif(
-    not HAS_PY_311,
-    reason="test for python >= 3.11",
+
+def test_ignoring_parent() -> None:
+    class A(Generic[T]): ...
+    assert ParentsResolver().get_parents(A[int]) == [A[int]]
+
+
+class TupleGeneric(tuple[T], Generic[T]): ...  # noqa: SLOT001
+class SequenceInt(Sequence[int]): ...
+class ListAny(list[Any]): ...
+class JsonMapping(dict[str, str | int]): ...
+
+@pytest.mark.parametrize(
+    ("structure", "result"),
+    [
+        (TupleGeneric[str], [TupleGeneric[str], tuple[str]]),
+        (SequenceInt, [SequenceInt, Sequence[int]]),
+        (ListAny, [ListAny, list[Any]]),
+        (JsonMapping, [JsonMapping, dict[str, str | int]]),
+    ],
 )
-def test_ignore_get_filled_arguments() -> None:
-    class Test(Generic[T, Unpack[Ts]]): ...
-
-    assert not get_filled_arguments(Test[T, Unpack[Ts]])
+def test_structures(structure: TypeHint, result: list[TypeHint]) -> None:
+    assert ParentsResolver().get_parents(structure) == result

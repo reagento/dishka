@@ -4,6 +4,9 @@ __all__ = [
     "setup_dishka",
 ]
 
+from collections.abc import Callable
+from typing import Final, TypeVar
+
 from click import (
     Command,
     Context,
@@ -14,10 +17,11 @@ from click import (
 from dishka import Container, FromDishka
 from .base import is_dishka_injected, wrap_injection
 
-CONTAINER_NAME = "dishka_container"
+T = TypeVar("T")
+CONTAINER_NAME: Final = "dishka_container"
 
 
-def inject(func):
+def inject(func: Callable[..., T]) -> Callable[..., T]:
     return wrap_injection(
         func=func,
         container_getter=lambda _, __: get_current_context().meta[
@@ -28,11 +32,11 @@ def inject(func):
     )
 
 
-def _inject_commands(context: Context, command: Command) -> None:
+def _inject_commands(context: Context, command: Command | None) -> None:
     if isinstance(command, Command) and not is_dishka_injected(
-        command.callback,
+        command.callback,  # type: ignore[arg-type]
     ):
-        command.callback = inject(command.callback)
+        command.callback = inject(command.callback)   # type: ignore[arg-type]
 
     if isinstance(command, Group):
         for command_name in command.list_commands(context):

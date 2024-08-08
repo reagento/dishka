@@ -8,16 +8,21 @@ from .unpack_provides import unpack_decorator
 
 
 def _decorate(
-        source: Callable | type | None = None,
+        source: Any = None,
         provides: Any = None,
         *,
         is_in_class: bool = True,
 ) -> CompositeDependencySource:
     composite = ensure_composite(source)
-    decorator = Decorator(make_factory(
-        provides=provides, scope=None, source=source, cache=False,
-        is_in_class=is_in_class,
-    ))
+    decorator = Decorator(
+        make_factory(
+            provides=provides,
+            scope=None,
+            source=source,
+            cache=False,
+            is_in_class=is_in_class,
+        ),
+    )
     if (
         decorator.provides not in decorator.factory.kw_dependencies.values()
         and decorator.provides not in decorator.factory.dependencies
@@ -36,13 +41,15 @@ def _decorate(
 def decorate(
         *,
         provides: Any = None,
-) -> Callable[[Callable], CompositeDependencySource]:
+) -> Callable[
+    [Callable[..., Any]], CompositeDependencySource,
+]:
     ...
 
 
 @overload
 def decorate(
-        source: Callable | type,
+        source: Callable[..., Any] | type,
         *,
         provides: Any = None,
 ) -> CompositeDependencySource:
@@ -50,20 +57,22 @@ def decorate(
 
 
 def decorate(
-        source: Callable | type | None = None,
+        source: Callable[..., Any] | type | None = None,
         provides: Any = None,
-) -> Any:
+) -> CompositeDependencySource | Callable[
+    [Callable[..., Any]], CompositeDependencySource,
+]:
     if source is not None:
         return _decorate(source, provides, is_in_class=True)
 
-    def scoped(func):
+    def scoped(func: Callable[..., Any]) -> CompositeDependencySource:
         return _decorate(func, provides, is_in_class=True)
 
     return scoped
 
 
 def decorate_on_instance(
-        source: Callable | type | None = None,
+        source: Callable[..., Any] | type | None = None,
         provides: Any = None,
 ) -> CompositeDependencySource:
     return _decorate(source, provides, is_in_class=False)

@@ -1,4 +1,6 @@
-from collections.abc import Callable, Sequence
+from __future__ import annotations
+
+from collections.abc import Sequence
 from typing import Any
 
 from .alias import Alias
@@ -14,15 +16,15 @@ class CompositeDependencySource:
 
     def __init__(
             self,
-            origin: Callable,
+            origin: Any,
             dependency_sources: Sequence[DependencySource] = (),
     ) -> None:
         self.dependency_sources = list(dependency_sources)
         self.origin = origin
-        CompositeDependencySource._instances += 1
         self.number = self._instances
+        CompositeDependencySource._instances += 1
 
-    def __get__(self, instance, owner) -> "CompositeDependencySource":
+    def __get__(self, instance: Any, owner: Any) -> CompositeDependencySource:
         try:
             origin = self.origin.__get__(instance, owner)
         except AttributeError:  # not a valid descriptor
@@ -34,22 +36,22 @@ class CompositeDependencySource:
             ],
         )
 
-    def __call__(self, *args, **kwargs) -> Any:
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
         return self.origin(*args, **kwargs)
 
     def __add__(
-            self, other: "CompositeDependencySource",
-    ) -> "CompositeDependencySource":
-        dependency_sources = self.dependency_sources + other.dependency_sources
+            self, other: CompositeDependencySource,
+    ) -> CompositeDependencySource:
         return CompositeDependencySource(
             origin=None,
-            dependency_sources=dependency_sources,
+            dependency_sources=(
+                self.dependency_sources
+                + other.dependency_sources
+            ),
         )
 
 
-def ensure_composite(
-        origin: Callable | CompositeDependencySource,
-) -> CompositeDependencySource:
+def ensure_composite(origin: Any) -> CompositeDependencySource:
     if isinstance(origin, CompositeDependencySource):
         return origin
     else:

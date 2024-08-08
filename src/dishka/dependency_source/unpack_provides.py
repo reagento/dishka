@@ -22,17 +22,21 @@ def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
         )
         for provides_other in provides_others
     ]
-    res.append(Factory(
-        dependencies=factory.dependencies,
-        kw_dependencies=factory.kw_dependencies,
-        type_=factory.type,
-        source=factory.source,
-        scope=factory.scope,
-        provides=DependencyKey(provides_first,
-                               factory.provides.component),
-        is_to_bind=factory.is_to_bind,
-        cache=factory.cache,
-    ))
+    res.append(
+        Factory(
+            dependencies=factory.dependencies,
+            kw_dependencies=factory.kw_dependencies,
+            type_=factory.type,
+            source=factory.source,
+            scope=factory.scope,
+            is_to_bind=factory.is_to_bind,
+            cache=factory.cache,
+            provides=DependencyKey(
+                provides_first,
+                factory.provides.component,
+            ),
+        ),
+    )
     return res
 
 

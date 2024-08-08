@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
@@ -17,7 +19,7 @@ class ContextVariable:
     def __init__(
             self, *,
             provides: DependencyKey,
-            scope: BaseScope,
+            scope: BaseScope | None,
     ) -> None:
         self.provides = provides
         self.scope = scope
@@ -45,7 +47,7 @@ class ContextVariable:
             )
             return aliased.as_factory(scope=self.scope, component=component)
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance: Any, owner: Any) -> ContextVariable:
         scope = self.scope or instance.scope
         return ContextVariable(
             scope=scope,

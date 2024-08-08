@@ -6,16 +6,18 @@ from typing import Any, Protocol
 from .dependency_source import FactoryType
 
 
-@dataclass
+@dataclass(slots=True)
 class Exit:
-    __slots__ = ("type", "callable")
     type: FactoryType
-    callable: Callable
+    callable: Callable[..., Any]
 
 
 class CompiledFactory(Protocol):
     @abstractmethod
     def __call__(
-            self, getter: Callable, exits: list[Exit], context: Any,
+            self,
+            getter: Callable[..., Any],
+            exits: list[Exit],
+            context: Any,
     ) -> Any:
         raise NotImplementedError

@@ -5,10 +5,11 @@ __all__ = [
     "setup_dishka",
 ]
 
-from collections.abc import Callable
-from typing import Final
+from collections.abc import Callable, Coroutine
+from typing import Any, Final, TypeAlias, TypeVar, cast
 
 from aiohttp import web
+from aiohttp.abc import AbstractView
 from aiohttp.typedefs import Handler
 from aiohttp.web_app import Application
 from aiohttp.web_request import Request
@@ -17,15 +18,21 @@ from aiohttp.web_response import StreamResponse
 from dishka import AsyncContainer, FromDishka, Scope
 from dishka.integrations.base import is_dishka_injected, wrap_injection
 
+T = TypeVar("T")
 DISHKA_CONTAINER_KEY: Final = web.AppKey("dishka_container", AsyncContainer)
+AiohttpHandler: TypeAlias = type[AbstractView] | Callable[
+    [Request], Coroutine[Any, Any, StreamResponse],
+]
 
 
-def inject(func: Callable) -> Callable:
-    return wrap_injection(
-        func=func,
-        remove_depends=True,
-        container_getter=lambda p, _: p[0][DISHKA_CONTAINER_KEY],
-        is_async=True,
+def inject(func: Callable[..., T]) -> AiohttpHandler:
+    return cast(
+        AiohttpHandler,
+        wrap_injection(
+            func=func,
+            is_async=True,
+            container_getter=lambda p, _: p[0][DISHKA_CONTAINER_KEY],
+        ),
     )
 
 
@@ -48,7 +55,8 @@ async def container_middleware(
     context = {Request: request}
 
     async with container(context=context, scope=scope) as request_container:
-        request[DISHKA_CONTAINER_KEY] = request_container
+        request[
+            DISHKA_CONTAINER_KEY] = request_container  # type: ignore[index]
         return await handler(request)
 
 
@@ -57,13 +65,17 @@ def _inject_routes(router: web.UrlDispatcher) -> None:
         _inject_route(route)
 
     for resource in router.resources():
-        for route in resource._routes:  # noqa: SLF001
+        for route in resource._routes:  # type: ignore[attr-defined] # noqa: SLF001
+            # attr-defined]
             _inject_route(route)
 
 
 def _inject_route(route: web.AbstractRoute) -> None:
     if not is_dishka_injected(route.handler):
-        route._handler = inject(route.handler)  # noqa: SLF001
+        route._handler = cast( # noqa: SLF001
+            AiohttpHandler,
+            inject(route.handler),
+        )
 
 
 async def _on_shutdown(app: web.Application) -> None:

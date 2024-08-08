@@ -16,6 +16,7 @@ When formatting substituted:
 * kwargs - "arg1=getter(arg1), arg2=getter(arg2)..." or async version
 * cache - expression to save cache
 """
+from typing import cast
 
 from .container_objects import CompiledFactory, Exit
 from .dependency_source import Factory, FactoryType
@@ -147,4 +148,4 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
         **kwargs,
     }
     exec(body, func_globals)  # noqa: S102
-    return func_globals["get"]
+    return cast(CompiledFactory, func_globals["get"])

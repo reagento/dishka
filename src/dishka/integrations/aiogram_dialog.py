@@ -1,23 +1,35 @@
 __all__ = ["inject"]
 
+from collections.abc import Callable
+from typing import Any, Final, TypeVar, cast
+
+from dishka import AsyncContainer
 from dishka.integrations.base import wrap_injection
 
-TWO = 2
-CONTAINER_NAME = "dishka_container"
+ReturnType = TypeVar("ReturnType")
+TWO: Final = 2
+CONTAINER_NAME: Final = "dishka_container"
 
-def _container_getter(args, kwargs):
+
+def _container_getter(
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+) -> AsyncContainer:
     if len(args) == 0:
-        return kwargs[CONTAINER_NAME]
+        container = AsyncContainer, kwargs[CONTAINER_NAME]
     elif len(args) == TWO:
-        return args[-1].middleware_data[CONTAINER_NAME]
+        container = args[-1].middleware_data[CONTAINER_NAME]
     else:
-        return args[2].middleware_data[CONTAINER_NAME]
+        container = args[2].middleware_data[CONTAINER_NAME]
+    return cast(AsyncContainer, container)
 
 
-def inject(func):
-    return wrap_injection(
-        func=func,
-        is_async=True,
-        remove_depends=True,
-        container_getter=_container_getter,
+def inject(func: Callable[..., ReturnType]) -> Callable[..., ReturnType]:
+    return cast(
+        Callable[..., ReturnType],
+        wrap_injection(
+            func=func,
+            is_async=True,
+            container_getter=_container_getter,
+        ),
     )

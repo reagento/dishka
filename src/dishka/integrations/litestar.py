@@ -4,8 +4,9 @@ __all__ = [
     "setup_dishka",
 ]
 
+from collections.abc import Callable
 from inspect import Parameter
-from typing import get_type_hints
+from typing import ParamSpec, TypeVar, get_type_hints
 
 from litestar import Litestar, Request
 from litestar.enums import ScopeType
@@ -14,8 +15,11 @@ from litestar.types import ASGIApp, Receive, Scope, Send
 from dishka import AsyncContainer, FromDishka
 from dishka.integrations.base import wrap_injection
 
+P = ParamSpec("P")
+T = TypeVar("T")
 
-def inject(func):
+
+def inject(func: Callable[P, T]) -> Callable[P, T]:
     hints = get_type_hints(func)
     request_param = next(
         (name for name in hints if name == "request"),
@@ -33,20 +37,19 @@ def inject(func):
 
     return wrap_injection(
         func=func,
-        remove_depends=True,
-        container_getter=lambda _, r: r[request_param].state.dishka_container,
-        additional_params=additional_params,
         is_async=True,
+        additional_params=additional_params,
+        container_getter=lambda _, r: r[request_param].state.dishka_container,
     )
 
 
-def make_add_request_container_middleware(app: ASGIApp):
+def make_add_request_container_middleware(app: ASGIApp) -> ASGIApp:
     async def middleware(scope: Scope, receive: Receive, send: Send) -> None:
         if scope.get("type") != ScopeType.HTTP:
             await app(scope, receive, send)
             return
 
-        request = Request(scope)
+        request = Request(scope)  # type: ignore[var-annotated]
         async with request.app.state.dishka_container(
                 {Request: request},
         ) as request_container:

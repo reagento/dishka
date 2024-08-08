@@ -1,3 +1,4 @@
+from asyncio import iscoroutinefunction
 from collections.abc import (
     AsyncGenerator,
     AsyncIterable,
@@ -13,7 +14,6 @@ from inspect import (
     isasyncgenfunction,
     isbuiltin,
     isclass,
-    iscoroutinefunction,
     isfunction,
     isgeneratorfunction,
     ismethod,
@@ -24,13 +24,15 @@ from typing import (
     Annotated,
     Any,
     Protocol,
+    TypeAlias,
+    cast,
     get_args,
     get_origin,
     get_type_hints,
     overload,
 )
 
-from dishka._adaptix.type_tools.basic_utils import (
+from dishka._adaptix.type_tools.basic_utils import (  # type: ignore[attr-defined]
     get_type_vars,
     is_bare_generic,
     strip_alias,
@@ -52,19 +54,25 @@ from .factory import Factory, FactoryType
 from .unpack_provides import unpack_factory
 
 _empty = signature(lambda a: 0).parameters["a"].annotation
-_protocol_init = type("_stub_proto", (Protocol,), {}).__init__
+_protocol_init = type("_stub_proto", (Protocol,), {}).__init__ # type: ignore[misc, arg-type]
+ProvideSource: TypeAlias = (
+    Callable[..., Any]
+    | classmethod # type: ignore[type-arg]
+    | staticmethod # type: ignore[type-arg]
+    | type
+)
 
 
-def _is_bound_method(obj):
-    return ismethod(obj) and obj.__self__
+def _is_bound_method(obj: Any) -> bool:
+    return ismethod(obj) and bool(obj.__self__)
 
 
-def _get_init_members(tp) -> MembersStorage[str, None]:
-    type_hints = get_all_type_hints(tp.__init__)
+def _get_init_members(tp: type) -> MembersStorage[str, None]:
+    type_hints = get_all_type_hints(tp.__init__)  # type: ignore[misc, no-untyped-call]
     if "__init__" in tp.__dict__:
         overridden = frozenset(type_hints)
     else:
-        overridden = {}
+        overridden = frozenset()
 
     return MembersStorage(
         meta=None,
@@ -73,7 +81,7 @@ def _get_init_members(tp) -> MembersStorage[str, None]:
     )
 
 
-def _guess_factory_type(source):
+def _guess_factory_type(source: Any) -> FactoryType:
     if isasyncgenfunction(source):
         return FactoryType.ASYNC_GENERATOR
     elif isgeneratorfunction(source):
@@ -98,7 +106,7 @@ def _type_repr(hint: Any) -> str:
         return str(hint)
 
 
-def _async_generator_result(hint: Any):
+def _async_generator_result(hint: Any) -> Any:
     origin = get_origin(hint)
     if origin is AsyncIterable:
         return get_args(hint)[0]
@@ -127,7 +135,7 @@ def _async_generator_result(hint: Any):
     )
 
 
-def _generator_result(hint: Any):
+def _generator_result(hint: Any) -> Any:
     origin = get_origin(hint)
     if origin is Iterable:
         return get_args(hint)[0]
@@ -156,7 +164,10 @@ def _generator_result(hint: Any):
     )
 
 
-def _clean_result_hint(factory_type: FactoryType, possible_dependency: Any):
+def _clean_result_hint(
+    factory_type: FactoryType,
+    possible_dependency: Any,
+) -> Any:
     if factory_type == FactoryType.ASYNC_GENERATOR:
         return _async_generator_result(possible_dependency)
     elif factory_type == FactoryType.GENERATOR:
@@ -164,7 +175,7 @@ def _clean_result_hint(factory_type: FactoryType, possible_dependency: Any):
     return possible_dependency
 
 
-def _params_without_hints(func, *, skip_self: bool) -> Sequence[str]:
+def _params_without_hints(func: Any, *, skip_self: bool) -> Sequence[str]:
     if func is object.__init__:
         return []
     if func is _protocol_init:
@@ -182,7 +193,7 @@ def _make_factory_by_class(
         *,
         provides: Any,
         scope: BaseScope | None,
-        source: Callable,
+        source: Callable[..., Any],
         cache: bool,
 ) -> Factory:
     if not provides:
@@ -239,11 +250,11 @@ def _make_factory_by_function(
         *,
         provides: Any,
         scope: BaseScope | None,
-        source: Callable | classmethod,
+        source: Callable[..., Any] | classmethod, # type: ignore[type-arg]
         cache: bool,
         is_in_class: bool,
 ) -> Factory:
-    raw_source = unwrap(source)
+    raw_source = unwrap(cast(Callable[..., Any], source))
     missing_hints = _params_without_hints(raw_source, skip_self=is_in_class)
     if missing_hints:
         name = getattr(source, "__qualname__", "") or str(source)
@@ -309,7 +320,7 @@ def _make_factory_by_static_method(
         *,
         provides: Any,
         scope: BaseScope | None,
-        source: staticmethod,
+        source: staticmethod,  # type: ignore[type-arg]
         cache: bool,
 ) -> Factory:
     if missing_hints := _params_without_hints(source, skip_self=False):
@@ -369,11 +380,11 @@ def _make_factory_by_other_callable(
         *,
         provides: Any,
         scope: BaseScope | None,
-        source: Callable,
+        source: Callable[..., Any],
         cache: bool,
 ) -> Factory:
     if _is_bound_method(source):
-        to_check = source.__func__
+        to_check = source.__func__  # type: ignore[attr-defined]
     else:
         to_check = type(source).__call__
     factory = make_factory(
@@ -403,12 +414,12 @@ def make_factory(
         *,
         provides: Any,
         scope: BaseScope | None,
-        source: Callable,
+        source: Callable[..., Any],
         cache: bool,
         is_in_class: bool,
 ) -> Factory:
     if is_bare_generic(source):
-        source = source[get_type_vars(source)]
+        source = source[get_type_vars(source)]  # type: ignore[index]
 
     if isclass(source) or get_origin(source):
         return _make_factory_by_class(
@@ -438,7 +449,7 @@ def make_factory(
 
 def _provide(
         *,
-        source: Callable | classmethod | staticmethod | type | None = None,
+        source: ProvideSource | None = None,
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
@@ -456,7 +467,7 @@ def _provide(
 
 def provide_on_instance(
         *,
-        source: Callable | classmethod | staticmethod | type | None = None,
+        source: ProvideSource | None = None,
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
@@ -470,16 +481,16 @@ def provide_on_instance(
 @overload
 def provide(
         *,
-        scope: BaseScope = None,
+        scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
-) -> Callable[[Callable], CompositeDependencySource]:
+) -> Callable[[Callable[..., Any]], CompositeDependencySource]:
     ...
 
 
 @overload
 def provide(
-        source: Callable | classmethod | staticmethod | type | None,
+        source: ProvideSource | None,
         *,
         scope: BaseScope | None = None,
         provides: Any = None,
@@ -489,12 +500,14 @@ def provide(
 
 
 def provide(
-        source: Callable | classmethod | staticmethod | type | None = None,
+        source: ProvideSource | None = None,
         *,
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
-) -> Any:
+) -> CompositeDependencySource | Callable[
+    [Callable[..., Any]], CompositeDependencySource,
+]:
     """
     Mark a method or class as providing some dependency.
 
@@ -521,7 +534,7 @@ def provide(
             is_in_class=True,
         )
 
-    def scoped(func):
+    def scoped(func: Callable[..., Any]) -> CompositeDependencySource:
         return _provide(
             provides=provides, scope=scope, source=func, cache=cache,
             is_in_class=True,
@@ -540,8 +553,10 @@ def _provide_all(
     composite = CompositeDependencySource(None)
     for single_provides in provides:
         factory = make_factory(
-            provides=single_provides, scope=scope,
-            source=single_provides, cache=cache,
+            source=single_provides,
+            provides=single_provides,
+            scope=scope,
+            cache=cache,
             is_in_class=is_in_class,
         )
         composite.dependency_sources.extend(unpack_factory(factory))

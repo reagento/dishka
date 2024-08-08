@@ -37,3 +37,8 @@ dependencies = [
 "Homepage" = "https://github.com/reagento/dishka"
 "Documentation" = "https://dishka.readthedocs.io/en/stable/"
 "Bug Tracker" = "https://github.com/reagento/dishka/issues"
+
+[tool.mypy]
+strict = true
+exclude = ["^src/dishka/_adaptix/.*"]
+modules = ["^src/.+/.py$", "^tests/.+/.py$"]

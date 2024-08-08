@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import warnings
 from collections.abc import Callable, MutableMapping
 from threading import Lock
-from typing import Any, Optional, TypeVar
+from types import TracebackType
+from typing import Any, TypeVar, cast
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.key import DependencyKey
@@ -21,16 +24,22 @@ T = TypeVar("T")
 
 class Container:
     __slots__ = (
-        "registry", "child_registries", "parent_container",
-        "lock", "_exits", "close_parent", "_cache", "_context",
+        "child_registries",
+        "close_parent",
+        "lock",
+        "parent_container",
+        "registry",
+        "_cache",
+        "_context",
+        "_exits",
     )
 
     def __init__(
             self,
             registry: Registry,
             *child_registries: Registry,
-            parent_container: Optional["Container"] = None,
-            context: dict | None = None,
+            parent_container: Container | None = None,
+            context: dict[Any, Any] | None = None,
             lock_factory: Callable[[], Lock] | None = None,
             close_parent: bool = False,
     ):
@@ -44,6 +53,8 @@ class Container:
                 self._context[key] = value
         self._cache = {**self._context}
         self.parent_container = parent_container
+
+        self.lock: Lock | None
         if lock_factory:
             self.lock = lock_factory()
         else:
@@ -62,10 +73,10 @@ class Container:
 
     def __call__(
             self,
-            context: dict | None = None,
+            context: dict[Any, Any] | None = None,
             lock_factory: Callable[[], Lock] | None = None,
             scope: BaseScope | None = None,
-    ) -> "ContextWrapper":
+    ) -> ContextWrapper:
         """
         Prepare container for entering the inner scope.
         :param context: Data which will available in inner scope
@@ -109,14 +120,14 @@ class Container:
     def get(
             self,
             dependency_type: type[T],
-            component: Component = DEFAULT_COMPONENT,
+            component: Component | None = DEFAULT_COMPONENT,
     ) -> T:
         lock = self.lock
         key = DependencyKey(dependency_type, component)
         if not lock:
-            return self._get_unlocked(key)
+            return cast(T, self._get_unlocked(key))
         with lock:
-            return self._get_unlocked(key)
+            return cast(T, self._get_unlocked(key))
 
     def _get_unlocked(self, key: DependencyKey) -> Any:
         if key in self._cache:
@@ -131,21 +142,23 @@ class Container:
         try:
             return compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:
-            e.add_path(self.registry.get_factory(key))
+            factory = self.registry.get_factory(key)
+            if factory:
+                e.add_path(factory)
             raise
 
-    def close(self, exception: Exception | None = None) -> None:
+    def close(self, exception: BaseException | None = None) -> None:
         errors = []
         for exit_generator in self._exits[::-1]:
             try:
                 if exit_generator.type is FactoryType.GENERATOR:
-                    exit_generator.callable.send(exception)
+                    exit_generator.callable.send(exception)  # type: ignore[attr-defined]
             except StopIteration:  # noqa: PERF203
                 pass
             except Exception as err:  # noqa: BLE001
                 errors.append(err)
         self._cache = {**self._context}
-        if self.close_parent:
+        if self.close_parent and self.parent_container:
             try:
                 self.parent_container.close(exception)
             except Exception as err:  # noqa: BLE001
@@ -164,14 +177,19 @@ class ContextWrapper:
     def __enter__(self) -> Container:
         return self.container
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None = None,
+        exc_val: BaseException | None = None,
+        exc_tb: TracebackType | None = None,
+    ) -> None:
         self.container.close(exception=exc_val)
 
 
 def make_container(
         *providers: BaseProvider,
         scopes: type[BaseScope] = Scope,
-        context: dict | None = None,
+        context: dict[Any, Any] | None = None,
         lock_factory: Callable[[], Lock] | None = None,
         skip_validation: bool = False,
         start_scope: BaseScope | None = None,

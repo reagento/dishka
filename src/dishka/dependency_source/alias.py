@@ -1,12 +1,15 @@
-from typing import Any
+from __future__ import annotations
+
+from typing import Any, TypeVar
 
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
 from .factory import Factory, FactoryType
 
+T = TypeVar("T")
 
-def _identity(x: Any) -> Any:
+def _identity(x: T) -> T:
     return x
 
 
@@ -24,7 +27,7 @@ class Alias:
         self.cache = cache
 
     def as_factory(
-            self, scope: BaseScope, component: Component,
+            self, scope: BaseScope | None, component: Component | None,
     ) -> Factory:
         return Factory(
             scope=scope,
@@ -37,5 +40,5 @@ class Alias:
             cache=self.cache,
         )
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance: Any, owner: Any) -> Alias:
         return self

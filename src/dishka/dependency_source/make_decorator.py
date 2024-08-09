@@ -8,7 +8,7 @@ from .unpack_provides import unpack_decorator
 
 
 def _decorate(
-        source: Any = None,
+        source: Callable[..., Any] | type,
         provides: Any = None,
         *,
         is_in_class: bool = True,
@@ -72,7 +72,7 @@ def decorate(
 
 
 def decorate_on_instance(
-        source: Callable[..., Any] | type | None = None,
+        source: Callable[..., Any] | type,
         provides: Any = None,
 ) -> CompositeDependencySource:
     return _decorate(source, provides, is_in_class=False)

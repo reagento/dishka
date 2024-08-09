@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import warnings
 from asyncio import Lock
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from collections.abc import Callable, MutableMapping
+from types import TracebackType
+from typing import Any
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.key import DependencyKey
@@ -16,12 +18,6 @@ from .exceptions import (
 )
 from .provider import BaseProvider
 from .registry import Registry, RegistryBuilder
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, MutableMapping
-    from types import TracebackType
-
-T = TypeVar("T")
 
 
 class AsyncContainer:
@@ -122,15 +118,15 @@ class AsyncContainer:
 
     async def get(
             self,
-            dependency_type: type[T],
+            dependency_type: Any,
             component: Component | None = DEFAULT_COMPONENT,
-    ) -> T:
+    ) -> Any:
         lock = self.lock
         key = DependencyKey(dependency_type, component)
         if not lock:
-            return cast(T, await self._get_unlocked(key))
+            return await self._get_unlocked(key)
         async with lock:
-            return cast(T, await self._get_unlocked(key))
+            return await self._get_unlocked(key)
 
     async def _get_unlocked(self, key: DependencyKey) -> Any:
         if key in self._cache:

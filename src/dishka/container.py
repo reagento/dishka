@@ -4,23 +4,20 @@ import warnings
 from collections.abc import Callable, MutableMapping
 from threading import Lock
 from types import TracebackType
-from typing import Any, TypeVar, cast
+from typing import Any, cast
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope, Scope
 from .container_objects import Exit
 from .context_proxy import ContextProxy
-from .dependency_source import FactoryType
+from .dependency_source import Factory, FactoryType
 from .exceptions import (
     ExitError,
     NoFactoryError,
 )
 from .provider import BaseProvider
 from .registry import Registry, RegistryBuilder
-
-T = TypeVar("T")
-
 
 class Container:
     __slots__ = (
@@ -119,15 +116,15 @@ class Container:
 
     def get(
             self,
-            dependency_type: type[T],
+            dependency_type: Any,
             component: Component | None = DEFAULT_COMPONENT,
-    ) -> T:
+    ) -> Any:
         lock = self.lock
         key = DependencyKey(dependency_type, component)
         if not lock:
-            return cast(T, self._get_unlocked(key))
+            return self._get_unlocked(key)
         with lock:
-            return cast(T, self._get_unlocked(key))
+            return self._get_unlocked(key)
 
     def _get_unlocked(self, key: DependencyKey) -> Any:
         if key in self._cache:
@@ -142,9 +139,10 @@ class Container:
         try:
             return compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:
-            factory = self.registry.get_factory(key)
-            if factory:
-                e.add_path(factory)
+            # cast is needed because registry.get_factory will always return Factory.
+            # This happens because registry.get_compiled uses the same method and returns None
+            # if the factory is not found. If None is returned, then go to the parent container
+            e.add_path(cast(Factory, self.registry.get_factory(key)))
             raise
 
     def close(self, exception: BaseException | None = None) -> None:

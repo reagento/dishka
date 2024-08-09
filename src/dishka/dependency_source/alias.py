@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, TypeVar
+from typing import Any
 
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
 from .factory import Factory, FactoryType
 
-T = TypeVar("T")
-
-def _identity(x: T) -> T:
+def _identity(x: Any) -> Any:
     return x
 
 

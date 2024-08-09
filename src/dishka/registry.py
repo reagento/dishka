@@ -326,7 +326,9 @@ class RegistryBuilder:
             decorator.provides.type_hint,  # type: ignore[name-defined]
         )
         self.decorator_depth[provides] += 1
-        old_factory = cast(Factory,registry.get_factory(provides))
+        old_factory = registry.get_factory(provides)
+        if old_factory is None:
+            raise NoFactoryError(provides)
         if old_factory.type is FactoryType.CONTEXT:
             raise InvalidGraphError(
                 f"Cannot apply decorator to context data {provides}",

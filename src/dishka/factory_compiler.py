@@ -148,4 +148,5 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
         **kwargs,
     }
     exec(body, func_globals)  # noqa: S102
+    # typing.cast is called because func_globals["get"] is not typed
     return cast(CompiledFactory, func_globals["get"])

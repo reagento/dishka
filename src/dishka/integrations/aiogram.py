@@ -29,14 +29,11 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
         kind=Parameter.KEYWORD_ONLY,
     )]
 
-    return cast(
-        Callable[P, T],
-        wrap_injection(
-            func=func,
-            is_async=True,
-            additional_params=additional_params,
-            container_getter=lambda args, kwargs: kwargs[CONTAINER_NAME],
-        ),
+    return wrap_injection(
+        func=func,
+        is_async=True,
+        additional_params=additional_params,
+        container_getter=lambda args, kwargs: kwargs[CONTAINER_NAME],
     )
 
 

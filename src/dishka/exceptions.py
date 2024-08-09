@@ -40,7 +40,7 @@ class CycleDependenciesError(InvalidGraphError):
         return f"Cycle dependencies detected.{hint}\n{details}"
 
 
-class ExitError(ExceptionGroup, DishkaError):  # type: ignore[type-arg]
+class ExitError(ExceptionGroup[Exception], DishkaError):
     pass
 
 

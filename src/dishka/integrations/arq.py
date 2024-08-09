@@ -4,7 +4,7 @@ __all__ = [
 ]
 
 from collections.abc import Awaitable, Callable
-from typing import Any, Final, TypeVar, cast
+from typing import Any, Final, ParamSpec, TypeVar, cast
 
 from arq import Worker
 from arq.typing import StartupShutdown
@@ -13,19 +13,17 @@ from dishka.async_container import AsyncContainer
 from dishka.integrations.base import wrap_injection
 
 T = TypeVar("T")
+P = ParamSpec("P")
 DISHKA_APP_CONTAINER_KEY: Final = "dishka_app_container"
 DISHKA_REQUEST_CONTAINER_KEY: Final = "dishka_request_container"
 
 
-def inject(func: Callable[..., T]) -> Callable[[dict[Any, Any]], T]:
-    return cast(
-        Callable[[dict[Any, Any]], T],
-        wrap_injection(
-            func=func,
-            remove_depends=True,
-            container_getter=lambda p, _: p[0][DISHKA_REQUEST_CONTAINER_KEY],
-            is_async=True,
-        ),
+def inject(func: Callable[P, T]) -> Callable[P, T]:
+    return wrap_injection(
+        func=func,
+        remove_depends=True,
+        container_getter=lambda p, _: p[0][DISHKA_REQUEST_CONTAINER_KEY],
+        is_async=True,
     )
 
 

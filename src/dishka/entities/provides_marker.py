@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
-__all__ = ["AnyOf"]
+__all__ = ["AnyOf", "ProvideMultiple"]
 
 if TYPE_CHECKING:
     from typing import Union as AnyOf

@@ -57,11 +57,10 @@ class PathRenderer:
         if last:
             width = max(width, len(self._key(last)))
 
-        dest = None
+        dest: tuple[BaseScope | None, Component | None] = (None, '')
         length = len(path) + bool(last)
 
         res = ""
-        factory: Factory
         for i, factory in enumerate(path):
             arrow = _arrow(i, length)
             new_dest = (factory.scope, factory.provides.component)
@@ -77,7 +76,7 @@ class PathRenderer:
                     "\n"
             )
         if last:
-            new_dest = (dest[0], last.component)  # type: ignore[index]
+            new_dest = (dest[0], last.component)
             arrow = _arrow(length + 1, length)
             if new_dest != dest:
                 res += "   " + " " * len(arrow) + " " + self._switch(*new_dest)

@@ -23,7 +23,7 @@ def getter(args: tuple[Any, ...], _: dict[Any, Any]) -> Container:
         for arg in args
         if isinstance(arg, grpc.ServicerContext)
     )
-
+    # typing.cast because the iterator is not typed
     return cast(Container, next(iterator))
 
 

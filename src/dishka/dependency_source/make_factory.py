@@ -54,11 +54,11 @@ from .factory import Factory, FactoryType
 from .unpack_provides import unpack_factory
 
 _empty = signature(lambda a: 0).parameters["a"].annotation
-_protocol_init = type("_stub_proto", (Protocol,), {}).__init__ # type: ignore[misc, arg-type]
+_protocol_init = type("_stub_proto", (Protocol,), {}).__init__  # type: ignore[misc, arg-type]
 ProvideSource: TypeAlias = (
     Callable[..., Any]
-    | classmethod # type: ignore[type-arg]
-    | staticmethod # type: ignore[type-arg]
+    | classmethod  # type: ignore[type-arg]
+    | staticmethod  # type: ignore[type-arg]
     | type
 )
 
@@ -193,7 +193,7 @@ def _make_factory_by_class(
         *,
         provides: Any,
         scope: BaseScope | None,
-        source: Callable[..., Any],
+        source: type,
         cache: bool,
 ) -> Factory:
     if not provides:
@@ -254,6 +254,7 @@ def _make_factory_by_function(
         cache: bool,
         is_in_class: bool,
 ) -> Factory:
+    # typing.cast is applied as unwrap takes a Callable object
     raw_source = unwrap(cast(Callable[..., Any], source))
     missing_hints = _params_without_hints(raw_source, skip_self=is_in_class)
     if missing_hints:
@@ -414,7 +415,7 @@ def make_factory(
         *,
         provides: Any,
         scope: BaseScope | None,
-        source: Callable[..., Any],
+        source: ProvideSource,
         cache: bool,
         is_in_class: bool,
 ) -> Factory:
@@ -423,25 +424,40 @@ def make_factory(
 
     if isclass(source) or get_origin(source):
         return _make_factory_by_class(
-            provides=provides, scope=scope, source=source, cache=cache,
+            provides=provides,
+            scope=scope,
+            source=cast(type, source),
+            cache=cache,
         )
     elif isfunction(source) or isinstance(source, classmethod):
         return _make_factory_by_function(
-            provides=provides, scope=scope, source=source, cache=cache,
+            provides=provides,
+            scope=scope,
+            source=source,
+            cache=cache,
             is_in_class=is_in_class,
         )
     elif isbuiltin(source):
         return _make_factory_by_function(
-            provides=provides, scope=scope, source=source, cache=cache,
+            provides=provides,
+            scope=scope,
+            source=source,
+            cache=cache,
             is_in_class=False,
         )
     elif isinstance(source, staticmethod):
         return _make_factory_by_static_method(
-            provides=provides, scope=scope, source=source, cache=cache,
+            provides=provides,
+            scope=scope,
+            source=source,
+            cache=cache,
         )
     elif callable(source):
         return _make_factory_by_other_callable(
-            provides=provides, scope=scope, source=source, cache=cache,
+            provides=provides,
+            scope=scope,
+            source=source,
+            cache=cache,
         )
     else:
         raise TypeError(f"Cannot use {type(source)} as a factory")

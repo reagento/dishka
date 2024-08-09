@@ -119,9 +119,11 @@ def wrap_injection(
 
     if is_async:
         auto_injected_func = _async_injection_wrapper(
+            # typing.cast is needed because the function must be async
             func=cast(Callable[P, Awaitable[T]],func),
             dependencies=dependencies,
             additional_params=additional_params,
+            #
             container_getter=cast(
                 ContainerGetter[AsyncContainer], container_getter,
             ),

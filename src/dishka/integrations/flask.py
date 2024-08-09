@@ -41,7 +41,8 @@ class ContainerMiddleware:
 def _inject_routes(scaffold: Scaffold) -> None:
     for key, func in scaffold.view_functions.items():
         if not is_dishka_injected(func):
-            # typing.cast is applied because there are RouteCallable objects in dict value
+            # typing.cast is applied because there
+            # are RouteCallable objects in dict value
             scaffold.view_functions[key] = cast(RouteCallable, inject(func))
 
 

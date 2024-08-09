@@ -4,7 +4,7 @@ __all__ = [
 ]
 
 from collections.abc import Awaitable, Callable
-from typing import Any, Final, ParamSpec, TypeVar, cast
+from typing import Any, Final, ParamSpec, TypeVar
 
 from arq import Worker
 from arq.typing import StartupShutdown

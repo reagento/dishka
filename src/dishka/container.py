@@ -19,6 +19,7 @@ from .exceptions import (
 from .provider import BaseProvider
 from .registry import Registry, RegistryBuilder
 
+
 class Container:
     __slots__ = (
         "child_registries",
@@ -139,9 +140,10 @@ class Container:
         try:
             return compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:
-            # cast is needed because registry.get_factory will always return Factory.
-            # This happens because registry.get_compiled uses the same method and returns None
-            # if the factory is not found. If None is returned, then go to the parent container
+            # cast is needed because registry.get_factory will always
+            # return Factory. This happens because registry.get_compiled
+            # uses the same method and returns None if the factory is not found
+            # If None is returned, then go to the parent container
             e.add_path(cast(Factory, self.registry.get_factory(key)))
             raise
 

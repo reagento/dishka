@@ -57,7 +57,7 @@ class PathRenderer:
         if last:
             width = max(width, len(self._key(last)))
 
-        dest: tuple[BaseScope | None, Component | None] = (None, '')
+        dest: tuple[BaseScope | None, Component | None] = (None, "")
         length = len(path) + bool(last)
 
         res = ""

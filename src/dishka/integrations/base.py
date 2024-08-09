@@ -123,7 +123,6 @@ def wrap_injection(
             func=cast(Callable[P, Awaitable[T]],func),
             dependencies=dependencies,
             additional_params=additional_params,
-            #
             container_getter=cast(
                 ContainerGetter[AsyncContainer], container_getter,
             ),

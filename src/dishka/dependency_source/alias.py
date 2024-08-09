@@ -7,6 +7,7 @@ from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
 from .factory import Factory, FactoryType
 
+
 def _identity(x: Any) -> Any:
     return x
 

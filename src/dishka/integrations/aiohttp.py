@@ -26,7 +26,6 @@ AiohttpHandler: TypeAlias = type[AbstractView] | Callable[
 
 
 def inject(func: Callable[..., T]) -> AiohttpHandler:
-    #
     return cast(
         AiohttpHandler,
         wrap_injection(
@@ -72,7 +71,8 @@ def _inject_routes(router: web.UrlDispatcher) -> None:
 
 def _inject_route(route: web.AbstractRoute) -> None:
     if not is_dishka_injected(route.handler):
-        # typing.cast is used because AbstractRoute._handler is Handler or Type[AbstractView]
+        # typing.cast is used because AbstractRoute._handler
+        # is Handler or Type[AbstractView]
         route._handler = cast( # noqa: SLF001
             AiohttpHandler,
             inject(route.handler),

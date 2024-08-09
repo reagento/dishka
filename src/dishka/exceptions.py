@@ -4,7 +4,8 @@ from dishka.entities.key import DependencyKey
 from .dependency_source import Factory
 
 try:
-    from builtins import ExceptionGroup
+    from builtins import ExceptionGroup  # type: ignore[attr-defined]
+
 except ImportError:
     from exceptiongroup import (  # type: ignore[no-redef, import-not-found]
         ExceptionGroup,

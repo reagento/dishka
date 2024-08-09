@@ -39,7 +39,7 @@ jobs:
 
     - name: Run mypy
       run: |
-        mypy src --exclude "^src/dishka/(_adaptix/|integrations/).*"
+        mypy src --config-file ./mypy.ini
 
     - name: Run tests
       run: |

@@ -39,6 +39,5 @@ dependencies = [
 "Bug Tracker" = "https://github.com/reagento/dishka/issues"
 
 [tool.mypy]
-strict = true
-exclude = ["^src/dishka/_adaptix/.*", "^src/dishka/integrations/.*"]
-modules = ["^src/.+/.py$", "^tests/.+/.py$"]
+exclude = ["^src/dishka/(_adaptix|intergrations)/.*"]
+modules = ["^src/.+/.py$"]

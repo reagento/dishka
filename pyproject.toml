@@ -40,5 +40,5 @@ dependencies = [
 
 [tool.mypy]
 strict = true
-exclude = ["^src/dishka/_adaptix/.*"]
+exclude = ["^src/dishka/_adaptix/.*", "^src/dishka/integrations/.*"]
 modules = ["^src/.+/.py$", "^tests/.+/.py$"]

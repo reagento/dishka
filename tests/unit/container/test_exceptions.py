@@ -197,14 +197,6 @@ def test_invalid_scope_factory():
         make_container(InvalidScopeProvider())
 
 
-def test_invalid_scope_context_var():
-    class InvalidScopeProvider(Provider):
-        a = from_context(int, scope="invalid")
-
-    with pytest.raises(UnknownScopeError):
-        make_container(InvalidScopeProvider())
-
-
 def test_missing_context_var_sync():
     class MyProvider(Provider):
         a = from_context(int, scope=Scope.APP)

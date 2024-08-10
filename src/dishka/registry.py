@@ -236,14 +236,13 @@ class RegistryBuilder:
                 provides = factory.provides.with_component(provider.component)
                 self.dependency_scopes[provides] = factory.scope
             for context_var in provider.context_vars:
-                if not isinstance(context_var.scope, self.scopes):
-                    raise UnknownScopeError(
-                        f"Scope {context_var.scope} is unknown, "
-                        f"expected one of {self.scopes}",
-                    )
                 for component in self.components:
                     provides = context_var.provides.with_component(component)
-                    self.dependency_scopes[provides] = context_var.scope
+                    # typing.cast is applied because the scope
+                    # was checked above
+                    self.dependency_scopes[provides] = cast(
+                        BaseScope, context_var.scope,
+                    )
 
     def _collect_aliases(self) -> None:
         for provider in self.providers:

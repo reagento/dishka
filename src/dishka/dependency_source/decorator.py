@@ -11,7 +11,11 @@ from .factory import Factory
 class Decorator:
     __slots__ = ("provides", "factory")
 
-    def __init__(self, factory: Factory, provides: Any = None) -> None:
+    def __init__(
+            self,
+            factory: Factory,
+            provides: DependencyKey | None = None,
+    ) -> None:
         self.factory = factory
         if provides:
             self.provides = provides

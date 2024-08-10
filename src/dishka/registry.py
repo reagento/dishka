@@ -328,7 +328,10 @@ class RegistryBuilder:
         self.decorator_depth[provides] += 1
         old_factory = registry.get_factory(provides)
         if old_factory is None:
-            raise NoFactoryError(provides)
+            raise InvalidGraphError(
+                "Cannot apply decorator because there is"
+                f"no factory for {provides}",
+            )
         if old_factory.type is FactoryType.CONTEXT:
             raise InvalidGraphError(
                 f"Cannot apply decorator to context data {provides}",
@@ -348,7 +351,13 @@ class RegistryBuilder:
     def _process_context_var(
             self, provider: BaseProvider, context_var: ContextVariable,
     ) -> None:
-        registry = self.registries[cast(BaseScope, context_var.scope)]
+        if context_var.scope is None:
+            raise UnknownScopeError(
+                f"Scope {context_var.scope} is unknown, "
+                f"expected one of {self.scopes}. Define it"
+                f"explicitly in Provider or from_context",
+            )
+        registry = self.registries[context_var.scope]
         for component in self.components:
             registry.add_factory(context_var.as_factory(component))
 

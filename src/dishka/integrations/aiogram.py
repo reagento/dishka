@@ -6,8 +6,9 @@ __all__ = [
     "setup_dishka",
 ]
 
-from collections.abc import Container
+from collections.abc import Awaitable, Callable, Container
 from inspect import Parameter
+from typing import Any, Final, ParamSpec, TypeVar, cast
 
 from aiogram import BaseMiddleware, Router
 from aiogram.dispatcher.event.handler import HandlerObject
@@ -16,10 +17,12 @@ from aiogram.types import TelegramObject
 from dishka import AsyncContainer, FromDishka
 from .base import is_dishka_injected, wrap_injection
 
-CONTAINER_NAME = "dishka_container"
+P = ParamSpec("P")
+T = TypeVar("T")
+CONTAINER_NAME: Final = "dishka_container"
 
 
-def inject(func):
+def inject(func: Callable[P, T]) -> Callable[P, T]:
     additional_params = [Parameter(
         name=CONTAINER_NAME,
         annotation=Container,
@@ -28,20 +31,22 @@ def inject(func):
 
     return wrap_injection(
         func=func,
-        remove_depends=True,
-        container_getter=lambda _, p: p[CONTAINER_NAME],
-        additional_params=additional_params,
         is_async=True,
+        additional_params=additional_params,
+        container_getter=lambda args, kwargs: kwargs[CONTAINER_NAME],
     )
 
 
 class ContainerMiddleware(BaseMiddleware):
-    def __init__(self, container):
+    def __init__(self, container: AsyncContainer) -> None:
         self.container = container
 
     async def __call__(
-        self, handler, event, data,
-    ):
+        self,
+        handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
+        event: TelegramObject,
+        data: dict[str, Any],
+    ) -> Any:
         async with self.container({TelegramObject: event}) as sub_container:
             data[CONTAINER_NAME] = sub_container
             return await handler(event, data)
@@ -49,9 +54,12 @@ class ContainerMiddleware(BaseMiddleware):
 
 class AutoInjectMiddleware(BaseMiddleware):
     async def __call__(
-        self, handler, event, data,
-    ):
-        old_handler: HandlerObject = data["handler"]
+        self,
+        handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
+        event: TelegramObject,
+        data: dict[str, Any],
+    ) -> Any:
+        old_handler = cast(HandlerObject, data["handler"])
         if is_dishka_injected(old_handler.callback):
             return await handler(event, data)
 

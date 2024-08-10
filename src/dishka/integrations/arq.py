@@ -3,8 +3,8 @@ __all__ = [
     "setup_dishka",
 ]
 
-import logging
-from typing import Any, Final
+from collections.abc import Awaitable, Callable
+from typing import Any, Final, ParamSpec, TypeVar
 
 from arq import Worker
 from arq.typing import StartupShutdown
@@ -12,13 +12,13 @@ from arq.typing import StartupShutdown
 from dishka.async_container import AsyncContainer
 from dishka.integrations.base import wrap_injection
 
+T = TypeVar("T")
+P = ParamSpec("P")
 DISHKA_APP_CONTAINER_KEY: Final = "dishka_app_container"
 DISHKA_REQUEST_CONTAINER_KEY: Final = "dishka_request_container"
 
-logger = logging.getLogger(__name__)
 
-
-def inject(func):
+def inject(func: Callable[P, T]) -> Callable[P, T]:
     return wrap_injection(
         func=func,
         remove_depends=True,
@@ -27,7 +27,9 @@ def inject(func):
     )
 
 
-def job_start(hook_func: StartupShutdown | None):
+def job_start(
+    hook_func: StartupShutdown | None,
+) -> Callable[[dict[Any, Any]], Awaitable[None]]:
     async def wrapper(context: dict[Any, Any]) -> None:
         container: AsyncContainer = context[DISHKA_APP_CONTAINER_KEY]
         sub_container = await container().__aenter__()
@@ -38,7 +40,9 @@ def job_start(hook_func: StartupShutdown | None):
     return wrapper
 
 
-def job_end(hook_func: StartupShutdown | None):
+def job_end(
+    hook_func: StartupShutdown | None,
+) -> Callable[[dict[Any, Any]], Awaitable[None]]:
     async def wrapper(context: dict[Any, Any]) -> None:
         if hook_func:
             await hook_func(context)
@@ -51,7 +55,7 @@ def job_end(hook_func: StartupShutdown | None):
 
 def setup_dishka(
     container: AsyncContainer,
-    worker_settings: type | dict | Worker,
+    worker_settings: dict[Any, Any] | Worker | Any,
 ) -> None:
     if isinstance(worker_settings, dict):
         if worker_settings.get("ctx"):

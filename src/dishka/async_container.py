@@ -1,14 +1,17 @@
+from __future__ import annotations
+
 import warnings
 from asyncio import Lock
 from collections.abc import Callable, MutableMapping
-from typing import Any, Optional, TypeVar
+from types import TracebackType
+from typing import Any, cast
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope, Scope
 from .container_objects import Exit
 from .context_proxy import ContextProxy
-from .dependency_source import FactoryType
+from .dependency_source import Factory, FactoryType
 from .exceptions import (
     ExitError,
     NoFactoryError,
@@ -16,21 +19,25 @@ from .exceptions import (
 from .provider import BaseProvider
 from .registry import Registry, RegistryBuilder
 
-T = TypeVar("T")
-
 
 class AsyncContainer:
     __slots__ = (
-        "registry", "child_registries", "parent_container",
-        "lock", "_exits", "close_parent", "_cache", "_context",
+        "child_registries",
+        "close_parent",
+        "lock",
+        "parent_container",
+        "registry",
+        "_cache",
+        "_context",
+        "_exits",
     )
 
     def __init__(
             self,
             registry: Registry,
             *child_registries: Registry,
-            parent_container: Optional["AsyncContainer"] = None,
-            context: dict | None = None,
+            parent_container: AsyncContainer | None = None,
+            context: dict[Any, Any] | None = None,
             lock_factory: Callable[[], Lock] | None = None,
             close_parent: bool = False,
     ):
@@ -44,6 +51,8 @@ class AsyncContainer:
                 self._context[key] = value
         self._cache = {**self._context}
         self.parent_container = parent_container
+
+        self.lock: Lock | None
         if lock_factory:
             self.lock = lock_factory()
         else:
@@ -62,10 +71,10 @@ class AsyncContainer:
 
     def __call__(
             self,
-            context: dict | None = None,
+            context: dict[Any, Any] | None = None,
             lock_factory: Callable[[], Lock] | None = None,
             scope: BaseScope | None = None,
-    ) -> "AsyncContextWrapper":
+    ) -> AsyncContextWrapper:
         """
         Prepare container for entering the inner scope.
         :param context: Data which will available in inner scope
@@ -109,9 +118,9 @@ class AsyncContainer:
 
     async def get(
             self,
-            dependency_type: type[T],
-            component: Component = DEFAULT_COMPONENT,
-    ) -> T:
+            dependency_type: Any,
+            component: Component | None = DEFAULT_COMPONENT,
+    ) -> Any:
         lock = self.lock
         key = DependencyKey(dependency_type, component)
         if not lock:
@@ -132,17 +141,21 @@ class AsyncContainer:
         try:
             return await compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:
-            e.add_path(self.registry.get_factory(key))
+            # cast is needed because registry.get_factory will always
+            # return Factory. This happens because registry.get_compiled
+            # uses the same method and returns None if the factory is not found
+            # If None is returned, then go to the parent container
+            e.add_path(cast(Factory, self.registry.get_factory(key)))
             raise
 
-    async def close(self, exception: Exception | None = None):
+    async def close(self, exception: BaseException | None = None) -> None:
         errors = []
         for exit_generator in self._exits[::-1]:
             try:
                 if exit_generator.type is FactoryType.ASYNC_GENERATOR:
-                    await exit_generator.callable.asend(exception)
+                    await exit_generator.callable.asend(exception) # type: ignore[attr-defined]
                 elif exit_generator.type is FactoryType.GENERATOR:
-                    exit_generator.callable.send(exception)
+                    exit_generator.callable.send(exception)  # type: ignore[attr-defined]
             except StopIteration:  # noqa: PERF203
                 pass
             except StopAsyncIteration:
@@ -150,7 +163,7 @@ class AsyncContainer:
             except Exception as err:  # noqa: BLE001
                 errors.append(err)
         self._cache = {**self._context}
-        if self.close_parent:
+        if self.close_parent and self.parent_container:
             try:
                 await self.parent_container.close(exception)
             except Exception as err:  # noqa: BLE001
@@ -166,14 +179,19 @@ class AsyncContextWrapper:
     async def __aenter__(self) -> AsyncContainer:
         return self.container
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None = None,
+        exc_val: BaseException | None = None,
+        exc_tb: TracebackType | None = None,
+    ) -> None:
         await self.container.close(exception=exc_val)
 
 
 def make_async_container(
         *providers: BaseProvider,
         scopes: type[BaseScope] = Scope,
-        context: dict | None = None,
+        context: dict[Any, Any] | None = None,
         lock_factory: Callable[[], Lock] | None = Lock,
         skip_validation: bool = False,
         start_scope: BaseScope | None = None,

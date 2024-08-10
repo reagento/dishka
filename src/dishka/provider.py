@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import inspect
 from collections.abc import Callable, Sequence
-from typing import Any
+from typing import Any, TypeGuard
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.scope import BaseScope
@@ -21,12 +23,14 @@ from .dependency_source.make_factory import (
 )
 
 
-def is_dependency_source(attribute: Any) -> bool:
+def is_dependency_source(
+    attribute: Any,
+) -> TypeGuard[CompositeDependencySource]:
     return isinstance(attribute, CompositeDependencySource)
 
 
 class BaseProvider:
-    def __init__(self, component: Component):
+    def __init__(self, component: Component | None) -> None:
         if component is not None:
             self.component = component
         self.factories: list[Factory] = []
@@ -66,7 +70,7 @@ class Provider(BaseProvider):
         for name, composite in sources:
             self._add_dependency_sources(name, composite.dependency_sources)
 
-    def _name(self):
+    def _name(self) -> str:
         if type(self) is Provider:
             return str(self)
         else:
@@ -127,7 +131,7 @@ class Provider(BaseProvider):
 
     def provide(
             self,
-            source: Callable | type,
+            source: Callable[..., Any] | type,
             *,
             scope: BaseScope | None = None,
             provides: Any = None,
@@ -175,7 +179,7 @@ class Provider(BaseProvider):
 
     def decorate(
             self,
-            source: Callable | type,
+            source: Callable[..., Any] | type,
             *,
             provides: Any = None,
     ) -> CompositeDependencySource:
@@ -186,15 +190,17 @@ class Provider(BaseProvider):
         self._add_dependency_sources(str(source), composite.dependency_sources)
         return composite
 
-    def to_component(self, component: Component) -> "ProviderWrapper":
+    def to_component(self, component: Component) -> ProviderWrapper:
         return ProviderWrapper(component, self)
 
     def from_context(
             self, *, provides: Any, scope: BaseScope,
     ) -> CompositeDependencySource:
         composite = from_context(provides, scope=scope)
-        self._add_dependency_sources(str(provides),
-                                     composite.dependency_sources)
+        self._add_dependency_sources(
+            name=str(provides),
+            sources=composite.dependency_sources,
+        )
         return composite
 
 

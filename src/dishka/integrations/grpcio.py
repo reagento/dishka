@@ -5,9 +5,9 @@ __all__ = [
 ]
 
 from collections.abc import Callable, Iterator
-from typing import Any, ParamSpec, TypeAlias, TypeVar
+from typing import Any, ParamSpec, TypeVar, cast
 
-import grpc._interceptor
+import grpc._interceptor  # type: ignore[import-untyped]
 from google.protobuf import message
 
 from dishka import Container, FromDishka, Scope
@@ -17,29 +17,25 @@ P = ParamSpec("P")
 RT = TypeVar("RT")
 
 
-InjectFunc: TypeAlias = Callable[P, RT]
-
-
-def getter(args: tuple, _: dict) -> Container | None:
+def getter(args: tuple[Any, ...], _: dict[Any, Any]) -> Container:
     iterator = (
         arg._dishka_container  # noqa: SLF001
         for arg in args
         if isinstance(arg, grpc.ServicerContext)
     )
+    # typing.cast because the iterator is not typed
+    return cast(Container, next(iterator))
 
-    return next(iterator, None)
 
-
-def inject(func: InjectFunc) -> InjectFunc:
+def inject(func: Callable[P, RT]) -> Callable[P, RT]:
     return wrap_injection(
         func=func,
-        container_getter=getter,
-        remove_depends=True,
         is_async=False,
+        container_getter=getter,
     )
 
 
-class ContainerInterceptor(grpc.ServerInterceptor):
+class ContainerInterceptor(grpc.ServerInterceptor):  # type: ignore[misc]
     def __init__(self, container: Container) -> None:
         self._container = container
 

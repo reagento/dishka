@@ -1,12 +1,13 @@
 import warnings
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, TypeVar
 
 from .component import DEFAULT_COMPONENT, Component
 from .key import FromComponent
 
+T = TypeVar("T")
+
 if TYPE_CHECKING:
-    from typing import TypeVar, Union
-    T = TypeVar("T")
+    from typing import Union
     FromDishka = Union[T, T]  # noqa: UP007,PYI016
 else:
     class FromDishka:
@@ -30,5 +31,5 @@ else:
                     stacklevel=2,
                 )
 
-        def __class_getitem__(cls, item):
+        def __class_getitem__(cls, item: T) -> Annotated[T, FromComponent]:
             return Annotated[item, FromComponent()]

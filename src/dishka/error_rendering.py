@@ -39,7 +39,7 @@ class PathRenderer:
             return str(source)
 
     def _switch(
-            self, scope: BaseScope, component: Component,
+            self, scope: BaseScope | None, component: Component | None,
     ) -> str:
         return f"~~~ component={component!r}, {scope} ~~~\n"
 
@@ -47,7 +47,7 @@ class PathRenderer:
             self,
             path: Sequence[Factory],
             last: DependencyKey | None = None,
-    ):
+    ) -> str:
         if last is None:
             _arrow = self._arrow_cycle
         else:
@@ -57,7 +57,7 @@ class PathRenderer:
         if last:
             width = max(width, len(self._key(last)))
 
-        dest = None
+        dest: tuple[BaseScope | None, Component | None] = (None, "")
         length = len(path) + bool(last)
 
         res = ""

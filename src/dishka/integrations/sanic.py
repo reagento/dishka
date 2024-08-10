@@ -4,8 +4,8 @@ __all__ = [
     "setup_dishka",
 ]
 
-import typing
 from collections.abc import Iterable
+from typing import Any, cast
 
 from sanic import HTTPResponse, Request, Sanic
 from sanic.models.handler_types import RouteHandler
@@ -16,14 +16,14 @@ from dishka.integrations.base import is_dishka_injected, wrap_injection
 
 
 def inject(func: RouteHandler) -> RouteHandler:
-    return typing.cast(
+    return cast(
         RouteHandler,
         wrap_injection(
             func=func,
-            remove_depends=True,
-            container_getter=lambda args, _: args[0].ctx.dishka_container,
             is_async=True,
-        ))
+            container_getter=lambda args, _: args[0].ctx.dishka_container,
+        ),
+    )
 
 
 class ContainerMiddleware:
@@ -46,13 +46,13 @@ def _inject_routes(routes: Iterable[Route]) -> None:
 
 def setup_dishka(
     container: AsyncContainer,
-    app: Sanic,
+    app: Sanic[Any, Any],
     *,
     auto_inject: bool = False,
 ) -> None:
     middleware = ContainerMiddleware(container)
     app.on_request(middleware.on_request)
-    app.on_response(middleware.on_response)
+    app.on_response(middleware.on_response)  # type: ignore[no-untyped-call]
 
     if auto_inject:
         _inject_routes(app.router.routes)

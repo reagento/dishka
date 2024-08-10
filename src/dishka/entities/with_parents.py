@@ -11,13 +11,15 @@ from typing import (
 
 from dishka._adaptix.common import TypeHint
 from dishka._adaptix.feature_requirement import HAS_PY_311
-from dishka._adaptix.type_tools import (
+from dishka._adaptix.type_tools.basic_utils import is_parametrized
+from dishka._adaptix.type_tools.fundamentals import (
     get_generic_args,
     get_type_vars,
-    is_parametrized,
     strip_alias,
 )
 from dishka.entities.provides_marker import ProvideMultiple
+
+__all__ = ["WithParents", "ParentsResolver"]
 
 IGNORE_TYPES: Final = (
     type,
@@ -48,7 +50,7 @@ def is_ignored_type(origin_type: TypeHint) -> bool:
     return origin_type in IGNORE_TYPES
 
 
-def create_type_vars_map(obj):
+def create_type_vars_map(obj: TypeHint) -> dict[TypeHint, TypeHint]:
     origin_obj = strip_alias(obj)
     type_vars = list(get_type_vars(origin_obj) or get_type_vars(obj))
     if not type_vars:
@@ -92,7 +94,7 @@ class ParentsResolver:
     def _get_parents_for_generic(
         self, child_type: TypeHint,
     ) -> list[TypeHint]:
-        parents = []
+        parents: list[TypeHint] = []
         self._recursion_get_parents(
             child_type=child_type,
             parents=parents,
@@ -168,9 +170,7 @@ if TYPE_CHECKING:
     from typing import Union as WithParents
 else:
     class WithParents:
-        def __class_getitem__(
-            cls, item: TypeHint,
-        ) -> TypeHint | ProvideMultiple:
+        def __class_getitem__(cls, item: TypeHint) -> TypeHint:
             parents = ParentsResolver().get_parents(item)
             if len(parents) > 1:
                 return ProvideMultiple(parents)

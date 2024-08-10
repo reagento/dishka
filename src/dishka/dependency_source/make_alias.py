@@ -1,3 +1,5 @@
+from typing import Any
+
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
 from .alias import Alias
@@ -7,8 +9,8 @@ from .unpack_provides import unpack_alias
 
 def alias(
         *,
-        source: type,
-        provides: type | None = None,
+        source: Any,
+        provides: Any | None = None,
         cache: bool = True,
         component: Component | None = None,
 ) -> CompositeDependencySource:
@@ -18,7 +20,7 @@ def alias(
         provides = source
 
     composite = ensure_composite(source)
-    alias = Alias(
+    alias_instance = Alias(
         source=DependencyKey(
             type_hint=source,
             component=component,
@@ -26,5 +28,5 @@ def alias(
         provides=DependencyKey(provides, None),
         cache=cache,
     )
-    composite.dependency_sources.extend(unpack_alias(alias))
+    composite.dependency_sources.extend(unpack_alias(alias_instance))
     return composite

@@ -4,9 +4,12 @@ from dishka.entities.key import DependencyKey
 from .dependency_source import Factory
 
 try:
-    from builtins import ExceptionGroup
+    from builtins import ExceptionGroup  # type: ignore[attr-defined]
+
 except ImportError:
-    from exceptiongroup import ExceptionGroup
+    from exceptiongroup import (  # type: ignore[no-redef, import-not-found]
+        ExceptionGroup,
+    )
 
 from .error_rendering import PathRenderer
 
@@ -29,7 +32,7 @@ class CycleDependenciesError(InvalidGraphError):
     def __init__(self, path: Sequence[Factory]) -> None:
         self.path = path
 
-    def __str__(self):
+    def __str__(self) -> str:
         if len(self.path) == 1:
             hint = " Did you mean @decorate instead of @provide?"
         else:
@@ -38,7 +41,7 @@ class CycleDependenciesError(InvalidGraphError):
         return f"Cycle dependencies detected.{hint}\n{details}"
 
 
-class ExitError(ExceptionGroup, DishkaError):
+class ExitError(ExceptionGroup[Exception], DishkaError):
     pass
 
 
@@ -59,10 +62,10 @@ class NoFactoryError(DishkaError):
         self.requested = requested
         self.path = list(path)
 
-    def add_path(self, requested_by: Factory):
+    def add_path(self, requested_by: Factory) -> None:
         self.path.insert(0, requested_by)
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.path:
             return (
                 f"Cannot find factory for {self.requested}. "

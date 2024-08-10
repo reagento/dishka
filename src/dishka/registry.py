@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from typing import Any, NewType, TypeVar, cast, get_args, get_origin
+from typing import Any, TypeVar, cast, get_args, get_origin
 
 from ._adaptix.type_tools.basic_utils import is_generic
 from ._adaptix.type_tools.fundamentals import get_type_vars
@@ -24,6 +24,16 @@ from .exceptions import (
 )
 from .factory_compiler import compile_factory
 from .provider import BaseProvider
+
+
+class UndecoratedType:
+    """Container for a type which is decorated in other place."""
+    def __init__(self, original: type[Any], depth: int) -> None:
+        self.original = original
+        self.level = depth
+
+    def __repr__(self) -> str:
+        return f"UndecoratedType({self.original}, depth={self.level})"
 
 
 class Registry:
@@ -320,9 +330,9 @@ class RegistryBuilder:
             )
         scope = self.dependency_scopes[provides]
         registry = self.registries[scope]
-        undecorated_type = NewType(  # type: ignore[misc]
-            f"{provides.type_hint.__name__}@{self.decorator_depth[provides]}",
-            decorator.provides.type_hint,  # type: ignore[name-defined]
+        undecorated_type = UndecoratedType(
+            decorator.provides.type_hint,
+            self.decorator_depth[provides],
         )
         self.decorator_depth[provides] += 1
         old_factory = registry.get_factory(provides)

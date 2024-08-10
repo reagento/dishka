@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, ClassVar
 
 from .alias import Alias
 from .context_var import ContextVariable
@@ -12,7 +12,7 @@ DependencySource = Alias | Factory | Decorator | ContextVariable
 
 
 class CompositeDependencySource:
-    _instances = 0
+    _instances: ClassVar[int] = 0
 
     def __init__(
             self,

@@ -125,7 +125,7 @@ The trick is how to manage those dependencies when you have a lot of request han
         service = request.state.service
         service.action()
 
-It works good. You have clean request handlers and you can change middlewares in tests. But it can become a problem if you have lot's of objects which are not cheap to create.
+It works good. You have clean request handlers and you can change middlewares in tests. But it can become a problem if you have lots of objects which are not cheap to create.
 
 * The second approach is to create some factory (let's call it **container**) and call it within request handler. You can still use middleware to pass it into handler (check also other features of your framework)
 

@@ -59,6 +59,34 @@ For such integrations library enters scope for each generated event. So if you h
 
 Additionally, you may need to call ``container.close()`` in the end of your application lifecycle if you want to finalize APP-scoped dependencies
 
+For some frameworks like ``grpcio`` common approach is not suitable. You need to create ``DishkaInterceptor`` or ``DishkaAioInterceptor`` and pass in to your server.
+But you still use ``@inject`` on your servicer methods. E.g.:
+
+.. code-block:: python
+
+    from dishka.integrations.grpcio import (
+        DishkaInterceptor,
+        FromDishka,
+        inject,
+    )
+    server = grpc.server(
+        ThreadPoolExecutor(max_workers=10),
+        interceptors=[
+            DishkaInterceptor(container),
+        ],
+    )
+
+    class MyServiceImpl(MyServicer):
+        @inject
+        def MyMethod(
+                self,
+                request: MyRequest,
+                context: grpc.ServicerContext,
+                a: FromDishka[RequestDep],
+        ) -> MyResponse:
+            ...
+
+
 .. _autoinject:
 
 Auto injection
@@ -180,8 +208,6 @@ With some frameworks we provide an option to inject dependencies in handlers wit
 
 
 
-
-
 Context data
 ====================
 
@@ -200,7 +226,7 @@ These objects are passed to context:
 * FastStream - ``faststream.broker.message.StreamMessage`` or ``faststream.[broker].[Broker]Message``, ``faststream.utils.ContextRepo`` 
 * TaskIq - no objects
 * Sanic - ``sanic.request.Request``
-* grpcio - ``grpcio.ServicerContext`` to get the current context and ``google.protobuf.message.Message`` to get the current request(Only for unary unary rpc methods)
+* grpcio - ``grpcio.ServicerContext`` to get the current context and ``google.protobuf.message.Message`` to get the current request. Message is available only for ``unary_unary`` and ``unary_stream`` rpc methods
 * Click - no objects
 
 
@@ -214,6 +240,8 @@ Injection is working with webosckets in these frameworks:
 * FastAPI
 * Starlette
 * aiohttp
+
+Also it works for grpcio ``stream_*`` rpc methods.
 
 For most cases we operate single events like HTTP-requests. In this case we operate only 2 scopes: ``APP`` and ``REQUEST``. Websockets are different: for one application you have multiple connections (one per client) and each connection delivers multiple messages. To support this we use additional scope: ``SESSION``:
 

@@ -10,18 +10,19 @@ where = ["src"]
 
 [project]
 name = "dishka"
-version = "1.2.0"
+version = "1.3.0"
 readme = "README.md"
 authors = [
     { name = "Andrey Tikhonov", email = "17@itishka.org" },
 ]
 license = { text = "Apache-2.0" }
-description = "Minimal DI framework"
+description = "Cute DI framework with scopes and agreeable API"
 requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries",
     "Typing :: Typed",
     "Intended Audience :: Developers",

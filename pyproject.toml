@@ -37,5 +37,3 @@ dependencies = [
 "Homepage" = "https://github.com/reagento/dishka"
 "Documentation" = "https://dishka.readthedocs.io/en/stable/"
 "Bug Tracker" = "https://github.com/reagento/dishka/issues"
-
-

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Annotated, Any, NamedTuple, get_args, get_origin
 
 from .component import DEFAULT_COMPONENT, Component
@@ -11,7 +13,7 @@ class DependencyKey(NamedTuple):
     type_hint: Any
     component: Component | None
 
-    def with_component(self, component: Component) -> "DependencyKey":
+    def with_component(self, component: Component | None) -> DependencyKey:
         if self.component is not None:
             return self
         return DependencyKey(
@@ -19,7 +21,7 @@ class DependencyKey(NamedTuple):
             component=component,
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"({self.type_hint}, component={self.component!r})"
 
 
@@ -31,10 +33,12 @@ def hint_to_dependency_key(hint: Any) -> DependencyKey:
         (arg for arg in args if isinstance(arg, FromComponent)),
         None,
     )
+    if from_component is None:
+        return DependencyKey(args[0], None)
     return DependencyKey(args[0], from_component.component)
 
 
-def hints_to_dependency_keys(hints: list) -> list[DependencyKey]:
+def hints_to_dependency_keys(hints: list[Any]) -> list[DependencyKey]:
     return [
         hint_to_dependency_key(type_hint)
         for type_hint in hints

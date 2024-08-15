@@ -36,10 +36,10 @@ Standard scopes are (excluding skipped):
 You decide when to enter and exit them, but it is done one by one. If you entered ``APP`` scope then the next step deeper will enter ``REQUEST`` scope.
 
 .. note::
-    ``APP`` scope can be used for lazy initialisation of singletons, while ``REQUEST`` scope is good for processing events like HTTP-requests or messenger updates. It is unlikely that you will need other scopes
+    ``APP`` scope can be used for lazy initialization of singletons, while ``REQUEST`` scope is good for processing events like HTTP-requests or messenger updates. It is unlikely that you will need other scopes
 
 
-In dishka dependencies are lazy - they are created when you first request them. If the same dependency is requested multiple time within one scope then the same instance is returned (you can disable it for each dependency separately). A created dependency is kept until you exit the scope. And in that moment it is not just dropped away, but corresponding finalization steps are done. You can enter same scope multiple times concurrently so to have multiple instances of objects you can work simultaneously.
+In dishka dependencies are lazy - they are created when you first request them. If the same dependency is requested multiple times within one scope then the same instance is returned (you can disable it for each dependency separately). A created dependency is kept until you exit the scope. And in that moment it is not just dropped away, but corresponding finalization steps are done. You can enter same scope multiple times concurrently so to have multiple instances of objects you can work simultaneously.
 
 Each object can depend on other objects from the same or previous scopes. So, if you have ``Config`` with scope of *APP* and ``Connection`` with scope of *REQUEST* you cannot have an *APP*-scoped object which requires a connection, but you can have *REQUEST*-scoped object which requires a ``Connection`` or a ``Config`` (or even both).
 
@@ -100,7 +100,7 @@ Component
 ====================
 **Component** - is an isolated group of providers within the same container identified by a string. When dependency is requested it is searched only within the same component as its dependant, unless it is declared explicitly.
 
-This allows you to have multiple parts of application build separately without need to think if the use same types.
+This allows you to have multiple parts of application build separately without need to think if they use same types.
 
 .. code-block:: python
 

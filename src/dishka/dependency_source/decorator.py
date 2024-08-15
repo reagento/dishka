@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 
 from dishka.entities.component import Component
@@ -9,7 +11,11 @@ from .factory import Factory
 class Decorator:
     __slots__ = ("provides", "factory")
 
-    def __init__(self, factory: Factory, provides: Any = None):
+    def __init__(
+            self,
+            factory: Factory,
+            provides: DependencyKey | None = None,
+    ) -> None:
         self.factory = factory
         if provides:
             self.provides = provides
@@ -48,5 +54,5 @@ class Decorator:
             cache=cache,
         )
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance: Any, owner: Any) -> Decorator:
         return Decorator(self.factory.__get__(instance, owner))

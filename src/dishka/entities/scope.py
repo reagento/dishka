@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 @dataclass(slots=True)
@@ -15,8 +16,8 @@ def new_scope(value: str, *, skip: bool = False) -> _ScopeValue:
 class BaseScope(Enum):
     __slots__ = ("name", "skip")
 
-    def __init__(self, value: _ScopeValue):
-        self.name = value.name
+    def __init__(self, value: _ScopeValue) -> None:
+        self.name = value.name  # type: ignore[misc]
         self.skip = value.skip
 
 
@@ -32,5 +33,5 @@ class Scope(BaseScope):
 class InvalidScopes(BaseScope):
     UNKNOWN_SCOPE = new_scope("<unknown scope>", skip=True)
 
-    def __str__(self):
+    def __str__(self) -> Any:
         return self.value

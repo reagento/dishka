@@ -44,7 +44,7 @@ from dishka import Provider
 provider = Provider()
 ```
 
-3. Register functions which provide dependencies. Do not forget to place correct typehints for parameters and result. We use `scope=Scope.APP` for dependencies which ar created only once in application lifetime, and `scope=Scope.REQUEST` for those which should be recreated for each processing request/event/etc.
+3. Register functions which provide dependencies. Do not forget to place correct typehints for parameters and result. We use `scope=Scope.APP` for dependencies which are created only once in application lifetime, and `scope=Scope.REQUEST` for those which should be recreated for each processing request/event/etc.
 
 ```python
 from dishka import Provider, Scope
@@ -240,8 +240,8 @@ from dishka import from_context, Provider, provide, Scope
 class MyProvider(Provider):
     scope = Scope.REQUEST
 
-    app = from_context(provides=App, scope=Scope.APP)
-    request = from_context(provides=RequestClass)
+    app = from_context(App, scope=Scope.APP)
+    request = from_context(RequestClass)
 
     @provide
     def get_a(self, request: RequestClass, app: App) -> A:

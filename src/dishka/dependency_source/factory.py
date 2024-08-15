@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import (
     Mapping,
     Sequence,
@@ -22,9 +24,14 @@ class FactoryType(Enum):
 
 class Factory:
     __slots__ = (
-        "dependencies", "kw_dependencies",
-        "source", "provides", "scope", "type",
-        "is_to_bind", "cache",
+        "dependencies",
+        "kw_dependencies",
+        "source",
+        "provides",
+        "scope",
+        "type",
+        "is_to_bind",
+        "cache",
     )
 
     def __init__(
@@ -38,7 +45,7 @@ class Factory:
             type_: FactoryType,
             is_to_bind: bool,
             cache: bool,
-    ):
+    ) -> None:
         self.dependencies = dependencies
         self.kw_dependencies = kw_dependencies
         self.source = source
@@ -48,7 +55,7 @@ class Factory:
         self.is_to_bind = is_to_bind
         self.cache = cache
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance: Any, owner: Any) -> Factory:
         scope = self.scope or instance.scope
         if instance is None:
             return self
@@ -69,7 +76,7 @@ class Factory:
             cache=self.cache,
         )
 
-    def with_component(self, component: Component) -> "Factory":
+    def with_component(self, component: Component) -> Factory:
         return Factory(
             dependencies=[
                 d.with_component(component) for d in self.dependencies

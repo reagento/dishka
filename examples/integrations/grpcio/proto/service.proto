@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package example;
+
+service ExampleService {
+    rpc UnaryUnary(RequestMessage) returns (ResponseMessage);
+    rpc UnaryStream(RequestMessage) returns (stream ResponseMessage);
+    rpc StreamUnary(stream RequestMessage) returns (ResponseMessage);
+    rpc StreamStream(stream RequestMessage) returns (stream ResponseMessage);
+}
+
+message RequestMessage {
+    string message = 1;
+}
+
+message ResponseMessage {
+    string message = 1;
+}

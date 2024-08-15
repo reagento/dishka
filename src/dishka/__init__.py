@@ -1,13 +1,24 @@
 __all__ = [
     "AnyOf",
-    "make_async_container", "AsyncContainer",
-    "DEFAULT_COMPONENT", "Component",
-    "make_container", "Container", "FromComponent",
-    "Provider",
-    "alias", "decorate", "from_context", "provide", "provide_all",
+    "AsyncContainer",
+    "BaseScope",
+    "Component",
+    "Container",
+    "DEFAULT_COMPONENT",
     "DependencyKey",
+    "FromComponent",
     "FromDishka",
-    "BaseScope", "Scope", "new_scope",
+    "Provider",
+    "Scope",
+    "WithParents",
+    "alias",
+    "decorate",
+    "from_context",
+    "make_async_container",
+    "make_container",
+    "provide",
+    "provide_all",
+    "new_scope",
 ]
 
 from .async_container import AsyncContainer, make_async_container
@@ -24,4 +35,5 @@ from .entities.depends_marker import FromDishka
 from .entities.key import DependencyKey, FromComponent
 from .entities.provides_marker import AnyOf
 from .entities.scope import BaseScope, Scope, new_scope
+from .entities.with_parents import WithParents
 from .provider import Provider

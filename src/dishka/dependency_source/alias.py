@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 
 from dishka.entities.component import Component
@@ -24,7 +26,7 @@ class Alias:
         self.cache = cache
 
     def as_factory(
-            self, scope: BaseScope, component: Component,
+            self, scope: BaseScope | None, component: Component | None,
     ) -> Factory:
         return Factory(
             scope=scope,
@@ -37,5 +39,5 @@ class Alias:
             cache=self.cache,
         )
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance: Any, owner: Any) -> Alias:
         return self

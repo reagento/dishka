@@ -1,9 +1,9 @@
 Testing with dishka
 ***************************
 
-Testing you code does not always require the whole application to be started. You can have unit tests for separate components and even integration tests which check only specific links. In many cases you do not need IoC-container: you create objects with a power of **Dependency Injection** and not framework.
+Testing your code does not always require the whole application to be started. You can have unit tests for separate components and even integration tests which check only specific links. In many cases you do not need IoC-container: you create objects with a power of **Dependency Injection** and not framework.
 
-For other cases which require calling functions located on application boundaries you need a container. These cases include testing you view functions with mocks of business logic and testing the application as a whole. Comparing to a production mode you will still have same implementations for some classes and others will be replaced with mocks. Luckily, in ``dishka`` your container is not an implicit global thing and can be replaced easily.
+For other cases which require calling functions located on application boundaries you need a container. These cases include testing your view functions with mocks of business logic and testing the application as a whole. Comparing to a production mode you will still have same implementations for some classes and others will be replaced with mocks. Luckily, in ``dishka`` your container is not an implicit global thing and can be replaced easily.
 
 There are many options to make providers with mock objects. If you are using ``pytest`` then you can
 

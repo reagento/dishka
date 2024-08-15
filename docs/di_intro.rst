@@ -18,7 +18,7 @@ Imagine you have a business logic which uses some remote API client
     service = Service()
     service.action()
 
-Here, the ``client`` is a **dependency**. Imagine that you have many methods working with same client and each methods knows how to create the client. Than think about these question?
+Here, the ``client`` is a **dependency**. Imagine that you have many methods working with same client and each method knows how to create the client. Than think about these questions?
 
 * How do they get the ``token``? Should the every method read it on its own?
 * What if the ``Client`` constructor will require more than one token? Should we copy-paste new parameters to each method?
@@ -79,12 +79,12 @@ Additionally I need to name anti-patterns, which should be avoided as they canno
 
 * *Singleton*. It's mostly a variant of global variable. It can add laziness, but other characteristics are the same.
 
-* *Monkey patch*. Or `mock.patch()` as an example. It allows to replace behavior in tests but it also relies on details how the class is imported and used instead of its interface. That make tests more fragile and requires more work to support them
+* *Monkey patch*. Or `mock.patch()` as an example. It allows to replace behavior in tests but it also relies on details how the class is imported and used instead of its interface. That makes tests more fragile and requires more work to support them
 
 When to inject dependencies?
 ===================================
 
-For simple cases it is obvious that you have some classes with their requirements and once you start you app you create all of them and wire together. But real applications are more complicated things. They operate dozens or even hundreds of objects in complex hierarchy, they do concurrent processing.
+For simple cases it is obvious that you have some classes with their requirements and once you start your app you create all of them and wire together. But real applications are more complicated things. They operate dozens or even hundreds of objects in complex hierarchy, they do concurrent processing.
 
 
 It is a good idea to separate the code which uses dependencies and the code which creates them. Usually we want to reduce the knowledge about our dependencies in the code which uses them. But it is not always possible as different objects have different lifespan.
@@ -125,9 +125,9 @@ The trick is how to manage those dependencies when you have a lot of request han
         service = request.state.service
         service.action()
 
-It works good. You have clean request handlers and you can change middlewares in tests. But it can become a problem if you have lot's of objects which are not cheap to create.
+It works good. You have clean request handlers and you can change middlewares in tests. But it can become a problem if you have lots of objects which are not cheap to create.
 
-* The second approach is to create some factory (let's call it **container**) and call it within request handler. You can still use middleware to pass it into handler (check also others features of your framework)
+* The second approach is to create some factory (let's call it **container**) and call it within request handler. You can still use middleware to pass it into handler (check also other features of your framework)
 
 .. code-block:: python
 
@@ -157,9 +157,9 @@ In both approaches you can control whether the instance is created on each reque
 What is IoC-container?
 =============================
 
-IoC-container is a special object (or a framework providing such an object) which provides required objects following dependency injection rules and manages their lifetime. DI-framework is another name fur such frameworks.
+IoC-container is a special object (or a framework providing such an object) which provides required objects following dependency injection rules and manages their lifetime. DI-framework is another name for such frameworks.
 
-Common mistake is to treat IoC-container as a single way to inject dependencies. It has nothing common with reality. Dependency injection can be done just by passing one object to another, but in complex application it is not so easy to do. As it was shown above you might want to create a separate object to encapsulate all DI-related logic. ``Container`` in previous example is a an example of hand-written primitive IoC-container.
+Common mistake is to treat IoC-container as a single way to inject dependencies. It has nothing common with reality. Dependency injection can be done just by passing one object to another, but in complex application it is not so easy to do. As it was shown above you might want to create a separate object to encapsulate all DI-related logic. ``Container`` in previous example is an example of hand-written primitive IoC-container.
 
 Bigger is your application, more complex factories you need, more necessary is to automate creation of a container. You do not need to use IoC-container to test one small part of application, but it can be essential for launching it in whole. Fortunately, there are frameworks for it. But again, beware of spreading container-related details around your application code with an exception on scope boundaries.
 

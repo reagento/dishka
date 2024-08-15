@@ -3,7 +3,7 @@
 from_context
 ****************
 
-You can put some data manually when entering scope and rely on it in your provider factories. To make it work you need to mark a dependency as retrieved from context using ``from_context`` and the use it as usual. Later, set ``context=`` argument when you enter corresponding scope.
+You can put some data manually when entering scope and rely on it in your provider factories. To make it work you need to mark a dependency as retrieved from context using ``from_context`` and then use it as usual. Later, set ``context=`` argument when you enter corresponding scope.
 
 
 .. code-block:: python

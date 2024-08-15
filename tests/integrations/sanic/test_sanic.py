@@ -1,5 +1,4 @@
 from contextlib import asynccontextmanager
-from typing import Annotated
 from unittest.mock import Mock
 
 import pytest
@@ -64,8 +63,8 @@ async def test_app_dependency(app_provider: AppProvider, app_factory):
 
 async def get_compat(
     _: Request,
-    a: Annotated[RequestDep, FromDishka()],
-    mock: Annotated[Mock, FromDishka()],
+    a: FromDishka[RequestDep],
+    mock: FromDishka[Mock],
 ) -> HTTPResponse:
     mock(a)
     return HTTPResponse(status=200)

@@ -4,39 +4,46 @@ __all__ = [
     "setup_dishka",
 ]
 
+from collections.abc import Callable
+from typing import Any, ParamSpec, TypeVar, cast
+
 from flask import Flask, Request, g, request
 from flask.sansio.scaffold import Scaffold
+from flask.typing import RouteCallable
 
 from dishka import Container, FromDishka
 from .base import is_dishka_injected, wrap_injection
 
+T = TypeVar("T")
+P = ParamSpec("P")
 
-def inject(func):
+
+def inject(func: Callable[P, T]) -> Callable[P, T]:
     return wrap_injection(
         func=func,
-        remove_depends=True,
-        container_getter=lambda _, p: g.dishka_container,
-        additional_params=[],
         is_async=False,
+        container_getter=lambda _, p: g.dishka_container,
     )
 
 
 class ContainerMiddleware:
-    def __init__(self, container):
+    def __init__(self, container: Container) -> None:
         self.container = container
 
-    def enter_request(self):
+    def enter_request(self) -> None:
         g.dishka_container_wrapper = self.container({Request: request})
         g.dishka_container = g.dishka_container_wrapper.__enter__()
 
-    def exit_request(self, *_args, **_kwargs):
+    def exit_request(self, *_args: Any, **_kwargs: Any) -> None:
         g.dishka_container.close()
 
 
-def _inject_routes(scaffold: Scaffold):
+def _inject_routes(scaffold: Scaffold) -> None:
     for key, func in scaffold.view_functions.items():
         if not is_dishka_injected(func):
-            scaffold.view_functions[key] = inject(func)
+            # typing.cast is applied because there
+            # are RouteCallable objects in dict value
+            scaffold.view_functions[key] = cast(RouteCallable, inject(func))
 
 
 def setup_dishka(

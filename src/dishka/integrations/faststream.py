@@ -8,7 +8,7 @@ __all__ = (
 import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, ParamSpec, TypeVar, cast
 
 from faststream import BaseMiddleware, FastStream, context
 from faststream.__about__ import __version__
@@ -19,10 +19,12 @@ from faststream.utils.context import ContextRepo
 from dishka import AsyncContainer, FromDishka, Provider, Scope, from_context
 from dishka.integrations.base import wrap_injection
 
+T = TypeVar("T")
+P = ParamSpec("P")
 
 class FastStreamProvider(Provider):
-    context = from_context(provides=ContextRepo, scope=Scope.REQUEST)
-    message = from_context(provides=StreamMessage, scope=Scope.REQUEST)
+    context = from_context(ContextRepo, scope=Scope.REQUEST)
+    message = from_context(StreamMessage, scope=Scope.REQUEST)
 
 
 FASTSTREAM_OLD_MIDDLEWARES = __version__ < "0.5"
@@ -41,14 +43,14 @@ if FASTSTREAM_OLD_MIDDLEWARES:
 
     class DishkaMiddleware(_DishkaBaseMiddleware):
         @asynccontextmanager
-        async def consume_scope(
+        async def consume_scope(  # type: ignore[override]
                 self,
                 *args: Any,
                 **kwargs: Any,
         ) -> AsyncIterator[DecodedMessage]:
             async with self.container() as request_container:
                 with context.scope("dishka", request_container):
-                    async with super().consume_scope(
+                    async with super().consume_scope(  # type: ignore[attr-defined]
                         *args,
                         **kwargs,
                     ) as result:
@@ -56,7 +58,7 @@ if FASTSTREAM_OLD_MIDDLEWARES:
 
 else:
 
-    class DishkaMiddleware(_DishkaBaseMiddleware):
+    class DishkaMiddleware(_DishkaBaseMiddleware):  # type: ignore[no-redef]
         async def consume_scope(
                 self,
                 call_next: Callable[[Any], Awaitable[Any]],
@@ -64,13 +66,16 @@ else:
         ) -> AsyncIterator[DecodedMessage]:
             async with self.container(
                 {
-                    StreamMessage: msg,
                     type(msg): msg,
+                    StreamMessage: msg,
                     ContextRepo: context,
                 },
             ) as request_container:
                 with context.scope("dishka", request_container):
-                    return await call_next(msg)
+                    return cast(
+                        AsyncIterator[DecodedMessage],
+                        await call_next(msg),
+                    )
 
 
 def setup_dishka(
@@ -86,9 +91,9 @@ def setup_dishka(
         app.after_shutdown(container.close)
 
     if FASTSTREAM_OLD_MIDDLEWARES:
-        app.broker.middlewares = (
+        app.broker.middlewares = (  # type: ignore[attr-defined]
             DishkaMiddleware(container),
-            *app.broker.middlewares,
+            *app.broker.middlewares,  # type: ignore[attr-defined]
         )
 
         if auto_inject:
@@ -127,10 +132,9 @@ or use @inject at each subscriber manually.
             )
 
 
-def inject(func):
+def inject(func: Callable[P, T]) -> Callable[P, T]:
     return wrap_injection(
         func=func,
-        container_getter=lambda *_: context.get_local("dishka"),
         is_async=True,
-        remove_depends=True,
+        container_getter=lambda *_: context.get_local("dishka"),
     )

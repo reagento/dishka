@@ -13,11 +13,14 @@ Built-in frameworks integrations:
 * Litestar
 * Starlette
 * Aiogram
+* Aiogram_dialog
 * pyTelegramBotAPI
 * Arq
 * FastStream
 * TaskIq
 * Sanic
+* grpcio
+* Click
 
 Common approach
 =====================
@@ -55,6 +58,34 @@ For FastAPI it will look like:
 For such integrations library enters scope for each generated event. So if you have standard scope, than handler dependencies will be retrieved as for ``Scope.REQUEST``.
 
 Additionally, you may need to call ``container.close()`` in the end of your application lifecycle if you want to finalize APP-scoped dependencies
+
+For some frameworks like ``grpcio`` common approach is not suitable. You need to create ``DishkaInterceptor`` or ``DishkaAioInterceptor`` and pass in to your server.
+But you still use ``@inject`` on your servicer methods. E.g.:
+
+.. code-block:: python
+
+    from dishka.integrations.grpcio import (
+        DishkaInterceptor,
+        FromDishka,
+        inject,
+    )
+    server = grpc.server(
+        ThreadPoolExecutor(max_workers=10),
+        interceptors=[
+            DishkaInterceptor(container),
+        ],
+    )
+
+    class MyServiceImpl(MyServicer):
+        @inject
+        def MyMethod(
+                self,
+                request: MyRequest,
+                context: grpc.ServicerContext,
+                a: FromDishka[RequestDep],
+        ) -> MyResponse:
+            ...
+
 
 .. _autoinject:
 
@@ -113,7 +144,7 @@ With some frameworks we provide an option to inject dependencies in handlers wit
 
     setup_dishka(container, app)
 
-* For **FasStream** (**0.5.0** version and higher) you need to provide ``auto_inject=True`` when calling ``setup_dishka``. E.g:
+* For **FastStream** (**0.5.0** version and higher) you need to provide ``auto_inject=True`` when calling ``setup_dishka``. E.g:
 
 .. code-block:: python
 
@@ -152,6 +183,31 @@ With some frameworks we provide an option to inject dependencies in handlers wit
 
     setup_dishka(container=container, app=app, auto_inject=True)
 
+* For **Click** you need to provide ``auto_inject=True`` when calling ``setup_dishka``. E.g:
+
+.. code-block:: python
+
+    import click
+    from dishka import make_container
+    from dishka.integrations.click import FromDishka, setup_dishka
+
+    @click.group()
+    @click.pass_context
+    def main(context: click.Context):
+        container = make_container(...)
+        setup_dishka(container=container, context=context, auto_inject=True)
+
+    @main.command()
+    @click.option("--count", default=1, help="Number of greetings.")
+    def hello(count: int, interactor: FromDishka[Interactor]):
+        """Simple program that greets NAME for a total of COUNT times."""
+        for x in range(count):
+            click.echo(f"Hello {interactor()}!")
+
+    main()
+
+
+
 Context data
 ====================
 
@@ -170,6 +226,9 @@ These objects are passed to context:
 * FastStream - ``faststream.broker.message.StreamMessage`` or ``faststream.[broker].[Broker]Message``, ``faststream.utils.ContextRepo`` 
 * TaskIq - no objects
 * Sanic - ``sanic.request.Request``
+* grpcio - ``grpcio.ServicerContext`` to get the current context and ``google.protobuf.message.Message`` to get the current request. Message is available only for ``unary_unary`` and ``unary_stream`` rpc methods
+* Click - no objects
+
 
 To use such objects you need to declare them in your provider using :ref:`from-context` and then they will be available as factories params.
 
@@ -181,6 +240,8 @@ Injection is working with webosckets in these frameworks:
 * FastAPI
 * Starlette
 * aiohttp
+
+Also it works for grpcio ``stream_*`` rpc methods.
 
 For most cases we operate single events like HTTP-requests. In this case we operate only 2 scopes: ``APP`` and ``REQUEST``. Websockets are different: for one application you have multiple connections (one per client) and each connection delivers multiple messages. To support this we use additional scope: ``SESSION``:
 

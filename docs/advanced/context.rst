@@ -14,9 +14,11 @@ Working with context data consists of three parts:
 .. code-block:: python
 
     from framework import Request
+    from dishka import Provider, make_container, Scope, from_context, provide
 
-    class MyProvider:
-        scope=Scope.REQUEST
+
+    class MyProvider(Provider):
+        scope = Scope.REQUEST
 
         # declare source
         request = from_context(provides=Request, scope=Scope.REQUEST)
@@ -33,8 +35,8 @@ Working with context data consists of three parts:
     while True:
         request = broker.recv()
         # provide REQUEST-scoped context variable
-        with container(context={Request:request}) as request_container:
-             a = request_container.get(A)
+        with container(context={Request: request}) as request_container:
+            a = request_container.get(A)
 
 .. note::
 

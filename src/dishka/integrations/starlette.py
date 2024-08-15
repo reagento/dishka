@@ -4,6 +4,9 @@ __all__ = [
     "setup_dishka",
 ]
 
+from collections.abc import Callable
+from typing import ParamSpec, TypeVar
+
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
@@ -13,14 +16,14 @@ from dishka import AsyncContainer, FromDishka
 from dishka import Scope as DIScope
 from .base import wrap_injection
 
+T = TypeVar("T")
+P = ParamSpec("P")
 
-def inject(func):
+def inject(func: Callable[P, T]) -> Callable[P, T]:
     return wrap_injection(
         func=func,
-        remove_depends=True,
-        container_getter=lambda r, _: r[0].scope["state"]["dishka_container"],
-        additional_params=[],
         is_async=True,
+        container_getter=lambda r, _: r[0].scope["state"]["dishka_container"],
     )
 
 
@@ -33,6 +36,9 @@ class ContainerMiddleware:
     ) -> None:
         if scope["type"] not in ("http", "websocket"):
             return await self.app(scope, receive, send)
+
+        request: Request | WebSocket
+        context: dict[type[Request | WebSocket], Request | WebSocket]
 
         if scope["type"] == "http":
             request = Request(scope)

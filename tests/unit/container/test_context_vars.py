@@ -64,7 +64,7 @@ async def test_2components():
         scope = Scope.APP
         component = "XXX"
 
-        a = from_context(provides=int)
+        a = from_context(int)
 
         @provide
         def foo(self, a: int) -> float:
@@ -96,7 +96,7 @@ def test_decorate():
     class MyProvider(Provider):
         scope = Scope.APP
 
-        i = from_context(provides=int)
+        i = from_context(int)
 
         @decorate
         def ii(self, i: int) -> int:

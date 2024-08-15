@@ -1,8 +1,9 @@
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from typing import Any, NewType, TypeVar, get_args, get_origin
+from typing import Any, TypeVar, cast, get_args, get_origin
 
-from ._adaptix.type_tools.basic_utils import get_type_vars, is_generic
+from ._adaptix.type_tools.basic_utils import is_generic
+from ._adaptix.type_tools.fundamentals import get_type_vars
 from .container_objects import CompiledFactory
 from .dependency_source import (
     Alias,
@@ -13,7 +14,7 @@ from .dependency_source import (
 )
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.key import DependencyKey
-from .entities.scope import BaseScope, InvalidScopes
+from .entities.scope import BaseScope, InvalidScopes, Scope
 from .exceptions import (
     CycleDependenciesError,
     GraphMissingFactoryError,
@@ -25,16 +26,26 @@ from .factory_compiler import compile_factory
 from .provider import BaseProvider
 
 
+class UndecoratedType:
+    """Container for a type which is decorated in other place."""
+    def __init__(self, original: type[Any], depth: int) -> None:
+        self.original = original
+        self.level = depth
+
+    def __repr__(self) -> str:
+        return f"UndecoratedType({self.original}, depth={self.level})"
+
+
 class Registry:
     __slots__ = ("scope", "factories", "compiled", "compiled_async")
 
     def __init__(self, scope: BaseScope):
-        self.factories: dict[DependencyKey, Factory] = {}
-        self.compiled: dict[DependencyKey, Callable] = {}
-        self.compiled_async: dict[DependencyKey, Callable] = {}
         self.scope = scope
+        self.factories: dict[DependencyKey, Factory] = {}
+        self.compiled: dict[DependencyKey, Callable[..., Any]] = {}
+        self.compiled_async: dict[DependencyKey, Callable[..., Any]] = {}
 
-    def add_factory(self, factory: Factory):
+    def add_factory(self, factory: Factory) -> None:
         if is_generic(factory.provides.type_hint):
             origin = get_origin(factory.provides.type_hint)
             if origin:
@@ -139,8 +150,8 @@ class Registry:
 class GraphValidator:
     def __init__(self, registries: Sequence[Registry]) -> None:
         self.registries = registries
-        self.valid_keys = {}
-        self.path = {}
+        self.path: dict[DependencyKey, Factory] = {}
+        self.valid_keys: dict[DependencyKey, bool] = {}
 
     def _validate_key(
             self, key: DependencyKey, registry_index: int,
@@ -161,8 +172,13 @@ class GraphValidator:
 
     def _validate_factory(
             self, factory: Factory, registry_index: int,
-    ):
+    ) -> None:
         self.path[factory.provides] = factory
+        if (
+            factory.provides in factory.kw_dependencies.values() or
+            factory.provides in factory.dependencies
+        ):
+            raise CycleDependenciesError([factory])
         try:
             for dep in factory.dependencies:
                 # ignore TypeVar parameters
@@ -180,7 +196,7 @@ class GraphValidator:
             self.path.pop(factory.provides)
         self.valid_keys[factory.provides] = True
 
-    def validate(self):
+    def validate(self) -> None:
         for registry_index, registry in enumerate(self.registries):
             factories = tuple(registry.factories.values())
             for factory in factories:
@@ -230,14 +246,13 @@ class RegistryBuilder:
                 provides = factory.provides.with_component(provider.component)
                 self.dependency_scopes[provides] = factory.scope
             for context_var in provider.context_vars:
-                if not isinstance(context_var.scope, self.scopes):
-                    raise UnknownScopeError(
-                        f"Scope {context_var.scope} is unknown, "
-                        f"expected one of {self.scopes}",
-                    )
                 for component in self.components:
                     provides = context_var.provides.with_component(component)
-                    self.dependency_scopes[provides] = context_var.scope
+                    # typing.cast is applied because the scope
+                    # was checked above
+                    self.dependency_scopes[provides] = cast(
+                        BaseScope, context_var.scope,
+                    )
 
     def _collect_aliases(self) -> None:
         for provider in self.providers:
@@ -262,7 +277,7 @@ class RegistryBuilder:
     def _process_factory(
             self, provider: BaseProvider, factory: Factory,
     ) -> None:
-        registry = self.registries[factory.scope]
+        registry = self.registries[cast(Scope, factory.scope)]
         registry.add_factory(factory.with_component(provider.component))
 
     def _process_alias(
@@ -270,7 +285,7 @@ class RegistryBuilder:
     ) -> None:
         component = provider.component
         alias_source = alias.source.with_component(component)
-        visited_keys = []
+        visited_keys: list[DependencyKey] = []
         while alias_source not in self.dependency_scopes:
             if alias_source not in self.alias_sources:
                 e = NoFactoryError(alias_source)
@@ -315,12 +330,17 @@ class RegistryBuilder:
             )
         scope = self.dependency_scopes[provides]
         registry = self.registries[scope]
-        undecorated_type = NewType(
-            f"{provides.type_hint.__name__}@{self.decorator_depth[provides]}",
+        undecorated_type = UndecoratedType(
             decorator.provides.type_hint,
+            self.decorator_depth[provides],
         )
         self.decorator_depth[provides] += 1
         old_factory = registry.get_factory(provides)
+        if old_factory is None:
+            raise InvalidGraphError(
+                "Cannot apply decorator because there is"
+                f"no factory for {provides}",
+            )
         if old_factory.type is FactoryType.CONTEXT:
             raise InvalidGraphError(
                 f"Cannot apply decorator to context data {provides}",
@@ -340,11 +360,17 @@ class RegistryBuilder:
     def _process_context_var(
             self, provider: BaseProvider, context_var: ContextVariable,
     ) -> None:
+        if context_var.scope is None:
+            raise UnknownScopeError(
+                f"Scope {context_var.scope} is unknown, "
+                f"expected one of {self.scopes}. Define it"
+                f"explicitly in Provider or from_context",
+            )
         registry = self.registries[context_var.scope]
         for component in self.components:
             registry.add_factory(context_var.as_factory(component))
 
-    def build(self):
+    def build(self) -> tuple[Registry, ...]:
         self._collect_components()
         self._collect_provided_scopes()
         self._collect_aliases()

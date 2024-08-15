@@ -4,7 +4,7 @@ __all__ = [
     "setup_dishka",
 ]
 
-from collections.abc import AsyncGenerator, Callable, Generator
+from collections.abc import Callable, Generator
 from inspect import Parameter
 from typing import Annotated, Any, Final
 
@@ -57,7 +57,7 @@ class ContainerMiddleware(TaskiqMiddleware):
 
 def _get_container(
     context: Annotated[Context, TaskiqDepends()],
-) -> Generator[AsyncGenerator, None, None]:
+) -> Generator[AsyncContainer, None, None]:
     yield context.message.labels[CONTAINER_NAME]
 
 

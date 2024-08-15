@@ -1,3 +1,4 @@
+-r test.txt
 grpcio
 grpcio-tools
 grpcio-testing

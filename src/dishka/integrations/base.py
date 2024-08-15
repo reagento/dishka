@@ -1,5 +1,11 @@
 from collections.abc import Awaitable, Callable, Sequence
-from inspect import Parameter, Signature, signature
+from inspect import (
+    Parameter,
+    Signature,
+    isasyncgenfunction,
+    isgeneratorfunction,
+    signature,
+)
 from typing import (
     Annotated,
     Any,
@@ -159,15 +165,31 @@ def _async_injection_wrapper(
         dependencies: dict[str, DependencyKey],
         func: Callable[P, Awaitable[T]],
 ) -> Callable[P, Awaitable[T]]:
-    async def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
-        container = container_getter(args, kwargs)
-        for param in additional_params:
-            kwargs.pop(param.name)
-        solved = {
-            name: await container.get(dep.type_hint, component=dep.component)
-            for name, dep in dependencies.items()
-        }
-        return await func(*args, **kwargs, **solved)
+    if isasyncgenfunction(func):
+        async def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
+            container = container_getter(args, kwargs)
+            for param in additional_params:
+                kwargs.pop(param.name)
+            solved = {
+                name: await container.get(
+                    dep.type_hint, component=dep.component,
+                )
+                for name, dep in dependencies.items()
+            }
+            async for message in func(*args, **kwargs, **solved):
+                yield message
+    else:
+        async def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
+            container = container_getter(args, kwargs)
+            for param in additional_params:
+                kwargs.pop(param.name)
+            solved = {
+                name: await container.get(
+                    dep.type_hint, component=dep.component,
+                )
+                for name, dep in dependencies.items()
+            }
+            return await func(*args, **kwargs, **solved)
 
     return auto_injected_func
 
@@ -178,14 +200,25 @@ def _sync_injection_wrapper(
         dependencies: dict[str, DependencyKey],
         func: Callable[P, T],
 ) -> Callable[P, T]:
-    def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
-        container = container_getter(args, kwargs)
-        for param in additional_params:
-            kwargs.pop(param.name)
-        solved = {
-            name: container.get(dep.type_hint, component=dep.component)
-            for name, dep in dependencies.items()
-        }
-        return func(*args, **kwargs, **solved)
+    if isgeneratorfunction(func):
+        def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
+            container = container_getter(args, kwargs)
+            for param in additional_params:
+                kwargs.pop(param.name)
+            solved = {
+                name: container.get(dep.type_hint, component=dep.component)
+                for name, dep in dependencies.items()
+            }
+            yield from func(*args, **kwargs, **solved)
+    else:
+        def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
+            container = container_getter(args, kwargs)
+            for param in additional_params:
+                kwargs.pop(param.name)
+            solved = {
+                name: container.get(dep.type_hint, component=dep.component)
+                for name, dep in dependencies.items()
+            }
+            return func(*args, **kwargs, **solved)
 
     return auto_injected_func

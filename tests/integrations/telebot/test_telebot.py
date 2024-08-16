@@ -17,7 +17,11 @@ from ..common import (
 
 @contextmanager
 def dishka_app(handler, provider):
-    bot = TeleBot("", use_class_middlewares=True, threaded=False)
+    bot = TeleBot(
+        "1234567890:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        use_class_middlewares=True,
+        threaded=False,
+    )
     bot.message_handler()(inject(handler))
     container = make_container(provider)
     setup_dishka(container=container, bot=bot)

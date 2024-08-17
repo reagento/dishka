@@ -7,7 +7,7 @@ __all__ = [
 ]
 
 from collections.abc import Awaitable, Callable, Container
-from inspect import Parameter
+from inspect import Parameter, signature
 from typing import Any, Final, ParamSpec, TypeVar, cast
 
 from aiogram import BaseMiddleware, Router
@@ -23,11 +23,14 @@ CONTAINER_NAME: Final = "dishka_container"
 
 
 def inject(func: Callable[P, T]) -> Callable[P, T]:
-    additional_params = [Parameter(
-        name=CONTAINER_NAME,
-        annotation=Container,
-        kind=Parameter.KEYWORD_ONLY,
-    )]
+    if CONTAINER_NAME in signature(func).parameters:
+        additional_params = []
+    else:
+        additional_params = [Parameter(
+            name=CONTAINER_NAME,
+            annotation=Container,
+            kind=Parameter.KEYWORD_ONLY,
+        )]
 
     return wrap_injection(
         func=func,

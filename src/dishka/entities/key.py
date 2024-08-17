@@ -5,8 +5,15 @@ from typing import Annotated, Any, NamedTuple, get_args, get_origin
 from .component import DEFAULT_COMPONENT, Component
 
 
-class FromComponent(NamedTuple):
-    component: Component = DEFAULT_COMPONENT
+class _FromComponent(NamedTuple):
+    component: Component
+
+
+# This solution allows you to get rid of the error in PyCharm
+def FromComponent(  # noqa: N802
+    component: Component = DEFAULT_COMPONENT,
+) -> _FromComponent:
+    return _FromComponent(component)
 
 
 class DependencyKey(NamedTuple):
@@ -30,7 +37,7 @@ def hint_to_dependency_key(hint: Any) -> DependencyKey:
         return DependencyKey(hint, None)
     args = get_args(hint)
     from_component = next(
-        (arg for arg in args if isinstance(arg, FromComponent)),
+        (arg for arg in args if isinstance(arg, _FromComponent)),
         None,
     )
     if from_component is None:

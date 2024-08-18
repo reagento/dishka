@@ -3,6 +3,7 @@ __all__ = [
     "FromDishka",
     "inject",
     "setup_dishka",
+    "AiohttpProvider",
 ]
 
 from collections.abc import Callable, Coroutine

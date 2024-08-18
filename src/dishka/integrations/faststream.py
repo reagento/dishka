@@ -8,7 +8,7 @@ __all__ = (
 import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any, ParamSpec, TypeVar, cast
+from typing import Any, NewType, ParamSpec, TypeVar, cast
 
 from faststream import BaseMiddleware, FastStream, context
 from faststream.__about__ import __version__
@@ -21,13 +21,16 @@ from dishka.integrations.base import wrap_injection
 
 T = TypeVar("T")
 P = ParamSpec("P")
+FASTSTREAM_OLD_MIDDLEWARES = __version__ < "0.5"
+FastStreamMessage = NewType("FastStreamMessage", StreamMessage)
+
 
 class FastStreamProvider(Provider):
-    context = from_context(ContextRepo, scope=Scope.REQUEST)
-    message = from_context(StreamMessage, scope=Scope.REQUEST)
-
-
-FASTSTREAM_OLD_MIDDLEWARES = __version__ < "0.5"
+    provides = (
+        from_context(ContextRepo, scope=Scope.REQUEST)
+        + from_context(StreamMessage, scope=Scope.REQUEST)
+        + from_context(FastStreamMessage, scope=Scope.REQUEST)
+    )
 
 
 class _DishkaBaseMiddleware(BaseMiddleware):
@@ -66,9 +69,9 @@ else:
         ) -> AsyncIterator[DecodedMessage]:
             async with self.container(
                 {
-                    type(msg): msg,
                     StreamMessage: msg,
                     ContextRepo: context,
+                    FastStreamMessage(type(msg)): msg,
                 },
             ) as request_container:
                 with context.scope("dishka", request_container):

@@ -221,9 +221,9 @@ These objects are passed to context:
 * Litestar - ``litestar.Request``. Provider ``LitestarProvider``.
 * Starlette - ``starlette.requests.Request`` or ``starlette.websockets.WebSocket`` if you are using web sockets. Provider ``StarletteProvider``.
 * Aiogram - ``aiogram.types.TelegramObject``. Provider ``AiogramProvider``
-* pyTelegramBotAPI - actual type of event (like ``Message``) is used. No provider.
+* pyTelegramBotAPI - ``dishka.integrations.telebot.TelebotMessage`` Provider ``TelebotProvider``.
 * Arq - no objects and provider.
-* FastStream - ``faststream.broker.message.StreamMessage`` or ``faststream.[broker].[Broker]Message``, ``faststream.utils.ContextRepo``. Provider ``FastStreamProvider``.
+* FastStream - ``faststream.broker.message.StreamMessage`` or ``dishka.integration.faststream.FastStreamMessage``, ``faststream.utils.ContextRepo``. Provider ``FastStreamProvider``.
 * TaskIq - no objects and provider.
 * Sanic - ``sanic.request.Request``. Provider ``SanicProvider``
 * grpcio - ``grpcio.ServicerContext`` to get the current context and ``google.protobuf.message.Message`` to get the current request. Message is available only for ``unary_unary`` and ``unary_stream`` rpc method. Provider ``GrpcioProvider``.

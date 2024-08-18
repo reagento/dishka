@@ -1,5 +1,6 @@
 __all__ = [
     "AutoInjectMiddleware",
+    "AiogramProvider",
     "CONTAINER_NAME",
     "FromDishka",
     "inject",

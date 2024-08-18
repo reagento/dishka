@@ -1,8 +1,9 @@
 __all__ = [
     "FromDishka",
     "inject",
+    "DishkaInterceptor",
     "DishkaAioInterceptor",
-    "DishkaAioInterceptor",
+    "GrpcioProvider",
 ]
 
 from collections.abc import Awaitable, Callable, Iterator

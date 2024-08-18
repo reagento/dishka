@@ -2,6 +2,7 @@ __all__ = [
     "FromDishka",
     "inject",
     "setup_dishka",
+    "StarletteProvider",
 ]
 
 from collections.abc import Callable

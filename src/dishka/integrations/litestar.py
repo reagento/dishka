@@ -12,7 +12,8 @@ from litestar import Litestar, Request
 from litestar.enums import ScopeType
 from litestar.types import ASGIApp, Receive, Scope, Send
 
-from dishka import AsyncContainer, FromDishka
+from dishka import AsyncContainer, FromDishka, Provider, from_context
+from dishka import Scope as DIScope
 from dishka.integrations.base import wrap_injection
 
 P = ParamSpec("P")
@@ -41,6 +42,10 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
         additional_params=additional_params,
         container_getter=lambda _, r: r[request_param].state.dishka_container,
     )
+
+
+class LitestarProvider(Provider):
+    request = from_context(Request, scope=DIScope.REQUEST)
 
 
 def make_add_request_container_middleware(app: ASGIApp) -> ASGIApp:

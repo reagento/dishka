@@ -7,17 +7,17 @@ from collections.abc import AsyncIterator
 from aiogram import Bot, Dispatcher, Router
 from aiogram.types import Message, TelegramObject, User
 
-from dishka import Provider, Scope, from_context, make_async_container, provide
-from dishka.integrations.aiogram import FromDishka, inject, setup_dishka
+from dishka import Provider, Scope, make_async_container, provide
+from dishka.integrations.aiogram import (
+    AiogramProvider,
+    FromDishka,
+    inject,
+    setup_dishka,
+)
 
 # app dependency logic
 
 class MyProvider(Provider):
-    telegram_object = from_context(
-        provides=TelegramObject,
-        scope=Scope.REQUEST,
-    )
-
     @provide(scope=Scope.APP)
     async def get_int(self) -> AsyncIterator[int]:
         print("solve int")
@@ -51,7 +51,10 @@ async def main():
     dp = Dispatcher()
     dp.include_router(router)
 
-    container = make_async_container(MyProvider())
+    container = make_async_container(
+        MyProvider(),
+        AiogramProvider(),
+    )
     setup_dishka(container=container, router=dp)
     try:
         await dp.start_polling(bot)

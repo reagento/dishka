@@ -11,7 +11,7 @@ from flask import Flask, Request, g, request
 from flask.sansio.scaffold import Scaffold
 from flask.typing import RouteCallable
 
-from dishka import Container, FromDishka
+from dishka import Container, FromDishka, Provider, Scope, from_context
 from .base import is_dishka_injected, wrap_injection
 
 T = TypeVar("T")
@@ -24,6 +24,10 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
         is_async=False,
         container_getter=lambda _, p: g.dishka_container,
     )
+
+
+class FlaskProvider(Provider):
+    request = from_context(Request, scope=Scope.REQUEST)
 
 
 class ContainerMiddleware:

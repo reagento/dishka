@@ -6,7 +6,7 @@ import pytest
 from aiogram import Dispatcher
 from aiogram.types import Chat, Message, Update, User
 
-from dishka import make_async_container
+from dishka import AsyncContainer, make_async_container
 from dishka.integrations.aiogram import FromDishka, inject, setup_dishka
 from ..common import (
     APP_DEP_VALUE,
@@ -107,3 +107,16 @@ async def test_request_dependency2(bot, app_provider: AppProvider):
         await send_message(bot, dp)
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
+
+
+async def handle_get_async_container(
+        _: Message,
+        dishka_container: AsyncContainer,
+) -> None:
+    assert isinstance(dishka_container, AsyncContainer)
+
+
+@pytest.mark.asyncio
+async def test_get_async_container(bot, app_provider: AppProvider):
+    async with dishka_app(handle_get_async_container, app_provider) as dp:
+        await send_message(bot, dp)

@@ -3,7 +3,7 @@ __all__ = [
     "alias", "Alias",
     "context_var", "ContextVariable", "from_context",
     "decorate", "Decorator",
-    "provide", "provide_all",
+    "provide", "provide_all", "provide_recursive",
     "Factory", "FactoryType",
 ]
 
@@ -15,4 +15,4 @@ from .factory import Factory, FactoryType
 from .make_alias import alias
 from .make_context_var import from_context
 from .make_decorator import decorate
-from .make_factory import provide, provide_all
+from .make_factory import provide, provide_all, provide_recursive

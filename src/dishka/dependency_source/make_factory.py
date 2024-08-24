@@ -46,7 +46,7 @@ from dishka._adaptix.type_tools.generic_resolver import (
 )
 from dishka.entities.key import (
     hint_to_dependency_key,
-    hints_to_dependency_keys,
+    hints_to_dependency_keys, FromComponent,
 )
 from dishka.entities.scope import BaseScope
 from .composite import CompositeDependencySource, ensure_composite
@@ -596,6 +596,63 @@ def provide_all_on_instance(
         cache: bool = True,
 ) -> CompositeDependencySource:
     return _provide_all(
+        provides=provides, scope=scope,
+        cache=cache, is_in_class=False,
+    )
+
+
+def _provide_recursive(
+        source: ProvideSource | None,
+        *,
+        scope: BaseScope | None,
+        provides: Any,
+        cache: bool,
+        is_in_class: bool,
+) -> CompositeDependencySource | Callable[
+    [Callable[..., Any]], CompositeDependencySource,
+]:
+    res = _provide(
+        provides=provides, scope=scope, source=source, cache=cache,
+        is_in_class=True,
+    )
+    for src in res.dependency_sources:
+        for dependency in src.dependencies:
+            additional = _provide_recursive(
+                provides=Annotated[dependency.type_hint, FromComponent(dependency.component)],
+                scope=scope,
+                source=dependency.type_hint, cache=cache,
+                is_in_class=True,
+            )
+            res.dependency_sources.extend(additional.dependency_sources)
+    return res
+
+
+def provide_recursive(
+        source: ProvideSource | None = None,
+        *,
+        scope: BaseScope | None = None,
+        provides: Any = None,
+        cache: bool = True,
+) -> CompositeDependencySource | Callable[
+    [Callable[..., Any]], CompositeDependencySource,
+]:
+    return _provide_recursive(
+        source=source,
+        provides=provides, scope=scope,
+        cache=cache, is_in_class=True,
+    )
+
+def provide_recursive_on_instance(
+        source: ProvideSource | None = None,
+        *,
+        scope: BaseScope | None = None,
+        provides: Any = None,
+        cache: bool = True,
+) -> CompositeDependencySource | Callable[
+    [Callable[..., Any]], CompositeDependencySource,
+]:
+    return _provide_recursive(
+        source=source,
         provides=provides, scope=scope,
         cache=cache, is_in_class=False,
     )

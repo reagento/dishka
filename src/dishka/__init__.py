@@ -18,6 +18,7 @@ __all__ = [
     "make_container",
     "provide",
     "provide_all",
+    "provide_recursive",
     "new_scope",
 ]
 
@@ -29,6 +30,7 @@ from .dependency_source import (
     from_context,
     provide,
     provide_all,
+    provide_recursive,
 )
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.depends_marker import FromDishka

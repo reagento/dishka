@@ -45,8 +45,9 @@ from dishka._adaptix.type_tools.generic_resolver import (
     MembersStorage,
 )
 from dishka.entities.key import (
+    dependency_key_to_hint,
     hint_to_dependency_key,
-    hints_to_dependency_keys, FromComponent,
+    hints_to_dependency_keys,
 )
 from dishka.entities.scope import BaseScope
 from .composite import CompositeDependencySource, ensure_composite
@@ -470,6 +471,7 @@ def _provide(
         provides: Any = None,
         cache: bool = True,
         is_in_class: bool = True,
+        recursive: bool = False,
 ) -> CompositeDependencySource:
     composite = ensure_composite(source)
     factory = make_factory(
@@ -478,6 +480,19 @@ def _provide(
         is_in_class=is_in_class,
     )
     composite.dependency_sources.extend(unpack_factory(factory))
+    if not recursive:
+        return composite
+
+    for src in composite.dependency_sources:
+        for dependency in src.dependencies:
+            additional = _provide(
+                provides=dependency_key_to_hint(dependency),
+                scope=scope,
+                source=dependency.type_hint,
+                cache=cache,
+                is_in_class=is_in_class,
+            )
+            composite.dependency_sources.extend(additional.dependency_sources)
     return composite
 
 
@@ -487,10 +502,12 @@ def provide_on_instance(
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
+        recursive: bool = False,
 ) -> CompositeDependencySource:
     return _provide(
         provides=provides, scope=scope, source=source, cache=cache,
         is_in_class=False,
+        recursive=recursive,
     )
 
 
@@ -500,6 +517,7 @@ def provide(
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
+        recursive: bool = False,
 ) -> Callable[[Callable[..., Any]], CompositeDependencySource]:
     ...
 
@@ -511,6 +529,7 @@ def provide(
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
+        recursive: bool = False,
 ) -> CompositeDependencySource:
     ...
 
@@ -521,6 +540,7 @@ def provide(
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
+        recursive: bool = False,
 ) -> CompositeDependencySource | Callable[
     [Callable[..., Any]], CompositeDependencySource,
 ]:
@@ -547,13 +567,13 @@ def provide(
     if source is not None:
         return _provide(
             provides=provides, scope=scope, source=source, cache=cache,
-            is_in_class=True,
+            is_in_class=True, recursive=recursive,
         )
 
     def scoped(func: Callable[..., Any]) -> CompositeDependencySource:
         return _provide(
             provides=provides, scope=scope, source=func, cache=cache,
-            is_in_class=True,
+            is_in_class=True, recursive=recursive,
         )
 
     return scoped
@@ -565,17 +585,19 @@ def _provide_all(
         scope: BaseScope | None,
         cache: bool,
         is_in_class: bool,
+        recursive: bool,
 ) -> CompositeDependencySource:
     composite = CompositeDependencySource(None)
     for single_provides in provides:
-        factory = make_factory(
+        source = _provide(
             source=single_provides,
             provides=single_provides,
             scope=scope,
             cache=cache,
             is_in_class=is_in_class,
+            recursive=recursive,
         )
-        composite.dependency_sources.extend(unpack_factory(factory))
+        composite.dependency_sources.extend(source.dependency_sources)
     return composite
 
 
@@ -583,10 +605,12 @@ def provide_all(
         *provides: Any,
         scope: BaseScope | None = None,
         cache: bool = True,
+        recursive: bool = False,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,
         cache=cache, is_in_class=True,
+        recursive=recursive,
     )
 
 
@@ -594,65 +618,10 @@ def provide_all_on_instance(
         *provides: Any,
         scope: BaseScope | None = None,
         cache: bool = True,
+        recursive: bool = False,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,
         cache=cache, is_in_class=False,
-    )
-
-
-def _provide_recursive(
-        source: ProvideSource | None,
-        *,
-        scope: BaseScope | None,
-        provides: Any,
-        cache: bool,
-        is_in_class: bool,
-) -> CompositeDependencySource | Callable[
-    [Callable[..., Any]], CompositeDependencySource,
-]:
-    res = _provide(
-        provides=provides, scope=scope, source=source, cache=cache,
-        is_in_class=True,
-    )
-    for src in res.dependency_sources:
-        for dependency in src.dependencies:
-            additional = _provide_recursive(
-                provides=Annotated[dependency.type_hint, FromComponent(dependency.component)],
-                scope=scope,
-                source=dependency.type_hint, cache=cache,
-                is_in_class=True,
-            )
-            res.dependency_sources.extend(additional.dependency_sources)
-    return res
-
-
-def provide_recursive(
-        source: ProvideSource | None = None,
-        *,
-        scope: BaseScope | None = None,
-        provides: Any = None,
-        cache: bool = True,
-) -> CompositeDependencySource | Callable[
-    [Callable[..., Any]], CompositeDependencySource,
-]:
-    return _provide_recursive(
-        source=source,
-        provides=provides, scope=scope,
-        cache=cache, is_in_class=True,
-    )
-
-def provide_recursive_on_instance(
-        source: ProvideSource | None = None,
-        *,
-        scope: BaseScope | None = None,
-        provides: Any = None,
-        cache: bool = True,
-) -> CompositeDependencySource | Callable[
-    [Callable[..., Any]], CompositeDependencySource,
-]:
-    return _provide_recursive(
-        source=source,
-        provides=provides, scope=scope,
-        cache=cache, is_in_class=False,
+        recursive=recursive,
     )

@@ -1,4 +1,6 @@
-from dishka import Provider, Scope, make_container, provide, provide_all
+from typing import Protocol
+
+from dishka import AnyOf, Provider, Scope, make_container, provide, provide_all
 
 
 class A1:
@@ -9,7 +11,11 @@ class A2:
     pass
 
 
-class B:
+class BProto(Protocol):
+    pass
+
+
+class B(BProto):
     def __init__(self, a1: A1, a2: A2):
         self.a1 = a1
         self.a2 = a2
@@ -19,7 +25,7 @@ class C(B):
     pass
 
 
-def test_provide_recursive_class():
+def test_provide_class():
     class MyProvider(Provider):
         x = provide(B, scope=Scope.APP, recursive=True)
 
@@ -30,7 +36,7 @@ def test_provide_recursive_class():
     assert isinstance(b.a2, A2)
 
 
-def test_provide_recursive_instance():
+def test_provide_instance():
     provider = Provider(scope=Scope.APP)
     provider.provide(B, recursive=True)
     container = make_container(provider)
@@ -40,7 +46,18 @@ def test_provide_recursive_instance():
     assert isinstance(b.a2, A2)
 
 
-def test_provide_all_recursive_class():
+def test_provide_any_of():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(source=B, provides=AnyOf[B, BProto], recursive=True)
+    container = make_container(provider)
+    b = container.get(B)
+    assert isinstance(b, B)
+    assert isinstance(b.a1, A1)
+    assert isinstance(b.a2, A2)
+    assert b is container.get(BProto)
+
+
+def test_provide_all_class():
     class MyProvider(Provider):
         x = provide_all(B, C, scope=Scope.APP, recursive=True)
 
@@ -55,7 +72,7 @@ def test_provide_all_recursive_class():
     assert isinstance(c.a2, A2)
 
 
-def test_provide_all_recursive_instance():
+def test_provide_all_instance():
     provider = Provider(scope=Scope.APP)
     provider.provide_all(B, C, recursive=True)
     container = make_container(provider)

@@ -484,6 +484,9 @@ def _provide(
         return composite
 
     for src in composite.dependency_sources:
+        if not isinstance(src, Factory):
+            # we expect Factory and Alias here
+            continue
         for dependency in src.dependencies:
             additional = _provide(
                 provides=dependency_key_to_hint(dependency),

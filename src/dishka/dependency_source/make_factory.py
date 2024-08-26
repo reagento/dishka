@@ -566,6 +566,7 @@ def provide(
     :param provides: Dependency type which is provided by this factory
     :return: instance of Factory or a decorator returning it
     :param cache: save created object to scope cache or not
+    :param recursive: register dependencies as factories as well
     """
     if source is not None:
         return _provide(

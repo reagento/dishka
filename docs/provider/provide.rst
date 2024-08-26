@@ -138,3 +138,18 @@ It works similar to :ref:`alias`.
 
 
 WithParents generates only one factory and many aliases and is equivalent to ``AnyOf[AImpl, A]``. The following parents are ignored: ``type``, ``object``, ``Enum``, ``ABC``, ``ABCMeta``, ``Generic``, ``Protocol``, ``Exception``, ``BaseException``
+
+* You object's dependencies (and their dependencies) can be simply created by calling their constructors. You do not need to register them manually. Use ``recursive=True`` to register them automatically
+
+.. code-block:: python
+
+    class A: ...
+
+    class B:
+        def __init__(self, a: A): ...
+
+    class C:
+        def __init__(self, b: B): ...
+
+    class MyProvider(Provider):
+        c = provide(C, scope=Scope.APP, recursive=True)

@@ -48,6 +48,7 @@ from dishka.entities.key import (
     hint_to_dependency_key,
     hints_to_dependency_keys,
 )
+from dishka.entities.provides_marker import ProvideMultiple
 from dishka.entities.scope import BaseScope
 from .composite import CompositeDependencySource, ensure_composite
 from .factory import Factory, FactoryType
@@ -107,6 +108,10 @@ def _type_repr(hint: Any) -> str:
 
 
 def _async_generator_result(hint: Any) -> Any:
+    if isinstance(hint, ProvideMultiple):
+        return ProvideMultiple([
+            _async_generator_result(x) for x in hint.items
+        ])
     origin = get_origin(hint)
     if origin is AsyncIterable:
         return get_args(hint)[0]
@@ -136,6 +141,10 @@ def _async_generator_result(hint: Any) -> Any:
 
 
 def _generator_result(hint: Any) -> Any:
+    if isinstance(hint, ProvideMultiple):
+        return ProvideMultiple([
+            _generator_result(x) for x in hint.items
+        ])
     origin = get_origin(hint)
     if origin is Iterable:
         return get_args(hint)[0]

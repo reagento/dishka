@@ -25,6 +25,12 @@ class DependencyKey(NamedTuple):
         return f"({self.type_hint}, component={self.component!r})"
 
 
+def dependency_key_to_hint(key: DependencyKey) -> Any:
+    if key.component is None:
+        return key.type_hint
+    return Annotated[key.type_hint, FromComponent(key.component)]
+
+
 def hint_to_dependency_key(hint: Any) -> DependencyKey:
     if get_origin(hint) is not Annotated:
         return DependencyKey(hint, None)

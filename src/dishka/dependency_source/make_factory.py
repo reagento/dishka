@@ -45,6 +45,7 @@ from dishka._adaptix.type_tools.generic_resolver import (
     MembersStorage,
 )
 from dishka.entities.key import (
+    dependency_key_to_hint,
     hint_to_dependency_key,
     hints_to_dependency_keys,
 )
@@ -470,6 +471,7 @@ def _provide(
         provides: Any = None,
         cache: bool = True,
         is_in_class: bool = True,
+        recursive: bool = False,
 ) -> CompositeDependencySource:
     composite = ensure_composite(source)
     factory = make_factory(
@@ -478,6 +480,22 @@ def _provide(
         is_in_class=is_in_class,
     )
     composite.dependency_sources.extend(unpack_factory(factory))
+    if not recursive:
+        return composite
+
+    for src in composite.dependency_sources:
+        if not isinstance(src, Factory):
+            # we expect Factory and Alias here
+            continue
+        for dependency in src.dependencies:
+            additional = _provide(
+                provides=dependency_key_to_hint(dependency),
+                scope=scope,
+                source=dependency.type_hint,
+                cache=cache,
+                is_in_class=is_in_class,
+            )
+            composite.dependency_sources.extend(additional.dependency_sources)
     return composite
 
 
@@ -487,10 +505,12 @@ def provide_on_instance(
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
+        recursive: bool = False,
 ) -> CompositeDependencySource:
     return _provide(
         provides=provides, scope=scope, source=source, cache=cache,
         is_in_class=False,
+        recursive=recursive,
     )
 
 
@@ -500,6 +520,7 @@ def provide(
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
+        recursive: bool = False,
 ) -> Callable[[Callable[..., Any]], CompositeDependencySource]:
     ...
 
@@ -511,6 +532,7 @@ def provide(
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
+        recursive: bool = False,
 ) -> CompositeDependencySource:
     ...
 
@@ -521,6 +543,7 @@ def provide(
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
+        recursive: bool = False,
 ) -> CompositeDependencySource | Callable[
     [Callable[..., Any]], CompositeDependencySource,
 ]:
@@ -543,17 +566,18 @@ def provide(
     :param provides: Dependency type which is provided by this factory
     :return: instance of Factory or a decorator returning it
     :param cache: save created object to scope cache or not
+    :param recursive: register dependencies as factories as well
     """
     if source is not None:
         return _provide(
             provides=provides, scope=scope, source=source, cache=cache,
-            is_in_class=True,
+            is_in_class=True, recursive=recursive,
         )
 
     def scoped(func: Callable[..., Any]) -> CompositeDependencySource:
         return _provide(
             provides=provides, scope=scope, source=func, cache=cache,
-            is_in_class=True,
+            is_in_class=True, recursive=recursive,
         )
 
     return scoped
@@ -565,17 +589,19 @@ def _provide_all(
         scope: BaseScope | None,
         cache: bool,
         is_in_class: bool,
+        recursive: bool,
 ) -> CompositeDependencySource:
     composite = CompositeDependencySource(None)
     for single_provides in provides:
-        factory = make_factory(
+        source = _provide(
             source=single_provides,
             provides=single_provides,
             scope=scope,
             cache=cache,
             is_in_class=is_in_class,
+            recursive=recursive,
         )
-        composite.dependency_sources.extend(unpack_factory(factory))
+        composite.dependency_sources.extend(source.dependency_sources)
     return composite
 
 
@@ -583,10 +609,12 @@ def provide_all(
         *provides: Any,
         scope: BaseScope | None = None,
         cache: bool = True,
+        recursive: bool = False,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,
         cache=cache, is_in_class=True,
+        recursive=recursive,
     )
 
 
@@ -594,8 +622,10 @@ def provide_all_on_instance(
         *provides: Any,
         scope: BaseScope | None = None,
         cache: bool = True,
+        recursive: bool = False,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,
         cache=cache, is_in_class=False,
+        recursive=recursive,
     )

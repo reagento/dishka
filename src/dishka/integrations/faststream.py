@@ -21,12 +21,14 @@ from dishka.integrations.base import wrap_injection
 
 T = TypeVar("T")
 P = ParamSpec("P")
-FASTSTREAM_OLD_MIDDLEWARES = __version__ < "0.5"
 
 
 class FastStreamProvider(Provider):
-    contextrepo = from_context(ContextRepo, scope=Scope.REQUEST)
-    streammessage = from_context(StreamMessage, scope=Scope.REQUEST)
+    context = from_context(ContextRepo, scope=Scope.REQUEST)
+    message = from_context(StreamMessage, scope=Scope.REQUEST)
+
+
+FASTSTREAM_OLD_MIDDLEWARES = __version__ < "0.5"
 
 
 class _DishkaBaseMiddleware(BaseMiddleware):
@@ -67,6 +69,7 @@ else:
                 {
                     StreamMessage: msg,
                     ContextRepo: context,
+                    type(msg): msg,
                 },
             ) as request_container:
                 with context.scope("dishka", request_container):

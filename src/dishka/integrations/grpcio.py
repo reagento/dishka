@@ -49,11 +49,8 @@ def inject(func: Callable[P, RT]) -> Callable[P, RT]:
 
 
 class GrpcioProvider(Provider):
-    provides = (
-        from_context(Message, scope=Scope.REQUEST),
-        from_context(ServicerContext, scope=Scope.REQUEST),
-        from_context(ServicerContext, scope=Scope.SESSION),
-    )
+    message = from_context(Message, scope=Scope.REQUEST)
+    servicer_context = from_context(ServicerContext, scope=Scope.SESSION)
 
 
 class DishkaInterceptor(ServerInterceptor):   # type: ignore[misc]

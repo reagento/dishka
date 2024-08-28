@@ -29,10 +29,8 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
 
 
 class StarletteProvider(Provider):
-    provides = (
-        from_context(Request, scope=DIScope.REQUEST)
-        + from_context(WebSocket, scope=DIScope.SESSION)
-    )
+    request = from_context(Request, scope=DIScope.REQUEST)
+    websocket = from_context(WebSocket, scope=DIScope.SESSION)
 
 
 class ContainerMiddleware:

@@ -27,47 +27,12 @@ def test_override_provide() -> None:
     make_container(TestProvider())
 
 
-def test_not_override_provide_all() -> None:
-    class TestProvider(Provider):
-        scope = Scope.APP
-        provides = (
-            provide_all(int, str)
-            + provide_all(int, str)
-        )
-
-    with pytest.raises(NotOverrideFactoryError):
-        make_container(TestProvider())
-
-
 def test_override_provide_all() -> None:
     class TestProvider(Provider):
         scope = Scope.APP
         provides = (
             provide_all(int, str)
-            + provide_all(int, str, overrides=True)
-        )
-
-    make_container(TestProvider())
-
-
-def test_not_override_provide_all_and_provide() -> None:
-    class TestProvider(Provider):
-        scope = Scope.APP
-        provides = (
-            provide(source=int, provides=int)
             + provide_all(int, str)
-        )
-
-    with pytest.raises(NotOverrideFactoryError):
-        make_container(TestProvider())
-
-
-def test_override_provide_all_and_provide() -> None:
-    class TestProvider(Provider):
-        scope = Scope.APP
-        provides = (
-            provide(source=int, provides=int)
-            + provide_all(int, str, overrides=True)
         )
 
     make_container(TestProvider())

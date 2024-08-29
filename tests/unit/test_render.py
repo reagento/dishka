@@ -24,6 +24,7 @@ def test_cycle(renderer):
         cache=False,
         scope=None,
         is_in_class=True,
+        override=False,
     )
 
     res = renderer.render([factory, factory, factory])
@@ -44,6 +45,7 @@ def test_cycle_1(renderer):
         cache=False,
         scope=None,
         is_in_class=True,
+        override=False,
     )
 
     res = renderer.render([factory])
@@ -62,6 +64,7 @@ def test_linear(renderer):
         cache=False,
         scope=None,
         is_in_class=True,
+        override=False,
     )
 
     res = renderer.render([factory, factory], last=factory.provides)

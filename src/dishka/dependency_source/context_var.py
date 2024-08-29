@@ -37,6 +37,7 @@ class ContextVariable:
                 kw_dependencies={},
                 type_=FactoryType.CONTEXT,
                 cache=False,
+                override=False,
             )
         else:
             aliased = Alias(

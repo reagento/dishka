@@ -20,6 +20,7 @@ from .exceptions import (
     GraphMissingFactoryError,
     InvalidGraphError,
     NoFactoryError,
+    NotOverrideFactoryError,
     UnknownScopeError,
 )
 from .factory_compiler import compile_factory
@@ -144,6 +145,7 @@ class Registry:
             type_=factory.type,
             scope=factory.scope,
             cache=factory.cache,
+            override=factory.override,
         )
 
 
@@ -230,6 +232,7 @@ class RegistryBuilder:
         self.container_type = container_type
         self.decorator_depth: dict[DependencyKey, int] = defaultdict(int)
         self.skip_validation = skip_validation
+        self.override_factories: dict[Any, bool] = {}
 
     def _collect_components(self) -> None:
         for provider in self.providers:
@@ -277,8 +280,20 @@ class RegistryBuilder:
     def _process_factory(
             self, provider: BaseProvider, factory: Factory,
     ) -> None:
+        factory = factory.with_component(provider.component)
+        provides = factory.provides
+        if provides in self.override_factories:
+            if not factory.override:
+                raise NotOverrideFactoryError(
+                    f"You need to explicitly override factory. "
+                    "Specify override=True for provide "
+                    "or overrides=True for provide_all. "
+                    f"scope={factory.scope}, provides={factory.provides}",
+                )
+        else:
+            self.override_factories[provides] = factory.override
         registry = self.registries[cast(Scope, factory.scope)]
-        registry.add_factory(factory.with_component(provider.component))
+        registry.add_factory(factory)
 
     def _process_alias(
             self, provider: BaseProvider, alias: Alias,

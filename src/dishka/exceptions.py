@@ -81,3 +81,7 @@ class NoFactoryError(DishkaError):
 
 class GraphMissingFactoryError(NoFactoryError, InvalidGraphError):
     pass
+
+
+class NotOverrideFactoryError(DishkaError):
+    pass

@@ -52,6 +52,7 @@ class Decorator:
             },
             type_=self.factory.type,
             cache=cache,
+            override=False,
         )
 
     def __get__(self, instance: Any, owner: Any) -> Decorator:

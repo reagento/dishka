@@ -37,12 +37,15 @@ class ContextVariable:
                 kw_dependencies={},
                 type_=FactoryType.CONTEXT,
                 cache=False,
+                override=False,
             )
         else:
             aliased = Alias(
                 source=self.provides.with_component(DEFAULT_COMPONENT),
-                provides=DependencyKey(self.provides.type_hint,
-                                       component=component),
+                provides=DependencyKey(
+                    self.provides.type_hint,
+                    component=component,
+                ),
                 cache=False,
             )
             return aliased.as_factory(scope=self.scope, component=component)

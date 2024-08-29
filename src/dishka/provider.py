@@ -136,6 +136,7 @@ class Provider(BaseProvider):
             scope: BaseScope | None = None,
             provides: Any = None,
             cache: bool = True,
+            override: bool = False,
     ) -> CompositeDependencySource:
         if scope is None:
             scope = self.scope
@@ -144,6 +145,7 @@ class Provider(BaseProvider):
             scope=scope,
             provides=provides,
             cache=cache,
+            override=override,
         )
         self._add_dependency_sources(str(source), composite.dependency_sources)
         return composite
@@ -153,11 +155,15 @@ class Provider(BaseProvider):
             *provides: Any,
             scope: BaseScope | None = None,
             cache: bool = True,
+            overrides: bool = False,
     ) -> CompositeDependencySource:
         if scope is None:
             scope = self.scope
         composite = provide_all_on_instance(
-            *provides, scope=scope, cache=cache,
+            *provides,
+            scope=scope,
+            cache=cache,
+            overrides=overrides,
         )
         self._add_dependency_sources("?", composite.dependency_sources)
         return composite

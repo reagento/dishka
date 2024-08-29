@@ -138,3 +138,19 @@ It works similar to :ref:`alias`.
 
 
 WithParents generates only one factory and many aliases and is equivalent to ``AnyOf[AImpl, A]``. The following parents are ignored: ``type``, ``object``, ``Enum``, ``ABC``, ``ABCMeta``, ``Generic``, ``Protocol``, ``Exception``, ``BaseException``
+
+* Do you want to override the factory? To do this, specify the parameter ``override=True``. If this is not done, error ``NotOverrideFactoryError`` will be thrown
+
+.. code-block:: python
+
+    from dishka import WithParents, provide, Provider, Scope
+
+    class MyProvider(Provider):
+        scope=Scope.APP
+
+        a = provide(lambda: 1, provides=int)
+        a_override = provide(lambda: 2, provides=int, override=True)
+
+    container = make_async_container(MyProvider())
+    a = await container.get(int)
+    # 2

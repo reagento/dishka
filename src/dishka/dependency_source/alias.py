@@ -37,6 +37,7 @@ class Alias:
             kw_dependencies={},
             type_=FactoryType.ALIAS,
             cache=self.cache,
+            override=False,
         )
 
     def __get__(self, instance: Any, owner: Any) -> Alias:

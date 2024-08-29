@@ -31,6 +31,7 @@ def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
             scope=factory.scope,
             is_to_bind=factory.is_to_bind,
             cache=factory.cache,
+            override=factory.override,
             provides=DependencyKey(
                 provides_first,
                 factory.provides.component,

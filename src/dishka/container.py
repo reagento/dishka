@@ -193,12 +193,14 @@ def make_container(
         lock_factory: Callable[[], Lock] | None = None,
         skip_validation: bool = False,
         start_scope: BaseScope | None = None,
+        skip_override: bool = False,
 ) -> Container:
     registries = RegistryBuilder(
         scopes=scopes,
         container_type=Container,
         providers=providers,
         skip_validation=skip_validation,
+        skip_override=skip_override,
     ).build()
     container = Container(
         *registries,

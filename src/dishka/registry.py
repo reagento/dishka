@@ -221,6 +221,7 @@ class RegistryBuilder:
             providers: Sequence[BaseProvider],
             container_type: type,
             skip_validation: bool,
+            skip_override: bool,
     ) -> None:
         self.scopes = scopes
         self.providers = providers
@@ -232,6 +233,7 @@ class RegistryBuilder:
         self.container_type = container_type
         self.decorator_depth: dict[DependencyKey, int] = defaultdict(int)
         self.skip_validation = skip_validation
+        self.skip_override = skip_override
         self.override_factories: dict[Any, bool] = {}
 
     def _collect_components(self) -> None:
@@ -282,7 +284,7 @@ class RegistryBuilder:
     ) -> None:
         factory = factory.with_component(provider.component)
         provides = factory.provides
-        if provides in self.override_factories:
+        if not self.skip_override and provides in self.override_factories:
             if not factory.override:
                 raise NotOverrideFactoryError(
                     f"You need to explicitly override factory. "
@@ -292,6 +294,7 @@ class RegistryBuilder:
                 )
         else:
             self.override_factories[provides] = factory.override
+        
         registry = self.registries[cast(Scope, factory.scope)]
         registry.add_factory(factory)
 

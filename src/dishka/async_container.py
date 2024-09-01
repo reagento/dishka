@@ -195,12 +195,14 @@ def make_async_container(
         lock_factory: Callable[[], Lock] | None = Lock,
         skip_validation: bool = False,
         start_scope: BaseScope | None = None,
+        skip_override: bool = False,
 ) -> AsyncContainer:
     registries = RegistryBuilder(
         scopes=scopes,
         container_type=AsyncContainer,
         providers=providers,
         skip_validation=skip_validation,
+        skip_override=skip_override,
     ).build()
     container = AsyncContainer(
         *registries,

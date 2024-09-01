@@ -15,7 +15,7 @@ from aiogram.dispatcher.event.handler import HandlerObject
 from aiogram.types import TelegramObject
 
 from dishka import AsyncContainer, FromDishka
-from .base import is_dishka_injected, wrap_injection
+from .base import InjectDecorator, is_dishka_injected, wrap_injection
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -56,6 +56,9 @@ class ContainerMiddleware(BaseMiddleware):
 
 
 class AutoInjectMiddleware(BaseMiddleware):
+    def __init__(self, inject_decorator: InjectDecorator = inject) -> None:
+        self.inject_decorator = inject_decorator
+
     async def __call__(
         self,
         handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
@@ -67,7 +70,7 @@ class AutoInjectMiddleware(BaseMiddleware):
             return await handler(event, data)
 
         new_handler = HandlerObject(
-            callback=inject(old_handler.callback),
+            callback=self.inject_decorator(old_handler.callback),
             filters=old_handler.filters,
             flags=old_handler.flags,
         )

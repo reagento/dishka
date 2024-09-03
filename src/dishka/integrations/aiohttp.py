@@ -3,6 +3,7 @@ __all__ = [
     "FromDishka",
     "inject",
     "setup_dishka",
+    "AiohttpProvider",
 ]
 
 from collections.abc import Callable, Coroutine
@@ -15,7 +16,7 @@ from aiohttp.web_app import Application
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 
-from dishka import AsyncContainer, FromDishka, Scope
+from dishka import AsyncContainer, FromDishka, Provider, Scope, from_context
 from dishka.integrations.base import is_dishka_injected, wrap_injection
 
 T = TypeVar("T")
@@ -34,6 +35,10 @@ def inject(func: Callable[..., T]) -> AiohttpHandler:
             container_getter=lambda p, _: p[0][DISHKA_CONTAINER_KEY],
         ),
     )
+
+
+class AiohttpProvider(Provider):
+    request = from_context(Request, scope=Scope.REQUEST)
 
 
 @web.middleware

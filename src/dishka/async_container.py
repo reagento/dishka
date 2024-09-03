@@ -4,7 +4,7 @@ import warnings
 from asyncio import Lock
 from collections.abc import Callable, MutableMapping
 from types import TracebackType
-from typing import Any, cast
+from typing import Any, TypeVar, cast
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.key import DependencyKey
@@ -18,6 +18,8 @@ from .exceptions import (
 )
 from .provider import BaseProvider
 from .registry import Registry, RegistryBuilder
+
+T = TypeVar("T")
 
 
 class AsyncContainer:
@@ -118,9 +120,9 @@ class AsyncContainer:
 
     async def get(
             self,
-            dependency_type: Any,
+            dependency_type: type[T],
             component: Component | None = DEFAULT_COMPONENT,
-    ) -> Any:
+    ) -> T:
         lock = self.lock
         key = DependencyKey(dependency_type, component)
         if not lock:

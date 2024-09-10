@@ -8,7 +8,9 @@ from dishka.integrations.pytest import dishka_fixture, inject
 def dishka_container():
     provider = Provider(scope=Scope.APP)
     provider.provide(source=lambda: 42, provides=int)
-    return make_container(provider)
+    container = make_container(provider)
+    yield container
+    container.close()
 
 
 @inject

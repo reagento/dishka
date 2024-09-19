@@ -3,7 +3,7 @@ import textwrap
 import pytest
 
 from dishka.dependency_source.make_factory import make_factory
-from dishka.error_rendering import PathRenderer
+from dishka.text_rendering.path import PathRenderer
 
 
 class A:
@@ -30,9 +30,9 @@ def test_cycle(renderer):
     res = textwrap.dedent(res)
     assert res == textwrap.dedent("""\
               ~~~ component=None, None ~~~
-         → →  <class 'int'> A.foo
-        ↑   ↓ <class 'int'> A.foo
-         ← ←  <class 'int'> A.foo
+         → →  int   A.foo
+        ↑   ↓ int   A.foo
+         ← ←  int   A.foo
     """)
 
 
@@ -50,7 +50,7 @@ def test_cycle_1(renderer):
     res = textwrap.dedent(res)
     assert res == textwrap.dedent("""\
       ~~~ component=None, None ~~~
-    ⥁ <class 'int'> A.foo
+    ⥁ int   A.foo
     """)
 
 
@@ -68,7 +68,7 @@ def test_linear(renderer):
     res = textwrap.dedent(res)
     assert res == textwrap.dedent("""\
        ~~~ component=None, None ~~~
-    ↓  <class 'int'> A.foo
-    ↓  <class 'int'> A.foo
-     → <class 'int'> ???
+    ↓  int   A.foo
+    ↓  int   A.foo
+     → int   ???
     """)

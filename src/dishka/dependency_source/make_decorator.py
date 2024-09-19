@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from typing import Any, overload
 
+from dishka.text_rendering import get_name
 from .composite import CompositeDependencySource, ensure_composite
 from .decorator import Decorator
 from .make_factory import make_factory
@@ -27,7 +28,7 @@ def _decorate(
         decorator.provides not in decorator.factory.kw_dependencies.values()
         and decorator.provides not in decorator.factory.dependencies
     ):
-        name = getattr(source, "__qualname__", "") or str(source)
+        name = get_name(source, include_module=True)
         raise ValueError(
             f"Decorator {name} does not depends on provided type.\n"
             f"Did you mean @provide instead of @decorate?",

@@ -2,6 +2,7 @@ from collections.abc import Sequence
 
 from dishka.entities.key import DependencyKey
 from .dependency_source import Factory
+from .text_rendering import get_name
 
 try:
     from builtins import ExceptionGroup  # type: ignore[attr-defined]
@@ -58,25 +59,31 @@ class NoFactoryError(DishkaError):
             self,
             requested: DependencyKey,
             path: Sequence[Factory] = (),
+            suggestion: str = "",
     ) -> None:
         self.requested = requested
         self.path = list(path)
+        self.suggestion = suggestion
 
     def add_path(self, requested_by: Factory) -> None:
         self.path.insert(0, requested_by)
 
     def __str__(self) -> str:
+        requested_name = (
+            f"({get_name(self.requested.type_hint, False)}, "
+            f"component={self.requested.component!r})"
+        )
         if self.path:
             return (
-                f"Cannot find factory for {self.requested}. "
+                f"Cannot find factory for {requested_name}. "
                 f"It is missing or has invalid scope.\n"
-            ) + _renderer.render(self.path, self.requested)
+            ) + _renderer.render(self.path, self.requested) + self.suggestion
         else:
             return (
-                f"Cannot find factory for {self.requested}. "
+                f"Cannot find factory for {requested_name}. "
                 f"Check scopes in your providers. "
                 f"It is missing or has invalid scope."
-            )
+            ) + self.suggestion
 
 
 class GraphMissingFactoryError(NoFactoryError, InvalidGraphError):

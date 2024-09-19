@@ -4,6 +4,7 @@ from dishka.dependency_source import Factory, FactoryType
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
+from dishka.text_rendering import get_name
 
 
 class PathRenderer:
@@ -25,7 +26,7 @@ class PathRenderer:
             return " →"
 
     def _key(self, key: DependencyKey) -> str:
-        return str(key.type_hint)
+        return get_name(key.type_hint, include_module=True)
 
     def _source(self, factory: Factory) -> str:
         source = factory.source
@@ -33,10 +34,8 @@ class PathRenderer:
             return ""
         if factory.type is FactoryType.ALIAS:
             return "alias"
-        if func := getattr(source, "__func__", None):
-            return getattr(func, "__qualname__", None) or str(func)
-        else:
-            return str(source)
+
+        return get_name(source, include_module=False)
 
     def _switch(
             self, scope: BaseScope | None, component: Component | None,
@@ -56,6 +55,7 @@ class PathRenderer:
         width = max(len(self._key(x.provides)) for x in path)
         if last:
             width = max(width, len(self._key(last)))
+        width += 2  # add spacing between columns
 
         dest: tuple[BaseScope | None, Component | None] = (None, "")
         length = len(path) + bool(last)
@@ -80,7 +80,6 @@ class PathRenderer:
             arrow = _arrow(length + 1, length)
             if new_dest != dest:
                 res += "   " + " " * len(arrow) + " " + self._switch(*new_dest)
-                dest = new_dest
             res += (
                     "   " + arrow + " " +
                     self._key(last).ljust(width) +

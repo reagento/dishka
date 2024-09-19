@@ -30,9 +30,9 @@ def test_cycle(renderer):
     res = textwrap.dedent(res)
     assert res == textwrap.dedent("""\
               ~~~ component=None, None ~~~
-         → →  <class 'int'> A.foo
-        ↑   ↓ <class 'int'> A.foo
-         ← ←  <class 'int'> A.foo
+         → →  int   A.foo
+        ↑   ↓ int   A.foo
+         ← ←  int   A.foo
     """)
 
 
@@ -50,7 +50,7 @@ def test_cycle_1(renderer):
     res = textwrap.dedent(res)
     assert res == textwrap.dedent("""\
       ~~~ component=None, None ~~~
-    ⥁ <class 'int'> A.foo
+    ⥁ int   A.foo
     """)
 
 
@@ -68,7 +68,7 @@ def test_linear(renderer):
     res = textwrap.dedent(res)
     assert res == textwrap.dedent("""\
        ~~~ component=None, None ~~~
-    ↓  <class 'int'> A.foo
-    ↓  <class 'int'> A.foo
-     → <class 'int'> ???
+    ↓  int   A.foo
+    ↓  int   A.foo
+     → int   ???
     """)

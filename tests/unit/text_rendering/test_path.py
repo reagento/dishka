@@ -3,7 +3,7 @@ import textwrap
 import pytest
 
 from dishka.dependency_source.make_factory import make_factory
-from dishka.error_rendering import PathRenderer
+from dishka.text_rendering.path import PathRenderer
 
 
 class A:

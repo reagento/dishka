@@ -206,44 +206,18 @@ class GraphValidator:
                 except NoFactoryError as e:
                     raise GraphMissingFactoryError(
                         e.requested, e.path,
-                        self._suggest_similar(e.requested, factory),
+                        self._find_other_scope(e.requested),
+                        self._find_other_component(e.requested),
                     ) from None
                 except CycleDependenciesError as e:
                     raise e from None
 
-    def _suggest_similar(
-            self, key: DependencyKey, for_factory: Factory,
-    ) -> str:
-        suggestion = ""
-        other_scopes = self._find_other_scope(key)
-        if other_scopes:
-            scopes_str = " or ".join(str(s) for s in other_scopes)
-            try:
-                name = for_factory.source.__qualname__
-            except AttributeError:
-                name = str(for_factory.source)
-            suggestion += f"\n * Try changing scope of {name} to {scopes_str}."
-        other_factories = self._find_other_component(key)
-        if other_factories:
-            try:
-                name = key.type_hint.__qualname__
-            except AttributeError:
-                name = str(key.type_hint)
-            components_str = " or ".join(
-                f"Annotated[{name}, FromComponent({f.provides.component!r})]"
-                for f in other_factories
-            )
-            suggestion += f"\n * Try using {components_str}."
-        if suggestion:
-            suggestion = "Hint: "+suggestion
-        return suggestion
-
-    def _find_other_scope(self, key: DependencyKey) -> list[BaseScope]:
+    def _find_other_scope(self, key: DependencyKey) -> list[Factory]:
         found = []
         for registry in self.registries:
             for factory_key, factory in registry.factories.items():
                 if factory_key == key:
-                    found.append(factory.scope)
+                    found.append(factory)
         return found
 
     def _find_other_component(self, key: DependencyKey) -> list[Factory]:

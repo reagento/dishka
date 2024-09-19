@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 from typing import Any, Protocol
 
-from dishka.dependency_source import Factory
 from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
@@ -53,7 +52,7 @@ class PathRenderer:
 
     def render(
             self,
-            path: Sequence[Factory],
+            path: Sequence[PathItem],
             last: DependencyKey | None = None,
     ) -> str:
         if last is None:

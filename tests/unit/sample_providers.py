@@ -9,9 +9,9 @@ from collections.abc import (
 from typing import Any
 
 from dishka import DependencyKey, Scope
-from dishka.entities.factory_type import FactoryType
 from dishka.dependency_source import Factory
 from dishka.dependency_source.composite import CompositeDependencySource
+from dishka.entities.factory_type import FactoryType
 
 
 class ClassA:

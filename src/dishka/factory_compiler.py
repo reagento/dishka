@@ -153,7 +153,7 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
     source_file_name = f"__dishka_factory_{id(factory)}"
     if is_async:
         source_file_name += "_async"
-    lines = body.splitlines(True)
+    lines = body.splitlines(keepends=True)
     linecache.cache[source_file_name] = (
         len(body), None, lines, source_file_name,
     )

@@ -13,14 +13,14 @@ def render_suggestions_for_missing(
 ):
     suggestion = ""
     if suggest_other_scopes:
-        src_name = get_name(requested_for.source, False)
-        scopes_str = " or ".join(
+        src_name = get_name(requested_for.source, include_module=False)
+        scopes = " or ".join(
             str(factory.scope)
             for factory in suggest_other_scopes
         )
-        suggestion += f"\n * Try changing scope of `{src_name}` to {scopes_str}."
+        suggestion += f"\n * Try changing scope of `{src_name}` to {scopes}."
     if suggest_other_components:
-        dep_name = get_name(requested_key.type_hint, True)
+        dep_name = get_name(requested_key.type_hint, include_module=True)
         components_str = " or ".join(
             f"Annotated[{dep_name}, FromComponent({f.provides.component!r})]"
             for f in suggest_other_components

@@ -1,13 +1,11 @@
 from typing import Any
 
 
-def get_name(hint: Any, include_module: bool) -> str:
-    if hint is type(None):
-        return "None"
+def get_name(hint: Any, *, include_module: bool) -> str:
     if hint is ...:
         return "..."
     if func := getattr(object, "__func__", None):
-        return get_name(func, include_module)
+        return get_name(func, include_module=include_module)
 
     if include_module:
         module = getattr(hint, "__module__", "")

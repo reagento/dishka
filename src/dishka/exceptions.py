@@ -73,7 +73,7 @@ class NoFactoryError(DishkaError):
 
     def __str__(self) -> str:
         requested_name = (
-            f"({get_name(self.requested.type_hint, False)}, "
+            f"({get_name(self.requested.type_hint, include_module=False)}, "
             f"component={self.requested.component!r})"
         )
         suggestion = render_suggestions_for_missing(

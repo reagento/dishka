@@ -18,7 +18,7 @@ def baz(): ...
 
 
 @pytest.mark.parametrize(
-    ["obj", "include_module", "name"], [
+    ("obj", "include_module", "name"), [
         (A0, False, "A0"),
         (A0, True, "unit.text_rendering.test_name.A0"),
         (A0.A1, False, "A0.A1"),
@@ -34,4 +34,4 @@ def baz(): ...
     ],
 )
 def test_get_name(obj, include_module, name):
-    assert get_name(obj, include_module) == name
+    assert get_name(obj, include_module=include_module) == name

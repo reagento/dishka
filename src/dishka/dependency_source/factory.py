@@ -7,19 +7,15 @@ from collections.abc import (
 from typing import Any
 
 from dishka.entities.component import Component
-from dishka.entities.factory_type import FactoryType
+from dishka.entities.factory_type import FactoryData, FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
 
 
-class Factory:
+class Factory(FactoryData):
     __slots__ = (
         "dependencies",
         "kw_dependencies",
-        "source",
-        "provides",
-        "scope",
-        "type",
         "is_to_bind",
         "cache",
     )
@@ -36,12 +32,14 @@ class Factory:
             is_to_bind: bool,
             cache: bool,
     ) -> None:
+        super().__init__(
+            source=source,
+            provides=provides,
+            type_=type_,
+            scope=scope,
+        )
         self.dependencies = dependencies
         self.kw_dependencies = kw_dependencies
-        self.source = source
-        self.provides = provides
-        self.scope = scope
-        self.type = type_
         self.is_to_bind = is_to_bind
         self.cache = cache
 

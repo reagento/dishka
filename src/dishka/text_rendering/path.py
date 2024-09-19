@@ -1,18 +1,10 @@
 from collections.abc import Sequence
-from typing import Any, Protocol
 
 from dishka.entities.component import Component
-from dishka.entities.factory_type import FactoryType
+from dishka.entities.factory_type import FactoryData, FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
 from dishka.text_rendering import get_name
-
-
-class PathItem(Protocol):
-    source: Any
-    provides: DependencyKey
-    scope: BaseScope
-    type: FactoryType
 
 
 class PathRenderer:
@@ -36,7 +28,7 @@ class PathRenderer:
     def _key(self, key: DependencyKey) -> str:
         return get_name(key.type_hint, include_module=True)
 
-    def _source(self, factory: PathItem) -> str:
+    def _source(self, factory: FactoryData) -> str:
         source = factory.source
         if source == factory.provides.type_hint:
             return ""
@@ -52,7 +44,7 @@ class PathRenderer:
 
     def render(
             self,
-            path: Sequence[PathItem],
+            path: Sequence[FactoryData],
             last: DependencyKey | None = None,
     ) -> str:
         if last is None:

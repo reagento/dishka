@@ -3,7 +3,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-from .dependency_source import FactoryType
+from dishka.entities.factory_type import FactoryType
 
 
 @dataclass(slots=True)

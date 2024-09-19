@@ -19,8 +19,9 @@ When formatting substituted:
 import linecache
 from typing import cast
 
+from dishka.entities.factory_type import FactoryType
 from .container_objects import CompiledFactory, Exit
-from .dependency_source import Factory, FactoryType
+from .dependency_source import Factory
 from .exceptions import NoContextValueError, UnsupportedFactoryError
 
 

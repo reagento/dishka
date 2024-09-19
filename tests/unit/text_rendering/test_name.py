@@ -31,7 +31,7 @@ def baz(): ...
         (None, False, "None"),
         (..., False, "..."),
         (dishka.Scope, True, "dishka.entities.scope.Scope"),
-    ]
+    ],
 )
 def test_get_name(obj, include_module, name):
     assert get_name(obj, include_module) == name

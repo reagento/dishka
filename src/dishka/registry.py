@@ -10,9 +10,9 @@ from .dependency_source import (
     ContextVariable,
     Decorator,
     Factory,
-    FactoryType,
 )
 from .entities.component import DEFAULT_COMPONENT, Component
+from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope, InvalidScopes, Scope
 from .exceptions import (

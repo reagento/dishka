@@ -3,9 +3,10 @@ from __future__ import annotations
 from typing import Any
 
 from dishka.entities.component import Component
+from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
-from .factory import Factory, FactoryType
+from .factory import Factory
 
 
 def _identity(x: Any) -> Any:

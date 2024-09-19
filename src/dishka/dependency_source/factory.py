@@ -4,22 +4,12 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
-from enum import Enum
 from typing import Any
 
 from dishka.entities.component import Component
+from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
-
-
-class FactoryType(Enum):
-    GENERATOR = "generator"
-    ASYNC_GENERATOR = "async_generator"
-    FACTORY = "factory"
-    ASYNC_FACTORY = "async_factory"
-    VALUE = "value"
-    ALIAS = "alias"
-    CONTEXT = "context"
 
 
 class Factory:

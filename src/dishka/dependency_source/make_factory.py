@@ -44,13 +44,14 @@ from dishka._adaptix.type_tools.generic_resolver import (
     GenericResolver,
     MembersStorage,
 )
+from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import (
     hint_to_dependency_key,
     hints_to_dependency_keys,
 )
 from dishka.entities.scope import BaseScope
 from .composite import CompositeDependencySource, ensure_composite
-from .factory import Factory, FactoryType
+from .factory import Factory
 from .unpack_provides import unpack_factory
 
 _empty = signature(lambda a: 0).parameters["a"].annotation

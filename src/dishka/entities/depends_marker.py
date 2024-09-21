@@ -2,7 +2,7 @@ import warnings
 from typing import TYPE_CHECKING, Annotated, TypeVar
 
 from .component import DEFAULT_COMPONENT, Component
-from .key import FromComponent
+from .key import FromComponent, _FromComponent
 
 T = TypeVar("T")
 
@@ -31,5 +31,5 @@ else:
                     stacklevel=2,
                 )
 
-        def __class_getitem__(cls, item: T) -> Annotated[T, FromComponent]:
+        def __class_getitem__(cls, item: T) -> Annotated[T, _FromComponent]:
             return Annotated[item, FromComponent()]

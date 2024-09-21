@@ -10,9 +10,9 @@ from .dependency_source import (
     ContextVariable,
     Decorator,
     Factory,
-    FactoryType,
 )
 from .entities.component import DEFAULT_COMPONENT, Component
+from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope, InvalidScopes, Scope
 from .exceptions import (
@@ -208,9 +208,30 @@ class GraphValidator:
                 except NoFactoryError as e:
                     raise GraphMissingFactoryError(
                         e.requested, e.path,
+                        self._find_other_scope(e.requested),
+                        self._find_other_component(e.requested),
                     ) from None
                 except CycleDependenciesError as e:
                     raise e from None
+
+    def _find_other_scope(self, key: DependencyKey) -> list[Factory]:
+        found = []
+        for registry in self.registries:
+            for factory_key, factory in registry.factories.items():
+                if factory_key == key:
+                    found.append(factory)
+        return found
+
+    def _find_other_component(self, key: DependencyKey) -> list[Factory]:
+        found = []
+        for registry in self.registries:
+            for factory_key, factory in registry.factories.items():
+                if factory_key.type_hint != key.type_hint:
+                    continue
+                if factory_key.component == key.component:
+                    continue
+                found.append(factory)
+        return found
 
 
 class RegistryBuilder:

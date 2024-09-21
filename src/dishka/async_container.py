@@ -7,11 +7,12 @@ from types import TracebackType
 from typing import Any, cast
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
+from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope, Scope
 from .container_objects import Exit
 from .context_proxy import ContextProxy
-from .dependency_source import Factory, FactoryType
+from .dependency_source import Factory
 from .exceptions import (
     ExitError,
     NoFactoryError,

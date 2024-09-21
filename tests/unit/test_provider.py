@@ -4,8 +4,8 @@ from typing import Any, Protocol
 import pytest
 
 from dishka import Provider, Scope, alias, decorate, provide
-from dishka.dependency_source import FactoryType
 from dishka.dependency_source.make_factory import make_factory, provide_all
+from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import (
     hint_to_dependency_key,
     hints_to_dependency_keys,

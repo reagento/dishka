@@ -16,10 +16,12 @@ When formatting substituted:
 * kwargs - "arg1=getter(arg1), arg2=getter(arg2)..." or async version
 * cache - expression to save cache
 """
+import linecache
 from typing import cast
 
+from dishka.entities.factory_type import FactoryType
 from .container_objects import CompiledFactory, Exit
-from .dependency_source import Factory, FactoryType
+from .dependency_source import Factory
 from .exceptions import NoContextValueError, UnsupportedFactoryError
 
 
@@ -147,6 +149,15 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
         **args,
         **kwargs,
     }
-    exec(body, func_globals)  # noqa: S102
+
+    source_file_name = f"__dishka_factory_{id(factory)}"
+    if is_async:
+        source_file_name += "_async"
+    lines = body.splitlines(keepends=True)
+    linecache.cache[source_file_name] = (
+        len(body), None, lines, source_file_name,
+    )
+    compiled = compile(body, source_file_name, "exec")
+    exec(compiled, func_globals)  # noqa: S102
     # typing.cast is called because func_globals["get"] is not typed
     return cast(CompiledFactory, func_globals["get"])

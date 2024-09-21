@@ -44,6 +44,7 @@ from dishka._adaptix.type_tools.generic_resolver import (
     GenericResolver,
     MembersStorage,
 )
+from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import (
     dependency_key_to_hint,
     hint_to_dependency_key,
@@ -51,8 +52,9 @@ from dishka.entities.key import (
 )
 from dishka.entities.provides_marker import ProvideMultiple
 from dishka.entities.scope import BaseScope
+from dishka.text_rendering import get_name
 from .composite import CompositeDependencySource, ensure_composite
-from .factory import Factory, FactoryType
+from .factory import Factory
 from .unpack_provides import unpack_factory
 
 _empty = signature(lambda a: 0).parameters["a"].annotation
@@ -97,15 +99,7 @@ def _guess_factory_type(source: Any) -> FactoryType:
 def _type_repr(hint: Any) -> str:
     if hint is type(None):
         return "None"
-    module = getattr(hint, "__module__", "")
-    if module == "builtins":
-        module = ""
-    elif module:
-        module += "."
-    try:
-        return f"{module}{hint.__qualname__}"
-    except AttributeError:
-        return str(hint)
+    return get_name(hint, include_module=True)
 
 
 def _async_generator_result(hint: Any) -> Any:
@@ -214,7 +208,7 @@ def _make_factory_by_class(
         source = get_args(source)[0]
     init = strip_alias(source).__init__
     if missing_hints := _params_without_hints(init, skip_self=True):
-        name = f"{source.__module__}.{source.__qualname__}.__init__"
+        name = get_name(source, include_module=True) + ".__init__"
         missing = ", ".join(missing_hints)
         raise ValueError(
             f"Failed to analyze `{name}`. \n"
@@ -226,7 +220,7 @@ def _make_factory_by_class(
     try:
         hints = dict(res.get_resolved_members(source).members)
     except NameError as e:
-        name = f"{source.__module__}.{source.__qualname__}.__init__"
+        name = get_name(source, include_module=True) + ".__init__"
         raise NameError(
             f"Failed to analyze `{name}`. \n"
             f"Type '{e.name}' is not defined\n\n"
@@ -271,7 +265,7 @@ def _make_factory_by_function(
     raw_source = unwrap(cast(Callable[..., Any], source))
     missing_hints = _params_without_hints(raw_source, skip_self=is_in_class)
     if missing_hints:
-        name = getattr(source, "__qualname__", "") or str(source)
+        name = get_name(source, include_module=True)
         missing = ", ".join(missing_hints)
         raise ValueError(
             f"Failed to analyze `{name}`. \n"
@@ -284,7 +278,7 @@ def _make_factory_by_function(
     try:
         hints = get_type_hints(source, include_extras=True)
     except NameError as e:
-        name = getattr(source, "__qualname__", "") or str(source)
+        name = get_name(source, include_module=True)
         raise NameError(
             f"Failed to analyze `{name}`. \n"
             f"Type '{e.name}' is not defined. \n\n"
@@ -310,13 +304,13 @@ def _make_factory_by_function(
 
     if not provides:
         if possible_dependency is _empty:
-            name = getattr(source, "__qualname__", "") or str(source)
+            name = get_name(source, include_module=True)
             raise ValueError(f"Failed to analyze `{name}`. \n"
                              f"Missing return type hint.")
         try:
             provides = _clean_result_hint(factory_type, possible_dependency)
         except TypeError as e:
-            name = getattr(source, "__qualname__", "") or str(source)
+            name = get_name(source, include_module=True)
             raise TypeError(f"Failed to analyze `{name}`. \n" + str(e)) from e
     return Factory(
         dependencies=hints_to_dependency_keys(dependencies),
@@ -340,7 +334,7 @@ def _make_factory_by_static_method(
         override: bool,
 ) -> Factory:
     if missing_hints := _params_without_hints(source, skip_self=False):
-        name = getattr(source, "__qualname__", "") or str(source)
+        name = get_name(source, include_module=True)
         missing = ", ".join(missing_hints)
         raise ValueError(
             f"Failed to analyze `{name}`. \n"
@@ -350,7 +344,7 @@ def _make_factory_by_static_method(
     try:
         hints = get_type_hints(source, include_extras=True)
     except NameError as e:
-        name = getattr(source, "__qualname__", "") or str(source)
+        name = get_name(source, include_module=True)
         raise NameError(
             f"Failed to analyze `{name}`. \n"
             f"Type '{e.name}' is not defined. \n\n"
@@ -372,13 +366,13 @@ def _make_factory_by_static_method(
 
     if not provides:
         if possible_dependency is _empty:
-            name = getattr(source, "__qualname__", "") or str(source)
+            name = get_name(source, include_module=True)
             raise ValueError(f"Failed to analyze `{name}`. \n"
                              f"Missing return type hint.")
         try:
             provides = _clean_result_hint(factory_type, possible_dependency)
         except TypeError as e:
-            name = getattr(source, "__qualname__", "") or str(source)
+            name = get_name(source, include_module=True)
             raise TypeError(f"Failed to analyze `{name}`. \n" + str(e)) from e
     return Factory(
         dependencies=hints_to_dependency_keys(dependencies),

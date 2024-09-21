@@ -195,6 +195,7 @@ def make_container(
         skip_validation: bool = False,
         start_scope: BaseScope | None = None,
         skip_override: bool = False,
+        skip_cant_override: bool = False,
 ) -> Container:
     registries = RegistryBuilder(
         scopes=scopes,
@@ -202,6 +203,7 @@ def make_container(
         providers=providers,
         skip_validation=skip_validation,
         skip_override=skip_override,
+        skip_cant_override=skip_cant_override,
     ).build()
     container = Container(
         *registries,

@@ -16,15 +16,17 @@ from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope, InvalidScopes, Scope
 from .exceptions import (
+    CantOverrideFactoryError,
     CycleDependenciesError,
+    FactoryNotOverrideError,
     GraphMissingFactoryError,
     InvalidGraphError,
     NoFactoryError,
-    FactoryIsNotOverriddenError,
-    NothingToOverrideError, UnknownScopeError,
+    UnknownScopeError,
 )
 from .factory_compiler import compile_factory
 from .provider import BaseProvider
+from .text_rendering import get_name
 
 
 class UndecoratedType:
@@ -243,6 +245,7 @@ class RegistryBuilder:
             container_type: type,
             skip_validation: bool,
             skip_override: bool,
+            skip_cant_override: bool,
     ) -> None:
         self.scopes = scopes
         self.providers = providers
@@ -255,6 +258,7 @@ class RegistryBuilder:
         self.decorator_depth: dict[DependencyKey, int] = defaultdict(int)
         self.skip_validation = skip_validation
         self.skip_override = skip_override
+        self.skip_cant_override = skip_cant_override
         self.override_factories: dict[DependencyKey, Factory] = {}
 
     def _collect_components(self) -> None:
@@ -305,22 +309,29 @@ class RegistryBuilder:
     ) -> None:
         factory = factory.with_component(provider.component)
         provides = factory.provides
-        if factory.override and provides not in self.override_factories:
-            raise NothingToOverrideError(
-                "There's nothing that can be overridden. "
-                f"Provides={factory.provides!r}. Scope={factory.scope}"
+        if (
+            not self.skip_cant_override
+            and factory.override
+            and provides not in self.override_factories
+        ):
+            name = get_name(factory.source, include_module=False)
+            raise CantOverrideFactoryError(
+                f"Can't override factory for {factory.provides}.\n"
+                f"Hint:\n"
+                f" * Remove override=True from {name}",
             )
         if not self.skip_override and provides in self.override_factories:
             if not factory.override:
-                origin = self.override_factories[provides]
-                raise FactoryIsNotOverriddenError(
-                    "A factory was found that overrides another factory."
-                    f"Overriding provides={factory.provides!r}, source={factory.source!r} "
-                    f"Original provides={origin.provides!r}, source={factory.source!r}"
+                name = get_name(factory.source, include_module=False)
+                raise FactoryNotOverrideError(
+                    f"Factory {factory.provides} was found that "
+                    "implicitly overrides factory.\n"
+                    "Hint:\n"
+                    f" * Specify the parameter override=True for {name}",
                 )
         else:
             self.override_factories[provides] = factory
-        
+
         registry = self.registries[cast(Scope, factory.scope)]
         registry.add_factory(factory)
 

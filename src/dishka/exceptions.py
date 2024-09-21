@@ -101,9 +101,9 @@ class GraphMissingFactoryError(NoFactoryError, InvalidGraphError):
     pass
 
 
-class FactoryIsNotOverriddenError(DishkaError):
+class FactoryNotOverrideError(InvalidGraphError):
     pass
 
 
-class NothingToOverrideError(DishkaError):
+class CantOverrideFactoryError(InvalidGraphError):
     pass

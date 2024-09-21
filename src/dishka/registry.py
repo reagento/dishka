@@ -20,8 +20,8 @@ from .exceptions import (
     GraphMissingFactoryError,
     InvalidGraphError,
     NoFactoryError,
-    NotOverrideFactoryError,
-    UnknownScopeError,
+    FactoryIsNotOverriddenError,
+    NothingToOverrideError, UnknownScopeError,
 )
 from .factory_compiler import compile_factory
 from .provider import BaseProvider
@@ -234,7 +234,7 @@ class RegistryBuilder:
         self.decorator_depth: dict[DependencyKey, int] = defaultdict(int)
         self.skip_validation = skip_validation
         self.skip_override = skip_override
-        self.override_factories: dict[Any, bool] = {}
+        self.override_factories: dict[DependencyKey, Factory] = {}
 
     def _collect_components(self) -> None:
         for provider in self.providers:
@@ -284,16 +284,21 @@ class RegistryBuilder:
     ) -> None:
         factory = factory.with_component(provider.component)
         provides = factory.provides
+        if factory.override and provides not in self.override_factories:
+            raise NothingToOverrideError(
+                "There's nothing that can be overridden. "
+                f"Provides={factory.provides!r}. Scope={factory.scope}"
+            )
         if not self.skip_override and provides in self.override_factories:
             if not factory.override:
-                raise NotOverrideFactoryError(
-                    f"You need to explicitly override factory. "
-                    "Specify override=True for provide "
-                    "or overrides=True for provide_all. "
-                    f"scope={factory.scope}, provides={factory.provides}",
+                origin = self.override_factories[provides]
+                raise FactoryIsNotOverriddenError(
+                    "A factory was found that overrides another factory."
+                    f"Overriding provides={factory.provides!r}, source={factory.source!r} "
+                    f"Original provides={origin.provides!r}, source={factory.source!r}"
                 )
         else:
-            self.override_factories[provides] = factory.override
+            self.override_factories[provides] = factory
         
         registry = self.registries[cast(Scope, factory.scope)]
         registry.add_factory(factory)

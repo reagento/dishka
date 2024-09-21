@@ -644,7 +644,7 @@ def provide_all(
         scope: BaseScope | None = None,
         cache: bool = True,
         recursive: bool = False,
-        overrides: bool = True,
+        overrides: bool = False,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,
@@ -658,7 +658,7 @@ def provide_all_on_instance(
         scope: BaseScope | None = None,
         cache: bool = True,
         recursive: bool = False,
-        overrides: bool = True,
+        overrides: bool = False,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,

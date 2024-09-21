@@ -83,5 +83,9 @@ class GraphMissingFactoryError(NoFactoryError, InvalidGraphError):
     pass
 
 
-class NotOverrideFactoryError(DishkaError):
+class FactoryIsNotOverriddenError(DishkaError):
+    pass
+
+
+class NothingToOverrideError(DishkaError):
     pass

@@ -24,7 +24,7 @@ from dishka.async_container import AsyncContainer
 from dishka.container import Container
 from dishka.entities.component import DEFAULT_COMPONENT
 from dishka.entities.depends_marker import FromDishka
-from dishka.entities.key import DependencyKey, FromComponent
+from dishka.entities.key import DependencyKey, _FromComponent
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -32,7 +32,7 @@ DependencyParser: TypeAlias = Callable[[Parameter, Any], DependencyKey | None]
 ContainerGetter: TypeAlias = Callable[[tuple[Any, ...], dict[str, Any]], T]
 DependsClass: TypeAlias = cast(
     type | Sequence[type],
-    FromDishka | FromComponent,
+    FromDishka | _FromComponent,
 )
 InjectDecorator: TypeAlias = Callable[[Callable[..., Any]], Any]
 
@@ -51,7 +51,7 @@ def default_parse_dependency(
     )
     if not dep:
         return None
-    if isinstance(dep, FromDishka | FromComponent):  # type: ignore[arg-type]
+    if isinstance(dep, FromDishka | _FromComponent):  # type: ignore[arg-type]
         return DependencyKey(args[0], dep.component)
     else:
         return DependencyKey(args[0], DEFAULT_COMPONENT)

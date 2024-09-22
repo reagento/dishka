@@ -22,6 +22,7 @@ from dishka.integrations.base import InjectDecorator, wrap_injection
 T = TypeVar("T")
 P = ParamSpec("P")
 
+
 class FastStreamProvider(Provider):
     context = from_context(ContextRepo, scope=Scope.REQUEST)
     message = from_context(StreamMessage, scope=Scope.REQUEST)
@@ -74,9 +75,9 @@ else:
         ) -> AsyncIterator[DecodedMessage]:
             async with self.container(
                 {
-                    type(msg): msg,
                     StreamMessage: msg,
                     ContextRepo: context,
+                    type(msg): msg,
                 },
             ) as request_container:
                 with context.scope("dishka", request_container):

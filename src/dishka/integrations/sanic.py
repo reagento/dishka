@@ -2,6 +2,7 @@ __all__ = [
     "FromDishka",
     "inject",
     "setup_dishka",
+    "SanicProvider",
 ]
 
 from collections.abc import Iterable
@@ -11,8 +12,9 @@ from sanic import HTTPResponse, Request, Sanic
 from sanic.models.handler_types import RouteHandler
 from sanic_routing import Route
 
-from dishka import AsyncContainer, FromDishka
+from dishka import AsyncContainer, Provider, Scope, from_context
 from dishka.integrations.base import (
+    FromDishka,
     InjectDecorator,
     is_dishka_injected,
     wrap_injection,
@@ -28,6 +30,10 @@ def inject(func: RouteHandler) -> RouteHandler:
             container_getter=lambda args, _: args[0].ctx.dishka_container,
         ),
     )
+
+
+class SanicProvider(Provider):
+    request = from_context(Request, scope=Scope.REQUEST)
 
 
 class ContainerMiddleware:

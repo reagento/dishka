@@ -7,6 +7,7 @@ from typing import (
     Protocol,
     TypeAlias,
     TypeVar,
+    Union,
 )
 
 from dishka._adaptix.common import TypeHint
@@ -167,8 +168,8 @@ class ParentsResolver:
 
 
 if TYPE_CHECKING:
-    T = TypeVar('T')
-    WithParent: TypeAlias = T | T
+    T = TypeVar("T")
+    WithParents = Union[T, T]  # noqa: UP007,PYI016
 else:
     class WithParents:
         def __class_getitem__(cls, item: TypeHint) -> TypeHint:

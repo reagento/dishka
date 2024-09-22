@@ -3,10 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
+from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
 from .alias import Alias
-from .factory import Factory, FactoryType
+from .factory import Factory
 
 
 def context_stub() -> Any:

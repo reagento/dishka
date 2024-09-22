@@ -167,7 +167,8 @@ class ParentsResolver:
 
 
 if TYPE_CHECKING:
-    from typing import Union as WithParents
+    T = TypeVar('T')
+    WithParent: TypeAlias = T | T
 else:
     class WithParents:
         def __class_getitem__(cls, item: TypeHint) -> TypeHint:

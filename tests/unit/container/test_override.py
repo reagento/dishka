@@ -58,7 +58,7 @@ def test_override_provide_all() -> None:
         scope = Scope.APP
         provides = (
             provide_all(int, str)
-            + provide_all(int, str, overrides=True)
+            + provide_all(int, str, override=True)
         )
 
     make_container(TestProvider())

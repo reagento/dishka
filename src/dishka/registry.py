@@ -26,7 +26,6 @@ from .exceptions import (
 )
 from .factory_compiler import compile_factory
 from .provider import BaseProvider
-from .text_rendering import get_name
 
 
 class UndecoratedType:
@@ -314,21 +313,10 @@ class RegistryBuilder:
             and factory.override
             and provides not in self.override_factories
         ):
-            name = get_name(factory.source, include_module=False)
-            raise CantOverrideFactoryError(
-                f"Can't override factory for {factory.provides}.\n"
-                f"Hint:\n"
-                f" * Remove override=True from {name}",
-            )
+            raise CantOverrideFactoryError(factory)
         if not self.skip_override and provides in self.override_factories:
             if not factory.override:
-                name = get_name(factory.source, include_module=False)
-                raise FactoryNotOverrideError(
-                    f"Factory {factory.provides} was found that "
-                    "implicitly overrides factory.\n"
-                    "Hint:\n"
-                    f" * Specify the parameter override=True for {name}",
-                )
+                raise FactoryNotOverrideError(factory)
         else:
             self.override_factories[provides] = factory
 

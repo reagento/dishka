@@ -158,13 +158,13 @@ class Provider(BaseProvider):
             scope: BaseScope | None = None,
             cache: bool = True,
             recursive: bool = False,
-            overrides: bool = True,
+            override: bool = False,
     ) -> CompositeDependencySource:
         if scope is None:
             scope = self.scope
         composite = provide_all_on_instance(
             *provides, scope=scope, cache=cache, recursive=recursive,
-            overrides=overrides,
+            override=override,
         )
         self._add_dependency_sources("?", composite.dependency_sources)
         return composite

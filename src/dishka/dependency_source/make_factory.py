@@ -616,7 +616,7 @@ def _provide_all(
         cache: bool,
         is_in_class: bool,
         recursive: bool,
-        overrides: bool = False,
+        override: bool = False,
 ) -> CompositeDependencySource:
     composite = CompositeDependencySource(None)
     for single_provides in provides:
@@ -627,7 +627,7 @@ def _provide_all(
             cache=cache,
             is_in_class=is_in_class,
             recursive=recursive,
-            override=overrides,
+            override=override,
         )
         composite.dependency_sources.extend(source.dependency_sources)
     return composite
@@ -638,12 +638,12 @@ def provide_all(
         scope: BaseScope | None = None,
         cache: bool = True,
         recursive: bool = False,
-        overrides: bool = False,
+        override: bool = False,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,
         cache=cache, is_in_class=True,
-        recursive=recursive, overrides=overrides,
+        recursive=recursive, override=override,
     )
 
 
@@ -652,10 +652,10 @@ def provide_all_on_instance(
         scope: BaseScope | None = None,
         cache: bool = True,
         recursive: bool = False,
-        overrides: bool = False,
+        override: bool = False,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,
         cache=cache, is_in_class=False,
-        recursive=recursive, overrides=overrides,
+        recursive=recursive, override=override,
     )

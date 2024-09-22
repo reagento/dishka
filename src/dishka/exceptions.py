@@ -102,8 +102,32 @@ class GraphMissingFactoryError(NoFactoryError, InvalidGraphError):
 
 
 class FactoryNotOverrideError(InvalidGraphError):
-    pass
+    def __init__(self, factory: Factory) -> None:
+        self.factory = factory
+
+    def __str__(self) -> str:
+        name = get_name(self.factory.source, include_module=False)
+        return (
+            f"Factory {self.factory.provides} was found that "
+            "implicitly override factory.\n"
+            "Hint:\n"
+            f" * Specify the parameter override=True for {name}.\n"
+            " * Add skip_override=True to make_container"
+            " or make_async_container."
+        )
 
 
 class CantOverrideFactoryError(InvalidGraphError):
-    pass
+    def __init__(self, factory: Factory) -> None:
+        self.factory = factory
+
+    def __str__(self) -> str:
+        name = get_name(self.factory.source, include_module=False)
+        return (
+            f"Can't override factory for {self.factory.provides}.\n"
+            "Hint:\n"
+            f" * Remove override=True from {name}.\n"
+            " * Add skip_cant_override=True to make_container"
+            " or make_async_container."
+        )
+

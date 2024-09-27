@@ -69,6 +69,7 @@ async def get_with_app(
     await websocket.receive()
     mock(a)
     await websocket.send_str("passed")
+    return websocket
 
 
 @pytest.mark.parametrize(
@@ -103,6 +104,7 @@ async def get_with_request(
     await websocket.receive()
     mock(a)
     await websocket.send_str("passed")
+    return websocket
 
 
 @pytest.mark.parametrize(
@@ -159,6 +161,7 @@ async def get_with_websocket(
     await websocket.receive()
     mock(ws)
     await websocket.send_str("passed")
+    return websocket
 
 
 @pytest.mark.parametrize(

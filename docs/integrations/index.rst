@@ -215,22 +215,23 @@ As ``REQUEST`` scope is entered automatically you cannot pass context data direc
 
 These objects are passed to context:
 
-* aiohttp - ``aiohttp.web_request.Request``
-* Flask - ``flask.Request``
-* Fastapi - ``fastapi.Request`` or ``fastapi.WebSocket`` if you are using web sockets
-* Litestar - ``litestar.Request``
-* Starlette - ``starlette.requests.Request`` or ``starlette.websockets.WebSocket`` if you are using web sockets
-* Aiogram - ``aiogram.types.TelegramObject``
-* pyTelegramBotAPI - actual type of event (like ``Message``) is used.
-* Arq - no objects
-* FastStream - ``faststream.broker.message.StreamMessage`` or ``faststream.[broker].[Broker]Message``, ``faststream.utils.ContextRepo`` 
-* TaskIq - no objects
-* Sanic - ``sanic.request.Request``
-* grpcio - ``grpcio.ServicerContext`` to get the current context and ``google.protobuf.message.Message`` to get the current request. Message is available only for ``unary_unary`` and ``unary_stream`` rpc methods
-* Click - no objects
+* aiohttp - ``aiohttp.web_request.Request``. Provider ``AiohttpProvider``.
+* Flask - ``flask.Request``. Provider ``FlaskProvider``.
+* Fastapi - ``fastapi.Request`` or ``fastapi.WebSocket`` if you are using web sockets. Provider ``StarletteProvider``.
+* Litestar - ``litestar.Request``. Provider ``LitestarProvider``.
+* Starlette - ``starlette.requests.Request`` or ``starlette.websockets.WebSocket`` if you are using web sockets. Provider ``StarletteProvider``.
+* Aiogram - ``aiogram.types.TelegramObject``. Provider ``AiogramProvider``
+* pyTelegramBotAPI - ``dishka.integrations.telebot.TelebotMessage`` Provider ``TelebotProvider``.
+* Arq - no objects and provider.
+* FastStream - ``faststream.broker.message.StreamMessage`` or ``dishka.integration.faststream.FastStreamMessage``, ``faststream.utils.ContextRepo``. Provider ``FastStreamProvider``.
+* TaskIq - no objects and provider.
+* Sanic - ``sanic.request.Request``. Provider ``SanicProvider``
+* grpcio - ``grpcio.ServicerContext`` to get the current context and ``google.protobuf.message.Message`` to get the current request. Message is available only for ``unary_unary`` and ``unary_stream`` rpc method. Provider ``GrpcioProvider``.
+* Click - no objects and provider.
 
 
 To use such objects you need to declare them in your provider using :ref:`from-context` and then they will be available as factories params.
+Or specify the provider of a specific integration when creating a container. Please note that not all context data has a factory defined. You will have to specify it yourself.
 
 Websocket support
 =============================

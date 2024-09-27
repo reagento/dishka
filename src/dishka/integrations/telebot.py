@@ -2,22 +2,25 @@ __all__ = [
     "FromDishka",
     "inject",
     "setup_dishka",
+    "TelebotProvider",
 ]
 
 from collections.abc import Callable
 from inspect import Parameter
-from typing import Any, ParamSpec, TypeVar
+from typing import Any, NewType, ParamSpec, TypeVar
 
 import telebot  # type: ignore[import-untyped]
 from telebot import BaseMiddleware, TeleBot
 
-from dishka import Container, FromDishka
+from dishka import Container, FromDishka, Provider, Scope, from_context
 from .base import wrap_injection
 
 CONTAINER_NAME = "dishka_container"
 
 T = TypeVar("T")
 P = ParamSpec("P")
+TelebotMessage = NewType("TelebotMessage", object)
+
 
 def inject(func: Callable[P, T]) -> Callable[P, T]:
     additional_params = [Parameter(
@@ -33,6 +36,10 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
     )
 
 
+class TelebotProvider(Provider):
+    message = from_context(TelebotMessage, scope=Scope.REQUEST)
+
+
 class ContainerMiddleware(BaseMiddleware):  # type: ignore[misc]
     update_types = telebot.util.update_types
 
@@ -45,7 +52,9 @@ class ContainerMiddleware(BaseMiddleware):  # type: ignore[misc]
         message: Any,
         data: dict[str, Any],
     ) -> None:
-        dishka_container_wrapper = self.container({type(message): message})
+        dishka_container_wrapper = self.container(
+            {TelebotMessage(type(message)): message},
+        )
         data[CONTAINER_NAME + "_wrapper"] = dishka_container_wrapper
         data[CONTAINER_NAME] = dishka_container_wrapper.__enter__()
 

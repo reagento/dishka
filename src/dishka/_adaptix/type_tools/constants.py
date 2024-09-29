@@ -3,8 +3,9 @@ import collections
 import concurrent.futures
 import queue
 import re
+from collections.abc import Mapping
 from os import PathLike
-from typing import Mapping, TypeVar
+from typing import TypeVar
 
 from ..common import VarTuple
 

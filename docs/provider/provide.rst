@@ -166,3 +166,14 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
     container = make_async_container(MyProvider())
     a = await container.get(int)
     # 2
+
+
+* You can use factory with Generic classes
+
+.. code-block:: python
+
+    class MyProvider(Provider):
+        @provide
+        def make_a(self, type_: type[T]) -> A[T]:
+            ...
+

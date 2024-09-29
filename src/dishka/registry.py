@@ -88,26 +88,42 @@ class Registry:
             origin = get_origin(dependency.type_hint)
             if not origin:
                 return None
+            if origin is type:
+                return self._get_type_var_factory(dependency)
+
             origin_key = DependencyKey(origin, dependency.component)
             factory = self.factories.get(origin_key)
             if not factory:
                 return None
 
-            factory = self._specialize_generic(factory, dependency)
+            else:
+                factory = self._specialize_generic(factory, dependency)
             self.factories[dependency] = factory
             return factory
+
+    def _get_type_var_factory(self, dependency: DependencyKey) -> Factory:
+        args = get_args(dependency.type_hint)
+        if args:
+            typevar = args[0]
+        else:
+            typevar = Any
+        return Factory(
+            scope=self.scope,
+            dependencies=[],
+            kw_dependencies={},
+            provides=DependencyKey(type[typevar], dependency.component),
+            type_=FactoryType.FACTORY,
+            is_to_bind=False,
+            cache=False,
+            source=lambda: typevar,
+        )
 
     def _specialize_generic(
             self, factory: Factory, dependency_key: DependencyKey,
     ) -> Factory:
         dependency = dependency_key.type_hint
-        type_var_deps = (
-            d.type_hint
-            for d in factory.dependencies
-            if isinstance(d.type_hint, TypeVar)
-        )
         params_replacement = dict(zip(
-            type_var_deps,
+            get_type_vars(factory.provides.type_hint),
             get_args(dependency),
             strict=False,
         ))

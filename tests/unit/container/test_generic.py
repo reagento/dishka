@@ -162,3 +162,26 @@ def test_generic_validation_fail():
     provider.provide(factory_invalid)
     with pytest.raises(GraphMissingFactoryError):
         assert make_container(provider)
+
+
+def type_var_factory(type_: type[T]) -> EventEmitter[T]:
+    return type_
+
+
+def test_passing_type_var():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(type_var_factory)
+    container = make_container(provider)
+    assert container.get(EventEmitter[int]) is int
+
+
+def parametrized_param_func(param: A[T]) -> EventEmitter[T]:
+    return param.x
+
+
+def test_func_with_generic_params():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(parametrized_param_func)
+    provider.provide(lambda: A(42), provides=A[T])
+    container = make_container(provider)
+    assert container.get(EventEmitter[int]) == 42

@@ -153,3 +153,13 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
 
     class MyProvider(Provider):
         c = provide(C, scope=Scope.APP, recursive=True)
+
+
+* You can use factory with Generic classes
+
+.. code-block:: python
+
+    class MyProvider(Provider):
+        @provide
+        def make_a(self, type_: type[T]) -> A[T]:
+            ...

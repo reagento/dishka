@@ -1,32 +1,26 @@
-# ruff: noqa: RET503
+# ruff: noqa: RET503, UP006
 import dataclasses
 import sys
 import types
 import typing
 from abc import ABC, abstractmethod
 from collections import abc as c_abc, defaultdict
+from collections.abc import Hashable, Iterable, Sequence
 from copy import copy
 from dataclasses import InitVar, dataclass
 from enum import Enum, EnumMeta
 from functools import lru_cache, partial
 from typing import (
+    Annotated,
     Any,
     Callable,
     ClassVar,
-    DefaultDict,
-    Dict,
     Final,
     ForwardRef,
-    Hashable,
-    Iterable,
-    List,
     Literal,
     NewType,
     NoReturn,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -34,7 +28,6 @@ from typing import (
 
 from ..common import TypeHint, VarTuple
 from ..feature_requirement import (
-    HAS_ANNOTATED,
     HAS_PARAM_SPEC,
     HAS_PY_310,
     HAS_PY_311,
@@ -175,7 +168,7 @@ class _LiteralNormType(_BasicNormType):
 class _AnnotatedNormType(_BasicNormType):
     @property
     def origin(self) -> Any:
-        return typing.Annotated
+        return Annotated
 
     __slots__ = (*_BasicNormType.__slots__, "_hash")
 
@@ -243,7 +236,7 @@ class NormTV(BaseNormType):
         return self._var
 
     @property
-    def args(self) -> Tuple[()]:
+    def args(self) -> tuple[()]:
         return ()
 
     @property
@@ -288,7 +281,7 @@ class NormTVTuple(BaseNormType):
         return self._var
 
     @property
-    def args(self) -> Tuple[()]:
+    def args(self) -> tuple[()]:
         return ()
 
     @property
@@ -325,7 +318,7 @@ class NormParamSpecMarker(BaseNormType, ABC):
         return self._param_spec
 
     @property
-    def args(self) -> Tuple[()]:
+    def args(self) -> tuple[()]:
         return ()
 
     @property
@@ -418,7 +411,7 @@ def make_norm_type(
         if not all(type(arg) in [int, bool, str, bytes] or isinstance(type(arg), EnumMeta) for arg in args):
             raise TypeError
         return _LiteralNormType(args, source=source)
-    if HAS_ANNOTATED and origin == typing.Annotated:
+    if origin == Annotated:
         return _AnnotatedNormType(args, source=source)
     if isinstance(origin, TypeVar):
         raise TypeError
@@ -471,7 +464,7 @@ def _replace_source_with_union(norm: BaseNormType, sources: list) -> BaseNormTyp
 NormAspect = Callable[["TypeNormalizer", Any, Any, tuple], Optional[BaseNormType]]
 
 
-class AspectStorage(List[str]):
+class AspectStorage(list[str]):
     @overload
     def add(self, *, condition: object = True) -> Callable[[NormAspect], NormAspect]:
         ...
@@ -503,9 +496,9 @@ TN = TypeVar("TN", bound="TypeNormalizer")
 class TypeNormalizer:
     def __init__(self, implicit_params_getter: ImplicitParamsGetter):
         self.implicit_params_getter = implicit_params_getter
-        self._namespace: Optional[Dict[str, Any]] = None
+        self._namespace: Optional[dict[str, Any]] = None
 
-    def _with_namespace(self: TN, namespace: Dict[str, Any]) -> TN:
+    def _with_namespace(self: TN, namespace: dict[str, Any]) -> TN:
         self_copy = copy(self)
         self_copy._namespace = namespace
         return self_copy
@@ -563,9 +556,8 @@ class TypeNormalizer:
     MUST_SUBSCRIBED_ORIGINS = [
         ClassVar, Final, Literal,
         Union, Optional, InitVar,
+        Annotated,
     ]
-    if HAS_ANNOTATED:
-        MUST_SUBSCRIBED_ORIGINS.append(typing.Annotated)
     if HAS_TYPE_GUARD:
         MUST_SUBSCRIBED_ORIGINS.append(typing.TypeGuard)
     if HAS_TYPED_DICT_REQUIRED:
@@ -584,9 +576,9 @@ class TypeNormalizer:
         if origin is None or origin is NoneType:
             return _NormType(None, (), source=tp)
 
-    @_aspect_storage.add(condition=HAS_ANNOTATED)
+    @_aspect_storage.add
     def _norm_annotated(self, tp, origin, args):
-        if origin == typing.Annotated:
+        if origin == Annotated:
             return _AnnotatedNormType(
                 (self.normalize(args[0]), *args[1:]),
                 source=tp,
@@ -663,8 +655,8 @@ class TypeNormalizer:
 
     @_aspect_storage.add
     def _norm_tuple(self, tp, origin, args):
-        if origin == tuple:
-            if tp in (tuple, Tuple):  # not subscribed values
+        if origin is tuple:
+            if tp in (tuple, typing.Tuple):  # not subscribed values
                 return _NormType(
                     tuple,
                     (ANY_NT, ...),
@@ -691,7 +683,7 @@ class TypeNormalizer:
         # it is necessary to unpack the variable-length tuple as well
         if len(args) == 1 and args[0].origin == typing.Unpack:
             inner_tp = args[0].args[0]
-            if inner_tp.origin == tuple:
+            if inner_tp.origin is tuple:
                 return inner_tp.args
 
         return self._unpack_generic_elements(args)
@@ -706,7 +698,7 @@ class TypeNormalizer:
         return tuple(result)
 
     def _is_fixed_size_tuple(self, tp: BaseNormType) -> bool:
-        return tp.origin == tuple and (not tp.args or tp.args[-1] is not Ellipsis)
+        return tp.origin is tuple and (not tp.args or tp.args[-1] is not Ellipsis)
 
     @_aspect_storage.add
     def _norm_callable(self, tp, origin, args):
@@ -749,7 +741,7 @@ class TypeNormalizer:
             return _LiteralNormType(args, source=tp)
 
     def _unfold_union_args(self, norm_args: Iterable[N]) -> Iterable[N]:
-        result: List[N] = []
+        result: list[N] = []
         for norm in norm_args:
             if norm.origin == Union:
                 result.extend(norm.args)
@@ -758,7 +750,7 @@ class TypeNormalizer:
         return result
 
     def _dedup_union_args(self, args: Iterable[BaseNormType]) -> Iterable[BaseNormType]:
-        args_to_sources: DefaultDict[BaseNormType, List[Any]] = defaultdict(list)
+        args_to_sources: defaultdict[BaseNormType, list[Any]] = defaultdict(list)
 
         for arg in args:
             args_to_sources[arg].append(arg.source)
@@ -772,7 +764,7 @@ class TypeNormalizer:
 
     def _merge_literals(self, args: Iterable[N]) -> Sequence[N]:
         result = []
-        lit_args: List[N] = []
+        lit_args: list[N] = []
         for norm in args:
             if norm.origin == Literal:
                 lit_args.extend(norm.args)
@@ -783,7 +775,7 @@ class TypeNormalizer:
             result.append(_create_norm_literal(lit_args))
         return result
 
-    _UNION_ORIGINS: List[Any] = [Union]
+    _UNION_ORIGINS: list[Any] = [Union]
     if HAS_TYPE_UNION_OP:
         _UNION_ORIGINS.append(types.UnionType)
 
@@ -808,13 +800,13 @@ class TypeNormalizer:
             if norm.origin == Union:
                 return _UnionNormType(
                     tuple(
-                        _NormType(type, (arg,), source=Type[arg.source])
+                        _NormType(type, (arg,), source=type[arg.source])
                         for arg in norm.args
                     ),
                     source=tp,
                 )
 
-    ALLOWED_ZERO_PARAMS_ORIGINS = {Any, NoReturn}
+    ALLOWED_ZERO_PARAMS_ORIGINS: set[Any] = {Any, NoReturn}
     if HAS_TYPE_ALIAS:
         ALLOWED_ZERO_PARAMS_ORIGINS.add(typing.TypeAlias)
     if HAS_PY_310:

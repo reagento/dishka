@@ -1,14 +1,11 @@
 import typing
 from dataclasses import InitVar
-from typing import ClassVar, Final, TypeVar
+from typing import Annotated, ClassVar, Final, TypeVar
 
-from ..feature_requirement import HAS_ANNOTATED, HAS_TYPED_DICT_REQUIRED
+from ..feature_requirement import HAS_TYPED_DICT_REQUIRED
 from .normalize_type import BaseNormType
 
-_TYPE_TAGS = [Final, ClassVar, InitVar]
-
-if HAS_ANNOTATED:
-    _TYPE_TAGS.append(typing.Annotated)
+_TYPE_TAGS = [Final, ClassVar, InitVar, Annotated]
 
 if HAS_TYPED_DICT_REQUIRED:
     _TYPE_TAGS.extend([typing.Required, typing.NotRequired])
@@ -24,12 +21,6 @@ def strip_tags(norm: BaseNormType) -> BaseNormType:
 
 
 N = TypeVar("N", bound=BaseNormType)
-
-
-def strip_annotated(value: N) -> N:
-    if HAS_ANNOTATED and isinstance(value, BaseNormType) and value.origin == typing.Annotated:
-        return strip_annotated(value)
-    return value
 
 
 def is_class_var(norm: BaseNormType) -> bool:

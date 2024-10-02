@@ -330,8 +330,9 @@ class RegistryBuilder:
             and provides not in self.processed_factories
         ):
             raise NothingOverriddenError(factory)
+
         if (
-            not self.validation_settings.implicit_override
+            self.validation_settings.implicit_override
             and not factory.override
             and provides in self.processed_factories
         ):

@@ -11,7 +11,7 @@ from dishka.exceptions import (
 )
 
 
-def test_not_override_provide() -> None:
+def test_no_override_provide() -> None:
     class TestProvider(Provider):
         scope = Scope.APP
         provides = (
@@ -19,14 +19,15 @@ def test_not_override_provide() -> None:
             + provide(int, provides=int)
         )
 
-    with pytest.raises(ImplicitOverrideDetectedError):
+    with pytest.raises(ImplicitOverrideDetectedError) as e:
         make_container(
             TestProvider(),
             validation_settings=STRICT_VALIDATION,
         )
+    assert str(e.value)
 
 
-def test_skip_override_provide() -> None:
+def test_skip_no_override_provide() -> None:
     class TestProvider(Provider):
         scope = Scope.APP
         provides = (
@@ -40,7 +41,7 @@ def test_skip_override_provide() -> None:
     )
 
 
-def test_override_provide() -> None:
+def test_override_provide_ok() -> None:
     class TestProvider(Provider):
         scope = Scope.APP
         provides = (
@@ -88,11 +89,12 @@ def test_cant_override() -> None:
         scope = Scope.APP
         provides = provide(int, provides=int, override=True)
 
-    with pytest.raises(NothingOverriddenError):
+    with pytest.raises(NothingOverriddenError) as e:
         make_container(
             TestProvider(),
             validation_settings=STRICT_VALIDATION,
         )
+    assert str(e.value)
 
 
 def test_skip_cant_override() -> None:

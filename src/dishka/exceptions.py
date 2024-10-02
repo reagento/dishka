@@ -110,11 +110,11 @@ class ImplicitOverrideDetectedError(InvalidGraphError):
         new_name = get_name(self.new.source, include_module=False)
         existing_name = get_name(self.existing.source, include_module=False)
         return (
-            f"Detected multiple factories for {self.factory.provides} "
+            f"Detected multiple factories for {self.new.provides} "
             f"while `override` flag is not set.\n"
             "Hint:\n"
-            f" * Specify the parameter `override=True` for {new_name}\n"
-            f" * Remove factory {existing_name}\n"
+            f" * Try specifying `override=True` for {new_name}\n"
+            f" * Try removing factory {existing_name} or {new_name}\n"
         )
 
 
@@ -128,6 +128,7 @@ class NothingOverriddenError(InvalidGraphError):
             f"Overriding factory found for {self.factory.provides}, "
             "but there is nothing to override.\n"
             "Hint:\n"
-            f" * Remove override=True from {name}\n"
+            f" * Try removing override=True from {name}\n"
+            f" * Check the order of providers\n"
         )
 

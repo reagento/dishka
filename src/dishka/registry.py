@@ -15,13 +15,14 @@ from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope, InvalidScopes, Scope
+from .entities.validation_settigs import ValidationSettings
 from .exceptions import (
-    CantOverrideFactoryError,
     CycleDependenciesError,
-    FactoryNotOverrideError,
     GraphMissingFactoryError,
+    ImplicitOverrideDetectedError,
     InvalidGraphError,
     NoFactoryError,
+    NothingOverriddenError,
     UnknownScopeError,
 )
 from .factory_compiler import compile_factory
@@ -260,8 +261,7 @@ class RegistryBuilder:
             providers: Sequence[BaseProvider],
             container_type: type,
             skip_validation: bool,
-            skip_override: bool,
-            skip_cant_override: bool,
+            validation_settings: ValidationSettings,
     ) -> None:
         self.scopes = scopes
         self.providers = providers
@@ -273,9 +273,8 @@ class RegistryBuilder:
         self.container_type = container_type
         self.decorator_depth: dict[DependencyKey, int] = defaultdict(int)
         self.skip_validation = skip_validation
-        self.skip_override = skip_override
-        self.skip_cant_override = skip_cant_override
-        self.override_factories: dict[DependencyKey, Factory] = {}
+        self.validation_settings = validation_settings
+        self.processed_factories: dict[DependencyKey, Factory] = {}
 
     def _collect_components(self) -> None:
         for provider in self.providers:
@@ -326,17 +325,22 @@ class RegistryBuilder:
         factory = factory.with_component(provider.component)
         provides = factory.provides
         if (
-            not self.skip_cant_override
+            self.validation_settings.nothing_overridden
             and factory.override
-            and provides not in self.override_factories
+            and provides not in self.processed_factories
         ):
-            raise CantOverrideFactoryError(factory)
-        if not self.skip_override and provides in self.override_factories:
-            if not factory.override:
-                raise FactoryNotOverrideError(factory)
-        else:
-            self.override_factories[provides] = factory
+            raise NothingOverriddenError(factory)
+        if (
+            not self.validation_settings.implicit_override
+            and not factory.override
+            and provides in self.processed_factories
+        ):
+            raise ImplicitOverrideDetectedError(
+                factory,
+                self.processed_factories[provides],
+            )
 
+        self.processed_factories[provides] = factory
         registry = self.registries[cast(Scope, factory.scope)]
         registry.add_factory(factory)
 

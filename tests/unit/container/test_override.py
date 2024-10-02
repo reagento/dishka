@@ -1,7 +1,14 @@
 import pytest
 
 from dishka import Provider, Scope, make_container, provide, provide_all
-from dishka.exceptions import CantOverrideFactoryError, FactoryNotOverrideError
+from dishka.entities.validation_settigs import (
+    STRICT_VALIDATION,
+    ValidationSettings,
+)
+from dishka.exceptions import (
+    ImplicitOverrideDetectedError,
+    NothingOverriddenError,
+)
 
 
 def test_not_override_provide() -> None:
@@ -12,8 +19,11 @@ def test_not_override_provide() -> None:
             + provide(int, provides=int)
         )
 
-    with pytest.raises(FactoryNotOverrideError):
-        make_container(TestProvider())
+    with pytest.raises(ImplicitOverrideDetectedError):
+        make_container(
+            TestProvider(),
+            validation_settings=STRICT_VALIDATION,
+        )
 
 
 def test_skip_override_provide() -> None:
@@ -26,7 +36,7 @@ def test_skip_override_provide() -> None:
 
     make_container(
         TestProvider(),
-        skip_override=True,
+        validation_settings=ValidationSettings(implicit_override=False),
     )
 
 
@@ -38,7 +48,10 @@ def test_override_provide() -> None:
             + provide(int, provides=int, override=True)
         )
 
-    make_container(TestProvider())
+    make_container(
+        TestProvider(),
+        validation_settings=STRICT_VALIDATION,
+    )
 
 
 def test_not_override_provide_all() -> None:
@@ -49,8 +62,11 @@ def test_not_override_provide_all() -> None:
             + provide_all(int, str)
         )
 
-    with pytest.raises(FactoryNotOverrideError):
-        make_container(TestProvider())
+    with pytest.raises(ImplicitOverrideDetectedError):
+        make_container(
+            TestProvider(),
+            validation_settings=STRICT_VALIDATION,
+        )
 
 
 def test_override_provide_all() -> None:
@@ -61,7 +77,10 @@ def test_override_provide_all() -> None:
             + provide_all(int, str, override=True)
         )
 
-    make_container(TestProvider())
+    make_container(
+        TestProvider(),
+        validation_settings=STRICT_VALIDATION,
+    )
 
 
 def test_cant_override() -> None:
@@ -69,8 +88,11 @@ def test_cant_override() -> None:
         scope = Scope.APP
         provides = provide(int, provides=int, override=True)
 
-    with pytest.raises(CantOverrideFactoryError):
-        make_container(TestProvider())
+    with pytest.raises(NothingOverriddenError):
+        make_container(
+            TestProvider(),
+            validation_settings=STRICT_VALIDATION,
+        )
 
 
 def test_skip_cant_override() -> None:
@@ -80,6 +102,6 @@ def test_skip_cant_override() -> None:
 
     make_container(
         TestProvider(),
-        skip_cant_override=True,
+        validation_settings=ValidationSettings(nothing_overridden=False),
     )
 

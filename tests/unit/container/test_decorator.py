@@ -176,7 +176,7 @@ def test_expected_decorator():
         def bar(self) -> A:
             return A()
 
-        @provide
+        @provide(override=True)
         def foo(self, a: A) -> A:
             return a
 

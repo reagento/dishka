@@ -61,7 +61,7 @@ def test_provide_all_class():
     class MyProvider(Provider):
         x = provide_all(B, C, scope=Scope.APP, recursive=True)
 
-    container = make_container(MyProvider())
+    container = make_container(MyProvider(), skip_override=True)
     b = container.get(B)
     assert isinstance(b, B)
     assert isinstance(b.a1, A1)
@@ -75,7 +75,7 @@ def test_provide_all_class():
 def test_provide_all_instance():
     provider = Provider(scope=Scope.APP)
     provider.provide_all(B, C, recursive=True)
-    container = make_container(provider)
+    container = make_container(provider, skip_override=True)
     b = container.get(B)
     assert isinstance(b, B)
     assert isinstance(b.a1, A1)

@@ -91,6 +91,7 @@ def test_parse_factory_cls(source, provider_type, is_to_bound):
         cache=False,
         scope=Scope.REQUEST,
         is_in_class=False,
+        override=False,
     )
     assert factory.provides == hint_to_dependency_key(ClassA)
     assert factory.dependencies == hints_to_dependency_keys([int])

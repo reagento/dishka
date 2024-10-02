@@ -74,5 +74,6 @@ value_factory = Factory(
     scope=Scope.APP,
     is_to_bind=False,
     cache=False,
+    override=False,
 )
 value_source = CompositeDependencySource(lambda: None, [value_factory])

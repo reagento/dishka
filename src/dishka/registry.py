@@ -16,7 +16,9 @@ from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope, InvalidScopes, Scope
 from .exceptions import (
+    CantOverrideFactoryError,
     CycleDependenciesError,
+    FactoryNotOverrideError,
     GraphMissingFactoryError,
     InvalidGraphError,
     NoFactoryError,
@@ -113,6 +115,7 @@ class Registry:
             type_=FactoryType.FACTORY,
             is_to_bind=False,
             cache=False,
+            override=False,
             source=lambda: typevar,
         )
 
@@ -160,6 +163,7 @@ class Registry:
             type_=factory.type,
             scope=factory.scope,
             cache=factory.cache,
+            override=factory.override,
         )
 
 
@@ -256,6 +260,8 @@ class RegistryBuilder:
             providers: Sequence[BaseProvider],
             container_type: type,
             skip_validation: bool,
+            skip_override: bool,
+            skip_cant_override: bool,
     ) -> None:
         self.scopes = scopes
         self.providers = providers
@@ -267,6 +273,9 @@ class RegistryBuilder:
         self.container_type = container_type
         self.decorator_depth: dict[DependencyKey, int] = defaultdict(int)
         self.skip_validation = skip_validation
+        self.skip_override = skip_override
+        self.skip_cant_override = skip_cant_override
+        self.override_factories: dict[DependencyKey, Factory] = {}
 
     def _collect_components(self) -> None:
         for provider in self.providers:
@@ -314,8 +323,22 @@ class RegistryBuilder:
     def _process_factory(
             self, provider: BaseProvider, factory: Factory,
     ) -> None:
+        factory = factory.with_component(provider.component)
+        provides = factory.provides
+        if (
+            not self.skip_cant_override
+            and factory.override
+            and provides not in self.override_factories
+        ):
+            raise CantOverrideFactoryError(factory)
+        if not self.skip_override and provides in self.override_factories:
+            if not factory.override:
+                raise FactoryNotOverrideError(factory)
+        else:
+            self.override_factories[provides] = factory
+
         registry = self.registries[cast(Scope, factory.scope)]
-        registry.add_factory(factory.with_component(provider.component))
+        registry.add_factory(factory)
 
     def _process_alias(
             self, provider: BaseProvider, alias: Alias,

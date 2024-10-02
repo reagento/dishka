@@ -115,6 +115,7 @@ class Registry:
             type_=FactoryType.FACTORY,
             is_to_bind=False,
             cache=False,
+            override=False,
             source=lambda: typevar,
         )
 

@@ -1,6 +1,14 @@
 from typing import Protocol
 
-from dishka import AnyOf, Provider, Scope, make_container, provide, provide_all
+from dishka import (
+    AnyOf,
+    Provider,
+    Scope,
+    ValidationSettings,
+    make_container,
+    provide,
+    provide_all,
+)
 
 
 class A1:
@@ -61,7 +69,12 @@ def test_provide_all_class():
     class MyProvider(Provider):
         x = provide_all(B, C, scope=Scope.APP, recursive=True)
 
-    container = make_container(MyProvider(), skip_override=True)
+    container = make_container(
+        MyProvider(),
+        validation_settings=ValidationSettings(
+            implicit_override=False,
+        ),
+    )
     b = container.get(B)
     assert isinstance(b, B)
     assert isinstance(b.a1, A1)
@@ -75,7 +88,12 @@ def test_provide_all_class():
 def test_provide_all_instance():
     provider = Provider(scope=Scope.APP)
     provider.provide_all(B, C, recursive=True)
-    container = make_container(provider, skip_override=True)
+    container = make_container(
+        provider,
+        validation_settings=ValidationSettings(
+            implicit_override=False,
+        ),
+    )
     b = container.get(B)
     assert isinstance(b, B)
     assert isinstance(b.a1, A1)

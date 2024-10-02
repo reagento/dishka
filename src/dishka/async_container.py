@@ -13,6 +13,7 @@ from dishka.entities.scope import BaseScope, Scope
 from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .dependency_source import Factory
+from .entities.validation_settigs import DEFAULT_VALIDATION, ValidationSettings
 from .exceptions import (
     ExitError,
     NoFactoryError,
@@ -196,16 +197,14 @@ def make_async_container(
         lock_factory: Callable[[], Lock] | None = Lock,
         skip_validation: bool = False,
         start_scope: BaseScope | None = None,
-        skip_override: bool = False,
-        skip_cant_override: bool = False,
+        validation_settings: ValidationSettings = DEFAULT_VALIDATION,
 ) -> AsyncContainer:
     registries = RegistryBuilder(
         scopes=scopes,
         container_type=AsyncContainer,
         providers=providers,
         skip_validation=skip_validation,
-        skip_override=skip_override,
-        skip_cant_override=skip_cant_override,
+        validation_settings=validation_settings,
     ).build()
     container = AsyncContainer(
         *registries,

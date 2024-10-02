@@ -101,33 +101,34 @@ class GraphMissingFactoryError(NoFactoryError, InvalidGraphError):
     pass
 
 
-class FactoryNotOverrideError(InvalidGraphError):
-    def __init__(self, factory: Factory) -> None:
-        self.factory = factory
+class ImplicitOverrideDetectedError(InvalidGraphError):
+    def __init__(self, new: Factory, existing: Factory) -> None:
+        self.new = new
+        self.existing = existing
 
     def __str__(self) -> str:
-        name = get_name(self.factory.source, include_module=False)
+        new_name = get_name(self.new.source, include_module=False)
+        existing_name = get_name(self.existing.source, include_module=False)
         return (
-            f"Factory {self.factory.provides} was found that "
-            "implicitly override factory.\n"
+            f"Detected multiple factories for {self.new.provides} "
+            f"while `override` flag is not set.\n"
             "Hint:\n"
-            f" * Specify the parameter override=True for {name}.\n"
-            " * Add skip_override=True to make_container"
-            " or make_async_container."
+            f" * Try specifying `override=True` for {new_name}\n"
+            f" * Try removing factory {existing_name} or {new_name}\n"
         )
 
 
-class CantOverrideFactoryError(InvalidGraphError):
+class NothingOverriddenError(InvalidGraphError):
     def __init__(self, factory: Factory) -> None:
         self.factory = factory
 
     def __str__(self) -> str:
         name = get_name(self.factory.source, include_module=False)
         return (
-            f"Can't override factory for {self.factory.provides}.\n"
+            f"Overriding factory found for {self.factory.provides}, "
+            "but there is nothing to override.\n"
             "Hint:\n"
-            f" * Remove override=True from {name}.\n"
-            " * Add skip_cant_override=True to make_container"
-            " or make_async_container."
+            f" * Try removing override=True from {name}\n"
+            f" * Check the order of providers\n"
         )
 

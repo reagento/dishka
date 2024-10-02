@@ -155,7 +155,7 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
         c = provide(C, scope=Scope.APP, recursive=True)
 
 
-* Do you want to override the factory? To do this, specify the parameter ``override=True``. If this is not done, error ``FactoryIsNotOverriddenError`` will be thrown
+* Do you want to override the factory? To do this, specify the parameter ``override=True``. This can be checked when passing proper ``validation_settings`` when creating container.
 
 .. code-block:: python
     from dishka import WithParents, provide, Provider, Scope

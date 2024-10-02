@@ -38,7 +38,7 @@ def inject(func: Callable[..., T]) -> AiohttpHandler:
 
 
 class AiohttpProvider(Provider):
-    request = from_context(Request, scope=Scope.REQUEST)
+    request = from_context(Request, scope=Scope.SESSION)
 
 
 @web.middleware

@@ -150,6 +150,7 @@ def test_no_factory_sync():
     with pytest.raises(NoFactoryError) as e:
         container.get(object)
     assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+    assert str(e.value)
 
 
 def test_no_factory_path_sync():
@@ -157,6 +158,7 @@ def test_no_factory_path_sync():
     with pytest.raises(NoFactoryError) as e:
         container.get(complex)
     assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+    assert str(e.value)
 
 
 @pytest.mark.asyncio

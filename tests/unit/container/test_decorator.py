@@ -1,3 +1,5 @@
+from typing import Generic, TypeVar
+
 import pytest
 
 from dishka import (
@@ -182,3 +184,34 @@ def test_expected_decorator():
 
     with pytest.raises(CycleDependenciesError):
         make_container(MyProvider())
+
+
+T = TypeVar("T", bound=int)
+
+
+class GenericA(Generic[T]):
+    def __init__(self, value):
+        self.value = value
+
+
+def test_generic_decorator():
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        @provide(scope=Scope.APP)
+        def bar(self) -> int:
+            return 17
+
+        @decorate
+        def dec(self, a: T) -> T:
+            return ADecorator(a)
+
+    container = make_container(MyProvider())
+    a = container.get(int)
+    print(a)
+    assert isinstance(a, ADecorator)
+    assert a.a == 17
+
+
+#  dishka.exceptions.NoFactoryError: <exception str() failed>
+# bound, constraints as generics (????)

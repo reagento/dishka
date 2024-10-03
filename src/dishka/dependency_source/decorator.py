@@ -42,6 +42,8 @@ def _is_broader_or_same_generic(t1: Any, t2: Any) -> bool:
 
 
 def _is_broader_or_same_type_var(t1: TypeVar, t2: Any) -> bool:
+    if get_origin(t2) is not None:
+        return False  # generic
     if not t1.__bound__ and not t1.__constraints__:
         return True
     elif t1.__bound__:
@@ -65,7 +67,7 @@ def is_broader_or_same_type(t1: Any, t2: Any) -> bool:
     if t1 == t2:
         return True
     if get_origin(t1) is not None:
-       return _is_broader_or_same_generic(t1, t2)
+        return _is_broader_or_same_generic(t1, t2)
     elif isinstance(t1, TypeVar):
         return _is_broader_or_same_type_var(t1, t2)
     return False
@@ -84,6 +86,12 @@ class Decorator:
             self.provides = provides
         else:
             self.provides = factory.provides
+
+    def is_generic(self):
+        return (
+            isinstance(self.provides.type_hint, TypeVar)
+            or get_origin(self.provides.type_hint) is not None
+        )
 
     def match_type(self, type_: Any) -> bool:
         return is_broader_or_same_type(self.provides.type_hint, type_)

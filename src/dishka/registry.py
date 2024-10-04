@@ -1,6 +1,5 @@
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from copy import copy
 from typing import Any, TypeVar, cast, get_args, get_origin
 
 from ._adaptix.type_tools.basic_utils import is_generic
@@ -12,6 +11,7 @@ from .dependency_source import (
     Decorator,
     Factory,
 )
+from .dependency_source.type_match import is_broader_or_same_type
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
@@ -88,9 +88,12 @@ class Registry:
             factory = self.factories.get(origin_key)
             if not factory:
                 return None
-
-            else:
-                factory = self._specialize_generic(factory, dependency)
+            if not is_broader_or_same_type(
+                    factory.provides.type_hint,
+                    dependency.type_hint,
+            ):
+                return None
+            factory = self._specialize_generic(factory, dependency)
             self.factories[dependency] = factory
             return factory
 
@@ -495,11 +498,12 @@ class RegistryBuilder:
         return tuple(registries)
 
     def _post_process_generic_factories(self):
-        found = []
-        for registry in self.registries.values():
-            for factory in registry.factories.values():
-                if is_generic(factory.provides.type_hint):
-                    found.append((registry, factory))
+        found = [
+            (registry, factory)
+            for registry in self.registries.values()
+            for factory in registry.factories.values()
+            if is_generic(factory.provides.type_hint)
+        ]
         for registry, factory in found:
             origin = get_origin(factory.provides.type_hint)
             origin_key = DependencyKey(origin, factory.provides.component)

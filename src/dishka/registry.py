@@ -30,16 +30,6 @@ from .factory_compiler import compile_factory
 from .provider import BaseProvider
 
 
-class UndecoratedType:
-    """Container for a type which is decorated in other place."""
-    def __init__(self, original: type[Any], depth: int) -> None:
-        self.original = original
-        self.level = depth
-
-    def __repr__(self) -> str:
-        return f"UndecoratedType({self.original}, depth={self.level})"
-
-
 class Registry:
     __slots__ = ("scope", "factories", "compiled", "compiled_async")
 
@@ -49,8 +39,13 @@ class Registry:
         self.compiled: dict[DependencyKey, Callable[..., Any]] = {}
         self.compiled_async: dict[DependencyKey, Callable[..., Any]] = {}
 
-    def add_factory(self, factory: Factory) -> None:
-        provides = factory.provides
+    def add_factory(
+            self,
+            factory: Factory,
+            provides: DependencyKey| None = None,
+    ) -> None:
+        if provides is None:
+            provides = factory.provides
         self.factories[provides] = factory
 
     def get_compiled(
@@ -508,6 +503,4 @@ class RegistryBuilder:
         for registry, factory in found:
             origin = get_origin(factory.provides.type_hint)
             origin_key = DependencyKey(origin, factory.provides.component)
-            factory = copy(factory)
-            factory.provides = origin_key
-            registry.add_factory(factory)
+            registry.add_factory(factory, origin_key)

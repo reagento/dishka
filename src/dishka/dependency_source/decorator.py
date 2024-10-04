@@ -42,10 +42,10 @@ def _is_broader_or_same_generic(t1: Any, t2: Any) -> bool:
 
 
 def _is_broader_or_same_type_var(t1: TypeVar, t2: Any) -> bool:
-    if get_origin(t2) is not None:
-        return False  # generic
     if not t1.__bound__ and not t1.__constraints__:
         return True
+    elif get_origin(t2) is not None:
+        return False  # FIXME generic
     elif t1.__bound__:
         bound1 = eval_maybe_forward(t1.__bound__, t1)
         if not isinstance(t2, TypeVar):

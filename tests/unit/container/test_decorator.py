@@ -186,7 +186,8 @@ def test_expected_decorator():
         make_container(MyProvider())
 
 
-T = TypeVar("T", bound=int)
+Tint = TypeVar("Tint", bound=int)
+T = TypeVar("T")
 
 
 class GenericA(Generic[T]):
@@ -203,15 +204,29 @@ def test_generic_decorator():
             return 17
 
         @decorate
-        def dec(self, a: T) -> T:
+        def dec(self, a: Tint) -> Tint:
             return ADecorator(a)
 
     container = make_container(MyProvider())
     a = container.get(int)
-    print(a)
     assert isinstance(a, ADecorator)
     assert a.a == 17
 
 
-#  dishka.exceptions.NoFactoryError: <exception str() failed>
-# bound, constraints as generics (????)
+def test_generic_decorator_generic_factory():
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        @provide(scope=Scope.APP)
+        def bar(self, t: type[T]) -> GenericA[T]:
+            return GenericA(t())
+
+        @decorate
+        def dec(self, a: T) -> T:
+            return ADecorator(a)
+
+    container = make_container(MyProvider())
+    a = container.get(GenericA[str])
+    assert isinstance(a, ADecorator)
+    assert isinstance(a.a, GenericA)
+    assert a.a.value == ""

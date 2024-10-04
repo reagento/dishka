@@ -1,5 +1,6 @@
 from collections import defaultdict
 from collections.abc import Callable, Sequence
+from copy import copy
 from typing import Any, TypeVar, cast, get_args, get_origin
 
 from ._adaptix.type_tools.basic_utils import is_generic
@@ -49,12 +50,8 @@ class Registry:
         self.compiled_async: dict[DependencyKey, Callable[..., Any]] = {}
 
     def add_factory(self, factory: Factory) -> None:
-        if is_generic(factory.provides.type_hint):
-            origin = get_origin(factory.provides.type_hint)
-            if origin:
-                origin_key = DependencyKey(origin, factory.provides.component)
-                self.factories[origin_key] = factory
-        self.factories[factory.provides] = factory
+        provides = factory.provides
+        self.factories[provides] = factory
 
     def get_compiled(
             self, dependency: DependencyKey,
@@ -379,7 +376,38 @@ class RegistryBuilder:
         self.dependency_scopes[factory.provides] = scope
         registry.add_factory(factory)
 
-    def _process_decorator(
+    def _process_generic_decorator(
+            self, provider: BaseProvider, decorator: Decorator,
+    ) -> None:
+        found = []
+        provides = decorator.provides.with_component(provider.component)
+        for registry in self.registries.values():
+            for factory in registry.factories.values():
+                if factory.provides.component != provides.component:
+                    continue
+                if factory.type is FactoryType.CONTEXT:
+                    continue
+                if decorator.match_type(factory.provides.type_hint):
+                    found.append((registry, factory))
+        if found:
+            for registry, factory in found:
+                self._decorate_factory(
+                    decorator=decorator,
+                    registry=registry,
+                    old_factory=factory,
+                )
+        else:
+            raise GraphMissingFactoryError(
+                requested=provides,
+                path=[decorator.as_factory(
+                    scope=InvalidScopes.UNKNOWN_SCOPE,
+                    new_dependency=provides,
+                    cache=False,
+                    component=provider.component,
+                )],
+            )
+
+    def _process_normal_decorator(
             self, provider: BaseProvider, decorator: Decorator,
     ) -> None:
         provides = decorator.provides.with_component(provider.component)
@@ -395,12 +423,23 @@ class RegistryBuilder:
             )
         scope = self.dependency_scopes[provides]
         registry = self.registries[scope]
-        undecorated_type = UndecoratedType(
-            decorator.provides.type_hint,
-            self.decorator_depth[provides],
-        )
-        self.decorator_depth[provides] += 1
         old_factory = registry.get_factory(provides)
+        self._decorate_factory(
+            decorator=decorator,
+            registry=registry,
+            old_factory=old_factory,
+        )
+
+    def _decorate_factory(
+        self,
+        decorator: Decorator,
+        registry: Registry,
+        old_factory: Factory,
+    ):
+        provides = old_factory.provides
+        depth = self.decorator_depth[provides]
+        decorated_component = f"__Dishka_decorate_{depth}"
+        self.decorator_depth[provides] += 1
         if old_factory is None:
             raise InvalidGraphError(
                 "Cannot apply decorator because there is"
@@ -411,14 +450,15 @@ class RegistryBuilder:
                 f"Cannot apply decorator to context data {provides}",
             )
         old_factory.provides = DependencyKey(
-            undecorated_type, old_factory.provides.component,
+            old_factory.provides.type_hint, decorated_component,
         )
         new_factory = decorator.as_factory(
-            scope=scope,
-            new_dependency=DependencyKey(undecorated_type, None),
+            scope=registry.scope,
+            new_dependency=old_factory.provides,
             cache=old_factory.cache,
-            component=provider.component,
+            component=provides.component,
         )
+        new_factory.provides = provides
         registry.add_factory(old_factory)
         registry.add_factory(new_factory)
 
@@ -449,9 +489,25 @@ class RegistryBuilder:
             for context_var in provider.context_vars:
                 self._process_context_var(provider, context_var)
             for decorator in provider.decorators:
-                self._process_decorator(provider, decorator)
-
+                if decorator.is_generic():
+                    self._process_generic_decorator(provider, decorator)
+                else:
+                    self._process_normal_decorator(provider, decorator)
+        self._post_process_generic_factories()
         registries = list(self.registries.values())
         if not self.skip_validation:
             GraphValidator(registries).validate()
         return tuple(registries)
+
+    def _post_process_generic_factories(self):
+        found = []
+        for registry in self.registries.values():
+            for factory in registry.factories.values():
+                if is_generic(factory.provides.type_hint):
+                    found.append((registry, factory))
+        for registry, factory in found:
+            origin = get_origin(factory.provides.type_hint)
+            origin_key = DependencyKey(origin, factory.provides.component)
+            factory = copy(factory)
+            factory.provides = origin_key
+            registry.add_factory(factory)

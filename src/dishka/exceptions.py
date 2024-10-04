@@ -77,7 +77,7 @@ class NoFactoryError(DishkaError):
             f"component={self.requested.component!r})"
         )
         suggestion = render_suggestions_for_missing(
-            requested_for=self.path[-1],
+            requested_for=self.path[-1] if self.path else None,
             requested_key=self.requested,
             suggest_other_scopes=self.suggest_other_scopes,
             suggest_other_components=self.suggest_other_components,

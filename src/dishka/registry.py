@@ -421,7 +421,9 @@ class RegistryBuilder:
             )
         scope = self.dependency_scopes[provides]
         registry = self.registries[scope]
-        old_factory = registry.get_factory(provides)
+        # factory is expected to be as we already processed
+        # it according to dependency_scopes
+        old_factory = cast(Factory, registry.get_factory(provides))
         self._decorate_factory(
             decorator=decorator,
             registry=registry,
@@ -435,6 +437,8 @@ class RegistryBuilder:
         old_factory: Factory,
     ):
         provides = old_factory.provides
+        if provides.component is None:
+            raise ValueError(f"Unexpected empty component for {provides}")
         depth = self.decorator_depth[provides]
         decorated_component = f"__Dishka_decorate_{depth}"
         self.decorator_depth[provides] += 1

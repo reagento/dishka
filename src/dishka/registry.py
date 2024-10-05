@@ -395,6 +395,8 @@ class RegistryBuilder:
                     old_factory=factory,
                 )
         else:
+            if not self.validation_settings.nothing_decorated:
+                return
             raise GraphMissingFactoryError(
                 requested=provides,
                 path=[decorator.as_factory(
@@ -410,6 +412,8 @@ class RegistryBuilder:
     ) -> None:
         provides = decorator.provides.with_component(provider.component)
         if provides not in self.dependency_scopes:
+            if not self.validation_settings.nothing_decorated:
+                return
             raise GraphMissingFactoryError(
                 requested=provides,
                 path=[decorator.as_factory(

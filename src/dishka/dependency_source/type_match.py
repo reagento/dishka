@@ -25,7 +25,7 @@ def eval_maybe_forward_many(args: Sequence[Any], wrapper: Any) -> list[type]:
 
 
 class _TypeMatcher:
-    def __init__(self):
+    def __init__(self) -> None:
         self.type_var_subst: dict[TypeVar, Any] = {}
 
     def _is_broader_or_same_generic(self, t1: Any, t2: Any) -> bool:

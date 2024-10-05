@@ -434,6 +434,21 @@ class RegistryBuilder:
             old_factory=old_factory,
         )
 
+    def _is_alias_decorated(
+        self,
+        decorator: Decorator,
+        registry: Registry,
+        alias: Factory,
+    ) -> bool:
+        dependency = alias.dependencies[0]
+        factory = registry.get_factory(dependency)
+        if factory is None:
+            raise ValueError(
+                f"Factory for {dependency} "
+                f"aliased from {alias.provides} is not found",
+            )
+        return factory.source is decorator.factory.source
+
     def _decorate_factory(
         self,
         decorator: Decorator,
@@ -443,6 +458,11 @@ class RegistryBuilder:
         provides = old_factory.provides
         if provides.component is None:
             raise ValueError(f"Unexpected empty component for {provides}")
+        if (
+            old_factory.type is FactoryType.ALIAS
+                and self._is_alias_decorated(decorator, registry, old_factory)
+        ):
+            return
         depth = self.decorator_depth[provides]
         decorated_component = f"__Dishka_decorate_{depth}"
         self.decorator_depth[provides] += 1

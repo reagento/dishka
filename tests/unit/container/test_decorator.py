@@ -230,3 +230,24 @@ def test_generic_decorator_generic_factory():
     assert isinstance(a, ADecorator)
     assert isinstance(a.a, GenericA)
     assert a.a.value == ""
+
+
+def test_decorate_alias():
+
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        @provide(scope=Scope.APP)
+        def bar(self) -> int:
+            return 17
+
+        baz = alias(source=int, provides=float)
+
+        @decorate
+        def dec(self, a: T) -> T:
+            return ADecorator(a)
+
+    container = make_container(MyProvider())
+    a = container.get(float)
+    assert isinstance(a, ADecorator)
+    assert a.a == 17

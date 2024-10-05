@@ -24,32 +24,32 @@ def eval_maybe_forward_many(args: Sequence[Any], wrapper: Any) -> list[type]:
     ]
 
 
-def _is_broader_or_same_generic(t1: Any, t2: Any) -> bool:
-    origin1 = eval_maybe_forward(get_origin(t1) or t1, t1)
-    origin2 = eval_maybe_forward(get_origin(t2) or t2, t2)
-    if origin1 is not origin2:
-        return False
-    args1 = eval_maybe_forward_many(get_args(t1), t1)
-    params1 = t1.__parameters__
-    if len(args1) != len(params1):
-        args1 += params1[len(args1):]
-    args2 = eval_maybe_forward_many(get_args(t2), t2)
-    params2 = t1.__parameters__
-    if len(args2) != len(params2):
-        args2 += params1[len(args2):]
+class _TypeMatcher:
+    def __init__(self):
+        self.type_var_subst: dict[TypeVar, Any] = {}
 
-    if len(args1) != len(args2):
-        return False
-    for a1, a2 in zip(args1, args2, strict=False):
-        if not is_broader_or_same_type(a1, a2):
+    def _is_broader_or_same_generic(self, t1: Any, t2: Any) -> bool:
+        origin1 = eval_maybe_forward(get_origin(t1) or t1, t1)
+        origin2 = eval_maybe_forward(get_origin(t2) or t2, t2)
+        if origin1 is not origin2:
             return False
-    return True
+        args1 = eval_maybe_forward_many(get_args(t1), t1)
+        params1 = t1.__parameters__
+        if len(args1) != len(params1):
+            args1 += params1[len(args1):]
+        args2 = eval_maybe_forward_many(get_args(t2), t2)
+        params2 = t1.__parameters__
+        if len(args2) != len(params2):
+            args2 += params1[len(args2):]
 
-
-def _is_broader_or_same_type_var(t1: TypeVar, t2: Any) -> bool:
-    if not t1.__bound__ and not t1.__constraints__:
+        if len(args1) != len(args2):
+            return False
+        for a1, a2 in zip(args1, args2, strict=False):
+            if not self.is_broader_or_same_type(a1, a2):
+                return False
         return True
-    if t1.__bound__:
+
+    def _is_bound_broader(self, t1: TypeVar, t2: Any) -> bool:
         bound1 = eval_maybe_forward(t1.__bound__, t1)
         if get_origin(bound1):
             raise ValueError(f"Generic bounds are not supported: {t1}")
@@ -60,21 +60,39 @@ def _is_broader_or_same_type_var(t1: TypeVar, t2: Any) -> bool:
         if t2.__bound__:
             bound2 = eval_maybe_forward(t2.__bound__, t2)
             return issubclass(bound2, bound1)
-    elif t1.__constraints__:
+        return False
+
+    def _is_constraint_broader(self, t1: TypeVar, t2: Any) -> bool:
         constraints1 = eval_maybe_forward_many(t1.__constraints__, t1)
         if not isinstance(t2, TypeVar):
             return t2 in constraints1
         if t2.__constraints__:
             constraints2 = eval_maybe_forward_many(t2.__constraints__, t2)
             return set(constraints1) >= set(constraints2)
-    return False
+        return False
+
+    def _is_broader_or_same_type_var(self, t1: TypeVar, t2: Any) -> bool:
+        if t1 in self.type_var_subst:
+            return self.type_var_subst[t1] == t2
+        self.type_var_subst[t1] = t2
+
+        if not t1.__bound__ and not t1.__constraints__:
+            return True
+        if t1.__bound__:
+            return self._is_bound_broader(t1, t2)
+        elif t1.__constraints__:
+            return self._is_constraint_broader(t1, t2)
+        return False
+
+    def is_broader_or_same_type(self, t1: Any, t2: Any) -> bool:
+        if t1 == t2:
+            return True
+        if get_origin(t1) is not None or is_generic(t1):
+            return self._is_broader_or_same_generic(t1, t2)
+        elif isinstance(t1, TypeVar):
+            return self._is_broader_or_same_type_var(t1, t2)
+        return False
 
 
 def is_broader_or_same_type(t1: Any, t2: Any) -> bool:
-    if t1 == t2:
-        return True
-    if get_origin(t1) is not None or is_generic(t1):
-        return _is_broader_or_same_generic(t1, t2)
-    elif isinstance(t1, TypeVar):
-        return _is_broader_or_same_type_var(t1, t2)
-    return False
+    return _TypeMatcher().is_broader_or_same_type(t1, t2)

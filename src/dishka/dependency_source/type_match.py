@@ -8,7 +8,9 @@ from dishka._adaptix.type_tools.basic_utils import eval_forward_ref, is_generic
 
 
 def eval_maybe_forward(t: Any, wrapper: Any) -> Any:
-    if not isinstance(t, ForwardRef):
+    if isinstance(t, str):
+        t = ForwardRef(t)
+    elif not isinstance(t, ForwardRef):
         return t
     return eval_forward_ref(
         vars(sys.modules[wrapper.__module__]),

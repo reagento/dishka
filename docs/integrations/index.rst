@@ -5,22 +5,34 @@ Using with frameworks
 
 There are some integrations in library you are not limited to use them.
 
-Built-in frameworks integrations:
+Built-in frameworks integrations includes:
 
-* aiohttp
-* Flask
-* Fastapi
-* Litestar
-* Starlette
-* Aiogram
-* Aiogram_dialog
-* pyTelegramBotAPI
-* Arq
-* FastStream
-* TaskIq
-* Sanic
-* grpcio
-* Click
+.. toctree::
+   :hidden:
+
+   aiohttp
+
+Web frameworks
+    * :ref:`aiohttp`
+    * Flask
+    * Fastapi
+    * Litestar
+    * Starlette
+    * grpcio
+
+Telegram bots
+    * Aiogram
+    * Aiogram_dialog
+    * pyTelegramBotAPI
+
+Tasks and events
+    * Arq
+    * FastStream
+    * TaskIq
+    * Sanic
+
+Other
+    * Click
 
 Common approach
 =====================
@@ -265,23 +277,7 @@ In frameworks like FastAPI and Starlette your view function is called once per c
             async with container() as request_container:
                 b = await request_container.get(B)  # object with Scope.REQUEST
 
-This is how it works with aiohttp
 
-.. code-block:: python
-
-    @inject
-    async def get_with_request(
-        request: web.Request, 
-        a: FromDishka[A],  # object with Scope.SESSION
-        container: FromDishka[AsyncContainer],  # container for Scope.SESSION
-    ) -> web.WebsocketResponse:
-        websocket = web.WebsocketResponse()
-        await websocket.prepare(request)
-
-        async for message in weboscket:
-            # enter the nested scope, which is Scope.REQUEST
-            async with container() as request_container:
-                b = await request_container.get(B)  # object with Scope.REQUEST
 
 Adding integrations
 ===========================

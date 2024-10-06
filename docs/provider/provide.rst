@@ -158,6 +158,7 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
 * Do you want to override the factory? To do this, specify the parameter ``override=True``. This can be checked when passing proper ``validation_settings`` when creating container.
 
 .. code-block:: python
+
     from dishka import WithParents, provide, Provider, Scope
     class MyProvider(Provider):
         scope=Scope.APP

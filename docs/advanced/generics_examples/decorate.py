@@ -25,8 +25,8 @@ class MyProvider(Provider):
 
 
 container = make_container(MyProvider())
-container.get(int)  # Requested int with value 1
-container.get(str)  # Requested str with value hello
+container.get(int)  # Requested <class 'int'> with value 1
+container.get(str)  # Requested <class 'str'> with value hello
 container.close()
 # Requested release object hello
 # Requested release object 1

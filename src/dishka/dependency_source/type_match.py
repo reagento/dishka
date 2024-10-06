@@ -96,3 +96,9 @@ class _TypeMatcher:
 
 def is_broader_or_same_type(t1: Any, t2: Any) -> bool:
     return _TypeMatcher().is_broader_or_same_type(t1, t2)
+
+
+def get_typevar_replacement(t1: Any, t2: Any) -> dict[TypeVar, Any]:
+    matcher = _TypeMatcher()
+    matcher.is_broader_or_same_type(t1, t2)
+    return matcher.type_var_subst

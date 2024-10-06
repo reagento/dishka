@@ -11,10 +11,11 @@ Built-in frameworks integrations includes:
    :hidden:
 
    aiohttp
+   flask
 
 Web frameworks
     * :ref:`aiohttp`
-    * Flask
+    * :ref:`Flask`
     * Fastapi
     * Litestar
     * Starlette

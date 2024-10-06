@@ -7,7 +7,7 @@ Though it is not required, you can use dishka-aiohttp integration. It features:
 
 * automatic REQUEST and SESSION scope management using middleware
 * passing ``Request`` object as a context data to providers for both **Websockets** and **HTTP** requests
-* automatic injection of dependencies into handle function
+* automatic injection of dependencies into handler function
 
 
 How to use
@@ -24,9 +24,9 @@ How to use
         setup_dishka,
         AiohttpProvider,
     )
-    from dishka import make_container, Provider, provide, Scope
+    from dishka import make_async_container, Provider, provide, Scope
 
-2. Create provider. You can use ``aophttp.web_request.Request`` as a factory parameter to access HTTP or Websocket request.
+2. Create provider. You can use ``aiohttp.web.Request`` as a factory parameter to access HTTP or Websocket request.
 It is available on ``SESSION`` and ``REQUEST`` scopes.
 
 .. code-block:: python
@@ -42,7 +42,7 @@ It is available on ``SESSION`` and ``REQUEST`` scopes.
 
     @router.get('/')
     async def endpoint(
-            request: str, gateway: FromDishka[Gateway],
+        request: str, gateway: FromDishka[Gateway],
     ) -> Response:
         ...
 

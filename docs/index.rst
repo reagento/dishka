@@ -36,6 +36,7 @@ Main ideas:
 
    advanced/components
    advanced/context
+   advanced/generics
    advanced/scopes
    advanced/testing/index
 

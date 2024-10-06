@@ -24,6 +24,9 @@ class A(Generic[T]):
     def __init__(self, x: T):
         self.x = x
 
+    def __eq__(self, other):
+        return isinstance(other, A) and other.x == self.x
+
 
 class B(A[U], Generic[U]):
     pass
@@ -185,3 +188,21 @@ def test_func_with_generic_params():
     provider.provide(lambda: A(42), provides=A[T])
     container = make_container(provider)
     assert container.get(EventEmitter[int]) == 42
+
+
+Tint = TypeVar("Tint", bound=int)
+
+
+def type_var_decorator(
+    type_: type[Tint], em: EventEmitter[Tint], obj: Tint,
+) -> Tint:
+    return type_, em, obj
+
+
+def test_passing_type_var_decorator():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(lambda: A(42), provides=int)
+    provider.provide(lambda: 1, provides=EventEmitter[T])
+    provider.decorate(type_var_decorator)
+    container = make_container(provider)
+    assert container.get(int) == (int, 1, A(42))

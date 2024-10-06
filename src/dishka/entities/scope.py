@@ -34,4 +34,4 @@ class InvalidScopes(BaseScope):
     UNKNOWN_SCOPE = new_scope("<unknown scope>", skip=True)
 
     def __str__(self) -> Any:
-        return self.value
+        return str(self.value)

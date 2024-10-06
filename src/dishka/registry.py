@@ -11,6 +11,7 @@ from .dependency_source import (
     Decorator,
     Factory,
 )
+from .dependency_source.type_match import is_broader_or_same_type
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
@@ -29,16 +30,6 @@ from .factory_compiler import compile_factory
 from .provider import BaseProvider
 
 
-class UndecoratedType:
-    """Container for a type which is decorated in other place."""
-    def __init__(self, original: type[Any], depth: int) -> None:
-        self.original = original
-        self.level = depth
-
-    def __repr__(self) -> str:
-        return f"UndecoratedType({self.original}, depth={self.level})"
-
-
 class Registry:
     __slots__ = ("scope", "factories", "compiled", "compiled_async")
 
@@ -48,13 +39,14 @@ class Registry:
         self.compiled: dict[DependencyKey, Callable[..., Any]] = {}
         self.compiled_async: dict[DependencyKey, Callable[..., Any]] = {}
 
-    def add_factory(self, factory: Factory) -> None:
-        if is_generic(factory.provides.type_hint):
-            origin = get_origin(factory.provides.type_hint)
-            if origin:
-                origin_key = DependencyKey(origin, factory.provides.component)
-                self.factories[origin_key] = factory
-        self.factories[factory.provides] = factory
+    def add_factory(
+            self,
+            factory: Factory,
+            provides: DependencyKey| None = None,
+    ) -> None:
+        if provides is None:
+            provides = factory.provides
+        self.factories[provides] = factory
 
     def get_compiled(
             self, dependency: DependencyKey,
@@ -96,9 +88,12 @@ class Registry:
             factory = self.factories.get(origin_key)
             if not factory:
                 return None
-
-            else:
-                factory = self._specialize_generic(factory, dependency)
+            if not is_broader_or_same_type(
+                    factory.provides.type_hint,
+                    dependency.type_hint,
+            ):
+                return None
+            factory = self._specialize_generic(factory, dependency)
             self.factories[dependency] = factory
             return factory
 
@@ -379,11 +374,46 @@ class RegistryBuilder:
         self.dependency_scopes[factory.provides] = scope
         registry.add_factory(factory)
 
-    def _process_decorator(
+    def _process_generic_decorator(
+            self, provider: BaseProvider, decorator: Decorator,
+    ) -> None:
+        found = []
+        provides = decorator.provides.with_component(provider.component)
+        for registry in self.registries.values():
+            for factory in registry.factories.values():
+                if factory.provides.component != provides.component:
+                    continue
+                if factory.type is FactoryType.CONTEXT:
+                    continue
+                if decorator.match_type(factory.provides.type_hint):
+                    found.append((registry, factory))
+        if found:
+            for registry, factory in found:
+                self._decorate_factory(
+                    decorator=decorator,
+                    registry=registry,
+                    old_factory=factory,
+                )
+        else:
+            if not self.validation_settings.nothing_decorated:
+                return
+            raise GraphMissingFactoryError(
+                requested=provides,
+                path=[decorator.as_factory(
+                    scope=InvalidScopes.UNKNOWN_SCOPE,
+                    new_dependency=provides,
+                    cache=False,
+                    component=provider.component,
+                )],
+            )
+
+    def _process_normal_decorator(
             self, provider: BaseProvider, decorator: Decorator,
     ) -> None:
         provides = decorator.provides.with_component(provider.component)
         if provides not in self.dependency_scopes:
+            if not self.validation_settings.nothing_decorated:
+                return
             raise GraphMissingFactoryError(
                 requested=provides,
                 path=[decorator.as_factory(
@@ -395,12 +425,47 @@ class RegistryBuilder:
             )
         scope = self.dependency_scopes[provides]
         registry = self.registries[scope]
-        undecorated_type = UndecoratedType(
-            decorator.provides.type_hint,
-            self.decorator_depth[provides],
+        # factory is expected to be as we already processed
+        # it according to dependency_scopes
+        old_factory = cast(Factory, registry.get_factory(provides))
+        self._decorate_factory(
+            decorator=decorator,
+            registry=registry,
+            old_factory=old_factory,
         )
+
+    def _is_alias_decorated(
+        self,
+        decorator: Decorator,
+        registry: Registry,
+        alias: Factory,
+    ) -> bool:
+        dependency = alias.dependencies[0]
+        factory = registry.get_factory(dependency)
+        if factory is None:
+            raise ValueError(
+                f"Factory for {dependency} "
+                f"aliased from {alias.provides} is not found",
+            )
+        return factory.source is decorator.factory.source
+
+    def _decorate_factory(
+        self,
+        decorator: Decorator,
+        registry: Registry,
+        old_factory: Factory,
+    ):
+        provides = old_factory.provides
+        if provides.component is None:
+            raise ValueError(f"Unexpected empty component for {provides}")
+        if (
+            old_factory.type is FactoryType.ALIAS
+                and self._is_alias_decorated(decorator, registry, old_factory)
+        ):
+            return
+        depth = self.decorator_depth[provides]
+        decorated_component = f"__Dishka_decorate_{depth}"
         self.decorator_depth[provides] += 1
-        old_factory = registry.get_factory(provides)
         if old_factory is None:
             raise InvalidGraphError(
                 "Cannot apply decorator because there is"
@@ -411,14 +476,15 @@ class RegistryBuilder:
                 f"Cannot apply decorator to context data {provides}",
             )
         old_factory.provides = DependencyKey(
-            undecorated_type, old_factory.provides.component,
+            old_factory.provides.type_hint, decorated_component,
         )
         new_factory = decorator.as_factory(
-            scope=scope,
-            new_dependency=DependencyKey(undecorated_type, None),
+            scope=registry.scope,
+            new_dependency=old_factory.provides,
             cache=old_factory.cache,
-            component=provider.component,
+            component=provides.component,
         )
+        new_factory.provides = provides
         registry.add_factory(old_factory)
         registry.add_factory(new_factory)
 
@@ -449,9 +515,24 @@ class RegistryBuilder:
             for context_var in provider.context_vars:
                 self._process_context_var(provider, context_var)
             for decorator in provider.decorators:
-                self._process_decorator(provider, decorator)
-
+                if decorator.is_generic():
+                    self._process_generic_decorator(provider, decorator)
+                else:
+                    self._process_normal_decorator(provider, decorator)
+        self._post_process_generic_factories()
         registries = list(self.registries.values())
         if not self.skip_validation:
             GraphValidator(registries).validate()
         return tuple(registries)
+
+    def _post_process_generic_factories(self):
+        found = [
+            (registry, factory)
+            for registry in self.registries.values()
+            for factory in registry.factories.values()
+            if is_generic(factory.provides.type_hint)
+        ]
+        for registry, factory in found:
+            origin = get_origin(factory.provides.type_hint)
+            origin_key = DependencyKey(origin, factory.provides.component)
+            registry.add_factory(factory, origin_key)

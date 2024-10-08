@@ -1,5 +1,6 @@
 __all__ = [
     "DishkaRoute",
+    "FastapiProvider",
     "FromDishka",
     "inject",
     "setup_dishka",
@@ -12,12 +13,13 @@ from typing import Any, ParamSpec, TypeVar, get_type_hints
 from fastapi import FastAPI, Request, WebSocket
 from fastapi.routing import APIRoute
 
-from dishka import AsyncContainer, FromDishka
+from dishka import AsyncContainer, FromDishka, Provider, from_context, Scope
 from .base import wrap_injection
 from .starlette import ContainerMiddleware
 
 T = TypeVar("T")
 P = ParamSpec("P")
+
 
 def inject(func: Callable[P, T]) -> Callable[P, T]:
     hints = get_type_hints(func)
@@ -57,6 +59,11 @@ class DishkaRoute(APIRoute):
     ) -> None:
         endpoint = inject(endpoint)
         super().__init__(path, endpoint, **kwargs)
+
+
+class FastapiProvider(Provider):
+    request = from_context(Request, scope=Scope.REQUEST)
+    websocket = from_context(WebSocket, scope=Scope.SESSION)
 
 
 def setup_dishka(container: AsyncContainer, app: FastAPI) -> None:

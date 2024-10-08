@@ -3,7 +3,7 @@
 Flask
 ===========================================
 
-Though it is not required, you can use dishka-aiohttp integration. It features:
+Though it is not required, you can use Dishka-Flask integration. It features:
 
 * automatic REQUEST scope management using middleware
 * passing ``Request`` object as a context data to providers for **HTTP** requests
@@ -61,7 +61,7 @@ It is available on ``REQUEST`` scope.
 
 .. code-block:: python
 
-    container = make_container(YourProvider(), AiohttpProvider())
+    container = make_container(YourProvider(), FlaskProvider())
 
 5. Setup dishka integration. ``autoinject=True`` is required unless you explicitly use ``@inject`` decorator. It is important here to call it after registering all views and blueprints.
 

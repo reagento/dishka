@@ -13,12 +13,15 @@ class NodeType(Enum):
     FACTORY = "Factory"
     ALIAS = "Alias"
 
+
 @dataclass
 class Node:
     id: str
     name: str
     dependencies: list[str]
     type: NodeType
+    is_protocol: bool
+    source_name: str
 
 @dataclass
 class Group:

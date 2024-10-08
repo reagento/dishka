@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Protocol
 
 from dishka import DependencyKey, BaseScope
 from dishka.registry import Registry
@@ -17,6 +17,9 @@ class Transformer:
     def count(self, prefix: str) -> str:
         self._counter += 1
         return f"{prefix}{self._counter}"
+
+    def _is_protocol(self, key: DependencyKey) -> bool:
+        return Protocol in getattr(key.type_hint, "__bases__", None)
 
     def _node_type(self, factory: Factory) -> NodeType:
         if factory.type is FactoryType.ALIAS:
@@ -45,11 +48,18 @@ class Transformer:
             node_name = get_name(key.type_hint, include_module=False)
             if key.component:
                 node_name += " " + str(key.component)
+
+            if factory.type in (FactoryType.CONTEXT, FactoryType.ALIAS):
+                source_name = ""
+            else:
+                source_name = get_name(factory.source, include_module=False)
             node = Node(
                 id=self.count("factory"),
                 name=node_name,
                 dependencies=[],
-                type=self._node_type(factory)
+                type=self._node_type(factory),
+                is_protocol=self._is_protocol(factory.provides),
+                source_name=source_name,
             )
             self.nodes[key, scope] = node
             component_group.nodes.append(node)
@@ -88,5 +98,5 @@ class Transformer:
             self._make_factories(scope, group, registry)
 
         for n, registry in enumerate(registries):
-            self._fill_dependencies(registry, registries[:n])
+            self._fill_dependencies(registry, registries[:n+1])
         return result

@@ -1,11 +1,36 @@
-from dishka.visualisation.model import Renderer, Group, Node, NodeType, \
-    GroupType
+from dishka.visualisation.model import Renderer, Group, Node, NodeType
+
+HTML_TEMPLATE = """\
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<pre class="mermaid">
+{diagram}
+</pre>
+
+<script type="module">
+    import mermaid
+    from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize(config);
+</script>
+</body>
+</html>
+
+"""
 
 
-class MermeidRenderer(Renderer):
+class MermaidRenderer(Renderer):
     def _render_node(self, node: Node) -> str:
         name = self._node_type(node) + node.name
-        return f"class {node.id}[\"{name}\"]"
+        return (
+            f"class {node.id}[\"{name}\"]"
+            + "{\n"
+            + ((node.source_name + "\n") if node.source_name else " ")
+            + "}\n"
+        )
 
     def _render_node_deps(self, node: Node) -> list[str]:
         return [
@@ -17,11 +42,15 @@ class MermeidRenderer(Renderer):
         return ""
 
     def _node_type(self, node: Node) -> str:
+        if node.is_protocol:
+            prefix = "Ⓘ "
+        else:
+            prefix = ""
         if node.type is NodeType.CONTEXT:
-            return "📥 "
+            return "📥 " + prefix
         elif node.type is NodeType.ALIAS:
-            return "🔗 "
-        return "🏭 "
+            return "🔗 " + prefix
+        return "🏭 " + prefix
 
     def _render_group(
             self, group: Group, indent: str = "", name_prefix: str = "",
@@ -48,7 +77,8 @@ class MermeidRenderer(Renderer):
 
     def render(self, groups: list[Group]) -> str:
         res = "classDiagram\n"
+        res += "direction LR\n"
         for group in groups:
             res += self._render_group(group)
             res += self._render_links(group)
-        return res
+        return HTML_TEMPLATE.format(diagram=res)

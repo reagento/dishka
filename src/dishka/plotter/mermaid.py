@@ -1,33 +1,46 @@
-from dishka.visualisation.model import Group, Node, NodeType, Renderer
+from dishka.plotter.model import Group, Node, NodeType, Renderer
+
+HTML_TEMPLATE = """\
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<pre class="mermaid">
+{diagram}
+</pre>
+
+<script type="module">
+    import mermaid
+    from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize(config);
+</script>
+</body>
+</html>
+
+"""
 
 
-class D2Renderer(Renderer):
+class MermaidRenderer(Renderer):
     def __init__(self):
         self.names: dict[str, str] = {}
-        self.full_ids: dict[str, str] = {}
 
     def _render_node(self, node: Node) -> str:
         name = self._node_type(node) + node.name
-        if node.source_name:
-            source = f'"{node.source_name}()": ""\n'
-        else:
-            source = ""
-        node_id = node.id
         return (
-                f'{node_id}: "{name}"'
-                + "{\n"
-                + "shape: class\n"
-                + source
-                + "\n".join(
-                    f'"{self.names[dep]}"'
-                    for dep in node.dependencies
-                )
-                + "}\n"
+            f'class {node.id}["{name}"]'
+            + "{\n"
+            + ((node.source_name + "()\n") if node.source_name else " ")
+            + "\n".join(
+                self.names[dep] for dep in node.dependencies
+            )
+            + "}\n"
         )
 
     def _render_node_deps(self, node: Node) -> list[str]:
         return [
-            f"{self.full_ids[dep]} --> {self.full_ids[node.id]}"
+            f"{dep} ..> {node.id}"
             for dep in node.dependencies
         ]
 
@@ -46,16 +59,17 @@ class D2Renderer(Renderer):
         return "🏭 " + prefix
 
     def _render_group(
-            self, group: Group, name_prefix: str = "",
+            self, group: Group, indent: str = "", name_prefix: str = "",
     ) -> str:
         name = self._group_type(group) + name_prefix + (group.name or "")
         res = ""
-        res += f'{group.id}: "{name}"' + "{\n"
-        for node in group.nodes:
-            res += self._render_node(node) + "\n"
+        if group.nodes:
+            res = f"{indent}namespace {name} {{\n"
+            for node in group.nodes:
+                res += indent + "    " + self._render_node(node) + "\n"
+            res += indent + "}\n"
         for child in group.children:
-            res += self._render_group(child, name) + "\n"
-        res += "}\n"
+            res += self._render_group(child, indent, name) + "\n"
         return res
 
     def _render_links(self, group: Group) -> str:
@@ -67,23 +81,18 @@ class D2Renderer(Renderer):
             res += self._render_links(child)
         return res
 
-    def _fill_names(self, groups: list[Group], prefix: str = "") -> None:
+    def _fill_names(self, groups: list[Group]) -> None:
         for group in groups:
-            if prefix:
-                id_prefix = prefix + "." + group.id
-            else:
-                id_prefix = group.id
-            self.full_ids[group.id] = id_prefix
             for node in group.nodes:
                 self.names[node.id] = node.name
-                self.full_ids[node.id] = id_prefix + "." + node.id
-            self._fill_names(group.children, prefix=id_prefix)
+            self._fill_names(group.children)
 
     def render(self, groups: list[Group]) -> str:
         self._fill_names(groups)
 
-        res = ""
+        res = "classDiagram\n"
+        res += "direction LR\n"
         for group in groups:
             res += self._render_group(group)
             res += self._render_links(group)
-        return res
+        return HTML_TEMPLATE.format(diagram=res)

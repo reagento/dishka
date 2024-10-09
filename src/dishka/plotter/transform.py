@@ -21,6 +21,14 @@ class Transformer:
     def _is_protocol(self, key: DependencyKey) -> bool:
         return Protocol in getattr(key.type_hint, "__bases__", [])
 
+    def _is_empty(self, registry: Registry) -> bool:
+        if len(registry.factories)>1:
+            return False
+        key = next(iter(registry.factories))
+        if key.type_hint in (Container, AsyncContainer):
+            return True
+        return False
+
     def _node_type(self, factory: Factory) -> NodeType:
         if factory.type is FactoryType.ALIAS:
             return NodeType.ALIAS
@@ -87,6 +95,8 @@ class Transformer:
         registries = [container.registry, *container.child_registries]
         result = []
         for registry in registries:
+            if self._is_empty(registry):
+                continue
             scope = registry.scope
             group = self.groups[scope] = Group(
                 id=self.count("scope"),
@@ -99,5 +109,7 @@ class Transformer:
             self._make_factories(scope, group, registry)
 
         for n, registry in enumerate(registries):
+            if self._is_empty(registry):
+                continue
             self._fill_dependencies(registry, registries[n::-1])
         return result

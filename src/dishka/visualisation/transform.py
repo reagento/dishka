@@ -1,6 +1,6 @@
 from typing import Any, Protocol
 
-from dishka import BaseScope, DependencyKey
+from dishka import AsyncContainer, BaseScope, Container, DependencyKey
 from dishka.dependency_source import Factory
 from dishka.entities.factory_type import FactoryType
 from dishka.registry import Registry
@@ -83,7 +83,8 @@ class Transformer:
                 dep_node = self.nodes[dep, dep_registry.scope]
                 node.dependencies.append(dep_node.id)
 
-    def transform(self, registries: list[Registry]):
+    def transform(self, container: Container|AsyncContainer) -> list[Group]:
+        registries = [container.registry, *container.child_registries]
         result = []
         for registry in registries:
             scope = registry.scope

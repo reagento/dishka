@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Protocol
+from typing import Protocol
 
 
 class GroupType(Enum):
@@ -27,7 +27,7 @@ class Node:
 class Group:
     id: str
     name: str
-    children: List['Group']
+    children: list["Group"]
     nodes: list[Node]
     type: GroupType
 

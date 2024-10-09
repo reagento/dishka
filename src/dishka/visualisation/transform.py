@@ -1,11 +1,11 @@
 from typing import Any, Protocol
 
-from dishka import DependencyKey, BaseScope
+from dishka import BaseScope, DependencyKey
+from dishka.dependency_source import Factory
+from dishka.entities.factory_type import FactoryType
 from dishka.registry import Registry
-from .model import Group, Node, GroupType, NodeType
-from ..dependency_source import Factory
-from ..entities.factory_type import FactoryType
-from ..text_rendering import get_name
+from dishka.text_rendering import get_name
+from .model import Group, GroupType, Node, NodeType
 
 
 class Transformer:
@@ -19,7 +19,7 @@ class Transformer:
         return f"{prefix}{self._counter}"
 
     def _is_protocol(self, key: DependencyKey) -> bool:
-        return Protocol in getattr(key.type_hint, "__bases__", None)
+        return Protocol in getattr(key.type_hint, "__bases__", [])
 
     def _node_type(self, factory: Factory) -> NodeType:
         if factory.type is FactoryType.ALIAS:
@@ -35,9 +35,9 @@ class Transformer:
         for key, factory in registry.factories.items():
             group_key = (scope, key.component)
             if group_key in self.groups:
-                component_group = self.groups[scope]
+                component_group = self.groups[group_key]
             else:
-                component_group = self.groups[scope] = Group(
+                component_group = self.groups[group_key] = Group(
                     id=self.count("component"),
                     name=str(key.component),
                     children=[],
@@ -67,12 +67,12 @@ class Transformer:
     def _fill_dependencies(
             self, registry: Registry, parent_registries: list[Registry],
     ) -> None:
-        parent_registries = parent_registries[::-1]
+        # parent registries are passed from current scope to outer one
         for key, factory in registry.factories.items():
             node = self.nodes[key, registry.scope]
             all_deps = (
-                list(factory.dependencies)
-                + list(factory.kw_dependencies.values())
+                    list(factory.dependencies)
+                    + list(factory.kw_dependencies.values())
             )
             for dep in all_deps:
                 for dep_registry in parent_registries:
@@ -98,5 +98,5 @@ class Transformer:
             self._make_factories(scope, group, registry)
 
         for n, registry in enumerate(registries):
-            self._fill_dependencies(registry, registries[:n+1])
+            self._fill_dependencies(registry, registries[n::-1])
         return result

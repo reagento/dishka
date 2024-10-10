@@ -1,5 +1,6 @@
 from typing import Any, Protocol
 
+from dishka._adaptix.type_tools import is_protocol
 from dishka import AsyncContainer, BaseScope, Container, DependencyKey
 from dishka.dependency_source import Factory
 from dishka.entities.factory_type import FactoryType
@@ -17,9 +18,6 @@ class Transformer:
     def count(self, prefix: str) -> str:
         self._counter += 1
         return f"{prefix}{self._counter}"
-
-    def _is_protocol(self, key: DependencyKey) -> bool:
-        return Protocol in getattr(key.type_hint, "__bases__", [])
 
     def _is_empty(self, registry: Registry) -> bool:
         for factory in registry.factories.values():
@@ -64,7 +62,7 @@ class Transformer:
                 name=node_name,
                 dependencies=[],
                 type=self._node_type(factory),
-                is_protocol=self._is_protocol(factory.provides),
+                is_protocol=is_protocol(factory.provides),
                 source_name=source_name,
             )
             self.nodes[key, scope] = node

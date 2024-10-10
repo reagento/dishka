@@ -12,9 +12,8 @@ class D2Renderer(Renderer):
             source = f'"{node.source_name}()": ""\n'
         else:
             source = ""
-        node_id = node.id
         return (
-                f'{node_id}: "{name}"'
+                f'{node.id}: "{name}"'
                 + "{\n"
                 + "shape: class\n"
                 + source
@@ -49,8 +48,7 @@ class D2Renderer(Renderer):
             self, group: Group, name_prefix: str = "",
     ) -> str:
         name = self._group_type(group) + name_prefix + (group.name or "")
-        res = ""
-        res += f'{group.id}: "{name}"' + "{\n"
+        res = f'{group.id}: "{name}"' + "{\n"
         for node in group.nodes:
             res += self._render_node(node) + "\n"
         for child in group.children:

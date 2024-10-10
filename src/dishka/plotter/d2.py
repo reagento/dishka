@@ -1,3 +1,5 @@
+import re
+
 from dishka.plotter.model import Group, Node, NodeType, Renderer
 
 
@@ -6,23 +8,24 @@ class D2Renderer(Renderer):
         self.names: dict[str, str] = {}
         self.full_ids: dict[str, str] = {}
 
+    def _escape(self, line: str) -> str:
+        return re.sub(r"[^\w_.\-]", "_", line)
+
     def _render_node(self, node: Node) -> str:
-        name = self._node_type(node) + node.name
+        name = self._node_type(node) + self._escape(node.name)
         if node.source_name:
-            source = f'"{node.source_name}()": ""\n'
+            source = f'    "{self._escape(node.source_name)}()": ""\n'
         else:
             source = ""
-        return (
-                f'{node.id}: "{name}"'
-                + "{\n"
-                + "shape: class\n"
-                + source
-                + "\n".join(
-                    f'"{self.names[dep]}"'
-                    for dep in node.dependencies
-                )
-                + "}\n"
-        )
+
+        res = f'{node.id}: "{name}"' + "{\n"
+        res += "    shape: class\n"
+        res += source
+        for dep in node.dependencies:
+            dep_name = self._escape(self.names[dep])
+            res += f"    {dep_name}\n"
+        res += "}\n"
+        return res
 
     def _render_node_deps(self, node: Node) -> list[str]:
         return [
@@ -47,7 +50,11 @@ class D2Renderer(Renderer):
     def _render_group(
             self, group: Group, name_prefix: str = "",
     ) -> str:
-        name = self._group_type(group) + name_prefix + (group.name or "")
+        name = (
+            self._group_type(group)
+            + name_prefix
+            + self._escape(group.name or "")
+        )
         res = f'{group.id}: "{name}"' + "{\n"
         for node in group.nodes:
             res += self._render_node(node) + "\n"

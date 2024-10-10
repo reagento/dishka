@@ -14,6 +14,7 @@ from dishka import (
 )
 from dishka.integrations.fastapi import (
     DishkaRoute,
+    FastapiProvider,
     FromDishka,
     inject,
     setup_dishka,
@@ -93,7 +94,7 @@ def create_app():
     app = FastAPI(lifespan=lifespan)
     app.include_router(router)
     app.include_router(second_router)
-    container = make_async_container(AdaptersProvider(), InteractorProvider())
+    container = make_async_container(AdaptersProvider(), InteractorProvider(), FastapiProvider())
     setup_dishka(container, app)
     return app
 

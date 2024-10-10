@@ -1,3 +1,5 @@
+import re
+
 from dishka.plotter.model import Group, Node, NodeType, Renderer
 
 HTML_TEMPLATE = """\
@@ -27,25 +29,25 @@ class MermaidRenderer(Renderer):
         self.names: dict[str, str] = {}
 
     def _render_node(self, node: Node) -> str:
-        name = self._node_type(node) + node.name
+        name = self._node_type(node) + self._escape(node.name)
         return (
             f'class {node.id}["{name}"]'
             + "{\n"
-            + ((node.source_name + "()\n") if node.source_name else " ")
-            + "\n".join(
-                self.names[dep] for dep in node.dependencies
+            + ((f"    {node.source_name}()\n") if node.source_name else " \n")
+            + "".join(
+                f"    {self.names[dep]}\n" for dep in node.dependencies
             )
             + "}\n"
         )
+
+    def _escape(self, line: str) -> str:
+        return re.sub(r"[^\w_.\-]", "_", line)
 
     def _render_node_deps(self, node: Node) -> list[str]:
         return [
             f"{dep} ..> {node.id}"
             for dep in node.dependencies
         ]
-
-    def _group_type(self, group: Group) -> str:
-        return ""
 
     def _node_type(self, node: Node) -> str:
         if node.is_protocol:
@@ -59,17 +61,19 @@ class MermaidRenderer(Renderer):
         return "🏭 " + prefix
 
     def _render_group(
-            self, group: Group, indent: str = "", name_prefix: str = "",
+            self, group: Group, name_prefix: str = "",
     ) -> str:
-        name = self._group_type(group) + name_prefix + (group.name or "")
+        if not group.nodes and not group.children:
+            return ""
+        name = name_prefix + self._escape(group.name or "")
         res = ""
         if group.nodes:
-            res = f"{indent}namespace {name} {{\n"
+            res = f"namespace {name} {{\n"
             for node in group.nodes:
-                res += indent + "    " + self._render_node(node) + "\n"
-            res += indent + "}\n"
+                res += self._render_node(node) + "\n"
+            res += "}\n"
         for child in group.children:
-            res += self._render_group(child, indent, name) + "\n"
+            res += self._render_group(child,  name) + "\n"
         return res
 
     def _render_links(self, group: Group) -> str:

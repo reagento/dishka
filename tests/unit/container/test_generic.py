@@ -21,7 +21,8 @@ class ReplaceInit(Base[str], Generic[T]):
 
 
 class A(Generic[T]):
-    def __init__(self, x: T):
+    def __init__(self, x: T, *, y: T):
+        assert x == y
         self.x = x
 
     def __eq__(self, other):
@@ -93,7 +94,7 @@ def test_bare_generic_method():
 
         @provide
         def a(self) -> A:
-            return A(42)
+            return A(42, y=42)
 
     container = make_container(MyProvider())
     a = container.get(A)
@@ -111,7 +112,7 @@ def test_generic_func():
 
         @provide
         def a(self, param: T) -> A[T]:
-            return A(param)
+            return A(param, y=param)
 
     container = make_container(MyProvider())
     a = container.get(A[int])
@@ -185,7 +186,7 @@ def parametrized_param_func(param: A[T]) -> EventEmitter[T]:
 def test_func_with_generic_params():
     provider = Provider(scope=Scope.APP)
     provider.provide(parametrized_param_func)
-    provider.provide(lambda: A(42), provides=A[T])
+    provider.provide(lambda: A(42, y=42), provides=A[T])
     container = make_container(provider)
     assert container.get(EventEmitter[int]) == 42
 
@@ -201,8 +202,8 @@ def type_var_decorator(
 
 def test_passing_type_var_decorator():
     provider = Provider(scope=Scope.APP)
-    provider.provide(lambda: A(42), provides=int)
+    provider.provide(lambda: A(42, y=42), provides=int)
     provider.provide(lambda: 1, provides=EventEmitter[T])
     provider.decorate(type_var_decorator)
     container = make_container(provider)
-    assert container.get(int) == (int, 1, A(42))
+    assert container.get(int) == (int, 1, A(42, y=42))

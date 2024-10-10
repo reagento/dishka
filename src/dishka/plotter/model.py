@@ -23,6 +23,7 @@ class Node:
     is_protocol: bool
     source_name: str
 
+
 @dataclass
 class Group:
     id: str

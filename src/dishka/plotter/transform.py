@@ -22,12 +22,10 @@ class Transformer:
         return Protocol in getattr(key.type_hint, "__bases__", [])
 
     def _is_empty(self, registry: Registry) -> bool:
-        if len(registry.factories)>1:
-            return False
-        key = next(iter(registry.factories))
-        if key.type_hint in (Container, AsyncContainer):
-            return True
-        return False
+        for factory in registry.factories.values():
+            if factory.provides.type_hint not in (Container, AsyncContainer):
+                return False
+        return True
 
     def _node_type(self, factory: Factory) -> NodeType:
         if factory.type is FactoryType.ALIAS:

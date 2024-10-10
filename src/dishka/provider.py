@@ -173,13 +173,15 @@ class Provider(BaseProvider):
             self,
             *,
             source: type,
-            provides: Any,
+            provides: Any = None,
             cache: bool = True,
+            component: Component | None = None,
     ) -> CompositeDependencySource:
         composite = alias(
             source=source,
             provides=provides,
             cache=cache,
+            component=component,
         )
         self._add_dependency_sources(str(source), composite.dependency_sources)
         return composite

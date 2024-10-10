@@ -39,6 +39,7 @@ Main ideas:
    advanced/generics
    advanced/scopes
    advanced/testing/index
+   advanced/plotter
 
 .. toctree::
    :hidden:

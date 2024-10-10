@@ -3,6 +3,7 @@ from __future__ import annotations
 import warnings
 from asyncio import Lock
 from collections.abc import Callable, MutableMapping
+from contextlib import AbstractAsyncContextManager
 from types import TracebackType
 from typing import Any, cast
 
@@ -40,7 +41,9 @@ class AsyncContainer:
             *child_registries: Registry,
             parent_container: AsyncContainer | None = None,
             context: dict[Any, Any] | None = None,
-            lock_factory: Callable[[], Lock] | None = None,
+            lock_factory: Callable[
+                [], AbstractAsyncContextManager[Any],
+            ] | None = None,
             close_parent: bool = False,
     ):
         self.registry = registry
@@ -54,7 +57,7 @@ class AsyncContainer:
         self._cache = {**self._context}
         self.parent_container = parent_container
 
-        self.lock: Lock | None
+        self.lock: AbstractAsyncContextManager[Any] | None
         if lock_factory:
             self.lock = lock_factory()
         else:
@@ -74,7 +77,9 @@ class AsyncContainer:
     def __call__(
             self,
             context: dict[Any, Any] | None = None,
-            lock_factory: Callable[[], Lock] | None = None,
+            lock_factory: Callable[
+                [], AbstractAsyncContextManager[Any],
+            ] | None = None,
             scope: BaseScope | None = None,
     ) -> AsyncContextWrapper:
         """
@@ -194,7 +199,9 @@ def make_async_container(
         *providers: BaseProvider,
         scopes: type[BaseScope] = Scope,
         context: dict[Any, Any] | None = None,
-        lock_factory: Callable[[], Lock] | None = Lock,
+        lock_factory: Callable[
+            [], AbstractAsyncContextManager[Any],
+        ] | None = Lock,
         skip_validation: bool = False,
         start_scope: BaseScope | None = None,
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,

@@ -42,7 +42,7 @@ class AsyncContainer:
             parent_container: AsyncContainer | None = None,
             context: dict[Any, Any] | None = None,
             lock_factory: Callable[
-                [], AbstractAsyncContextManager,
+                [], AbstractAsyncContextManager[Any],
             ] | None = None,
             close_parent: bool = False,
     ):
@@ -57,7 +57,7 @@ class AsyncContainer:
         self._cache = {**self._context}
         self.parent_container = parent_container
 
-        self.lock: AbstractAsyncContextManager | None
+        self.lock: AbstractAsyncContextManager[Any] | None
         if lock_factory:
             self.lock = lock_factory()
         else:
@@ -78,7 +78,7 @@ class AsyncContainer:
             self,
             context: dict[Any, Any] | None = None,
             lock_factory: Callable[
-                [], AbstractAsyncContextManager,
+                [], AbstractAsyncContextManager[Any],
             ] | None = None,
             scope: BaseScope | None = None,
     ) -> AsyncContextWrapper:
@@ -199,7 +199,9 @@ def make_async_container(
         *providers: BaseProvider,
         scopes: type[BaseScope] = Scope,
         context: dict[Any, Any] | None = None,
-        lock_factory: Callable[[], AbstractAsyncContextManager] | None = Lock,
+        lock_factory: Callable[
+            [], AbstractAsyncContextManager[Any],
+        ] | None = Lock,
         skip_validation: bool = False,
         start_scope: BaseScope | None = None,
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,

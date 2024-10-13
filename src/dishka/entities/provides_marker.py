@@ -18,3 +18,6 @@ else:
 class ProvideMultiple:
     def __init__(self, items: Sequence[Any]) -> None:
         self.items = items
+
+    def __call__(self) -> Sequence[Any]:
+        return self.items

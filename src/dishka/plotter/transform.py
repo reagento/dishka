@@ -10,7 +10,7 @@ from .model import Group, GroupType, Node, NodeType
 
 
 class Transformer:
-    def __init__(self):
+    def __init__(self) -> None:
         self.nodes: dict[tuple[DependencyKey, BaseScope], Node] = {}
         self.groups: dict[Any, Group] = {}
         self._counter = 0
@@ -25,12 +25,16 @@ class Transformer:
                 return False
         return True
 
+    def _is_decorated(self, key: DependencyKey) -> bool:
+        if not key.component:
+            return False
+        return key.component.startswith(DECORATED_COMPONENT_PREFIX)
     def _node_type(self, factory: Factory) -> NodeType:
         for dep in factory.dependencies:
-            if dep.component.startswith(DECORATED_COMPONENT_PREFIX):
+            if self._is_decorated(dep):
                 return NodeType.DECORATOR
         for dep in factory.kw_dependencies.values():
-            if dep.component.startswith(DECORATED_COMPONENT_PREFIX):
+            if self._is_decorated(dep):
                 return NodeType.DECORATOR
 
         if factory.type is FactoryType.ALIAS:

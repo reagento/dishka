@@ -25,7 +25,7 @@ HTML_TEMPLATE = """\
 
 
 class MermaidRenderer(Renderer):
-    def __init__(self):
+    def __init__(self) -> None:
         self.nodes: dict[str, Node] = {}
 
     def _render_node(self, node: Node) -> str:
@@ -46,7 +46,7 @@ class MermaidRenderer(Renderer):
         return re.sub(r"[^\w_.\-]", "_", line)
 
     def _render_node_deps(self, node: Node) -> list[str]:
-        res = []
+        res: list[str] = []
         if node.type is NodeType.ALIAS:
             return res
         for dep in node.dependencies:

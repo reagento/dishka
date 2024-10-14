@@ -4,7 +4,7 @@ from dishka.plotter.model import Group, Node, NodeType, Renderer
 
 
 class D2Renderer(Renderer):
-    def __init__(self):
+    def __init__(self) -> None:
         self.nodes: dict[str, Node] = {}
         self.full_ids: dict[str, str] = {}
 
@@ -30,7 +30,7 @@ class D2Renderer(Renderer):
         return res
 
     def _render_node_deps(self, node: Node) -> list[str]:
-        res = []
+        res: list[str] = []
         if node.type is NodeType.ALIAS:
             return res
         node_id = self.full_ids[node.id]

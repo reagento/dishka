@@ -61,10 +61,10 @@ EXPECTED_GRAPH = [
                     Node(
                         id="factory6",
                         name="P",
-                        dependencies=[],
-                        type=NodeType.FACTORY,
+                        dependencies=["factory9"],
+                        type=NodeType.DECORATOR,
                         is_protocol=True,
-                        source_name="test_deps.<locals>.<lambda>",
+                        source_name="p_decorator",
                     ),
                     Node(
                         id="factory7",
@@ -73,6 +73,14 @@ EXPECTED_GRAPH = [
                         type=NodeType.ALIAS,
                         is_protocol=False,
                         source_name="",
+                    ),
+                    Node(
+                        id="factory9",
+                        name="P",
+                        dependencies=[],
+                        type=NodeType.FACTORY,
+                        is_protocol=True,
+                        source_name="test_deps.<locals>.<lambda>",
                     ),
                 ],
                 type=GroupType.COMPONENT,
@@ -84,11 +92,15 @@ EXPECTED_GRAPH = [
 ]
 
 
+def p_decorator(p: P) -> P:
+    return p
+
 def test_deps():
     provider = Provider(scope=Scope.APP)
     provider.provide(A)
     provider.provide(B)
     provider.provide(lambda: 0, provides=P)
+    provider.decorate(p_decorator)
     provider.alias(source=P, provides=float)
     container = make_container(provider)
     res = Transformer().transform(container)
@@ -215,7 +227,7 @@ COMPONENT_GRAPH = [
                 nodes=[
                     Node(
                         id="factory5",
-                        name="Container comp1",
+                        name="Container",
                         dependencies=["factory3"],
                         type=NodeType.ALIAS,
                         is_protocol=False,
@@ -223,7 +235,7 @@ COMPONENT_GRAPH = [
                     ),
                     Node(
                         id="factory6",
-                        name="A comp1",
+                        name="A",
                         dependencies=[],
                         type=NodeType.FACTORY,
                         is_protocol=False,

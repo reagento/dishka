@@ -29,6 +29,7 @@ from .exceptions import (
 from .factory_compiler import compile_factory
 from .provider import BaseProvider
 
+DECORATED_COMPONENT_PREFIX = "__Dishka_decorate_"
 
 class Registry:
     __slots__ = ("scope", "factories", "compiled", "compiled_async")
@@ -464,7 +465,7 @@ class RegistryBuilder:
         ):
             return
         depth = self.decorator_depth[provides]
-        decorated_component = f"__Dishka_decorate_{depth}"
+        decorated_component = f"{DECORATED_COMPONENT_PREFIX}{depth}"
         self.decorator_depth[provides] += 1
         if old_factory is None:
             raise InvalidGraphError(

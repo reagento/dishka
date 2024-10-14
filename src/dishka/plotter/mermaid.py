@@ -25,17 +25,19 @@ HTML_TEMPLATE = """\
 
 
 class MermaidRenderer(Renderer):
-    def __init__(self):
-        self.names: dict[str, str] = {}
+    def __init__(self) -> None:
+        self.nodes: dict[str, Node] = {}
 
     def _render_node(self, node: Node) -> str:
+        if node.type is NodeType.ALIAS:
+            return ""
         name = self._node_type(node) + self._escape(node.name)
         return (
             f'class {node.id}["{name}"]'
             + "{\n"
             + ((f"    {node.source_name}()\n") if node.source_name else " \n")
             + "".join(
-                f"    {self.names[dep]}\n" for dep in node.dependencies
+                f"    {self.nodes[dep].name}\n" for dep in node.dependencies
             )
             + "}\n"
         )
@@ -44,17 +46,29 @@ class MermaidRenderer(Renderer):
         return re.sub(r"[^\w_.\-]", "_", line)
 
     def _render_node_deps(self, node: Node) -> list[str]:
-        return [
-            f"{dep} ..> {node.id}"
-            for dep in node.dependencies
-        ]
+        res: list[str] = []
+        if node.type is NodeType.ALIAS:
+            return res
+        for dep in node.dependencies:
+            dep_node = self.nodes[dep]
+            if dep_node.type is NodeType.ALIAS:
+                target = dep_node.dependencies[0]
+                res.append(
+                    f"{target} <.. {node.id}: "
+                    f"🔗 {self._escape(dep_node.name)}",
+                )
+            else:
+                res.append(f"{dep} <.. {node.id}")
+        return res
 
     def _node_type(self, node: Node) -> str:
         if node.is_protocol:
             prefix = "Ⓘ "
         else:
             prefix = ""
-        if node.type is NodeType.CONTEXT:
+        if node.type is NodeType.DECORATOR:
+            return "🎭 " + prefix
+        elif node.type is NodeType.CONTEXT:
             return "📥 " + prefix
         elif node.type is NodeType.ALIAS:
             return "🔗 " + prefix
@@ -85,14 +99,14 @@ class MermaidRenderer(Renderer):
             res += self._render_links(child)
         return res
 
-    def _fill_names(self, groups: list[Group]) -> None:
+    def _fill_nodes(self, groups: list[Group]) -> None:
         for group in groups:
             for node in group.nodes:
-                self.names[node.id] = node.name
-            self._fill_names(group.children)
+                self.nodes[node.id] = node
+            self._fill_nodes(group.children)
 
     def render(self, groups: list[Group]) -> str:
-        self._fill_names(groups)
+        self._fill_nodes(groups)
 
         res = "classDiagram\n"
         res += "direction LR\n"

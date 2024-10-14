@@ -38,7 +38,10 @@ class D2Renderer(Renderer):
             dep_node = self.nodes[dep]
             if dep_node.type is NodeType.ALIAS:
                 target = self.full_ids[dep_node.dependencies[0]]
-                res.append(f"{target} --> {node_id}: 🔗 {self._escape(dep_node.name)}")
+                res.append(
+                    f"{target} --> {node_id}: "
+                    f"🔗 {self._escape(dep_node.name)}",
+                )
             else:
                 target = self.full_ids[dep]
                 res.append(f"{target} --> {node_id}")

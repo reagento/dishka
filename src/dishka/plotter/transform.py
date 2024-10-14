@@ -4,7 +4,7 @@ from dishka import AsyncContainer, BaseScope, Container, DependencyKey
 from dishka._adaptix.type_tools import is_protocol
 from dishka.dependency_source import Factory
 from dishka.entities.factory_type import FactoryType
-from dishka.registry import Registry, DECORATED_COMPONENT_PREFIX
+from dishka.registry import DECORATED_COMPONENT_PREFIX, Registry
 from dishka.text_rendering import get_name
 from .model import Group, GroupType, Node, NodeType
 
@@ -56,10 +56,10 @@ class Transformer:
                 for n in group.nodes
                 if n.id in node.dependencies
             ]
-            for node in nodes_to_move:
-                group.nodes.remove(node)
-                target_group.nodes.append(node)
-                self._trace_decorator(node, target_group)
+            for moved in nodes_to_move:
+                group.nodes.remove(moved)
+                target_group.nodes.append(moved)
+                self._trace_decorator(moved, target_group)
 
 
     def _make_factories(

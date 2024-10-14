@@ -53,7 +53,10 @@ class MermaidRenderer(Renderer):
             dep_node = self.nodes[dep]
             if dep_node.type is NodeType.ALIAS:
                 target = dep_node.dependencies[0]
-                res.append(f"{target} <.. {node.id}: 🔗 {self._escape(dep_node.name)}")
+                res.append(
+                    f"{target} <.. {node.id}: "
+                    f"🔗 {self._escape(dep_node.name)}",
+                )
             else:
                 res.append(f"{dep} <.. {node.id}")
         return res

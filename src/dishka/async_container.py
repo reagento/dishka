@@ -5,7 +5,7 @@ from asyncio import Lock
 from collections.abc import Callable, MutableMapping
 from contextlib import AbstractAsyncContextManager
 from types import TracebackType
-from typing import Any, cast
+from typing import Any, TypeVar, cast, overload
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.factory_type import FactoryType
@@ -21,6 +21,8 @@ from .exceptions import (
 )
 from .provider import BaseProvider
 from .registry import Registry, RegistryBuilder
+
+T = TypeVar("T")
 
 
 class AsyncContainer:
@@ -122,6 +124,22 @@ class AsyncContainer:
                     close_parent=True,
                 )
         return AsyncContextWrapper(child)
+
+    @overload
+    async def get(
+            self,
+            dependency_type: type[T],
+            component: Component | None = DEFAULT_COMPONENT,
+    ) -> T:
+        ...
+
+    @overload
+    async def get(
+            self,
+            dependency_type: Any,
+            component: Component | None = DEFAULT_COMPONENT,
+    ) -> Any:
+        ...
 
     async def get(
             self,

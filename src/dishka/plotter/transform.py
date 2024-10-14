@@ -4,7 +4,7 @@ from dishka import AsyncContainer, BaseScope, Container, DependencyKey
 from dishka._adaptix.type_tools import is_protocol
 from dishka.dependency_source import Factory
 from dishka.entities.factory_type import FactoryType
-from dishka.registry import Registry
+from dishka.registry import Registry, DECORATED_COMPONENT_PREFIX
 from dishka.text_rendering import get_name
 from .model import Group, GroupType, Node, NodeType
 
@@ -26,12 +26,41 @@ class Transformer:
         return True
 
     def _node_type(self, factory: Factory) -> NodeType:
+        for dep in factory.dependencies:
+            if dep.component.startswith(DECORATED_COMPONENT_PREFIX):
+                return NodeType.DECORATOR
+        for dep in factory.kw_dependencies.values():
+            if dep.component.startswith(DECORATED_COMPONENT_PREFIX):
+                return NodeType.DECORATOR
+
         if factory.type is FactoryType.ALIAS:
             return NodeType.ALIAS
         elif factory.type is FactoryType.CONTEXT:
             return NodeType.CONTEXT
         else:
             return NodeType.FACTORY
+
+    def _is_decorated_component(self, group: Group) -> bool:
+        if group.type is not GroupType.COMPONENT:
+            return False
+        return group.name.startswith(DECORATED_COMPONENT_PREFIX)
+
+    def _trace_decorator(self, node: Node, target_group: Group) -> None:
+        if node.type is not NodeType.DECORATOR:
+            return
+        for group in self.groups.values():
+            if not self._is_decorated_component(group):
+                continue
+            nodes_to_move = [
+                n
+                for n in group.nodes
+                if n.id in node.dependencies
+            ]
+            for node in nodes_to_move:
+                group.nodes.remove(node)
+                target_group.nodes.append(node)
+                self._trace_decorator(node, target_group)
+
 
     def _make_factories(
             self, scope: BaseScope, group: Group, registry: Registry,
@@ -50,13 +79,11 @@ class Transformer:
                 )
                 group.children.append(component_group)
             node_name = get_name(key.type_hint, include_module=False)
-            if key.component:
-                node_name += " " + str(key.component)
-
             if factory.type in (FactoryType.CONTEXT, FactoryType.ALIAS):
                 source_name = ""
             else:
                 source_name = get_name(factory.source, include_module=False)
+
             node = Node(
                 id=self.count("factory"),
                 name=node_name,
@@ -87,6 +114,14 @@ class Transformer:
                 dep_node = self.nodes[dep, dep_registry.scope]
                 node.dependencies.append(dep_node.id)
 
+    def clean_groups(self, groups: list[Group]) -> list[Group]:
+        res = []
+        for group in groups:
+            group.children = self.clean_groups(group.children)
+            if group.children or group.nodes:
+                res.append(group)
+        return res
+
     def transform(self, container: Container|AsyncContainer) -> list[Group]:
         registries = [container.registry, *container.child_registries]
         result = []
@@ -108,4 +143,9 @@ class Transformer:
             if self._is_empty(registry):
                 continue
             self._fill_dependencies(registry, registries[n::-1])
-        return result
+
+        for group in self.groups.values():
+            for node in group.nodes:
+                self._trace_decorator(node, group)
+
+        return self.clean_groups(result)

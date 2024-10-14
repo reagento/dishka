@@ -11,6 +11,7 @@ class GroupType(Enum):
 class NodeType(Enum):
     CONTEXT = "Context"
     FACTORY = "Factory"
+    DECORATOR = "Decorator"
     ALIAS = "Alias"
 
 

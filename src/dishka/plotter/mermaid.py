@@ -63,7 +63,9 @@ class MermaidRenderer(Renderer):
             prefix = "Ⓘ "
         else:
             prefix = ""
-        if node.type is NodeType.CONTEXT:
+        if node.type is NodeType.DECORATOR:
+            return "🎭 " + prefix
+        elif node.type is NodeType.CONTEXT:
             return "📥 " + prefix
         elif node.type is NodeType.ALIAS:
             return "🔗 " + prefix

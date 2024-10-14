@@ -47,7 +47,7 @@ class ContainerMiddleware:
         context: dict[type[Request | WebSocket], Request | WebSocket]
 
         if scope["type"] == "http":
-            request = Request(scope)
+            request = Request(scope, receive=receive, send=send)
             context = {Request: request}
             di_scope = DIScope.REQUEST
 

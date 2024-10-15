@@ -20,7 +20,8 @@ from .exceptions import (
     NoFactoryError,
 )
 from .provider import BaseProvider
-from .registry import Registry, RegistryBuilder
+from .registry import Registry
+from .registry_builder import RegistryBuilder
 
 T = TypeVar("T")
 

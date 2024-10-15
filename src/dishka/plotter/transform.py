@@ -4,7 +4,8 @@ from dishka import AsyncContainer, BaseScope, Container, DependencyKey
 from dishka._adaptix.type_tools import is_protocol
 from dishka.dependency_source import Factory
 from dishka.entities.factory_type import FactoryType
-from dishka.registry import DECORATED_COMPONENT_PREFIX, Registry
+from dishka.registry import Registry
+from dishka.registry_builder import DECORATED_COMPONENT_PREFIX
 from dishka.text_rendering import get_name
 from .model import Group, GroupType, Node, NodeType
 

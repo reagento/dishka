@@ -13,7 +13,7 @@ from typing import Any, ParamSpec, TypeVar, get_type_hints
 from fastapi import FastAPI, Request, WebSocket
 from fastapi.routing import APIRoute
 
-from dishka import AsyncContainer, FromDishka, Provider, from_context, Scope
+from dishka import AsyncContainer, FromDishka, Provider, Scope, from_context
 from .base import wrap_injection
 from .starlette import ContainerMiddleware
 

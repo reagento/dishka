@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Callable, MutableMapping
+from contextlib import AbstractContextManager
 from threading import Lock
 from types import TracebackType
-from typing import Any, cast
+from typing import Any, TypeVar, cast, overload
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.factory_type import FactoryType
@@ -19,7 +20,10 @@ from .exceptions import (
     NoFactoryError,
 )
 from .provider import BaseProvider
-from .registry import Registry, RegistryBuilder
+from .registry import Registry
+from .registry_builder import RegistryBuilder
+
+T = TypeVar("T")
 
 
 class Container:
@@ -40,7 +44,9 @@ class Container:
             *child_registries: Registry,
             parent_container: Container | None = None,
             context: dict[Any, Any] | None = None,
-            lock_factory: Callable[[], Lock] | None = None,
+            lock_factory: Callable[
+                [], AbstractContextManager[Any],
+            ] | None = None,
             close_parent: bool = False,
     ):
         self.registry = registry
@@ -54,7 +60,7 @@ class Container:
         self._cache = {**self._context}
         self.parent_container = parent_container
 
-        self.lock: Lock | None
+        self.lock: AbstractContextManager[Any] | None
         if lock_factory:
             self.lock = lock_factory()
         else:
@@ -74,7 +80,9 @@ class Container:
     def __call__(
             self,
             context: dict[Any, Any] | None = None,
-            lock_factory: Callable[[], Lock] | None = None,
+            lock_factory: Callable[
+                [], AbstractContextManager[Any],
+            ] | None = None,
             scope: BaseScope | None = None,
     ) -> ContextWrapper:
         """
@@ -116,6 +124,22 @@ class Container:
                     close_parent=True,
                 )
         return ContextWrapper(child)
+
+    @overload
+    def get(
+            self,
+            dependency_type: type[T],
+            component: Component | None = DEFAULT_COMPONENT,
+    ) -> T:
+        ...
+
+    @overload
+    def get(
+            self,
+            dependency_type: Any,
+            component: Component | None = DEFAULT_COMPONENT,
+    ) -> Any:
+        ...
 
     def get(
             self,
@@ -192,7 +216,7 @@ def make_container(
         *providers: BaseProvider,
         scopes: type[BaseScope] = Scope,
         context: dict[Any, Any] | None = None,
-        lock_factory: Callable[[], Lock] | None = None,
+        lock_factory: Callable[[], AbstractContextManager[Any]] | None = Lock,
         skip_validation: bool = False,
         start_scope: BaseScope | None = None,
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,

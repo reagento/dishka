@@ -13,6 +13,7 @@ Built-in frameworks integrations includes:
    aiohttp
    fastapi
    flask
+   litestar
    adding_new
 
 Web frameworks
@@ -20,7 +21,7 @@ Web frameworks
     * grpcio
     * :ref:`Fastapi`
     * :ref:`Flask`
-    * Litestar
+    * :ref:`Litestar`
     * Sanic
     * Starlette
 

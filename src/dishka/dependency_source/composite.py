@@ -18,11 +18,15 @@ class CompositeDependencySource:
             self,
             origin: Any,
             dependency_sources: Sequence[DependencySource] = (),
+            number: int | None = None,
     ) -> None:
         self.dependency_sources = list(dependency_sources)
         self.origin = origin
-        self.number = self._instances
-        CompositeDependencySource._instances += 1
+        if number is None:
+            self.number = self._instances
+            CompositeDependencySource._instances += 1
+        else:
+            self.number = number
 
     def __get__(self, instance: Any, owner: Any) -> CompositeDependencySource:
         try:
@@ -34,6 +38,7 @@ class CompositeDependencySource:
             dependency_sources=[
                 s.__get__(instance, owner) for s in self.dependency_sources
             ],
+            number=self.number,
         )
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:

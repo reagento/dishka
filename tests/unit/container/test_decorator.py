@@ -213,6 +213,27 @@ def test_generic_decorator():
     assert a.a == 17
 
 
+def test_generic_double_decorator():
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        @provide(scope=Scope.APP)
+        def bar(self) -> int:
+            return 17
+
+        @decorate
+        def dec(self, a: int) -> int:
+            return a+1
+
+        @decorate
+        def baz(self, a: Tint) -> Tint:
+            return a*2
+
+    container = make_container(MyProvider())
+    a = container.get(int)
+    assert a == (17+1)*2
+
+
 def test_generic_decorator_generic_factory():
     class MyProvider(Provider):
         scope = Scope.APP

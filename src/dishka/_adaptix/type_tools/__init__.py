@@ -23,3 +23,4 @@ from .normalize_type import (
     make_norm_type,
     normalize_type,
 )
+from .type_evaler import exec_type_checking, make_fragments_collector

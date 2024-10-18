@@ -8,7 +8,6 @@ from dishka.text_rendering import get_name
 
 
 class PathRenderer:
-
     def _arrow_cycle(self, index: int, length: int) -> str:
         if length == 1:
             return "⥁"

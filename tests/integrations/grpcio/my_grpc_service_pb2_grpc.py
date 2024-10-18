@@ -24,7 +24,7 @@ except ImportError:
 
 if _version_not_supported:
     warnings.warn(  # noqa: B028
-        f"The grpc package installed is at version {GRPC_VERSION},"  # noqa: ISC003
+        f"The grpc package installed is at version {GRPC_VERSION},"
         + " but the generated code in my_grpc_service_pb2_grpc.py depends on"
         + f" grpcio>={GRPC_GENERATED_VERSION}."
         + f" Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}"  # noqa: E501

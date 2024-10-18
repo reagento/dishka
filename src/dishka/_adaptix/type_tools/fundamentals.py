@@ -2,7 +2,7 @@ import types
 from typing import TypeVar, get_args, get_origin, get_type_hints
 
 from ..common import TypeHint, VarTuple
-from ..feature_requirement import HAS_ANNOTATED, HAS_SUPPORTED_PYDANTIC_PKG
+from ..feature_requirement import HAS_SUPPORTED_PYDANTIC_PKG
 
 __all__ = ("is_pydantic_class", "strip_alias", "get_type_vars", "get_generic_args", "get_all_type_hints")
 
@@ -41,8 +41,5 @@ def get_generic_args(tp: TypeHint) -> VarTuple[TypeHint]:
     return get_args(tp)
 
 
-if HAS_ANNOTATED:
-    def get_all_type_hints(obj, globalns=None, localns=None):
-        return get_type_hints(obj, globalns, localns, include_extras=True)
-else:
-    get_all_type_hints = get_type_hints
+def get_all_type_hints(obj, globalns=None, localns=None):
+    return get_type_hints(obj, globalns, localns, include_extras=True)

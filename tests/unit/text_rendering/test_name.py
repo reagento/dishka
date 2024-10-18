@@ -1,3 +1,5 @@
+from typing import Generic, TypeVar
+
 import pytest
 
 import dishka
@@ -17,6 +19,12 @@ class A0:
 def baz(): ...
 
 
+T = TypeVar("T")
+
+class GenericA(Generic[T]):
+    pass
+
+
 @pytest.mark.parametrize(
     ("obj", "include_module", "name"), [
         (A0, False, "A0"),
@@ -31,6 +39,9 @@ def baz(): ...
         (None, False, "None"),
         (..., False, "..."),
         (dishka.Scope, True, "dishka.entities.scope.Scope"),
+        (GenericA[int], False, "GenericA[int]"),
+        (GenericA[T], False, "GenericA[T]"),
+        (GenericA, False, "GenericA"),
     ],
 )
 def test_get_name(obj, include_module, name):

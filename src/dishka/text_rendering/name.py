@@ -1,4 +1,12 @@
-from typing import Any
+from typing import Any, get_args, get_origin
+
+
+def _render_args(hint: Any) -> str:
+    args = get_args(hint)
+    return ", ".join(
+        get_name(arg, include_module=False)
+        for arg in args
+    )
 
 
 def get_name(hint: Any, *, include_module: bool) -> str:
@@ -21,5 +29,9 @@ def get_name(hint: Any, *, include_module: bool) -> str:
         getattr(hint, "__name__", None)
     )
     if name:
-        return f"{module}{name}"
+        if get_origin(hint):
+            args = f"[{_render_args(hint)}]"
+        else:
+            args = ""
+        return f"{module}{name}{args}"
     return str(hint)

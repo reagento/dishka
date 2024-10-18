@@ -18,6 +18,7 @@ class Factory(FactoryData):
         "kw_dependencies",
         "is_to_bind",
         "cache",
+        "override",
     )
 
     def __init__(
@@ -31,6 +32,7 @@ class Factory(FactoryData):
             type_: FactoryType,
             is_to_bind: bool,
             cache: bool,
+            override: bool,
     ) -> None:
         super().__init__(
             source=source,
@@ -42,6 +44,7 @@ class Factory(FactoryData):
         self.kw_dependencies = kw_dependencies
         self.is_to_bind = is_to_bind
         self.cache = cache
+        self.override = override
 
     def __get__(self, instance: Any, owner: Any) -> Factory:
         scope = self.scope or instance.scope
@@ -62,6 +65,7 @@ class Factory(FactoryData):
             type_=self.type,
             is_to_bind=False,
             cache=self.cache,
+            override=self.override,
         )
 
     def with_component(self, component: Component) -> Factory:
@@ -79,4 +83,5 @@ class Factory(FactoryData):
             is_to_bind=self.is_to_bind,
             cache=self.cache,
             type_=self.type,
+            override=self.override,
         )

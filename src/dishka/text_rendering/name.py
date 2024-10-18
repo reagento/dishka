@@ -1,6 +1,12 @@
-from typing import Any, get_args
+from typing import Any, get_args, get_origin
 
-from dishka._adaptix.type_tools import is_generic, strip_alias
+
+def _render_args(hint: Any) -> str:
+    args = get_args(hint)
+    return ", ".join(
+        get_name(arg, include_module=False)
+        for arg in args
+    )
 
 
 def get_name(hint: Any, *, include_module: bool) -> str:
@@ -22,13 +28,10 @@ def get_name(hint: Any, *, include_module: bool) -> str:
         getattr(hint, "__qualname__", None) or
         getattr(hint, "__name__", None)
     )
-    if is_generic(strip_alias(hint)):
-        str_args = ",".join(
-            (get_name(args, include_module=False) for args in get_args(hint)),
-        )
-        generic_args = f"[{str_args}]"
-    else:
-        generic_args = ""
     if name:
-        return f"{module}{name}" + generic_args
-    return str(hint) + generic_args
+        if get_origin(hint):
+            args = f"[{_render_args(hint)}]"
+        else:
+            args = ""
+        return f"{module}{name}{args}"
+    return str(hint)

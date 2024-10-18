@@ -20,6 +20,8 @@ __all__ = [
     "provide_all",
     "new_scope",
     "WithProtocols",
+    "ValidationSettings",
+    "STRICT_VALIDATION",
 ]
 
 from .async_container import AsyncContainer, make_async_container
@@ -36,6 +38,7 @@ from .entities.depends_marker import FromDishka
 from .entities.key import DependencyKey, FromComponent
 from .entities.provides_marker import AnyOf
 from .entities.scope import BaseScope, Scope, new_scope
+from .entities.validation_settigs import STRICT_VALIDATION, ValidationSettings
 from .entities.with_parents import WithParents
 from .entities.with_protocols import WithProtocols
 from .provider import Provider

@@ -77,7 +77,7 @@ class NoFactoryError(DishkaError):
             f"component={self.requested.component!r})"
         )
         suggestion = render_suggestions_for_missing(
-            requested_for=self.path[-1],
+            requested_for=self.path[-1] if self.path else None,
             requested_key=self.requested,
             suggest_other_scopes=self.suggest_other_scopes,
             suggest_other_components=self.suggest_other_components,
@@ -99,3 +99,36 @@ class NoFactoryError(DishkaError):
 
 class GraphMissingFactoryError(NoFactoryError, InvalidGraphError):
     pass
+
+
+class ImplicitOverrideDetectedError(InvalidGraphError):
+    def __init__(self, new: Factory, existing: Factory) -> None:
+        self.new = new
+        self.existing = existing
+
+    def __str__(self) -> str:
+        new_name = get_name(self.new.source, include_module=False)
+        existing_name = get_name(self.existing.source, include_module=False)
+        return (
+            f"Detected multiple factories for {self.new.provides} "
+            f"while `override` flag is not set.\n"
+            "Hint:\n"
+            f" * Try specifying `override=True` for {new_name}\n"
+            f" * Try removing factory {existing_name} or {new_name}\n"
+        )
+
+
+class NothingOverriddenError(InvalidGraphError):
+    def __init__(self, factory: Factory) -> None:
+        self.factory = factory
+
+    def __str__(self) -> str:
+        name = get_name(self.factory.source, include_module=False)
+        return (
+            f"Overriding factory found for {self.factory.provides}, "
+            "but there is nothing to override.\n"
+            "Hint:\n"
+            f" * Try removing override=True from {name}\n"
+            f" * Check the order of providers\n"
+        )
+

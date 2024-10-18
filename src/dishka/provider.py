@@ -137,6 +137,7 @@ class Provider(BaseProvider):
             provides: Any = None,
             cache: bool = True,
             recursive: bool = False,
+            override: bool = False,
     ) -> CompositeDependencySource:
         if scope is None:
             scope = self.scope
@@ -146,6 +147,7 @@ class Provider(BaseProvider):
             provides=provides,
             cache=cache,
             recursive=recursive,
+            override=override,
         )
         self._add_dependency_sources(str(source), composite.dependency_sources)
         return composite
@@ -156,11 +158,13 @@ class Provider(BaseProvider):
             scope: BaseScope | None = None,
             cache: bool = True,
             recursive: bool = False,
+            override: bool = False,
     ) -> CompositeDependencySource:
         if scope is None:
             scope = self.scope
         composite = provide_all_on_instance(
             *provides, scope=scope, cache=cache, recursive=recursive,
+            override=override,
         )
         self._add_dependency_sources("?", composite.dependency_sources)
         return composite
@@ -169,13 +173,15 @@ class Provider(BaseProvider):
             self,
             *,
             source: type,
-            provides: Any,
+            provides: Any = None,
             cache: bool = True,
+            component: Component | None = None,
     ) -> CompositeDependencySource:
         composite = alias(
             source=source,
             provides=provides,
             cache=cache,
+            component=component,
         )
         self._add_dependency_sources(str(source), composite.dependency_sources)
         return composite

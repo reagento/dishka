@@ -132,8 +132,9 @@ It works similar to :ref:`alias`.
             return A()
 
     container = make_async_container(MyProvider())
-    await container.get(A)
-
+    a = await container.get(A)
+    a = await container.get(AImpl)
+    a is a # True
 
 WithParents generates only one factory and many aliases and is equivalent to ``AnyOf[AImpl, A]``. The following parents are ignored: ``type``, ``object``, ``Enum``, ``ABC``, ``ABCMeta``, ``Generic``, ``Protocol``, ``Exception``, ``BaseException``
 
@@ -176,3 +177,21 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
         def make_a(self, type_: type[T]) -> A[T]:
             ...
 
+* Do you want to get "dependencies" by parents which are protocols? Use ``WithProtocols`` as a result hint:
+
+.. code-block:: python
+
+    from dishka import WithProtocols, provide, Provider, Scope
+
+    class A(Protocol): ...
+    class AImpl(A): ...
+
+    class MyProvider(Provider):
+        scope=Scope.APP
+
+        @provide
+        def a(self) -> WithProtocols[AImpl]:
+            return A()
+
+    container = make_async_container(MyProvider())
+    await container.get(A)

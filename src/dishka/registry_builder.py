@@ -136,8 +136,6 @@ class RegistryBuilder:
         self.skip_validation = skip_validation
         self.validation_settings = validation_settings
         self.processed_factories: dict[DependencyKey, Factory] = {}
-        self.processed_aliases: dict[DependencyKey, Alias] = {}
-        self.processed_contex_vars: dict[DependencyKey, ContextVariable] = {}
 
     def _collect_components(self) -> None:
         for provider in self.providers:

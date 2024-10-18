@@ -220,7 +220,7 @@ def _make_factory_by_class(
         hints = dict(res.get_resolved_members(source).members)
     except NameError as e:
         name = get_name(source, include_module=True) + ".__init__"
-        raise NameError(
+        raise NameError(  # type: ignore[call-arg]
             f"Failed to analyze `{name}`. \n"
             f"Type '{e.name}' is not defined\n\n"
             f"If your are using `if TYPE_CHECKING` to import '{e.name}' "
@@ -276,7 +276,7 @@ def _make_factory_by_function(
         hints = get_type_hints(source, include_extras=True)
     except NameError as e:
         name = get_name(source, include_module=True)
-        raise NameError(
+        raise NameError(  # type: ignore[call-arg]
             f"Failed to analyze `{name}`. \n"
             f"Type '{e.name}' is not defined. \n\n"
             f"If your are using `if TYPE_CHECKING` to import '{e.name}' "
@@ -340,7 +340,7 @@ def _make_factory_by_static_method(
         hints = get_type_hints(source, include_extras=True)
     except NameError as e:
         name = get_name(source, include_module=True)
-        raise NameError(
+        raise NameError(  # type: ignore[call-arg]
             f"Failed to analyze `{name}`. \n"
             f"Type '{e.name}' is not defined. \n\n"
             f"If your are using `if TYPE_CHECKING` to import '{e.name}' "

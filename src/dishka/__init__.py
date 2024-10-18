@@ -19,6 +19,7 @@ __all__ = [
     "provide",
     "provide_all",
     "new_scope",
+    "WithProtocols",
 ]
 
 from .async_container import AsyncContainer, make_async_container
@@ -36,4 +37,5 @@ from .entities.key import DependencyKey, FromComponent
 from .entities.provides_marker import AnyOf
 from .entities.scope import BaseScope, Scope, new_scope
 from .entities.with_parents import WithParents
+from .entities.with_protocols import WithProtocols
 from .provider import Provider

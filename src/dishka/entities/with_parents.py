@@ -21,6 +21,8 @@ from dishka.entities.provides_marker import ProvideMultiple
 
 __all__ = ["WithParents", "ParentsResolver"]
 
+from dishka.text_rendering import get_name
+
 IGNORE_TYPES: Final = (
     type,
     object,
@@ -84,8 +86,9 @@ def create_type_vars_map(obj: TypeHint) -> dict[TypeHint, TypeHint]:
 class ParentsResolver:
     def get_parents(self, child_type: TypeHint) -> list[TypeHint]:
         if is_ignored_type(strip_alias(child_type)):
+            name = get_name(child_type, include_module=False)
             raise ValueError(
-                f"The starting class {child_type!r} is in ignored types",
+                f"The starting class {name} is in ignored types",
             )
         if is_parametrized(child_type) or has_orig_bases(child_type):
             return self._get_parents_for_generic(child_type)

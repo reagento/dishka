@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, NoReturn
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.factory_type import FactoryType
@@ -10,20 +10,22 @@ from .alias import Alias
 from .factory import Factory
 
 
-def context_stub() -> Any:
+def context_stub() -> NoReturn:
     raise NotImplementedError
 
 
 class ContextVariable:
-    __slots__ = ("provides", "scope")
+    __slots__ = ("provides", "scope", "override")
 
     def __init__(
             self, *,
             provides: DependencyKey,
             scope: BaseScope | None,
+            override: bool,
     ) -> None:
         self.provides = provides
         self.scope = scope
+        self.override = override
 
     def as_factory(
             self, component: Component,
@@ -38,14 +40,17 @@ class ContextVariable:
                 kw_dependencies={},
                 type_=FactoryType.CONTEXT,
                 cache=False,
-                override=False,
+                override=self.override,
             )
         else:
             aliased = Alias(
                 source=self.provides.with_component(DEFAULT_COMPONENT),
-                provides=DependencyKey(self.provides.type_hint,
-                                       component=component),
                 cache=False,
+                override=self.override,
+                provides=DependencyKey(
+                    component=component,
+                    type_hint=self.provides.type_hint,
+                ),
             )
             return aliased.as_factory(scope=self.scope, component=component)
 
@@ -54,4 +59,5 @@ class ContextVariable:
         return ContextVariable(
             scope=scope,
             provides=self.provides,
+            override=self.override,
         )

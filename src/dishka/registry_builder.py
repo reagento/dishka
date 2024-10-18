@@ -136,6 +136,8 @@ class RegistryBuilder:
         self.skip_validation = skip_validation
         self.validation_settings = validation_settings
         self.processed_factories: dict[DependencyKey, Factory] = {}
+        self.processed_aliases: dict[DependencyKey, Alias] = {}
+        self.processed_contex_vars: dict[DependencyKey, ContextVariable] = {}
 
     def _collect_components(self) -> None:
         for provider in self.providers:
@@ -175,6 +177,7 @@ class RegistryBuilder:
             context_var = ContextVariable(
                 provides=DependencyKey(self.container_type, DEFAULT_COMPONENT),
                 scope=scope,
+                override=False,
             )
             for component in self.components:
                 registry.add_factory(context_var.as_factory(component))
@@ -243,7 +246,27 @@ class RegistryBuilder:
         registry = self.registries[scope]
 
         factory = alias.as_factory(scope, component)
+        if (
+            self.validation_settings.nothing_overridden
+            and not self.skip_validation
+            and factory.override
+            and factory.provides not in self.processed_factories
+        ):
+            raise NothingOverriddenError(factory)
+
+        if (
+            self.validation_settings.implicit_override
+            and not self.skip_validation
+            and not factory.override
+            and factory.provides in self.processed_factories
+        ):
+            raise ImplicitOverrideDetectedError(
+                factory,
+                self.processed_factories[factory.provides],
+            )
+
         self.dependency_scopes[factory.provides] = scope
+        self.processed_factories[factory.provides] = factory
         registry.add_factory(factory)
 
     def _process_generic_decorator(
@@ -375,7 +398,27 @@ class RegistryBuilder:
             )
         registry = self.registries[context_var.scope]
         for component in self.components:
-            registry.add_factory(context_var.as_factory(component))
+            factory = context_var.as_factory(component)
+            if (
+                self.validation_settings.nothing_overridden
+                and not self.skip_validation
+                and factory.override
+                and factory.provides not in self.processed_factories
+            ):
+                raise NothingOverriddenError(factory)
+
+            if (
+                self.validation_settings.implicit_override
+                and not self.skip_validation
+                and not factory.override
+                and factory.provides in self.processed_factories
+            ):
+                raise ImplicitOverrideDetectedError(
+                    factory,
+                    self.processed_factories[factory.provides],
+                )
+            self.processed_factories[context_var.provides] = factory
+            registry.add_factory(factory)
 
     def build(self) -> tuple[Registry, ...]:
         self._collect_components()

@@ -90,7 +90,7 @@ class Registry:
             scope=self.scope,
             dependencies=[],
             kw_dependencies={},
-            provides=DependencyKey(type[typevar], dependency.component),
+            provides=DependencyKey(type[typevar], dependency.component),  # type: ignore[misc]
             type_=FactoryType.FACTORY,
             is_to_bind=False,
             cache=False,

@@ -8,8 +8,8 @@ from .unpack_provides import unpack_alias
 
 
 def alias(
-        *,
         source: Any,
+        *,
         provides: Any | None = None,
         cache: bool = True,
         component: Component | None = None,

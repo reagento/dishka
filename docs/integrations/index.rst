@@ -3,7 +3,8 @@
 Using with frameworks
 *******************************
 
-There are some integrations in library you are not limited to use them.
+There are some integrations in library, however you are not limited to them only.
+You can create custom integrations for your framework of choice.
 
 Built-in frameworks integrations:
 
@@ -21,6 +22,8 @@ Built-in frameworks integrations:
 * Sanic
 * grpcio
 * Click
+
+See real `integation examples <https://github.com/reagento/dishka/tree/develop/examples/integrations>`_ here.
 
 Common approach
 =====================

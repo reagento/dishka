@@ -28,7 +28,7 @@ First of all - split your application factory and container setup.
 
 .. literalinclude:: ./app_factory.py
 
-Create a provider with you mock objects. You can still use production providers and override dependencies in a new one. Or you can build container only with new providers. It depends on the structure of your application and type of a test.
+Create a provider with your mock objects. You can still use production providers and override dependencies in a new one. Or you can build container only with new providers. It depends on the structure of your application and type of a test.
 
 .. literalinclude:: ./fixtures.py
 

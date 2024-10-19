@@ -174,8 +174,8 @@ class Provider(BaseProvider):
 
     def alias(
             self,
-            *,
             source: type,
+            *,
             provides: Any = None,
             cache: bool = True,
             component: Component | None = None,
@@ -209,14 +209,14 @@ class Provider(BaseProvider):
 
     def from_context(
             self,
-            *,
             provides: Any,
-            scope: BaseScope,
+            *,
+            scope: BaseScope | None = None,
             override: bool = False,
     ) -> CompositeDependencySource:
         composite = from_context(
             provides=provides,
-            scope=scope,
+            scope=scope or self.scope,
             override=override,
         )
         self._add_dependency_sources(

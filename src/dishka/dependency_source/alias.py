@@ -14,17 +14,19 @@ def _identity(x: Any) -> Any:
 
 
 class Alias:
-    __slots__ = ("source", "provides", "cache", "component")
+    __slots__ = ("source", "provides", "cache", "component", "override")
 
     def __init__(
             self, *,
             source: DependencyKey,
             provides: DependencyKey,
             cache: bool,
+            override: bool,
     ) -> None:
         self.source = source
         self.provides = provides
         self.cache = cache
+        self.override = override
 
     def as_factory(
             self, scope: BaseScope | None, component: Component | None,
@@ -38,7 +40,7 @@ class Alias:
             kw_dependencies={},
             type_=FactoryType.ALIAS,
             cache=self.cache,
-            override=False,
+            override=self.override,
         )
 
     def __get__(self, instance: Any, owner: Any) -> Alias:

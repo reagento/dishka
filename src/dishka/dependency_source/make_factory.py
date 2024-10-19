@@ -227,7 +227,7 @@ def _make_factory_by_class(
             f"If your are using `if TYPE_CHECKING` to import '{e.name}' "
             f"then try removing it. \n"
             f"Or, create a separate factory with all types imported.",
-            name=e.name,  # type: ignore[call-arg]
+            name=e.name,
         ) from e
 
     hints.pop("return", _empty)
@@ -285,7 +285,7 @@ def _make_factory_by_function(
             f"If your are using `if TYPE_CHECKING` to import '{e.name}' "
             f"then try removing it. \n"
             f"Or, create a separate factory with all types imported.",
-            name=e.name,  # type: ignore[call-arg]
+            name=e.name,
         ) from e
     if is_in_class:
         self = next(iter(params.values()), None)
@@ -351,7 +351,7 @@ def _make_factory_by_static_method(
             f"If your are using `if TYPE_CHECKING` to import '{e.name}' "
             f"then try removing it. \n"
             f"Or, create a separate factory with all types imported.",
-            name=e.name,  # type: ignore[call-arg]
+            name=e.name,
         ) from e
 
     possible_dependency = hints.pop("return", _empty)

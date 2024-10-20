@@ -17,6 +17,7 @@ Built-in frameworks integrations includes:
    litestar
    sanic
    aiogram
+   aiogram_dialog
    telebot
    adding_new
 
@@ -31,7 +32,7 @@ Web frameworks
 
 Telegram bots
     * :ref:`aiogram`
-    * Aiogram_dialog
+    * :ref:`Aiogram_dialog`
     * :ref:`pyTelegramBotAPI<telebot>`
 
 Tasks and events

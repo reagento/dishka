@@ -3,7 +3,7 @@
 pyTelegramBotAPI
 ===========================================
 
-Though it is not required, you can use dishka-aiogram integration. It features:
+Though it is not required, you can use dishka-pyTelegramBotAPI integration. It features:
 
 * automatic REQUEST scope management using middleware
 * passing ``dishka.integrations.telebot.TelebotEvent`` object as a context data to providers for telegram events (update object fields)

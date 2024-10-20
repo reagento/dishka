@@ -18,6 +18,7 @@ Built-in frameworks integrations includes:
    fastapi
    faststream
    flask
+   grpcio
    litestar
    sanic
    starlette
@@ -27,7 +28,7 @@ Built-in frameworks integrations includes:
 
 Web frameworks
     * :ref:`aiohttp`
-    * grpcio
+    * :ref:`grpcio`
     * :ref:`Fastapi`
     * :ref:`Flask`
     * :ref:`Litestar`
@@ -88,35 +89,7 @@ For such integrations library enters scope for each generated event. So if you h
 
 Additionally, you may need to call ``container.close()`` in the end of your application lifecycle if you want to finalize APP-scoped dependencies
 
-For some frameworks like ``grpcio`` common approach is not suitable. You need to create ``DishkaInterceptor`` or ``DishkaAioInterceptor`` and pass in to your server.
-But you still use ``@inject`` on your servicer methods. E.g.:
-
-.. code-block:: python
-
-    from dishka.integrations.grpcio import (
-        DishkaInterceptor,
-        FromDishka,
-        inject,
-    )
-    server = grpc.server(
-        ThreadPoolExecutor(max_workers=10),
-        interceptors=[
-            DishkaInterceptor(container),
-        ],
-    )
-
-    class MyServiceImpl(MyServicer):
-        @inject
-        def MyMethod(
-                self,
-                request: MyRequest,
-                context: grpc.ServicerContext,
-                a: FromDishka[RequestDep],
-        ) -> MyResponse:
-            ...
-
-
-.. _autoinject:
+Some frameworks have their own specific, check corresponding page.
 
 Context data
 ====================
@@ -131,10 +104,10 @@ These objects are passed to context:
 * Litestar - ``litestar.Request``. Provider ``LitestarProvider``.
 * Starlette - ``starlette.requests.Request`` or ``starlette.websockets.WebSocket`` if you are using web sockets. Provider ``StarletteProvider``.
 * Aiogram - ``aiogram.types.TelegramObject``. Provider ``AiogramProvider``
-* pyTelegramBotAPI - ``dishka.integrations.telebot.TelebotMessage`` Provider ``TelebotProvider``.
+* pyTelegramBotAPI - ``dishka.integrations.telebot.TelebotMessage``. Provider ``TelebotProvider``.
 * Arq - no objects and provider.
 * FastStream - ``faststream.broker.message.StreamMessage`` or ``dishka.integration.faststream.FastStreamMessage``, ``faststream.utils.ContextRepo``. Provider ``FastStreamProvider``.
-* TaskIq - no objects and provider.
+* TaskIq - ``taskiq.TaskiqMessage``. Provider ``TaskiqProvider``
 * Sanic - ``sanic.request.Request``. Provider ``SanicProvider``
 * grpcio - ``grpcio.ServicerContext`` to get the current context and ``google.protobuf.message.Message`` to get the current request. Message is available only for ``unary_unary`` and ``unary_stream`` rpc method. Provider ``GrpcioProvider``.
 * Click - no objects and provider.

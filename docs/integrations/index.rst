@@ -11,17 +11,18 @@ Built-in frameworks integrations includes:
 .. toctree::
    :hidden:
 
+   aiogram
+   aiogram_dialog
    aiohttp
+   click
    fastapi
+   faststream
    flask
    litestar
    sanic
    starlette
-   aiogram
-   aiogram_dialog
-   telebot
    taskiq
-   faststream
+   telebot
    adding_new
 
 Web frameworks
@@ -44,7 +45,7 @@ Tasks and events
     * :ref:`TaskIq`
 
 Other
-    * Click
+    * :ref:`Click`
 
 See real `integation examples <https://github.com/reagento/dishka/tree/develop/examples/integrations>`_ here.
 
@@ -59,7 +60,7 @@ To use framework integration you mainly need to do 3 things:
 
 * call ``setup_dishka`` on your container and framework entity
 * add ``FromDishka[YourClass]`` on you framework handlers (or view-functions)
-* decorate your handlers with ``@inject`` before registering them in framework. Some integrations do not required it, see :ref:`autoinject`
+* decorate your handlers with ``@inject`` before registering them in framework. Some integrations do not required it, see their details
 
 .. note::
    ``FromDishka[T]`` is basically a synonym for ``Annotated[T, FromComponent()]`` and is used to get an object from default component. To use other component you can use the same syntax with annotated ``Annotated[T, FromComponent("X")]``.
@@ -117,37 +118,6 @@ But you still use ``@inject`` on your servicer methods. E.g.:
 
 .. _autoinject:
 
-Auto injection
-=========================
-
-With some frameworks we provide an option to inject dependencies in handlers without decorating them with ``@inject``.
-
-
-* For **Click** you need to provide ``auto_inject=True`` when calling ``setup_dishka``. E.g:
-
-.. code-block:: python
-
-    import click
-    from dishka import make_container
-    from dishka.integrations.click import FromDishka, setup_dishka
-
-    @click.group()
-    @click.pass_context
-    def main(context: click.Context):
-        container = make_container(...)
-        setup_dishka(container=container, context=context, auto_inject=True)
-
-    @main.command()
-    @click.option("--count", default=1, help="Number of greetings.")
-    def hello(count: int, interactor: FromDishka[Interactor]):
-        """Simple program that greets NAME for a total of COUNT times."""
-        for x in range(count):
-            click.echo(f"Hello {interactor()}!")
-
-    main()
-
-
-
 Context data
 ====================
 
@@ -170,8 +140,8 @@ These objects are passed to context:
 * Click - no objects and provider.
 
 
-To use such objects you need to declare them in your provider using :ref:`from-context` and then they will be available as factories params.
-Or specify the provider of a specific integration when creating a container. Please note that not all context data has a factory defined. You will have to specify it yourself.
+To access such objects, just specify them as your factory parameter and add corresponding integrations provider when creating a container.
+
 
 Websocket support
 =============================

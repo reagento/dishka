@@ -44,6 +44,7 @@ How to use
     async def start(
         gateway: FromDishka[Gateway],
     ):
+        ...
 
 
 4. *(optional)* Use ``TaskiqProvider()`` when creating container if you are going to use ``taskiq.TaskiqMessage`` in providers.

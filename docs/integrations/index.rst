@@ -20,6 +20,7 @@ Built-in frameworks integrations includes:
    aiogram_dialog
    telebot
    taskiq
+   faststream
    adding_new
 
 Web frameworks
@@ -38,7 +39,7 @@ Telegram bots
 
 Tasks and events
     * Arq
-    * FastStream
+    * :ref:`FastStream`
     * :ref:`TaskIq`
 
 Other
@@ -120,27 +121,6 @@ Auto injection
 
 With some frameworks we provide an option to inject dependencies in handlers without decorating them with ``@inject``.
 
-
-* For **FastStream** (**0.5.0** version and higher) you need to provide ``auto_inject=True`` when calling ``setup_dishka``. E.g:
-
-.. code-block:: python
-
-    from faststream import FastStream
-    from faststream.nats import NatsBroker, NatsMessage
-    from dishka import make_async_container
-    from dishka.integrations.faststream import FastStreamProvider, FromDishka, setup_dishka
-
-    broker = NatsBroker()
-    app = FastStream(broker)
-    setup_dishka(make_async_container(..., FastStreamProvider), app, auto_inject=True)
-
-    @broker.subscriber("/")
-    def index(
-            *,
-            message: FromDishka[NatsMessage],
-    ) -> str:
-        await message.ack()
-        return message.body
 
 * For **Click** you need to provide ``auto_inject=True`` when calling ``setup_dishka``. E.g:
 

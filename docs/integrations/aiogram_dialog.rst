@@ -29,8 +29,7 @@ How to use
         mock: FromDishka[Mock],
         **kwargs,
     ):
-        mock(a)
-        return {}
+        ...
 
 
     @inject
@@ -41,4 +40,4 @@ How to use
         a: FromDishka[RequestDep],
         mock: FromDishka[Mock],
     ):
-        mock(a)
+        ...

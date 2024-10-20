@@ -6,7 +6,9 @@ from grpc import ServicerContext, server as make_server
 
 from dishka import Container
 from dishka.container import make_container
-from dishka.integrations.grpcio import inject, FromDishka, setup_dishka
+from dishka.integrations.grpcio import (
+    inject, FromDishka, GrpcioProvider, DishkaInterceptor,
+)
 
 from grpcio.di import service_provider
 from grpcio.services.uuid_service import UUIDService
@@ -74,9 +76,13 @@ class ExampleService(ExampleServiceServicer):
 
 
 def main() -> None:
-    server = make_server(ThreadPoolExecutor(10))
-
-    setup_dishka(make_container(service_provider()), server)
+    container = make_container(service_provider(), GrpcioProvider())
+    server = make_server(
+        ThreadPoolExecutor(max_workers=10),
+        interceptors=[
+            DishkaInterceptor(container),
+        ],
+    )
 
     add_ExampleServiceServicer_to_server(ExampleService(), server)
 

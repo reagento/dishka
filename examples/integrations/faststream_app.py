@@ -2,7 +2,9 @@ from faststream import ContextRepo, FastStream
 from faststream.nats import NatsBroker, NatsMessage
 
 from dishka import Provider, Scope, make_async_container, provide
-from dishka.integrations.faststream import FromDishka, setup_dishka
+from dishka.integrations.faststream import (
+    FastStreamProvider, FromDishka, setup_dishka,
+)
 
 
 class A:
@@ -26,7 +28,7 @@ class MyProvider(Provider):
 
 
 provider = MyProvider()
-container = make_async_container(provider)
+container = make_async_container(provider, FastStreamProvider())
 
 broker = NatsBroker()
 app = FastStream(broker)

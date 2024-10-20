@@ -13,6 +13,7 @@ from dishka import (
 )
 from dishka.integrations.aiohttp import (
     DISHKA_CONTAINER_KEY,
+    AiohttpProvider,
     FromDishka,
     inject,
     setup_dishka,
@@ -51,7 +52,7 @@ async def on_shutdown(app: Application):
 app = Application()
 app.add_routes(router)
 
-container = make_async_container(GatewayProvider())
+container = make_async_container(GatewayProvider(), AiohttpProvider())
 setup_dishka(container=container, app=app)
 app.on_shutdown.append(on_shutdown)
 run_app(app)

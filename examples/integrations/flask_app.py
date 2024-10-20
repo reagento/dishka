@@ -10,6 +10,7 @@ from dishka import (
     provide,
 )
 from dishka.integrations.flask import (
+    FlaskProvider,
     FromDishka,
     inject,
     setup_dishka,
@@ -70,7 +71,7 @@ def auto(
     return result
 
 
-container = make_container(AdaptersProvider(), InteractorProvider())
+container = make_container(AdaptersProvider(), InteractorProvider(), FlaskProvider())
 setup_dishka(container=container, app=app, auto_inject=True)
 try:
     app.run()

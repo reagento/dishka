@@ -19,7 +19,7 @@ CONTAINER_NAME = "dishka_container"
 
 T = TypeVar("T")
 P = ParamSpec("P")
-TelebotMessage = NewType("TelebotMessage", object)
+TelebotEvent = NewType("TelebotEvent", object)
 
 
 def inject(func: Callable[P, T]) -> Callable[P, T]:
@@ -37,7 +37,7 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
 
 
 class TelebotProvider(Provider):
-    message = from_context(TelebotMessage, scope=Scope.REQUEST)
+    message = from_context(TelebotEvent, scope=Scope.REQUEST)
 
 
 class ContainerMiddleware(BaseMiddleware):  # type: ignore[misc]
@@ -53,7 +53,7 @@ class ContainerMiddleware(BaseMiddleware):  # type: ignore[misc]
         data: dict[str, Any],
     ) -> None:
         dishka_container_wrapper = self.container(
-            {TelebotMessage(type(message)): message},
+            {TelebotEvent(type(message)): message},
         )
         data[CONTAINER_NAME + "_wrapper"] = dishka_container_wrapper
         data[CONTAINER_NAME] = dishka_container_wrapper.__enter__()

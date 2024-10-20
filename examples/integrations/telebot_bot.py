@@ -1,13 +1,15 @@
 import logging
 import os
 import random
-from typing import Annotated, Iterable
+from typing import Iterable
 
 import telebot
 from telebot.types import Message
 
 from dishka import Provider, Scope, provide, make_container
-from dishka.integrations.telebot import FromDishka, inject, setup_dishka
+from dishka.integrations.telebot import (
+    FromDishka, inject, setup_dishka, TelebotProvider,
+)
 
 
 # app dependency logic
@@ -34,7 +36,7 @@ def start(
 
 logging.basicConfig(level=logging.INFO)
 
-container = make_container(MyProvider())
+container = make_container(MyProvider(), TelebotProvider())
 setup_dishka(container=container, bot=bot)
 try:
     bot.infinity_polling()

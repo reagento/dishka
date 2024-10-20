@@ -11,12 +11,13 @@ Built-in frameworks integrations includes:
 .. toctree::
    :hidden:
 
-   aiogram
    aiohttp
    fastapi
    flask
    litestar
    sanic
+   aiogram
+   telebot
    adding_new
 
 Web frameworks
@@ -31,7 +32,7 @@ Web frameworks
 Telegram bots
     * :ref:`aiogram`
     * Aiogram_dialog
-    * pyTelegramBotAPI
+    * :ref:`pyTelegramBotAPI<telebot>`
 
 Tasks and events
     * Arq

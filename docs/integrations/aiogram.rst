@@ -6,9 +6,10 @@ aiogram
 Though it is not required, you can use dishka-aiogram integration. It features:
 
 * automatic REQUEST scope management using middleware
-* passing ``TelegramObject`` object as a context data to providers for telegram events (update members)
+* passing ``TelegramObject`` object as a context data to providers for telegram events (update object fields)
 * automatic injection of dependencies into handler function
 
+Only async handlers are supported.
 
 How to use
 ****************

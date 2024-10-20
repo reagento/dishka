@@ -17,10 +17,14 @@ from taskiq import (
     TaskiqResult,
 )
 
-from dishka import AsyncContainer, FromDishka
+from dishka import AsyncContainer, FromDishka, Provider, Scope, from_context
 from dishka.integrations.base import wrap_injection
 
 CONTAINER_NAME: Final = "dishka_container"
+
+
+class TaskiqProvider(Provider):
+    event = from_context(TaskiqMessage, scope=Scope.REQUEST)
 
 
 class ContainerMiddleware(TaskiqMiddleware):
@@ -32,7 +36,9 @@ class ContainerMiddleware(TaskiqMiddleware):
         self,
         message: TaskiqMessage,
     ) -> TaskiqMessage:
-        message.labels[CONTAINER_NAME] = await self._container().__aenter__()
+        message.labels[CONTAINER_NAME] = await self._container(
+            context={TaskiqMessage: message},
+        ).__aenter__()
         return message
 
     async def on_error(

@@ -19,6 +19,7 @@ Built-in frameworks integrations includes:
    aiogram
    aiogram_dialog
    telebot
+   taskiq
    adding_new
 
 Web frameworks
@@ -38,7 +39,7 @@ Telegram bots
 Tasks and events
     * Arq
     * FastStream
-    * TaskIq
+    * :ref:`TaskIq`
 
 Other
     * Click

@@ -12,6 +12,7 @@ You can create custom integrations for your framework of choice.
    aiogram
    aiogram_dialog
    aiohttp
+   arq
    click
    fastapi
    faststream
@@ -34,7 +35,7 @@ You can create custom integrations for your framework of choice.
 
    * -  :ref:`aiohttp`
      -  :ref:`aiogram`
-     -  Arq
+     -  :ref:`arq`
      -  :ref:`Click`
 
    * - :ref:`grpcio`

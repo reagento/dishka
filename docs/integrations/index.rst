@@ -15,6 +15,7 @@ Built-in frameworks integrations includes:
    fastapi
    flask
    litestar
+   sanic
    adding_new
 
 Web frameworks
@@ -23,7 +24,7 @@ Web frameworks
     * :ref:`Fastapi`
     * :ref:`Flask`
     * :ref:`Litestar`
-    * Sanic
+    * :ref:`Sanic`
     * Starlette
 
 Telegram bots
@@ -152,24 +153,6 @@ With some frameworks we provide an option to inject dependencies in handlers wit
     ) -> str:
         await message.ack()
         return message.body
-
-* For **Sanic** you need to provide ``auto_inject=True`` when calling ``setup_dishka``. It is important here to call it after registering all views and blueprints. E.g:
-
-.. code-block:: python
-
-    from sanic import Sanic, Request, HTTPResponse
-    from dishka.integrations.sanic import FromDishka, setup_dishka
-
-    app = Sanic(__name__)
-
-    @app.get("/")
-    async def index(
-        request: Request,
-        interactor: FromDishka[Interactor],
-    ) -> HTTPResponse:
-        return HTTPResponse(interactor())
-
-    setup_dishka(container=container, app=app, auto_inject=True)
 
 * For **Click** you need to provide ``auto_inject=True`` when calling ``setup_dishka``. E.g:
 

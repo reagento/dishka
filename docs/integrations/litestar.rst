@@ -5,9 +5,9 @@ Litestar
 
 Though it is not required, you can use dishka-litestar integration. It features:
 
-* automatic REQUEST and SESSION scope management using middleware
-* passing ``Request`` object as a context data to providers for both **Websockets** and **HTTP** requests
-* automatic injection of dependencies into handler function
+* automatic REQUEST scope management using middleware
+* passing ``Request`` object as a context data to providers for **HTTP** requests
+* injection of dependencies into handler function using decorator
 
 
 How to use
@@ -18,7 +18,6 @@ How to use
 ..  code-block:: python
 
     from dishka.integrations.litestar import (
-        DishkaRoute,
         FromDishka,
         LitestarProvider,
         inject,
@@ -35,31 +34,16 @@ How to use
         def create_x(self, request: Request) -> X:
              ...
 
-3. *(optional)* Set route class to each of your litestar routers to enable autoinjection (it works only for HTTP, not for websockets).
 
-.. code-block:: python
-
-    router = APIRouter(route_class=DishkaRoute)
-
-3. Mark those of your handlers parameters which are to be injected with ``FromDishka[]``
-
-.. code-block:: python
-
-    @router.get('/')
-    async def endpoint(
-        request: str, gateway: FromDishka[Gateway],
-    ) -> Response:
-        ...
-
-3a. *(optional)* decorate them using ``@inject`` if you are not using DishkaRoute or use websockets.
+3. Mark those of your handlers parameters which are to be injected with ``FromDishka[]`` and decorate them using ``@inject``
 
 .. code-block:: python
 
     @router.get('/')
     @inject
     async def endpoint(
-        gateway: FromDishka[Gateway],
-    ) -> ResponseModel:
+        request: str, gateway: FromDishka[Gateway],
+    ) -> Response:
         ...
 
 
@@ -79,9 +63,10 @@ How to use
         yield
         await app.state.dishka_container.close()
 
-    app = Litestar(lifespan=lifespan)
+    app = Litestar([endpoint], lifespan=[lifespan])
 
-5. Setup dishka integration. ``autoinject=True`` is required unless you explicitly use ``@inject`` decorator
+
+6. Setup dishka integration. ``autoinject=True`` is required unless you explicitly use ``@inject`` decorator
 
 .. code-block:: python
 

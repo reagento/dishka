@@ -19,3 +19,18 @@ Provider object has also a ``.alias`` method with the same logic.
         a_proto = alias(source=A, provides=AProtocol)
 
 Additionally, alias has own setting for caching: it caches by default regardless if source is cached. You can disable it providing ``cache=False`` argument.
+
+* Do you want to override the alias? To do this, specify the parameter ``override=True``. This can be checked when passing proper ``validation_settings`` when creating container.
+
+.. code-block:: python
+
+    from dishka import WithParents, provide, Provider, Scope, alias
+    class MyProvider(Provider):
+        scope=Scope.APP
+        a = provide(lambda: 1, provides=int)
+        a_alias = alias(float, provides=int)
+        a_alias_override = alias(float, provides=int, override=True)
+
+    container = make_async_container(MyProvider())
+    a = await container.get(int)
+    # 2

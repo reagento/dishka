@@ -1,6 +1,6 @@
 import pytest
 
-from dishka import Provider, Scope, make_container, provide, provide_all
+from dishka import Provider, Scope, make_container, provide
 from dishka.entities.validation_settigs import (
     STRICT_VALIDATION,
     ValidationSettings,
@@ -11,7 +11,7 @@ from dishka.exceptions import (
 )
 
 
-def test_no_override_provide() -> None:
+def test_no_override() -> None:
     class TestProvider(Provider):
         scope = Scope.APP
         provides = (
@@ -27,7 +27,7 @@ def test_no_override_provide() -> None:
     assert str(e.value)
 
 
-def test_skip_no_override_provide() -> None:
+def test_skip_no_override() -> None:
     class TestProvider(Provider):
         scope = Scope.APP
         provides = (
@@ -41,41 +41,12 @@ def test_skip_no_override_provide() -> None:
     )
 
 
-def test_override_provide_ok() -> None:
+def test_override_ok() -> None:
     class TestProvider(Provider):
         scope = Scope.APP
         provides = (
             provide(int, provides=int)
             + provide(int, provides=int, override=True)
-        )
-
-    make_container(
-        TestProvider(),
-        validation_settings=STRICT_VALIDATION,
-    )
-
-
-def test_not_override_provide_all() -> None:
-    class TestProvider(Provider):
-        scope = Scope.APP
-        provides = (
-            provide_all(int, str)
-            + provide_all(int, str)
-        )
-
-    with pytest.raises(ImplicitOverrideDetectedError):
-        make_container(
-            TestProvider(),
-            validation_settings=STRICT_VALIDATION,
-        )
-
-
-def test_override_provide_all() -> None:
-    class TestProvider(Provider):
-        scope = Scope.APP
-        provides = (
-            provide_all(int, str)
-            + provide_all(int, str, override=True)
         )
 
     make_container(
@@ -106,4 +77,3 @@ def test_skip_cant_override() -> None:
         TestProvider(),
         validation_settings=ValidationSettings(nothing_overridden=False),
     )
-

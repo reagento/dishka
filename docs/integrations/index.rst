@@ -1,5 +1,7 @@
 .. include:: <isonum.txt>
 
+.. _integrations:
+
 Using with frameworks
 *******************************
 

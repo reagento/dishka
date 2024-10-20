@@ -16,6 +16,7 @@ Built-in frameworks integrations includes:
    flask
    litestar
    sanic
+   starlette
    aiogram
    aiogram_dialog
    telebot
@@ -30,7 +31,7 @@ Web frameworks
     * :ref:`Flask`
     * :ref:`Litestar`
     * :ref:`Sanic`
-    * Starlette
+    * :ref:`Starlette`
 
 Telegram bots
     * :ref:`aiogram`

@@ -11,6 +11,7 @@ Built-in frameworks integrations includes:
 .. toctree::
    :hidden:
 
+   aiogram
    aiohttp
    fastapi
    flask
@@ -28,7 +29,7 @@ Web frameworks
     * Starlette
 
 Telegram bots
-    * Aiogram
+    * :ref:`aiogram`
     * Aiogram_dialog
     * pyTelegramBotAPI
 
@@ -115,22 +116,6 @@ Auto injection
 =========================
 
 With some frameworks we provide an option to inject dependencies in handlers without decorating them with ``@inject``.
-
-* For **aiogram** you need to provide ``auto_inject=True`` when calling ``setup_dishka``. E.g:
-
-.. code-block:: python
-
-    from dishka.integrations.aiogram import FromDishka, setup_dishka
-
-    @router.message()
-    async def start(
-        message: Message,
-        user: FromDishka[User],
-    ):
-        await message.answer(f"Hello, {1}, {user.full_name}!")
-
-
-    setup_dishka(container=container, router=dp, auto_inject=True)
 
 
 * For **FastStream** (**0.5.0** version and higher) you need to provide ``auto_inject=True`` when calling ``setup_dishka``. E.g:

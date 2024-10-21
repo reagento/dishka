@@ -67,7 +67,7 @@ To provide connection we might need to write some custom code:
 
 .. code-block:: python
 
-   from dishka import make_container
+    from dishka import make_container
 
     container = make_container(service_provider, ConnectionProvider())
 
@@ -75,15 +75,15 @@ To provide connection we might need to write some custom code:
 
 .. code-block:: python
 
-   client = container.get(SomeClient)  # `SomeClient` has Scope.APP, so it is accessible here
-   client = container.get(SomeClient)  # same instance of `SomeClient`
+    client = container.get(SomeClient)  # `SomeClient` has Scope.APP, so it is accessible here
+    client = container.get(SomeClient)  # same instance of `SomeClient`
 
 
 8. You can enter and exit ``REQUEST`` scope multiple times after that using context manager:
 
 .. code-block:: python
 
-   # subcontainer to access more short-living objects
+    # subcontainer to access more short-living objects
     with container() as request_container:
         service = request_container.get(Service)
         service = request_container.get(Service)  # same service instance

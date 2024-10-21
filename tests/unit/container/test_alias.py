@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterable, Iterable
 from unittest.mock import Mock
 
 import pytest
@@ -9,6 +10,7 @@ from dishka import (
     Provider,
     Scope,
     alias,
+    make_async_container,
     make_container,
     provide,
 )
@@ -63,6 +65,62 @@ def test_implicit():
     assert container.get(float) == 42
     assert container.get(int) == 42
     mock.assert_called_once()
+
+
+def test_implicit_generator():
+    class MyProvider(Provider):
+        value = 0
+
+        @provide(scope=Scope.APP)
+        def foo(self) -> Iterable[AnyOf[float, int]]:
+            self.value += 1
+            yield self.value
+
+    container = make_container(MyProvider())
+    assert container.get(float) == 1
+    assert container.get(int) == 1
+
+
+def test_implicit_generator_alt():
+    class MyProvider(Provider):
+        value = 0
+        @provide(scope=Scope.APP)
+        def foo(self) -> AnyOf[Iterable[float], Iterable[int]]:
+            self.value += 1
+            yield self.value
+
+    container = make_container(MyProvider())
+    assert container.get(float) == 1
+    assert container.get(int) == 1
+
+
+@pytest.mark.asyncio
+async def test_implicit_async_generator():
+    class MyProvider(Provider):
+        value = 0
+
+        @provide(scope=Scope.APP)
+        async def foo(self) -> AsyncIterable[AnyOf[float, int]]:
+            self.value += 1
+            yield self.value
+
+    container = make_async_container(MyProvider())
+    assert await container.get(float) == 1
+    assert await container.get(int) == 1
+
+
+@pytest.mark.asyncio
+async def test_implicit_async_generator_alt():
+    class MyProvider(Provider):
+        value = 0
+        @provide(scope=Scope.APP)
+        async def foo(self) -> AnyOf[AsyncIterable[float], AsyncIterable[int]]:
+            self.value += 1
+            yield self.value
+
+    container = make_async_container(MyProvider())
+    assert await container.get(float) == 1
+    assert await container.get(int) == 1
 
 
 def test_union_alias():

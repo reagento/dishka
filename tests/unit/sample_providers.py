@@ -9,8 +9,9 @@ from collections.abc import (
 from typing import Any
 
 from dishka import DependencyKey, Scope
-from dishka.dependency_source import Factory, FactoryType
+from dishka.dependency_source import Factory
 from dishka.dependency_source.composite import CompositeDependencySource
+from dishka.entities.factory_type import FactoryType
 
 
 class ClassA:
@@ -73,5 +74,6 @@ value_factory = Factory(
     scope=Scope.APP,
     is_to_bind=False,
     cache=False,
+    override=False,
 )
 value_source = CompositeDependencySource(lambda: None, [value_factory])

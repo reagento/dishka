@@ -1,5 +1,6 @@
 __all__ = [
     "AutoInjectMiddleware",
+    "AiogramProvider",
     "CONTAINER_NAME",
     "FromDishka",
     "inject",
@@ -7,14 +8,14 @@ __all__ = [
 ]
 
 from collections.abc import Awaitable, Callable, Container
-from inspect import Parameter
+from inspect import Parameter, signature
 from typing import Any, Final, ParamSpec, TypeVar, cast
 
 from aiogram import BaseMiddleware, Router
 from aiogram.dispatcher.event.handler import HandlerObject
 from aiogram.types import TelegramObject
 
-from dishka import AsyncContainer, FromDishka
+from dishka import AsyncContainer, FromDishka, Provider, Scope, from_context
 from .base import is_dishka_injected, wrap_injection
 
 P = ParamSpec("P")
@@ -23,11 +24,14 @@ CONTAINER_NAME: Final = "dishka_container"
 
 
 def inject(func: Callable[P, T]) -> Callable[P, T]:
-    additional_params = [Parameter(
-        name=CONTAINER_NAME,
-        annotation=Container,
-        kind=Parameter.KEYWORD_ONLY,
-    )]
+    if CONTAINER_NAME in signature(func).parameters:
+        additional_params = []
+    else:
+        additional_params = [Parameter(
+            name=CONTAINER_NAME,
+            annotation=Container,
+            kind=Parameter.KEYWORD_ONLY,
+        )]
 
     return wrap_injection(
         func=func,
@@ -35,6 +39,10 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
         additional_params=additional_params,
         container_getter=lambda args, kwargs: kwargs[CONTAINER_NAME],
     )
+
+
+class AiogramProvider(Provider):
+    event = from_context(TelegramObject, scope=Scope.REQUEST)
 
 
 class ContainerMiddleware(BaseMiddleware):

@@ -2,6 +2,7 @@ __all__ = [
     "FromDishka",
     "inject",
     "setup_dishka",
+    "StarletteProvider",
 ]
 
 from collections.abc import Callable
@@ -12,7 +13,7 @@ from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.websockets import WebSocket
 
-from dishka import AsyncContainer, FromDishka
+from dishka import AsyncContainer, FromDishka, Provider, from_context
 from dishka import Scope as DIScope
 from .base import wrap_injection
 
@@ -25,6 +26,11 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
         is_async=True,
         container_getter=lambda r, _: r[0].scope["state"]["dishka_container"],
     )
+
+
+class StarletteProvider(Provider):
+    request = from_context(Request, scope=DIScope.REQUEST)
+    websocket = from_context(WebSocket, scope=DIScope.SESSION)
 
 
 class ContainerMiddleware:
@@ -41,7 +47,7 @@ class ContainerMiddleware:
         context: dict[type[Request | WebSocket], Request | WebSocket]
 
         if scope["type"] == "http":
-            request = Request(scope)
+            request = Request(scope, receive=receive, send=send)
             context = {Request: request}
             di_scope = DIScope.REQUEST
 

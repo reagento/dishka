@@ -3,7 +3,9 @@ from typing import Protocol
 from sanic import Blueprint, HTTPResponse, Request, Sanic
 
 from dishka import Provider, Scope, make_async_container, provide
-from dishka.integrations.sanic import FromDishka, inject, setup_dishka
+from dishka.integrations.sanic import (
+    FromDishka, inject, setup_dishka, SanicProvider,
+)
 
 
 class DbGateway(Protocol):
@@ -58,7 +60,9 @@ if __name__ == "__main__":
     app = Sanic(__name__)
 
     app.blueprint(bp)
-    container = make_async_container(AdaptersProvider(), InteractorsProvider())
+    container = make_async_container(
+        AdaptersProvider(), InteractorsProvider(), SanicProvider(),
+    )
 
     setup_dishka(container, app, auto_inject=True)
 

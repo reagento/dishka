@@ -44,13 +44,17 @@ from dishka._adaptix.type_tools.generic_resolver import (
     GenericResolver,
     MembersStorage,
 )
+from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import (
+    dependency_key_to_hint,
     hint_to_dependency_key,
     hints_to_dependency_keys,
 )
+from dishka.entities.provides_marker import ProvideMultiple
 from dishka.entities.scope import BaseScope
+from dishka.text_rendering import get_name
 from .composite import CompositeDependencySource, ensure_composite
-from .factory import Factory, FactoryType
+from .factory import Factory
 from .unpack_provides import unpack_factory
 
 _empty = signature(lambda a: 0).parameters["a"].annotation
@@ -95,18 +99,14 @@ def _guess_factory_type(source: Any) -> FactoryType:
 def _type_repr(hint: Any) -> str:
     if hint is type(None):
         return "None"
-    module = getattr(hint, "__module__", "")
-    if module == "builtins":
-        module = ""
-    elif module:
-        module += "."
-    try:
-        return f"{module}{hint.__qualname__}"
-    except AttributeError:
-        return str(hint)
+    return get_name(hint, include_module=True)
 
 
 def _async_generator_result(hint: Any) -> Any:
+    if isinstance(hint, ProvideMultiple):
+        return ProvideMultiple([
+            _async_generator_result(x) for x in hint.items
+        ])
     origin = get_origin(hint)
     if origin is AsyncIterable:
         return get_args(hint)[0]
@@ -136,6 +136,10 @@ def _async_generator_result(hint: Any) -> Any:
 
 
 def _generator_result(hint: Any) -> Any:
+    if isinstance(hint, ProvideMultiple):
+        return ProvideMultiple([
+            _generator_result(x) for x in hint.items
+        ])
     origin = get_origin(hint)
     if origin is Iterable:
         return get_args(hint)[0]
@@ -195,6 +199,7 @@ def _make_factory_by_class(
         scope: BaseScope | None,
         source: type,
         cache: bool,
+        override: bool,
 ) -> Factory:
     if not provides:
         provides = source
@@ -203,7 +208,7 @@ def _make_factory_by_class(
         source = get_args(source)[0]
     init = strip_alias(source).__init__
     if missing_hints := _params_without_hints(init, skip_self=True):
-        name = f"{source.__module__}.{source.__qualname__}.__init__"
+        name = get_name(source, include_module=True) + ".__init__"
         missing = ", ".join(missing_hints)
         raise ValueError(
             f"Failed to analyze `{name}`. \n"
@@ -215,7 +220,7 @@ def _make_factory_by_class(
     try:
         hints = dict(res.get_resolved_members(source).members)
     except NameError as e:
-        name = f"{source.__module__}.{source.__qualname__}.__init__"
+        name = get_name(source, include_module=True) + ".__init__"
         raise NameError(
             f"Failed to analyze `{name}`. \n"
             f"Type '{e.name}' is not defined\n\n"
@@ -243,6 +248,7 @@ def _make_factory_by_class(
         provides=hint_to_dependency_key(provides),
         is_to_bind=False,
         cache=cache,
+        override=override,
     )
 
 
@@ -253,12 +259,13 @@ def _make_factory_by_function(
         source: Callable[..., Any] | classmethod, # type: ignore[type-arg]
         cache: bool,
         is_in_class: bool,
+        override: bool,
 ) -> Factory:
     # typing.cast is applied as unwrap takes a Callable object
     raw_source = unwrap(cast(Callable[..., Any], source))
     missing_hints = _params_without_hints(raw_source, skip_self=is_in_class)
     if missing_hints:
-        name = getattr(source, "__qualname__", "") or str(source)
+        name = get_name(source, include_module=True)
         missing = ", ".join(missing_hints)
         raise ValueError(
             f"Failed to analyze `{name}`. \n"
@@ -271,7 +278,7 @@ def _make_factory_by_function(
     try:
         hints = get_type_hints(source, include_extras=True)
     except NameError as e:
-        name = getattr(source, "__qualname__", "") or str(source)
+        name = get_name(source, include_module=True)
         raise NameError(
             f"Failed to analyze `{name}`. \n"
             f"Type '{e.name}' is not defined. \n\n"
@@ -297,13 +304,13 @@ def _make_factory_by_function(
 
     if not provides:
         if possible_dependency is _empty:
-            name = getattr(source, "__qualname__", "") or str(source)
+            name = get_name(source, include_module=True)
             raise ValueError(f"Failed to analyze `{name}`. \n"
                              f"Missing return type hint.")
         try:
             provides = _clean_result_hint(factory_type, possible_dependency)
         except TypeError as e:
-            name = getattr(source, "__qualname__", "") or str(source)
+            name = get_name(source, include_module=True)
             raise TypeError(f"Failed to analyze `{name}`. \n" + str(e)) from e
     return Factory(
         dependencies=hints_to_dependency_keys(dependencies),
@@ -314,6 +321,7 @@ def _make_factory_by_function(
         provides=hint_to_dependency_key(provides),
         is_to_bind=is_in_class,
         cache=cache,
+        override=override,
     )
 
 
@@ -323,9 +331,10 @@ def _make_factory_by_static_method(
         scope: BaseScope | None,
         source: staticmethod,  # type: ignore[type-arg]
         cache: bool,
+        override: bool,
 ) -> Factory:
     if missing_hints := _params_without_hints(source, skip_self=False):
-        name = getattr(source, "__qualname__", "") or str(source)
+        name = get_name(source, include_module=True)
         missing = ", ".join(missing_hints)
         raise ValueError(
             f"Failed to analyze `{name}`. \n"
@@ -335,7 +344,7 @@ def _make_factory_by_static_method(
     try:
         hints = get_type_hints(source, include_extras=True)
     except NameError as e:
-        name = getattr(source, "__qualname__", "") or str(source)
+        name = get_name(source, include_module=True)
         raise NameError(
             f"Failed to analyze `{name}`. \n"
             f"Type '{e.name}' is not defined. \n\n"
@@ -357,13 +366,13 @@ def _make_factory_by_static_method(
 
     if not provides:
         if possible_dependency is _empty:
-            name = getattr(source, "__qualname__", "") or str(source)
+            name = get_name(source, include_module=True)
             raise ValueError(f"Failed to analyze `{name}`. \n"
                              f"Missing return type hint.")
         try:
             provides = _clean_result_hint(factory_type, possible_dependency)
         except TypeError as e:
-            name = getattr(source, "__qualname__", "") or str(source)
+            name = get_name(source, include_module=True)
             raise TypeError(f"Failed to analyze `{name}`. \n" + str(e)) from e
     return Factory(
         dependencies=hints_to_dependency_keys(dependencies),
@@ -374,6 +383,7 @@ def _make_factory_by_static_method(
         provides=hint_to_dependency_key(provides),
         is_to_bind=False,
         cache=cache,
+        override=override,
     )
 
 
@@ -383,6 +393,7 @@ def _make_factory_by_other_callable(
         scope: BaseScope | None,
         source: Callable[..., Any],
         cache: bool,
+        override: bool,
 ) -> Factory:
     if _is_bound_method(source):
         to_check = source.__func__  # type: ignore[attr-defined]
@@ -394,6 +405,7 @@ def _make_factory_by_other_callable(
         cache=cache,
         scope=scope,
         is_in_class=True,
+        override=override,
     )
     if factory.is_to_bind:
         dependencies = factory.dependencies[1:]  # remove `self`
@@ -408,6 +420,7 @@ def _make_factory_by_other_callable(
         provides=factory.provides,
         is_to_bind=False,
         cache=cache,
+        override=override,
     )
 
 
@@ -418,6 +431,7 @@ def make_factory(
         source: ProvideSource,
         cache: bool,
         is_in_class: bool,
+        override: bool,
 ) -> Factory:
     if is_bare_generic(source):
         source = source[get_type_vars(source)]  # type: ignore[index]
@@ -428,6 +442,7 @@ def make_factory(
             scope=scope,
             source=cast(type, source),
             cache=cache,
+            override=override,
         )
     elif isfunction(source) or isinstance(source, classmethod):
         return _make_factory_by_function(
@@ -436,6 +451,7 @@ def make_factory(
             source=source,
             cache=cache,
             is_in_class=is_in_class,
+            override=override,
         )
     elif isbuiltin(source):
         return _make_factory_by_function(
@@ -444,6 +460,7 @@ def make_factory(
             source=source,
             cache=cache,
             is_in_class=False,
+            override=override,
         )
     elif isinstance(source, staticmethod):
         return _make_factory_by_static_method(
@@ -451,6 +468,7 @@ def make_factory(
             scope=scope,
             source=source,
             cache=cache,
+            override=override,
         )
     elif callable(source):
         return _make_factory_by_other_callable(
@@ -458,6 +476,7 @@ def make_factory(
             scope=scope,
             source=source,
             cache=cache,
+            override=override,
         )
     else:
         raise TypeError(f"Cannot use {type(source)} as a factory")
@@ -470,14 +489,34 @@ def _provide(
         provides: Any = None,
         cache: bool = True,
         is_in_class: bool = True,
+        recursive: bool = False,
+        override: bool = False,
 ) -> CompositeDependencySource:
     composite = ensure_composite(source)
     factory = make_factory(
         provides=provides, scope=scope,
         source=composite.origin, cache=cache,
         is_in_class=is_in_class,
+        override=override,
     )
     composite.dependency_sources.extend(unpack_factory(factory))
+    if not recursive:
+        return composite
+
+    for src in composite.dependency_sources:
+        if not isinstance(src, Factory):
+            # we expect Factory and Alias here
+            continue
+        for dependency in src.dependencies:
+            additional = _provide(
+                provides=dependency_key_to_hint(dependency),
+                scope=scope,
+                source=dependency.type_hint,
+                cache=cache,
+                is_in_class=is_in_class,
+                override=override,
+            )
+            composite.dependency_sources.extend(additional.dependency_sources)
     return composite
 
 
@@ -487,10 +526,13 @@ def provide_on_instance(
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
+        recursive: bool = False,
+        override: bool = False,
 ) -> CompositeDependencySource:
     return _provide(
         provides=provides, scope=scope, source=source, cache=cache,
         is_in_class=False,
+        recursive=recursive, override=override,
     )
 
 
@@ -500,6 +542,8 @@ def provide(
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
+        recursive: bool = False,
+        override: bool = False,
 ) -> Callable[[Callable[..., Any]], CompositeDependencySource]:
     ...
 
@@ -511,6 +555,8 @@ def provide(
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
+        recursive: bool = False,
+        override: bool = False,
 ) -> CompositeDependencySource:
     ...
 
@@ -521,6 +567,8 @@ def provide(
         scope: BaseScope | None = None,
         provides: Any = None,
         cache: bool = True,
+        recursive: bool = False,
+        override: bool = False,
 ) -> CompositeDependencySource | Callable[
     [Callable[..., Any]], CompositeDependencySource,
 ]:
@@ -541,19 +589,21 @@ def provide(
     :param source: Method to decorate or class.
     :param scope: Scope of the dependency to limit its lifetime
     :param provides: Dependency type which is provided by this factory
-    :return: instance of Factory or a decorator returning it
     :param cache: save created object to scope cache or not
+    :param recursive: register dependencies as factories as well
+    :param override: dependency override
+    :return: instance of Factory or a decorator returning it
     """
     if source is not None:
         return _provide(
             provides=provides, scope=scope, source=source, cache=cache,
-            is_in_class=True,
+            is_in_class=True, recursive=recursive, override=override,
         )
 
     def scoped(func: Callable[..., Any]) -> CompositeDependencySource:
         return _provide(
             provides=provides, scope=scope, source=func, cache=cache,
-            is_in_class=True,
+            is_in_class=True, recursive=recursive, override=override,
         )
 
     return scoped
@@ -565,17 +615,21 @@ def _provide_all(
         scope: BaseScope | None,
         cache: bool,
         is_in_class: bool,
+        recursive: bool,
+        override: bool = False,
 ) -> CompositeDependencySource:
     composite = CompositeDependencySource(None)
     for single_provides in provides:
-        factory = make_factory(
+        source = _provide(
             source=single_provides,
             provides=single_provides,
             scope=scope,
             cache=cache,
             is_in_class=is_in_class,
+            recursive=recursive,
+            override=override,
         )
-        composite.dependency_sources.extend(unpack_factory(factory))
+        composite.dependency_sources.extend(source.dependency_sources)
     return composite
 
 
@@ -583,10 +637,13 @@ def provide_all(
         *provides: Any,
         scope: BaseScope | None = None,
         cache: bool = True,
+        recursive: bool = False,
+        override: bool = False,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,
         cache=cache, is_in_class=True,
+        recursive=recursive, override=override,
     )
 
 
@@ -594,8 +651,11 @@ def provide_all_on_instance(
         *provides: Any,
         scope: BaseScope | None = None,
         cache: bool = True,
+        recursive: bool = False,
+        override: bool = False,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,
         cache=cache, is_in_class=False,
+        recursive=recursive, override=override,
     )

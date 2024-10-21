@@ -1,9 +1,9 @@
 import types
 import typing
-from typing import Any, Dict, ForwardRef, Generic, NewType, Protocol, TypedDict, TypeVar, Union
+from typing import Annotated, Any, ForwardRef, Generic, NewType, Protocol, TypedDict, TypeVar, Union
 
 from ..common import TypeHint, VarTuple
-from ..feature_requirement import HAS_ANNOTATED, HAS_PY_39, HAS_PY_312, HAS_STD_CLASSES_GENERICS
+from ..feature_requirement import HAS_PY_312
 from .constants import BUILTIN_ORIGIN_TO_TYPEVARS
 from .fundamentals import get_generic_args, get_type_vars, strip_alias
 
@@ -81,16 +81,12 @@ def is_generic(tp: TypeHint) -> bool:
         bool(get_type_vars(tp))
         or (
             strip_alias(tp) in BUILTIN_ORIGIN_TO_TYPEVARS
-            and tp != type
+            and tp is not type
             and not is_parametrized(tp)
-            and (
-                bool(HAS_STD_CLASSES_GENERICS) or not isinstance(tp, type)
-            )
         )
         or (
-            bool(HAS_ANNOTATED)
-            and strip_alias(tp) == typing.Annotated
-            and tp != typing.Annotated
+            strip_alias(tp) == Annotated
+            and tp != Annotated
             and is_generic(tp.__origin__)
         )
     )
@@ -129,7 +125,7 @@ def get_type_vars_of_parametrized(tp: TypeHint) -> VarTuple[TypeVar]:
     if not params:
         return ()
     if isinstance(tp, type):
-        if HAS_STD_CLASSES_GENERICS and isinstance(tp, types.GenericAlias):
+        if isinstance(tp, types.GenericAlias):
             return params
         return ()
     if strip_alias(tp) != tp and get_generic_args(tp) == ():
@@ -137,9 +133,5 @@ def get_type_vars_of_parametrized(tp: TypeHint) -> VarTuple[TypeVar]:
     return params
 
 
-if HAS_PY_39:
-    def eval_forward_ref(namespace: Dict[str, Any], forward_ref: ForwardRef):
-        return forward_ref._evaluate(namespace, None, frozenset())
-else:
-    def eval_forward_ref(namespace: Dict[str, Any], forward_ref: ForwardRef):
-        return forward_ref._evaluate(namespace, None)  # type: ignore[call-arg]
+def eval_forward_ref(namespace: dict[str, Any], forward_ref: ForwardRef):
+    return forward_ref._evaluate(namespace, None, recursive_guard=frozenset())

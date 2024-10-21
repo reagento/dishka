@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Callable, Tuple, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
 
 K_contra = TypeVar("K_contra", contravariant=True)
 V_co = TypeVar("V_co", covariant=True)
@@ -12,9 +12,9 @@ OneArgCoercer = Callable[[Any], Any]
 
 TypeHint = Any
 
-VarTuple = Tuple[T, ...]
+VarTuple = tuple[T, ...]
 
-Catchable = Union[Type[BaseException], VarTuple[Type[BaseException]]]
+Catchable = Union[type[BaseException], VarTuple[type[BaseException]]]
 
 # https://github.com/python/typing/issues/684#issuecomment-548203158
 if TYPE_CHECKING:

@@ -3,7 +3,7 @@ import textwrap
 import pytest
 
 from dishka.dependency_source.make_factory import make_factory
-from dishka.error_rendering import PathRenderer
+from dishka.text_rendering.path import PathRenderer
 
 
 class A:
@@ -24,15 +24,16 @@ def test_cycle(renderer):
         cache=False,
         scope=None,
         is_in_class=True,
+        override=False,
     )
 
     res = renderer.render([factory, factory, factory])
     res = textwrap.dedent(res)
     assert res == textwrap.dedent("""\
               ~~~ component=None, None ~~~
-         → →  <class 'int'> A.foo
-        ↑   ↓ <class 'int'> A.foo
-         ← ←  <class 'int'> A.foo
+         → →  int   A.foo
+        ↑   ↓ int   A.foo
+         ← ←  int   A.foo
     """)
 
 
@@ -44,13 +45,14 @@ def test_cycle_1(renderer):
         cache=False,
         scope=None,
         is_in_class=True,
+        override=False,
     )
 
     res = renderer.render([factory])
     res = textwrap.dedent(res)
     assert res == textwrap.dedent("""\
       ~~~ component=None, None ~~~
-    ⥁ <class 'int'> A.foo
+    ⥁ int   A.foo
     """)
 
 
@@ -62,13 +64,14 @@ def test_linear(renderer):
         cache=False,
         scope=None,
         is_in_class=True,
+        override=False,
     )
 
     res = renderer.render([factory, factory], last=factory.provides)
     res = textwrap.dedent(res)
     assert res == textwrap.dedent("""\
        ~~~ component=None, None ~~~
-    ↓  <class 'int'> A.foo
-    ↓  <class 'int'> A.foo
-     → <class 'int'> ???
+    ↓  int   A.foo
+    ↓  int   A.foo
+     → int   ???
     """)

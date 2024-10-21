@@ -1,5 +1,5 @@
 from collections.abc import AsyncIterable, Iterable
-from typing import NewType
+from typing import Annotated, NewType
 from unittest.mock import Mock
 
 import pytest
@@ -7,6 +7,7 @@ import pytest
 from dishka import (
     DEFAULT_COMPONENT,
     DependencyKey,
+    FromComponent,
     Provider,
     Scope,
     from_context,
@@ -98,6 +99,7 @@ def test_no_factory_cls_sync():
         make_container(provider)
     assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
 
+
 def test_invalid_type_sync():
     class A:
         def __init__(self, x: "B"):  # noqa: F821
@@ -148,6 +150,7 @@ def test_no_factory_sync():
     with pytest.raises(NoFactoryError) as e:
         container.get(object)
     assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+    assert str(e.value)
 
 
 def test_no_factory_path_sync():
@@ -155,6 +158,7 @@ def test_no_factory_path_sync():
     with pytest.raises(NoFactoryError) as e:
         container.get(complex)
     assert e.value.requested == DependencyKey(object, DEFAULT_COMPONENT)
+    assert str(e.value)
 
 
 @pytest.mark.asyncio
@@ -224,3 +228,33 @@ def test_no_scope():
 
     with pytest.raises(ValueError):  # noqa: PT011
         NoScopeProvider()
+
+
+class InvalidScopeProvider(Provider):
+    @provide(scope=Scope.APP)
+    def get_int(self, value: object) -> int:
+        return value
+
+    @provide(scope=Scope.REQUEST)
+    def get_obj(self) -> object:
+        return 1
+
+    @provide(scope=Scope.APP)
+    def get_obj_x(self) -> Annotated[object, FromComponent("x")]:
+        return 2
+
+def test_invalid_scope():
+    with pytest.raises(NoFactoryError) as e:
+        make_container(InvalidScopeProvider())
+
+    assert str(e.value)
+    assert len(e.value.suggest_other_scopes) == 1
+    assert e.value.suggest_other_scopes[0].scope == Scope.REQUEST
+    assert e.value.suggest_other_scopes[0].provides == DependencyKey(
+        object, DEFAULT_COMPONENT,
+    )
+    assert len(e.value.suggest_other_components) == 1
+    assert e.value.suggest_other_components[0].scope == Scope.APP
+    assert e.value.suggest_other_components[0].provides == DependencyKey(
+        object, "x",
+    )

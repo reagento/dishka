@@ -1,6 +1,6 @@
 import sys
 import typing
-from typing import Any, ForwardRef, Tuple, TypeVar
+from typing import Any, ForwardRef, TypeVar
 
 from ..common import TypeHint, VarTuple
 from ..feature_requirement import HAS_PARAM_SPEC, HAS_TV_TUPLE
@@ -18,7 +18,7 @@ class ImplicitParamsGetter:
         if HAS_PARAM_SPEC and isinstance(type_var, typing.ParamSpec):
             return ...
         if HAS_TV_TUPLE and isinstance(type_var, typing.TypeVarTuple):
-            return typing.Unpack[Tuple[Any, ...]]
+            return typing.Unpack[tuple[Any, ...]]
         if type_var.__constraints__:
             return create_union(
                 tuple(

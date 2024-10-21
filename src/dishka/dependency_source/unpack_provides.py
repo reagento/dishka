@@ -19,6 +19,7 @@ def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
             provides=DependencyKey(provides_other, factory.provides.component),
             source=DependencyKey(provides_first, factory.provides.component),
             cache=factory.cache,
+            override=factory.override,
         )
         for provides_other in provides_others
     ]
@@ -31,6 +32,7 @@ def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
             scope=factory.scope,
             is_to_bind=factory.is_to_bind,
             cache=factory.cache,
+            override=factory.override,
             provides=DependencyKey(
                 provides_first,
                 factory.provides.component,
@@ -62,6 +64,7 @@ def unpack_alias(alias: Alias) -> Sequence[DependencySource]:
             provides=DependencyKey(provides, alias.provides.component),
             source=alias.source,
             cache=alias.cache,
+            override=alias.override,
         )
         for provides in alias.provides.type_hint.items
     ]

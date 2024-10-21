@@ -136,6 +136,8 @@ class Provider(BaseProvider):
             scope: BaseScope | None = None,
             provides: Any = None,
             cache: bool = True,
+            recursive: bool = False,
+            override: bool = False,
     ) -> CompositeDependencySource:
         if scope is None:
             scope = self.scope
@@ -144,6 +146,8 @@ class Provider(BaseProvider):
             scope=scope,
             provides=provides,
             cache=cache,
+            recursive=recursive,
+            override=override,
         )
         self._add_dependency_sources(str(source), composite.dependency_sources)
         return composite
@@ -153,26 +157,36 @@ class Provider(BaseProvider):
             *provides: Any,
             scope: BaseScope | None = None,
             cache: bool = True,
+            recursive: bool = False,
+            override: bool = False,
     ) -> CompositeDependencySource:
         if scope is None:
             scope = self.scope
         composite = provide_all_on_instance(
-            *provides, scope=scope, cache=cache,
+            *provides,
+            scope=scope,
+            cache=cache,
+            recursive=recursive,
+            override=override,
         )
         self._add_dependency_sources("?", composite.dependency_sources)
         return composite
 
     def alias(
             self,
-            *,
             source: type,
-            provides: Any,
+            *,
+            provides: Any = None,
             cache: bool = True,
+            component: Component | None = None,
+            override: bool = False,
     ) -> CompositeDependencySource:
         composite = alias(
             source=source,
             provides=provides,
             cache=cache,
+            component=component,
+            override=override,
         )
         self._add_dependency_sources(str(source), composite.dependency_sources)
         return composite
@@ -194,9 +208,17 @@ class Provider(BaseProvider):
         return ProviderWrapper(component, self)
 
     def from_context(
-            self, *, provides: Any, scope: BaseScope,
+            self,
+            provides: Any,
+            *,
+            scope: BaseScope | None = None,
+            override: bool = False,
     ) -> CompositeDependencySource:
-        composite = from_context(provides, scope=scope)
+        composite = from_context(
+            provides=provides,
+            scope=scope or self.scope,
+            override=override,
+        )
         self._add_dependency_sources(
             name=str(provides),
             sources=composite.dependency_sources,

@@ -4,34 +4,21 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
-from enum import Enum
 from typing import Any
 
 from dishka.entities.component import Component
+from dishka.entities.factory_type import FactoryData, FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
 
 
-class FactoryType(Enum):
-    GENERATOR = "generator"
-    ASYNC_GENERATOR = "async_generator"
-    FACTORY = "factory"
-    ASYNC_FACTORY = "async_factory"
-    VALUE = "value"
-    ALIAS = "alias"
-    CONTEXT = "context"
-
-
-class Factory:
+class Factory(FactoryData):
     __slots__ = (
         "dependencies",
         "kw_dependencies",
-        "source",
-        "provides",
-        "scope",
-        "type",
         "is_to_bind",
         "cache",
+        "override",
     )
 
     def __init__(
@@ -45,15 +32,19 @@ class Factory:
             type_: FactoryType,
             is_to_bind: bool,
             cache: bool,
+            override: bool,
     ) -> None:
+        super().__init__(
+            source=source,
+            provides=provides,
+            type_=type_,
+            scope=scope,
+        )
         self.dependencies = dependencies
         self.kw_dependencies = kw_dependencies
-        self.source = source
-        self.provides = provides
-        self.scope = scope
-        self.type = type_
         self.is_to_bind = is_to_bind
         self.cache = cache
+        self.override = override
 
     def __get__(self, instance: Any, owner: Any) -> Factory:
         scope = self.scope or instance.scope
@@ -74,6 +65,7 @@ class Factory:
             type_=self.type,
             is_to_bind=False,
             cache=self.cache,
+            override=self.override,
         )
 
     def with_component(self, component: Component) -> Factory:
@@ -91,4 +83,5 @@ class Factory:
             is_to_bind=self.is_to_bind,
             cache=self.cache,
             type_=self.type,
+            override=self.override,
         )

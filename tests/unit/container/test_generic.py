@@ -21,8 +21,12 @@ class ReplaceInit(Base[str], Generic[T]):
 
 
 class A(Generic[T]):
-    def __init__(self, x: T):
+    def __init__(self, x: T, *, y: T):
+        assert x == y
         self.x = x
+
+    def __eq__(self, other):
+        return isinstance(other, A) and other.x == self.x
 
 
 class B(A[U], Generic[U]):
@@ -90,7 +94,7 @@ def test_bare_generic_method():
 
         @provide
         def a(self) -> A:
-            return A(42)
+            return A(42, y=42)
 
     container = make_container(MyProvider())
     a = container.get(A)
@@ -108,7 +112,7 @@ def test_generic_func():
 
         @provide
         def a(self, param: T) -> A[T]:
-            return A(param)
+            return A(param, y=param)
 
     container = make_container(MyProvider())
     a = container.get(A[int])
@@ -162,3 +166,44 @@ def test_generic_validation_fail():
     provider.provide(factory_invalid)
     with pytest.raises(GraphMissingFactoryError):
         assert make_container(provider)
+
+
+def type_var_factory(type_: type[T]) -> EventEmitter[T]:
+    return type_
+
+
+def test_passing_type_var():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(type_var_factory)
+    container = make_container(provider)
+    assert container.get(EventEmitter[int]) is int
+
+
+def parametrized_param_func(param: A[T]) -> EventEmitter[T]:
+    return param.x
+
+
+def test_func_with_generic_params():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(parametrized_param_func)
+    provider.provide(lambda: A(42, y=42), provides=A[T])
+    container = make_container(provider)
+    assert container.get(EventEmitter[int]) == 42
+
+
+Tint = TypeVar("Tint", bound=int)
+
+
+def type_var_decorator(
+    type_: type[Tint], em: EventEmitter[Tint], obj: Tint,
+) -> Tint:
+    return type_, em, obj
+
+
+def test_passing_type_var_decorator():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(lambda: A(42, y=42), provides=int)
+    provider.provide(lambda: 1, provides=EventEmitter[T])
+    provider.decorate(type_var_decorator)
+    container = make_container(provider)
+    assert container.get(int) == (int, 1, A(42, y=42))

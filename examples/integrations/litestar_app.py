@@ -7,7 +7,7 @@ from litestar import Controller, Litestar, get
 
 from dishka import Provider, Scope, provide, make_async_container
 from dishka.integrations.base import FromDishka
-from dishka.integrations.litestar import inject, setup_dishka
+from dishka.integrations.litestar import inject, LitestarProvider, setup_dishka
 
 
 # app core
@@ -59,7 +59,7 @@ def create_app():
         format='%(asctime)s  %(process)-7s %(module)-20s %(message)s',
     )
     app = Litestar(route_handlers=[MainController])
-    container = make_async_container(InteractorProvider(), AdaptersProvider())
+    container = make_async_container(InteractorProvider(), AdaptersProvider(), LitestarProvider())
     setup_dishka(container, app)
     return app
 

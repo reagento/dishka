@@ -15,18 +15,19 @@ Cute DI framework with scopes and agreeable API.
 ### Purpose
 
 This library is targeting to provide only an IoC-container but tries to make it really useful. 
-If you are tired manually passing objects to create others objects which are only used to create more objects - we have a solution. 
-Not all project require an IoC-container, but check what we have.
+If you are tired of passing objects manually to create other objects which are only used to create more objects - we have a solution.
+Not all projects require an IoC-container, but check what we have.
 
-Unlike other instruments we are not trying to solve tasks not related to [dependency injection](https://dishka.readthedocs.io/en/latest/di_intro.html). We want to keep DI in place, not soiling you code with global variables and additional specifiers in all places.
+Unlike other instruments we are not trying to solve tasks not related to [dependency injection](https://dishka.readthedocs.io/en/latest/di_intro.html).
+Instead, we want to keep DI in place, not soiling your code with global variables and additional specifiers scattered everywhere.
 
 Main ideas:
 * **Scopes**. Any object can have lifespan of the whole app, single request or even more fractionally. Many frameworks do not have scopes or have only 2 of them. Here you can have as many scopes as you need.
-* **Finalization**. Some dependencies like database connections must be not only created, but carefully released. Many framework lack this essential feature
-* **Modular providers**. Instead of creating lots of separate functions or contrariwise a big single class, you can split your factories into several classes, which makes them simpler reusable.
-* **Clean dependencies**. You do not need to add custom markers to the code of dependencies so to allow library to see them. All customization is done within providers code and only borders of scopes have to deal with library API.
+* **Finalization**. Some dependencies like database connections must not only be created, but carefully released. Many framework lack this essential feature
+* **Modular providers**. Instead of creating lots of separate functions or contrariwise a big single class, you can split your factories into several classes, which makes them simpler to reuse.
+* **Clean dependencies**. You do not need to add custom markers to the code of dependencies just to allow library to see them. All customization is done within providers code and only the borders of scopes have to deal with library API.
 * **Simple API**. You need minimum of objects to start using library. You can easily integrate it with your task framework, examples provided.
-* **Speed**. It is fast enough so you not to worry about. It is even faster than many of the analogs.
+* **Speed**. It is fast enough so you do not have to worry about it. It is even faster than many of the analogs.
 
 See more in [technical requirements](https://dishka.readthedocs.io/en/latest/requirements/technical.html)
 

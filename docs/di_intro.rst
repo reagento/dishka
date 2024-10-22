@@ -18,7 +18,7 @@ Imagine you have a business logic which uses some remote API client
     service = Service()
     service.action()
 
-Here, the ``client`` is a **dependency**. Imagine that you have many methods working with same client and each method knows how to create the client. Than think about these questions?
+Here, the ``client`` is a **dependency**. Imagine that you have many methods working with same client and each method knows how to create the client. Then: think about these questions?
 
 * How do they get the ``token``? Should the every method read it on its own?
 * What if the ``Client`` constructor will require more than one token? Should we copy-paste new parameters to each method?

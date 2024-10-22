@@ -28,7 +28,7 @@ Technical requirements
 ========================
 
 1. Usage of container must not require modification of objects we are creating
-2. Container must not require to be global variable.
+2. Container must not require being a global variable.
 3. Container can require code changes on the borders of scopes (e.g. application start, middlewares, request handlers)
 
 4. Lifecycle

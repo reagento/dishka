@@ -27,7 +27,7 @@ Scope
 ===========
 
 **Scope** is a lifespan of a dependency.
-Some dependencies can live while you application is running, others are created and destroyed on each request. In more rare cases you need more short-lived objects. You set a scope for your dependency when you configure how to create it.
+Some dependencies can live while application is running, others are created and destroyed on each request. In more rare cases you need more short-lived objects. You set a scope for your dependency when you configure how to create it.
 
 Standard scopes are (excluding skipped):
 

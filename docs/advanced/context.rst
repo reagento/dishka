@@ -40,4 +40,4 @@ Working with context data consists of three parts:
 
 .. note::
 
-    If your are using *multiple components*, you need to specify ``from_context`` in them separately though the context is shared. Context data is always stored in default component, so, other components may not use it and have factories instead.
+    If you are using *multiple components*, you need to specify ``from_context`` in them separately though the context is shared. Context data is always stored in default component, so, other components may not use it and have factories instead.

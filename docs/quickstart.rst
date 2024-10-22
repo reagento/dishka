@@ -56,8 +56,8 @@ To provide connection we might need to write some custom code:
     from dishka import Provider, provide, Scope
 
     class ConnectionProvider(Provider):
-        @provide(Scope=Scope.REQUEST)
-        def new_connection(self) -> Connection:
+        @provide(scope=Scope.REQUEST)
+        def new_connection(self) -> Iterable[Connection]:
             conn = sqlite3.connect()
             yield conn
             conn.close()

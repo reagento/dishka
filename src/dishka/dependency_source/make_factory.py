@@ -103,10 +103,10 @@ def _type_repr(hint: Any) -> str:
 
 
 def _async_generator_result(hint: Any) -> Any:
-    if isinstance(hint, ProvideMultiple):
-        return ProvideMultiple([
-            _async_generator_result(x) for x in hint.items
-        ])
+    if get_origin(hint) is ProvideMultiple:
+        return ProvideMultiple[tuple(  # type: ignore[misc]
+            _async_generator_result(x) for x in get_args(hint)
+        )]
     origin = get_origin(hint)
     if origin is AsyncIterable:
         return get_args(hint)[0]
@@ -136,10 +136,10 @@ def _async_generator_result(hint: Any) -> Any:
 
 
 def _generator_result(hint: Any) -> Any:
-    if isinstance(hint, ProvideMultiple):
-        return ProvideMultiple([
-            _generator_result(x) for x in hint.items
-        ])
+    if get_origin(hint) is ProvideMultiple:
+        return ProvideMultiple[tuple(  # type: ignore[misc]
+            _generator_result(x) for x in get_args(hint)
+        )]
     origin = get_origin(hint)
     if origin is Iterable:
         return get_args(hint)[0]

@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import get_args, get_origin
 
 from dishka.entities.key import DependencyKey
 from dishka.entities.provides_marker import ProvideMultiple
@@ -9,10 +10,10 @@ from .factory import Factory
 
 
 def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
-    if not isinstance(factory.provides.type_hint, ProvideMultiple):
+    if get_origin(factory.provides.type_hint) is not ProvideMultiple:
         return [factory]
 
-    provides_first, *provides_others = factory.provides.type_hint.items
+    provides_first, *provides_others = get_args(factory.provides.type_hint)
 
     res: list[DependencySource] = [
         Alias(
@@ -43,7 +44,7 @@ def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
 
 
 def unpack_decorator(decorator: Decorator) -> Sequence[DependencySource]:
-    if not isinstance(decorator.provides.type_hint, ProvideMultiple):
+    if get_origin(decorator.provides.type_hint) is not ProvideMultiple:
         return [decorator]
 
     return [
@@ -51,12 +52,12 @@ def unpack_decorator(decorator: Decorator) -> Sequence[DependencySource]:
             factory=decorator.factory,
             provides=DependencyKey(provides, decorator.provides.component),
         )
-        for provides in decorator.provides.type_hint.items
+        for provides in get_args(decorator.provides.type_hint)
     ]
 
 
 def unpack_alias(alias: Alias) -> Sequence[DependencySource]:
-    if not isinstance(alias.provides.type_hint, ProvideMultiple):
+    if get_origin(alias.provides.type_hint) is not ProvideMultiple:
         return [alias]
 
     return [
@@ -66,5 +67,5 @@ def unpack_alias(alias: Alias) -> Sequence[DependencySource]:
             cache=alias.cache,
             override=alias.override,
         )
-        for provides in alias.provides.type_hint.items
+        for provides in get_args(alias.provides.type_hint)
     ]

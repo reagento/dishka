@@ -100,7 +100,7 @@ async def test_implicit_async_generator():
         value = 0
 
         @provide(scope=Scope.APP)
-        async def foo(self) -> AsyncIterable[AnyOf[float, int]]:
+        async def foo(self) -> AsyncIterable[AnyOf[float, "int"]]:
             self.value += 1
             yield self.value
 

@@ -174,5 +174,5 @@ else:
         def __class_getitem__(cls, item: TypeHint) -> TypeHint:
             parents = ParentsResolver().get_parents(item)
             if len(parents) > 1:
-                return ProvideMultiple(parents)
+                return ProvideMultiple[tuple(parents)]
             return parents[0]

@@ -152,8 +152,9 @@ def make_var(node: Node, ns: dict[Any, str]):
     return "value_" + ns[node.provides].lower()
 
 
-def make_if(node: Node, node_var: str, ns: dict[Any, str],
-            is_async: bool) -> str:
+def make_if(
+        node: Node, node_var: str, ns: dict[Any, str], is_async: bool,
+) -> str:
     node_key = ns[node.provides]
     node_source = ns[node.source]
 
@@ -189,15 +190,18 @@ def make_if(node: Node, node_var: str, ns: dict[Any, str],
         var=node_var,
         args=args_str,
     )
-    body_str = indent(body_str, "    ")
 
-    return IF_TEMPLATE.format(
-        var=node_var,
-        key=node_key,
-        deps=deps,
-        body=body_str,
-        cache=cache,
-    )
+    if node.cache:
+        body_str = indent(body_str, "    ")
+        return IF_TEMPLATE.format(
+            var=node_var,
+            key=node_key,
+            deps=deps,
+            body=body_str,
+            cache=cache,
+        )
+    else:
+        return "\n".join([deps, body_str, cache])
 
 
 def make_func(

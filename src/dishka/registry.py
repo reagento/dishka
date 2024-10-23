@@ -1,6 +1,8 @@
 from collections.abc import Callable
 from typing import Any, TypeVar, get_args, get_origin
 
+from pydantic.v1 import compiled
+
 from ._adaptix.type_tools.fundamentals import get_type_vars
 from .container_objects import CompiledFactory
 from .dependency_source import (
@@ -11,6 +13,7 @@ from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope
 from .factory_compiler import compile_factory
+from .graph_compiler import Node, compile_graph
 
 
 class Registry:
@@ -25,7 +28,7 @@ class Registry:
     def add_factory(
             self,
             factory: Factory,
-            provides: DependencyKey| None = None,
+            provides: DependencyKey | None = None,
     ) -> None:
         if provides is None:
             provides = factory.provides
@@ -40,7 +43,9 @@ class Registry:
             factory = self.get_factory(dependency)
             if not factory:
                 return None
-            compiled = compile_factory(factory=factory, is_async=False)
+            node = make_node(self, factory)
+            compiled = compile_graph(node=node, is_async=False)
+            # compiled = compile_factory(factory=factory, is_async=False)
             self.compiled[dependency] = compiled
             return compiled
 
@@ -53,7 +58,9 @@ class Registry:
             factory = self.get_factory(dependency)
             if not factory:
                 return None
-            compiled = compile_factory(factory=factory, is_async=True)
+            node = make_node(self, factory)
+            compiled = compile_graph(node=node, is_async=True)
+            # compiled = compile_factory(factory=factory, is_async=True)
             self.compiled[dependency] = compiled
             return compiled
 
@@ -144,3 +151,21 @@ class Registry:
             cache=factory.cache,
             override=factory.override,
         )
+
+
+def make_node(registry: Registry, factory: Factory) -> Node:
+    return Node(
+        provides=factory.provides,
+        scope=factory.scope,
+        source=factory.source,
+        type_=factory.type,
+        cache=factory.cache,
+        dependencies=[
+            make_node(registry, registry.get_factory(dep))
+            for dep in factory.dependencies
+        ],
+        kw_dependencies={
+            key: make_node(registry, registry.get_factory(dep))
+            for key, dep in factory.kw_dependencies.items()
+        },
+    )

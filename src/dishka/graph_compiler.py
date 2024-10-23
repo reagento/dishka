@@ -26,7 +26,7 @@ class Node(FactoryData):
             source: Any,
             provides: DependencyKey,
             scope: BaseScope,
-            type_: FactoryType,
+            type_: FactoryType | None,
             cache: bool,
     ) -> None:
         super().__init__(
@@ -83,6 +83,12 @@ raise UnsupportedFactoryError(
     f"Unsupported factory type {{factory_type}}.",
 )
 """
+GO_PARENT = """
+{var} = getter({key})
+"""
+GO_PARENT_ASYNC = """
+{var} = await getter({key})
+"""
 
 ASYNC_BODIES = {
     FactoryType.ASYNC_FACTORY: ASYNC_FACTORY,
@@ -92,6 +98,7 @@ ASYNC_BODIES = {
     FactoryType.VALUE: VALUE,
     FactoryType.CONTEXT: CONTEXT,
     FactoryType.ALIAS: ALIAS,
+    None: GO_PARENT_ASYNC,
 }
 SYNC_BODIES = {
     FactoryType.FACTORY: FACTORY,
@@ -99,6 +106,7 @@ SYNC_BODIES = {
     FactoryType.VALUE: VALUE,
     FactoryType.CONTEXT: CONTEXT,
     FactoryType.ALIAS: ALIAS,
+    None: GO_PARENT,
 }
 FUNC_TEMPLATE = """
 {async_}def {func_name}(getter, exits, context):
@@ -108,7 +116,7 @@ FUNC_TEMPLATE = """
 """
 
 IF_TEMPLATE = """
-if {var} := cache_getter({key}):
+if {var} := cache_getter({key}, None):
     pass  # cache found
 else:
     {deps}
@@ -163,9 +171,9 @@ def make_if(node: Node, node_var: str, ns: dict[Any, str],
     else:
         cache = "# no cache"
 
-    args = [ns.get(dep.provides) for dep in node.dependencies]
+    args = [make_var(dep, ns) for dep in node.dependencies]
     kwargs = {
-        key: ns.get(dep.provides)
+        key: make_var(dep, ns)
         for key, dep in node.kw_dependencies.items()
     }
 

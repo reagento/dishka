@@ -43,7 +43,7 @@ class Registry:
             factory = self.get_factory(dependency)
             if not factory:
                 return None
-            node = make_node(self, factory)
+            node = make_node(self, dependency)
             compiled = compile_graph(node=node, is_async=False)
             # compiled = compile_factory(factory=factory, is_async=False)
             self.compiled[dependency] = compiled
@@ -58,7 +58,7 @@ class Registry:
             factory = self.get_factory(dependency)
             if not factory:
                 return None
-            node = make_node(self, factory)
+            node = make_node(self, dependency)
             compiled = compile_graph(node=node, is_async=True)
             # compiled = compile_factory(factory=factory, is_async=True)
             self.compiled[dependency] = compiled
@@ -153,7 +153,18 @@ class Registry:
         )
 
 
-def make_node(registry: Registry, factory: Factory) -> Node:
+def make_node(registry: Registry, key: DependencyKey) -> Node:
+    factory = registry.get_factory(key)
+    if not factory:
+        return Node(
+            provides=key,
+            scope=registry.scope,
+            type_=None,
+            dependencies=[],
+            kw_dependencies={},
+            cache=False,
+            source=None,
+        )
     return Node(
         provides=factory.provides,
         scope=factory.scope,
@@ -161,11 +172,11 @@ def make_node(registry: Registry, factory: Factory) -> Node:
         type_=factory.type,
         cache=factory.cache,
         dependencies=[
-            make_node(registry, registry.get_factory(dep))
+            make_node(registry, dep)
             for dep in factory.dependencies
         ],
         kw_dependencies={
-            key: make_node(registry, registry.get_factory(dep))
+            key: make_node(registry, dep)
             for key, dep in factory.kw_dependencies.items()
         },
     )

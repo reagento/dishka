@@ -11,8 +11,8 @@ from litestar.testing import TestClient
 from dishka import make_async_container
 from dishka.integrations.litestar import (
     FromDishka,
-    setup_dishka,
     inject_websocket,
+    setup_dishka,
 )
 from ..common import (
     APP_DEP_VALUE,
@@ -50,13 +50,18 @@ class GetWithApp(WebsocketListener):
     path = "/"
 
     @inject_websocket
-    async def on_receive(self, data: str, a: FromDishka[AppDep], mock: FromDishka[Mock]) -> str:
+    async def on_receive(
+            self,
+            data: str,
+            a: FromDishka[AppDep],
+            mock: FromDishka[Mock],
+    ) -> str:
         mock(a)
         return "passed"
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("view", (get_with_app, GetWithApp))
+@pytest.mark.parametrize("view", [get_with_app, GetWithApp])
 async def test_app_dependency(view, ws_app_provider: WebSocketAppProvider):
     async with dishka_app(view, ws_app_provider) as client:
         with client.websocket_connect("/") as connection:
@@ -84,14 +89,22 @@ class GetWithRequest(WebsocketListener):
     path = "/"
 
     @inject_websocket
-    async def on_receive(self, data: str, a: FromDishka[RequestDep], mock: FromDishka[Mock]) -> str:
+    async def on_receive(
+            self,
+            data: str,
+            a: FromDishka[RequestDep],
+            mock: FromDishka[Mock],
+    ) -> str:
         mock(a)
         return "passed"
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("view", (get_with_request, GetWithRequest))
-async def test_request_dependency(view, ws_app_provider: WebSocketAppProvider):
+@pytest.mark.parametrize("view", [get_with_request, GetWithRequest])
+async def test_request_dependency(
+        view,
+        ws_app_provider: WebSocketAppProvider,
+):
     async with dishka_app(view, ws_app_provider) as client:
         with client.websocket_connect("/") as connection:
             connection.send_text("...")
@@ -101,8 +114,11 @@ async def test_request_dependency(view, ws_app_provider: WebSocketAppProvider):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("view", (get_with_request, GetWithRequest))
-async def test_request_dependency2(view, ws_app_provider: WebSocketAppProvider):
+@pytest.mark.parametrize("view", [get_with_request, GetWithRequest])
+async def test_request_dependency2(
+        view,
+        ws_app_provider: WebSocketAppProvider,
+):
     async with dishka_app(view, ws_app_provider) as client:
         with client.websocket_connect("/") as connection:
             connection.send_text("...")
@@ -134,14 +150,22 @@ class GetWithWebsocket(WebsocketListener):
     path = "/"
 
     @inject_websocket
-    async def on_receive(self, data: str, a: FromDishka[WebSocketDep], mock: FromDishka[Mock]) -> str:
+    async def on_receive(
+            self,
+            data: str,
+            a: FromDishka[WebSocketDep],
+            mock: FromDishka[Mock],
+    ) -> str:
         mock(a)
         return "passed"
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("view", (get_with_websocket, GetWithWebsocket))
-async def test_websocket_dependency(view, ws_app_provider: WebSocketAppProvider):
+@pytest.mark.parametrize("view", [get_with_websocket, GetWithWebsocket])
+async def test_websocket_dependency(
+        view,
+        ws_app_provider: WebSocketAppProvider,
+):
     async with dishka_app(view, ws_app_provider) as client:
         with client.websocket_connect("/") as connection:
             connection.send_text("...")

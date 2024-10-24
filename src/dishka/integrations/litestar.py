@@ -8,7 +8,7 @@ __all__ = [
 
 from collections.abc import Callable
 from inspect import Parameter
-from typing import ParamSpec, TypeVar, get_type_hints, Type
+from typing import ParamSpec, TypeVar, get_type_hints
 
 from litestar import Litestar, Request, WebSocket
 from litestar.enums import ScopeType
@@ -32,7 +32,7 @@ def inject_websocket(func: Callable[P, T]):
 def _inject_wrapper(
         func: Callable[P, T],
         param_name: str,
-        param_annotation: Type[Request | WebSocket]
+        param_annotation: type[Request | WebSocket],
 ):
     hints = get_type_hints(func)
 

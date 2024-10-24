@@ -11,8 +11,8 @@ from litestar.testing import TestClient
 from dishka import make_async_container
 from dishka.integrations.litestar import (
     FromDishka,
-    inject,
     setup_dishka,
+    inject_websocket,
 )
 from ..common import (
     APP_DEP_VALUE,
@@ -36,7 +36,7 @@ async def dishka_app(view, provider) -> AsyncGenerator[TestClient, None]:
 
 
 @websocket_listener("/")
-@inject(websocket=True)
+@inject_websocket
 async def get_with_app(
     data: str,
     a: FromDishka[AppDep],
@@ -49,7 +49,7 @@ async def get_with_app(
 class GetWithApp(WebsocketListener):
     path = "/"
 
-    @inject(websocket=True)
+    @inject_websocket
     async def on_receive(self, data: str, a: FromDishka[AppDep], mock: FromDishka[Mock]) -> str:
         mock(a)
         return "passed"
@@ -70,7 +70,7 @@ async def test_app_dependency(view, ws_app_provider: WebSocketAppProvider):
 
 
 @websocket_listener("/")
-@inject(websocket=True)
+@inject_websocket
 async def get_with_request(
     data: str,
     a: FromDishka[RequestDep],
@@ -83,7 +83,7 @@ async def get_with_request(
 class GetWithRequest(WebsocketListener):
     path = "/"
 
-    @inject(websocket=True)
+    @inject_websocket
     async def on_receive(self, data: str, a: FromDishka[RequestDep], mock: FromDishka[Mock]) -> str:
         mock(a)
         return "passed"
@@ -120,7 +120,7 @@ async def test_request_dependency2(view, ws_app_provider: WebSocketAppProvider):
 
 
 @websocket_listener("/")
-@inject(websocket=True)
+@inject_websocket
 async def get_with_websocket(
     data: str,
     ws: FromDishka[WebSocketDep],
@@ -133,7 +133,7 @@ async def get_with_websocket(
 class GetWithWebsocket(WebsocketListener):
     path = "/"
 
-    @inject(websocket=True)
+    @inject_websocket
     async def on_receive(self, data: str, a: FromDishka[WebSocketDep], mock: FromDishka[Mock]) -> str:
         mock(a)
         return "passed"

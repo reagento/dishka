@@ -152,12 +152,13 @@ class Registry:
             override=factory.override,
         )
 
+MAX_DEPTH = 4
 
-def make_node(registry: Registry, key: DependencyKey, cache: dict| None = None) -> Node:
+def make_node(registry: Registry, key: DependencyKey, cache: dict| None = None, depth: int=0) -> Node:
     if cache is None:
         cache = {}
     factory = registry.get_factory(key)
-    if not factory:
+    if not factory or depth>MAX_DEPTH:
         node = Node(
             provides=key,
             scope=registry.scope,
@@ -175,11 +176,11 @@ def make_node(registry: Registry, key: DependencyKey, cache: dict| None = None) 
             type_=factory.type,
             cache=factory.cache,
             dependencies=[
-                make_node(registry, dep, cache)
+                make_node(registry, dep, cache, depth+1)
                 for dep in factory.dependencies
             ],
             kw_dependencies={
-                key: make_node(registry, dep, cache)
+                key: make_node(registry, dep, cache, depth+1)
                 for key, dep in factory.kw_dependencies.items()
             },
         )

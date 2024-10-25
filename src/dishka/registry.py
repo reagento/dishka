@@ -1,7 +1,8 @@
+import time
 from collections.abc import Callable
+from linecache import cache
 from typing import Any, TypeVar, get_args, get_origin
 
-from pydantic.v1 import compiled
 
 from ._adaptix.type_tools.fundamentals import get_type_vars
 from .container_objects import CompiledFactory
@@ -12,7 +13,6 @@ from .dependency_source.type_match import is_broader_or_same_type
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope
-from .factory_compiler import compile_factory
 from .graph_compiler import Node, compile_graph
 
 
@@ -153,10 +153,12 @@ class Registry:
         )
 
 
-def make_node(registry: Registry, key: DependencyKey) -> Node:
+def make_node(registry: Registry, key: DependencyKey, cache: dict| None = None) -> Node:
+    if cache is None:
+        cache = {}
     factory = registry.get_factory(key)
     if not factory:
-        return Node(
+        node = Node(
             provides=key,
             scope=registry.scope,
             type_=None,
@@ -165,18 +167,21 @@ def make_node(registry: Registry, key: DependencyKey) -> Node:
             cache=False,
             source=None,
         )
-    return Node(
-        provides=factory.provides,
-        scope=factory.scope,
-        source=factory.source,
-        type_=factory.type,
-        cache=factory.cache,
-        dependencies=[
-            make_node(registry, dep)
-            for dep in factory.dependencies
-        ],
-        kw_dependencies={
-            key: make_node(registry, dep)
-            for key, dep in factory.kw_dependencies.items()
-        },
-    )
+    else:
+        node = Node(
+            provides=factory.provides,
+            scope=factory.scope,
+            source=factory.source,
+            type_=factory.type,
+            cache=factory.cache,
+            dependencies=[
+                make_node(registry, dep, cache)
+                for dep in factory.dependencies
+            ],
+            kw_dependencies={
+                key: make_node(registry, dep, cache)
+                for key, dep in factory.kw_dependencies.items()
+            },
+        )
+    cache[key] = node
+    return node

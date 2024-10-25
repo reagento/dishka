@@ -11,6 +11,9 @@ from .exceptions import NoContextValueError, UnsupportedFactoryError
 from .text_rendering import get_name
 
 
+MAX_DEPTH = 5  # max code depth, otherwise we get too big file
+
+
 class Node(FactoryData):
     __slots__ = (
         "dependencies",
@@ -106,7 +109,6 @@ SYNC_BODIES = {
     FactoryType.VALUE: VALUE,
     FactoryType.CONTEXT: CONTEXT,
     FactoryType.ALIAS: ALIAS,
-    None: GO_PARENT,
 }
 FUNC_TEMPLATE = """
 {async_}def {func_name}(getter, exits, context):
@@ -116,19 +118,19 @@ FUNC_TEMPLATE = """
 """
 
 IF_TEMPLATE = """
-if {var} := cache_getter({key}, None):
-    pass  # cache found
-else:
+if ({var} := cache_getter({key}, ...)) is ...:
     {deps}
     {body}
     {cache}
 """
 CACHE = "context[{key}] = {var}"
 
-
+builtins = {getattr(__builtins__, name): name for name in dir(__builtins__)}
 def make_name(obj: Any, ns: dict[Any, str]) -> str:
+    if obj in builtins:
+        return builtins[obj]
     if isinstance(obj, DependencyKey):
-        key = get_name(obj.type_hint, include_module=False) + obj.component
+        key = get_name(obj.type_hint, include_module=False) +"_"+ obj.component
     else:
         key = get_name(obj, include_module=False)
     key = re.sub(r"\W", "_", key)
@@ -153,24 +155,33 @@ def make_var(node: Node, ns: dict[Any, str]):
 
 
 def make_if(
-        node: Node, node_var: str, ns: dict[Any, str], is_async: bool,
+        node: Node, node_var: str, ns: dict[Any, str],
+        is_async: bool,
+        depth: int,
 ) -> str:
     node_key = ns[node.provides]
     node_source = ns[node.source]
+    if depth > MAX_DEPTH or node.type is None:
+        if is_async:
+            return GO_PARENT.format(
+                var=node_var,
+                key=node_key,
+            )
+        else:
+            return GO_PARENT.format(
+                var=node_var,
+                key=node_key,
+            )
 
     deps = "".join(
-        make_if(dep, make_var(dep, ns), ns, is_async)
+        make_if(dep, make_var(dep, ns), ns, is_async, depth+1)
         for dep in node.dependencies
     )
     deps += "".join(
-        make_if(dep, make_var(dep, ns), ns, is_async)
+        make_if(dep, make_var(dep, ns), ns, is_async, depth+1)
         for dep in node.kw_dependencies.values()
     )
     deps = indent(deps, "    ")
-    if node.cache:
-        cache = CACHE.format(var=node_var, key=node_key)
-    else:
-        cache = "# no cache"
 
     args = [make_var(dep, ns) for dep in node.dependencies]
     kwargs = {
@@ -192,6 +203,7 @@ def make_if(
     )
 
     if node.cache:
+        cache = CACHE.format(var=node_var, key=node_key)
         body_str = indent(body_str, "    ")
         return IF_TEMPLATE.format(
             var=node_var,
@@ -201,14 +213,14 @@ def make_if(
             cache=cache,
         )
     else:
-        return "\n".join([deps, body_str, cache])
+        return "\n".join([deps, body_str])
 
 
 def make_func(
         node: Node, ns: dict[Any, str], func_name: str, is_async: bool,
 ) -> str:
     node_var = make_var(node, ns)
-    body = make_if(node, node_var, ns, is_async)
+    body = make_if(node, node_var, ns, is_async, 0)
     body = indent(body, "    ")
     return FUNC_TEMPLATE.format(
         async_="async " if is_async else "",

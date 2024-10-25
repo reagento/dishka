@@ -51,7 +51,7 @@ class Container:
     ):
         self.registry = registry
         self.child_registries = child_registries
-        self._context = {DependencyKey(type(self), DEFAULT_COMPONENT): self}
+        self._context = {CONTAINER_KEY: self}
         if context:
             for key, value in context.items():
                 if not isinstance(key, DependencyKey):
@@ -252,3 +252,6 @@ def make_container(
                 close_parent=True,
             )
     return container
+
+
+CONTAINER_KEY = DependencyKey(Container, DEFAULT_COMPONENT)

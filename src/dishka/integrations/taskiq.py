@@ -6,7 +6,7 @@ __all__ = [
 
 from collections.abc import Callable, Generator
 from inspect import Parameter
-from typing import Annotated, Any, Final
+from typing import Annotated, Any, Final, TypeVar, ParamSpec
 
 from taskiq import (
     AsyncBroker,
@@ -20,6 +20,8 @@ from taskiq import (
 from dishka import AsyncContainer, FromDishka, Provider, Scope, from_context
 from dishka.integrations.base import wrap_injection
 
+P = ParamSpec("P")
+T = TypeVar("T")
 CONTAINER_NAME: Final = "dishka_container"
 
 
@@ -67,7 +69,7 @@ def _get_container(
     yield context.message.labels[CONTAINER_NAME]
 
 
-def inject(func: Callable[..., Any]) -> Callable[..., Any]:
+def inject(func: Callable[P, T]) -> Callable[P, T]:
     annotation = Annotated[
         AsyncContainer, TaskiqDepends(_get_container),
     ]

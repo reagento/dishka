@@ -5,7 +5,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable
-from typing import Final, TypeVar
+from typing import Final, TypeVar, ParamSpec
 
 from click import (
     Command,
@@ -18,10 +18,11 @@ from dishka import Container, FromDishka
 from .base import is_dishka_injected, wrap_injection
 
 T = TypeVar("T")
+P = ParamSpec("P")
 CONTAINER_NAME: Final = "dishka_container"
 
 
-def inject(func: Callable[..., T]) -> Callable[..., T]:
+def inject(func: Callable[P, T]) -> Callable[P, T]:
     return wrap_injection(
         func=func,
         container_getter=lambda _, __: get_current_context().meta[

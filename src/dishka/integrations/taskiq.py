@@ -8,6 +8,9 @@ from collections.abc import Callable, Generator
 from inspect import Parameter
 from typing import Annotated, Any, Final, TypeVar, ParamSpec
 
+from dishka import AsyncContainer, Provider, Scope, from_context
+from dishka.integrations.base import wrap_injection
+
 from taskiq import (
     AsyncBroker,
     Context,
@@ -16,9 +19,6 @@ from taskiq import (
     TaskiqMiddleware,
     TaskiqResult,
 )
-
-from dishka import AsyncContainer, FromDishka, Provider, Scope, from_context
-from dishka.integrations.base import wrap_injection
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -35,8 +35,8 @@ class ContainerMiddleware(TaskiqMiddleware):
         self._container = container
 
     async def pre_execute(
-        self,
-        message: TaskiqMessage,
+            self,
+            message: TaskiqMessage,
     ) -> TaskiqMessage:
         message.labels[CONTAINER_NAME] = await self._container(
             context={TaskiqMessage: message},
@@ -44,19 +44,19 @@ class ContainerMiddleware(TaskiqMiddleware):
         return message
 
     async def on_error(
-        self,
-        message: TaskiqMessage,
-        result: TaskiqResult[Any],
-        exception: BaseException,
+            self,
+            message: TaskiqMessage,
+            result: TaskiqResult[Any],
+            exception: BaseException,
     ) -> None:
         if CONTAINER_NAME in result.labels:
             await result.labels[CONTAINER_NAME].close()
             del result.labels[CONTAINER_NAME]
 
     async def post_execute(
-        self,
-        message: TaskiqMessage,
-        result: TaskiqResult[Any],
+            self,
+            message: TaskiqMessage,
+            result: TaskiqResult[Any],
     ) -> None:
         if CONTAINER_NAME in result.labels:
             await result.labels[CONTAINER_NAME].close()
@@ -64,7 +64,7 @@ class ContainerMiddleware(TaskiqMiddleware):
 
 
 def _get_container(
-    context: Annotated[Context, TaskiqDepends()],
+        context: Annotated[Context, TaskiqDepends()],
 ) -> Generator[AsyncContainer, None, None]:
     yield context.message.labels[CONTAINER_NAME]
 
@@ -89,7 +89,7 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
 
 
 def setup_dishka(
-    container: AsyncContainer,
-    broker: AsyncBroker,
+        container: AsyncContainer,
+        broker: AsyncBroker,
 ) -> None:
     broker.add_middlewares(ContainerMiddleware(container))

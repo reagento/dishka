@@ -7,14 +7,14 @@ __all__ = [
 from collections.abc import Callable
 from typing import Final, TypeVar, ParamSpec
 
+from dishka import Container
+
 from click import (
     Command,
     Context,
     Group,
     get_current_context,
 )
-
-from dishka import Container, FromDishka
 from .base import is_dishka_injected, wrap_injection
 
 T = TypeVar("T")
@@ -35,9 +35,9 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
 
 def _inject_commands(context: Context, command: Command | None) -> None:
     if isinstance(command, Command) and not is_dishka_injected(
-        command.callback,  # type: ignore[arg-type]
+            command.callback,  # type: ignore[arg-type]
     ):
-        command.callback = inject(command.callback)   # type: ignore[arg-type]
+        command.callback = inject(command.callback)  # type: ignore[arg-type]
 
     if isinstance(command, Group):
         for command_name in command.list_commands(context):
@@ -46,11 +46,11 @@ def _inject_commands(context: Context, command: Command | None) -> None:
 
 
 def setup_dishka(
-    container: Container,
-    context: Context,
-    *,
-    finalize_container: bool = True,
-    auto_inject: bool = False,
+        container: Container,
+        context: Context,
+        *,
+        finalize_container: bool = True,
+        auto_inject: bool = False,
 ) -> None:
     context.meta[CONTAINER_NAME] = container
 

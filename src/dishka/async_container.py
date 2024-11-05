@@ -51,7 +51,7 @@ class AsyncContainer:
     ):
         self.registry = registry
         self.child_registries = child_registries
-        self._context = {DependencyKey(type(self), DEFAULT_COMPONENT): self}
+        self._context = {CONTAINER_KEY: self}
         if context:
             for key, value in context.items():
                 if not isinstance(key, DependencyKey):
@@ -227,7 +227,7 @@ def make_async_container(
 ) -> AsyncContainer:
     registries = RegistryBuilder(
         scopes=scopes,
-        container_type=AsyncContainer,
+        container_key=CONTAINER_KEY,
         providers=providers,
         skip_validation=skip_validation,
         validation_settings=validation_settings,
@@ -257,3 +257,6 @@ def make_async_container(
                 close_parent=True,
             )
     return container
+
+
+CONTAINER_KEY = DependencyKey(AsyncContainer, DEFAULT_COMPONENT)

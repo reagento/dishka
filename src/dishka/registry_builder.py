@@ -170,8 +170,9 @@ class RegistryBuilder:
                 self.aliases[provides] = alias
 
     def _init_registries(self) -> None:
+        has_fallback = True
         for scope in self.scopes:
-            registry = Registry(scope)
+            registry = Registry(scope, has_fallback=has_fallback)
             context_var = ContextVariable(
                 provides=DependencyKey(self.container_type, DEFAULT_COMPONENT),
                 scope=scope,
@@ -180,6 +181,7 @@ class RegistryBuilder:
             for component in self.components:
                 registry.add_factory(context_var.as_factory(component))
             self.registries[scope] = registry
+            has_fallback = False
 
     def _process_factory(
             self, provider: BaseProvider, factory: Factory,

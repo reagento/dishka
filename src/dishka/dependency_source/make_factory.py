@@ -433,6 +433,11 @@ def make_factory(
         is_in_class: bool,
         override: bool,
 ) -> Factory:
+    if get_origin(source) is ProvideMultiple:
+        if provides is None:
+            provides = source
+        source = get_args(source)[0]
+
     if is_bare_generic(source):
         source = source[get_type_vars(source)]  # type: ignore[index]
 

@@ -1,13 +1,13 @@
 import logging
 
-from .use_cases import ProductGateway, UnitOfWork, User, UserGateway, Product
+from .use_cases import ProductGateway, Commiter, User, UserGateway, Product
 
 logger = logging.getLogger(__name__)
 
 
-class FakeDbConnection(UnitOfWork):
+class FakeCommiter(Commiter):
     def __init__(self):
-        logger.info("init FakeDbConnection as %s", self)
+        logger.info("init FakeCommiter as %s", self)
 
     def commit(self) -> None:
         logger.info("commit as %s", self)
@@ -17,9 +17,9 @@ class FakeDbConnection(UnitOfWork):
 
 
 class FakeUserGateway(UserGateway):
-    def __init__(self, unit_of_work: FakeDbConnection):
-        self.unit_of_work = unit_of_work
-        logger.info("init FakeUserGateway with %s", unit_of_work)
+    def __init__(self, commiter: FakeCommiter):
+        self.commiter = commiter
+        logger.info("init FakeUserGateway with %s", commiter)
 
     def get_user(self, user_id: int) -> User:
         logger.info("get_user %s as %s", user_id, self)
@@ -27,9 +27,9 @@ class FakeUserGateway(UserGateway):
 
 
 class FakeProductGateway(ProductGateway):
-    def __init__(self, unit_of_work: FakeDbConnection):
-        self.unit_of_work = unit_of_work
-        logger.info("init FakeProductGateway with %s", unit_of_work)
+    def __init__(self, commiter: FakeCommiter):
+        self.commiter = commiter
+        logger.info("init FakeProductGateway with %s", commiter)
 
     def add_product(self, product: Product) -> None:
         logger.info(

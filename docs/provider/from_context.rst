@@ -25,7 +25,7 @@ You can put some data manually when entering scope and rely on it in your provid
         pass
 
 
-* Do you want to override the from_context? To do this, specify the parameter ``override=True``. This can be checked when passing proper ``validation_settings`` when creating container.
+* Do you want to override the ``from_context``? To do this, specify the parameter ``override=True``. This can be checked when passing proper ``validation_settings`` when creating container.
 
 .. code-block:: python
 

@@ -9,8 +9,8 @@ import pytest
 from myapp.ioc import InteractorProvider
 from myapp.use_cases import (
     AddProductsInteractor,
+    Committer,
     ProductGateway,
-    UnitOfWork,
     User,
     UserGateway,
     WarehouseClient,
@@ -26,7 +26,7 @@ from dishka import (
 
 # app dependency logic
 class AdaptersProvider(Provider):
-    scope=Scope.APP
+    scope = Scope.APP
 
     @provide
     def users(self) -> UserGateway:
@@ -41,10 +41,10 @@ class AdaptersProvider(Provider):
         return gateway
 
     @provide
-    def uow(self) -> UnitOfWork:
-        uow = Mock()
-        uow.commit = Mock()
-        return uow
+    def committer(self) -> Committer:
+        committer = Mock()
+        committer.commit = Mock()
+        return committer
 
     @provide
     def warehouse(self) -> WarehouseClient:
@@ -63,4 +63,4 @@ def container():
 def test_interactor(container):
     interactor = container.get(AddProductsInteractor)
     interactor(1)
-    container.get(UnitOfWork).commit.assert_called_once_with()
+    container.get(Committer).commit.assert_called_once_with()

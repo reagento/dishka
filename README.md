@@ -57,16 +57,9 @@ class SomeClient:
     ...
 ```
 
-4. Create Provider instance. It is only used to setup all factories providing your objects.
+3. Create Provider instance and setup how to provide dependencies.
 
-```python
-from dishka import Provider
-
-provider = Provider()
-```
-
-
-5. Setup how to provide dependencies.
+Providers are only used to setup all factories providing your objects.
 
 We use `scope=Scope.APP` for dependencies which are created only once in application lifetime,
 and `scope=Scope.REQUEST` for those which should be recreated for each processing request/event/etc.
@@ -89,12 +82,12 @@ from dishka import Provider, provide, Scope
 class ConnectionProvider(Provider):
     @provide(scope=Scope.REQUEST)
     def new_connection(self) -> Iterable[Connection]:
-        conn = sqlite3.connect()
+        conn = sqlite3.connect(":memory:")
         yield conn
         conn.close()
 ```
 
-6. Create main `Container` instance passing providers, and step into `APP` scope.
+4. Create main `Container` instance passing providers, and step into `APP` scope.
 
 ```python
 from dishka import make_container
@@ -102,7 +95,7 @@ from dishka import make_container
 container = make_container(service_provider, ConnectionProvider())
 ```
 
-7. Container holds dependencies cache and is used to retrieve them. Here, you can use `.get` method to access APP-scoped dependencies:
+5. Container holds dependencies cache and is used to retrieve them. Here, you can use `.get` method to access APP-scoped dependencies:
 
 ```python
 client = container.get(SomeClient)  # `SomeClient` has Scope.APP, so it is accessible here
@@ -110,7 +103,7 @@ client = container.get(SomeClient)  # same instance of `SomeClient`
 ```
 
 
-8. You can enter and exit `REQUEST` scope multiple times after that using context manager:
+6. You can enter and exit `REQUEST` scope multiple times after that using context manager:
 
 ```python
 # subcontainer to access more short-living objects
@@ -125,13 +118,13 @@ with container() as request_container:
 ```
 
 
-9. Close container in the end:
+7. Close container in the end:
 
 ```python
 container.close()
 ```
 
-10. If you are using supported framework add decorators and middleware for it.
+8. If you are using supported framework add decorators and middleware for it.
 For more details see [integrations doc](https://dishka.readthedocs.io/en/latest/integrations/index.html)
 
 ```python

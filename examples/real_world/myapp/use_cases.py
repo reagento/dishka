@@ -29,7 +29,7 @@ class ProductGateway(Protocol):
         raise NotImplementedError
 
 
-class Commiter(Protocol):
+class Committer(Protocol):
     @abstractmethod
     def commit(self) -> None:
         raise NotImplementedError
@@ -46,12 +46,12 @@ class AddProductsInteractor:
             self,
             user_gateway: UserGateway,
             product_gateway: ProductGateway,
-            commiter: Commiter,
+            committer: Committer,
             warehouse_client: WarehouseClient,
     ) -> None:
         self.user_gateway = user_gateway
         self.product_gateway = product_gateway
-        self.commiter = commiter
+        self.committer = committer
         self.warehouse_client = warehouse_client
 
     def __call__(self, user_id: int):
@@ -63,4 +63,4 @@ class AddProductsInteractor:
         self.product_gateway.add_product(product)
         product2 = Product(user_id, self.warehouse_client.next_product())
         self.product_gateway.add_product(product2)
-        self.commiter.commit()
+        self.committer.commit()

@@ -9,7 +9,7 @@ import pytest
 from myapp.ioc import InteractorProvider
 from myapp.use_cases import (
     AddProductsInteractor,
-    Commiter,
+    Committer,
     ProductGateway,
     User,
     UserGateway,
@@ -41,10 +41,10 @@ class AdaptersProvider(Provider):
         return gateway
 
     @provide
-    def commiter(self) -> Commiter:
-        commiter = Mock()
-        commiter.commit = Mock()
-        return commiter
+    def committer(self) -> Committer:
+        committer = Mock()
+        committer.commit = Mock()
+        return committer
 
     @provide
     def warehouse(self) -> WarehouseClient:
@@ -63,4 +63,4 @@ def container():
 def test_interactor(container):
     interactor = container.get(AddProductsInteractor)
     interactor(1)
-    container.get(Commiter).commit.assert_called_once_with()
+    container.get(Committer).commit.assert_called_once_with()

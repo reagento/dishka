@@ -1,13 +1,13 @@
 import logging
 
-from .use_cases import ProductGateway, Commiter, User, UserGateway, Product
+from .use_cases import ProductGateway, Committer, User, UserGateway, Product
 
 logger = logging.getLogger(__name__)
 
 
-class FakeCommiter(Commiter):
+class FakeCommitter(Committer):
     def __init__(self):
-        logger.info("init FakeCommiter as %s", self)
+        logger.info("init FakeCommitter as %s", self)
 
     def commit(self) -> None:
         logger.info("commit as %s", self)
@@ -17,9 +17,9 @@ class FakeCommiter(Commiter):
 
 
 class FakeUserGateway(UserGateway):
-    def __init__(self, commiter: FakeCommiter):
-        self.commiter = commiter
-        logger.info("init FakeUserGateway with %s", commiter)
+    def __init__(self, committer: FakeCommitter):
+        self.committer = committer
+        logger.info("init FakeUserGateway with %s", committer)
 
     def get_user(self, user_id: int) -> User:
         logger.info("get_user %s as %s", user_id, self)
@@ -27,9 +27,9 @@ class FakeUserGateway(UserGateway):
 
 
 class FakeProductGateway(ProductGateway):
-    def __init__(self, commiter: FakeCommiter):
-        self.commiter = commiter
-        logger.info("init FakeProductGateway with %s", commiter)
+    def __init__(self, committer: FakeCommitter):
+        self.committer = committer
+        logger.info("init FakeProductGateway with %s", committer)
 
     def add_product(self, product: Product) -> None:
         logger.info(

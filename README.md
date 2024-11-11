@@ -14,32 +14,32 @@ Cute DI framework with scopes and agreeable API.
 
 ### Purpose
 
-This library aims to provide only an IoC container, but one that is genuinely useful.
-If you're tired of manually passing objects just to create other objects that, in turn, create even more — this is the
-solution for you.
+This library provides **IoC container** that's genuinely useful.
+If you're tired of manually passing objects just to create other objects, which then create even more — this is for
+you.
 Not every project requires an IoC container, but take a look at what we offer.
 
-Unlike other tools, this one doesn't attempt to solve tasks unrelated
-to [dependency injection](https://dishka.readthedocs.io/en/latest/di_intro.html).
-Instead, it keeps DI in place without cluttering your code with global variables and scattered specifiers.
+Unlike other tools, this one focuses **only**
+on [dependency injection](https://dishka.readthedocs.io/en/latest/di_intro.html), without trying to solve unrelated
+tasks.
+It keeps DI in place without cluttering your code with global variables and scattered specifiers.
 
-#### Main ideas:
+#### Key features:
 
 * **Scopes**. Any object can have a lifespan for the entire app, a single request, or even more fractionally. Many
-  frameworks either lack scopes entirely or provide only two. Here, you can define as many scopes as needed.
-* **Finalization**. Some dependencies, like database connections, need not only be created but also carefully released.
-  Many frameworks lack this essential feature.
-* **Modular providers**. Instead of creating many separate functions or, conversely, one large class, you can
-  split your factories into multiple classes, making them easier to reuse.
-* **Clean dependencies**. You don't need to add custom markers to the dependency code just to make it visible to the
-  library. All customization is managed by the library's own providers, so only the boundaries of scopes interact with
-  the library API.
-* **Simple API**. Only a minimal number of objects are needed to start using the library. Integration with your task
-  framework is straightforward, with examples provided.
-* **Speed**. The library is fast enough that you don't have to worry about performance. In fact, it outperforms many
+  frameworks either lack scopes entirely or offer only two. Here, you can define as many scopes as needed.
+* **Finalization**. Some dependencies, like database connections, need not only to be created but also carefully
+  released. Many frameworks lack this essential feature.
+* **Modular providers**. Instead of creating many separate functions or one large class, you can split factories
+  into smaller classes for easier reuse.
+* **Clean dependencies**. You don't need to add custom markers to dependency code just to make it visible to the
+  library. Customization is managed by the library's providers, so only scope boundaries interact with the library API.
+* **Simple API**. Only a few objects are needed to start using the library. Integration with your framework is
+  straightforward, with examples provided.
+* **Speed**. The library is fast enough that performance is not a concern. In fact, it outperforms many
   alternatives.
 
-See more in the [technical requirements.](https://dishka.readthedocs.io/en/latest/requirements/technical.html)
+See more in [technical requirements.](https://dishka.readthedocs.io/en/latest/requirements/technical.html)
 
 ### Quickstart
 
@@ -49,8 +49,8 @@ See more in the [technical requirements.](https://dishka.readthedocs.io/en/lates
 pip install dishka
 ```
 
-2. **Define your classes with type hints.** Imagine you have two classes: `Service` (a kind of business logic) and
-   `DAO` (a kind of data access), along with an external API client:
+2. **Define your classes with type hints.** Imagine you have two classes: `Service` (business logic) and
+   `DAO` (data access), along with an external API client:
 
 ```python
 class DAO(Protocol):
@@ -71,13 +71,13 @@ class SomeClient:
     ...
 ```
 
-3. **Create Provider** instance and setup how to provide dependencies.
+3. **Create Provider** instance and set up how to provide dependencies.
 
-Providers are only used to setup all factories providing your objects.
+Providers are used only to set up factories providing your objects.
 
-We use `scope=Scope.APP` for dependencies which are created only once in application lifetime,
-and `scope=Scope.REQUEST` for those which should be recreated for each processing request/event/etc.
-To read more about scopes, refer [documentation](https://dishka.readthedocs.io/en/latest/advanced/scopes.html)
+Use `scope=Scope.APP` for dependencies created once per application lifetime,
+and `scope=Scope.REQUEST` for those that need to be recreated for each request, event, etc.
+To learn more about scopes, see [documentation.](https://dishka.readthedocs.io/en/latest/advanced/scopes.html)
 
 ```python
 from dishka import Provider, Scope
@@ -102,7 +102,7 @@ class ConnectionProvider(Provider):
         conn.close()
 ```
 
-4. **Create main `Container`** instance passing providers, and step into `APP` scope.
+4. **Create main `Container`** instance by passing providers, and enter `APP` scope.
 
 ```python
 from dishka import make_container
@@ -110,15 +110,15 @@ from dishka import make_container
 container = make_container(service_provider, ConnectionProvider())
 ```
 
-5. **Access dependencies using the container.** Container holds dependencies cache and is used to retrieve them. Here, you can use `.get` method to access APP-scoped dependencies:
+5. **Access dependencies using container.** Container holds a cache of dependencies and is used to retrieve them.
+   You can use `.get` method to access `APP`-scoped dependencies:
 
 ```python
 client = container.get(SomeClient)  # `SomeClient` has Scope.APP, so it is accessible here
 client = container.get(SomeClient)  # same instance of `SomeClient`
 ```
 
-6. After that, you can repeatedly **enter** and **exit the `REQUEST` scope using a context manager**:
-
+6. **Enter and exit `REQUEST` scope repeatedly using a context manager**:
 
 ```python
 # subcontainer to access shorter-living objects
@@ -132,15 +132,14 @@ with container() as request_container:
     service = request_container.get(Service)  # new service instance
 ```
 
-7. **Close the container** when done:
-
+7. **Close container** when done:
 
 ```python
 container.close()
 ```
 
-8. **Integrate with your framework.** If you are using supported framework add decorators and middleware for it.
-For more details see [integrations doc](https://dishka.readthedocs.io/en/latest/integrations/index.html)
+8. **Integrate with your framework.** If you are using a supported framework, add decorators and middleware for it.
+   For more details, see [integrations doc.](https://dishka.readthedocs.io/en/latest/integrations/index.html)
 
 ```python
 from dishka.integrations.fastapi import (
@@ -175,15 +174,14 @@ You assign a scope to each dependency when configuring its creation.
 By default, if the same dependency is requested multiple times within a single scope without leaving it, the same
 instance is returned.
 
-If you are developing a web application, you would enter the `APP` scope on startup and enter the `REQUEST` scope for
-each HTTP-request.
+For a web application, enter `APP` scope on startup and `REQUEST` scope for each HTTP request.
 
 If the standard scope flow doesn't fit your needs, you can define your own `Scopes` class.
 
 **Container** is what you use to get your dependencies.
 You simply call `.get(SomeType)`, and it finds a way to provide you with an instance of that type.
 The container itself doesn't create objects but manages their lifecycle and caches.
-It delegates object creation to providers that were added during setup.
+It delegates object creation to providers added during setup.
 
 **Provider** is a collection of functions that actually provide certain objects.
 A `Provider` is a class with various attributes and methods, each created through `provide`, `alias`, or
@@ -192,8 +190,8 @@ These can serve as provider methods, functions to assign attributes, or method d
 
 `@provide` can be used as a decorator for a method.
 This method will be called when the corresponding dependency has to be created.
-The method's name is unimportant: just make sure it's different from other `Provider` attributes.
-Type hints are essential: they indicate what this method creates and what it requires.
+Method name is unimportant: just make sure it's different from other `Provider` attributes.
+Type hints are crucial: they indicate what this method creates and what it requires.
 All method parameters are treated as dependencies and are created using the container.
 
 If `provide` is applied to a class, that class itself is treated as a factory (its `__init__` parameters are analyzed).

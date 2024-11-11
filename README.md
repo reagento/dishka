@@ -1,9 +1,9 @@
-## Dishka (from russian "cute DI")
+## Dishka (stands for "cute DI" in Russian)
 
 [![PyPI version](https://badge.fury.io/py/dishka.svg)](https://pypi.python.org/pypi/dishka)
 [![Supported versions](https://img.shields.io/pypi/pyversions/dishka.svg)](https://pypi.python.org/pypi/dishka)
-[![downloads](https://img.shields.io/pypi/dm/dishka.svg)](https://pypistats.org/packages/dishka)
-[![license](https://img.shields.io/github/license/reagento/dishka)](https://github.com/reagento/dishka/blob/master/LICENSE)
+[![Downloads](https://img.shields.io/pypi/dm/dishka.svg)](https://pypistats.org/packages/dishka)
+[![License](https://img.shields.io/github/license/reagento/dishka)](https://github.com/reagento/dishka/blob/master/LICENSE)
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/reagento/dishka/setup.yml)](https://github.com/reagento/dishka/actions)
 [![Doc](https://readthedocs.org/projects/dishka/badge/?version=latest&style=flat)](https://dishka.readthedocs.io)
 [![Telegram](https://img.shields.io/badge/💬-Telegram-blue)](https://t.me/reagento_ru)
@@ -14,50 +14,64 @@ Cute DI framework with scopes and agreeable API.
 
 ### Purpose
 
-This library is targeting to provide only an IoC-container but tries to make it really useful. 
-If you are tired of passing objects manually to create other objects which are only used to create more objects - we have a solution.
-Not all projects require an IoC-container, but check what we have.
+This library aims to provide only an IoC container, but one that is genuinely useful.
+If you're tired of manually passing objects just to create other objects that, in turn, create even more — this is the
+solution for you.
+Not every project requires an IoC container, but take a look at what we offer.
 
-Unlike other instruments we are not trying to solve tasks not related to [dependency injection](https://dishka.readthedocs.io/en/latest/di_intro.html).
-Instead, we want to keep DI in place, not soiling your code with global variables and additional specifiers scattered everywhere.
+Unlike other tools, this one doesn't attempt to solve tasks unrelated
+to [dependency injection](https://dishka.readthedocs.io/en/latest/di_intro.html).
+Instead, it keeps DI in place without cluttering your code with global variables and scattered specifiers.
 
-Main ideas:
-* **Scopes**. Any object can have lifespan of the whole app, single request or even more fractionally. Many frameworks do not have scopes or have only 2 of them. Here you can have as many scopes as you need.
-* **Finalization**. Some dependencies like database connections must not only be created, but carefully released. Many framework lack this essential feature
-* **Modular providers**. Instead of creating lots of separate functions or contrariwise a big single class, you can split your factories into several classes, which makes them simpler to reuse.
-* **Clean dependencies**. You do not need to add custom markers to the code of dependencies just to allow library to see them. All customization is done within providers code and only the borders of scopes have to deal with library API.
-* **Simple API**. You need minimum of objects to start using library. You can easily integrate it with your task framework, examples provided.
-* **Speed**. It is fast enough so you do not have to worry about it. It is even faster than many of the analogs.
+#### Main ideas:
 
-See more in [technical requirements](https://dishka.readthedocs.io/en/latest/requirements/technical.html)
+* **Scopes**. Any object can have a lifespan for the entire app, a single request, or even more fractionally. Many
+  frameworks either lack scopes entirely or provide only two. Here, you can define as many scopes as needed.
+* **Finalization**. Some dependencies, like database connections, need not only be created but also carefully released.
+  Many frameworks lack this essential feature.
+* **Modular providers**. Instead of creating many separate functions or, conversely, one large class, you can
+  split your factories into multiple classes, making them easier to reuse.
+* **Clean dependencies**. You don't need to add custom markers to the dependency code just to make it visible to the
+  library. All customization is managed by the library's own providers, so only the boundaries of scopes interact with
+  the library API.
+* **Simple API**. Only a minimal number of objects are needed to start using the library. Integration with your task
+  framework is straightforward, with examples provided.
+* **Speed**. The library is fast enough that you don't have to worry about performance. In fact, it outperforms many
+  alternatives.
+
+See more in the [technical requirements.](https://dishka.readthedocs.io/en/latest/requirements/technical.html)
 
 ### Quickstart
 
-1. Install dishka
+1. **Install dishka.**
 
 ```shell
 pip install dishka
 ```
 
-2. Write your classes, fill type hints. Imagine, you have two classes: Service (kind of business logic) and DAO (kind of data access) and some external api client:
+2. **Define your classes with type hints.** Imagine you have two classes: `Service` (a kind of business logic) and
+   `DAO` (a kind of data access), along with an external API client:
 
 ```python
 class DAO(Protocol):
     ...
 
+
 class Service:
     def __init__(self, dao: DAO):
         ...
+
 
 class DAOImpl(DAO):
     def __init__(self, connection: Connection):
         ...
 
+
 class SomeClient:
     ...
 ```
 
-4. Create Provider instance. It is only used to setup all factories providing your objects.
+3. **Create Provider instance**. It is only used to set up all factories that will provide your objects.
 
 ```python
 from dishka import Provider
@@ -65,12 +79,11 @@ from dishka import Provider
 provider = Provider()
 ```
 
+4. **Configure dependencies.**
 
-5. Setup how to provide dependencies.
-
-We use `scope=Scope.APP` for dependencies which are created only once in application lifetime,
-and `scope=Scope.REQUEST` for those which should be recreated for each processing request/event/etc.
-To read more about scopes, refer [documentation](https://dishka.readthedocs.io/en/latest/advanced/scopes.html)
+We use `scope=Scope.APP` for dependencies created only once during the application's lifetime,
+and `scope=Scope.REQUEST` for those that should be recreated for each processing request/event/etc.
+For more details on scopes, refer to the [documentation.](https://dishka.readthedocs.io/en/latest/advanced/scopes.html)
 
 ```python
 from dishka import Provider, Scope
@@ -81,10 +94,11 @@ service_provider.provide(DAOImpl, provides=DAO)
 service_provider.provide(SomeClient, scope=Scope.APP)  # override provider scope
 ```
 
-To provide connection we might need to write some custom code:
+To provide a connection, you might need some custom code:
 
 ```python
 from dishka import Provider, provide, Scope
+
 
 class ConnectionProvider(Provider):
     @provide(scope=Scope.REQUEST)
@@ -94,7 +108,7 @@ class ConnectionProvider(Provider):
         conn.close()
 ```
 
-6. Create main `Container` instance passing providers, and step into `APP` scope.
+5. **Create the main `Container` instance**, passing in the providers, and step into the `APP` scope.
 
 ```python
 from dishka import make_container
@@ -102,47 +116,49 @@ from dishka import make_container
 container = make_container(service_provider, ConnectionProvider())
 ```
 
-7. Container holds dependencies cache and is used to retrieve them. Here, you can use `.get` method to access APP-scoped dependencies:
+6. **Access dependencies using the container.** The container holds a cache of dependencies and is used to retrieve
+   them. Use `.get` to access APP-scoped dependencies:
 
 ```python
 client = container.get(SomeClient)  # `SomeClient` has Scope.APP, so it is accessible here
 client = container.get(SomeClient)  # same instance of `SomeClient`
 ```
 
-
-8. You can enter and exit `REQUEST` scope multiple times after that using context manager:
+7. After that, you can repeatedly **enter** and **exit the `REQUEST` scope using a context manager**:
 
 ```python
-# subcontainer to access more short-living objects
+# subcontainer to access shorter-living objects
 with container() as request_container:
     service = request_container.get(Service)
     service = request_container.get(Service)  # same service instance
-# at this point connection will be closed as we exited context manager
+# at this point, the connection will be closed as we exit the context manager
 
-# new subcontainer to have a new lifespan for request processing
+# new subcontainer with a new lifespan for request processing
 with container() as request_container:
     service = request_container.get(Service)  # new service instance
 ```
 
-
-9. Close container in the end:
+8. **Close the container** when done:
 
 ```python
 container.close()
 ```
 
-10. If you are using supported framework add decorators and middleware for it.
-For more details see [integrations doc](https://dishka.readthedocs.io/en/latest/integrations/index.html)
+9. **Integrate with your framework.** If you're using a supported framework, add decorators and middleware for it.
+   For more details, see
+   the [integration documentation.](https://dishka.readthedocs.io/en/latest/integrations/index.html)
 
 ```python
 from dishka.integrations.fastapi import (
     FromDishka, inject, setup_dishka,
 )
 
+
 @router.get("/")
 @inject
 async def index(service: FromDishka[Service]) -> str:
     ...
+
 
 ...
 setup_dishka(container, app)
@@ -150,28 +166,48 @@ setup_dishka(container, app)
 
 ### Concepts
 
-**Dependency** is what you need for some part of your code to work. They are just object which you do not create in place and probably want to replace some day. At least for tests.
-Some of them can live while you application is running, others are destroyed and created on each request. Dependencies can depend on other objects, which are their dependencies.
+**Dependency** is what you need for some parts of your code to work.
+Dependencies are simply objects you don't create directly in place and might want to replace someday, at least for
+testing purposes.
+Some of them live throughout your application's runtime, while others are created and destroyed with each request.
+Dependencies can also rely on other objects, which then become their dependencies.
 
-**Scope** is a lifespan of a dependency. Standard scopes are (without skipped ones):
+**Scope** is the lifespan of a dependency. The standard scopes are (with some skipped):
 
-  `APP` -> `REQUEST` -> `ACTION` -> `STEP`.
+`APP` -> `REQUEST` -> `ACTION` -> `STEP`.
 
-You decide when to enter and exit them, but it is done one by one. You set a scope for your dependency when you configure how to create it. If the same dependency is requested multiple time within one scope without leaving it, then by default the same instance is returned.
+You decide when to enter and exit each scope, but this happens one by one.
+You assign a scope to each dependency when configuring its creation.
+By default, if the same dependency is requested multiple times within a single scope without leaving it, the same
+instance is returned.
 
-If you are developing web application, you would enter `APP` scope on startup, and you would `REQUEST` scope in each HTTP-request.
+If you are developing a web application, you would enter the `APP` scope on startup and enter the `REQUEST` scope for
+each HTTP-request.
 
-You can provide your own Scopes class if you are not satisfied with standard flow.
+If the standard scope flow doesn't fit your needs, you can define your own `Scopes` class.
 
-**Container** is what you use to get your dependency. You just call `.get(SomeType)` and it finds a way to get you an instance of that type. It does not create things itself, but manages their lifecycle and caches. It delegates objects creation to providers which are passed during creation.
+**Container** is what you use to get your dependencies.
+You simply call `.get(SomeType)`, and it finds a way to provide you with an instance of that type.
+The container itself doesn't create objects but manages their lifecycle and caches.
+It delegates object creation to providers that were added during setup.
 
-**Provider** is a collection of functions which really provide some objects. 
-Provider itself is a class with some attributes and methods. Each of them is either result of `provide`, `alias` or `decorate`. They can be used as provider methods, functions to assign attributes or method decorators.
+**Provider** is a collection of functions that actually provide certain objects.
+A `Provider` is a class with various attributes and methods, each created through `provide`, `alias`, or
+`decorate`.
+These can serve as provider methods, functions to assign attributes, or method decorators.
 
-`@provide` can be used as a decorator for some method. This method will be called when corresponding dependency has to be created. Name of the method is not important: just check that it is different form other `Provider` attributes. Type hints do matter: they show what this method creates and what does it require. All method parameters are treated as other dependencies and created using container.
+`@provide` can be used as a decorator for a method.
+This method will be called when the corresponding dependency has to be created.
+The method's name is unimportant: just make sure it's different from other `Provider` attributes.
+Type hints are essential: they indicate what this method creates and what it requires.
+All method parameters are treated as dependencies and are created using the container.
 
-If `provide` is used with some class then that class itself is treated as a factory (`__init__` is analyzed for parameters). But do not forget to assign that call to some attribute otherwise it will be ignored.
+If `provide` is applied to a class, that class itself is treated as a factory (its `__init__` parameters are analyzed).
+Remember to assign this call to an attribute; otherwise, it will be ignored.
 
-**Component** - is an isolated group of providers within the same container identified by a string. When dependency is requested it is searched only within the same component as its dependant, unless it is declared explicitly.
+**Component** is an isolated group of providers within the same container, identified by a unique string. When a
+dependency is requested, it is only searched for within the same component as the requesting object, unless explicitly
+specified otherwise.
 
-This allows you to have multiple parts of application build separately without need to think if the use same types.
+This structure allows you to build different parts of the application separately without worrying about using the same
+types.

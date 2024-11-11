@@ -9,99 +9,54 @@ Quickstart
 
 2. Write your classes, fill type hints. Imagine, you have two classes: Service (kind of business logic) and DAO (kind of data access) and some external api client:
 
-.. code-block:: python
+.. literalinclude:: ./quickstart_example.py
+   :language: python
+   :lines: 6-18
 
-    class DAO(Protocol):
-        ...
+3. Create Provider instance and setup how to provide dependencies.
 
-    class Service:
-        def __init__(self, dao: DAO):
-            ...
-
-    class DAOImpl(DAO):
-        def __init__(self, connection: Connection):
-            ...
-
-    class SomeClient:
-        ...
-
-4. Create Provider instance. It is only used to setup all factories providing your objects.
-
-.. code-block:: python
-
-    from dishka import Provider
-
-    provider = Provider()
-
-
-5. Setup how to provide dependencies.
+Providers are only used to setup all factories providing your objects.
 
 We use ``scope=Scope.APP`` for dependencies which are created only once in application lifetime,
 and ``scope=Scope.REQUEST`` for those which should be recreated for each processing request/event/etc.
 To read more about scopes, refer :ref:`scopes`
 
-.. code-block:: python
-
-    from dishka import Provider, Scope
-
-    service_provider = Provider(scope=Scope.REQUEST)
-    service_provider.provide(Service)
-    service_provider.provide(DAOImpl, provides=DAO)
-    service_provider.provide(SomeClient, scope=Scope.APP)  # override provider scope
+.. literalinclude:: ./quickstart_example.py
+   :language: python
+   :lines: 20-25
 
 To provide connection we might need to write some custom code:
 
-.. code-block:: python
+.. literalinclude:: ./quickstart_example.py
+   :language: python
+   :lines: 27-34
 
-    from dishka import Provider, provide, Scope
+4. Create main ``Container`` instance passing providers, and step into ``APP`` scope.
 
-    class ConnectionProvider(Provider):
-        @provide(scope=Scope.REQUEST)
-        def new_connection(self) -> Iterable[Connection]:
-            conn = sqlite3.connect()
-            yield conn
-            conn.close()
+.. literalinclude:: ./quickstart_example.py
+   :language: python
+   :lines: 37-39
 
+5. Container holds dependencies cache and is used to retrieve them. Here, you can use ``.get`` method to access APP-scoped dependencies:
 
-6. Create main ``Container`` instance passing providers, and step into ``APP`` scope.
-
-.. code-block:: python
-
-    from dishka import make_container
-
-    container = make_container(service_provider, ConnectionProvider())
-
-7. Container holds dependencies cache and is used to retrieve them. Here, you can use ``.get`` method to access APP-scoped dependencies:
-
-.. code-block:: python
-
-    client = container.get(SomeClient)  # `SomeClient` has Scope.APP, so it is accessible here
-    client = container.get(SomeClient)  # same instance of `SomeClient`
+.. literalinclude:: ./quickstart_example.py
+   :language: python
+   :lines: 41-42
 
 
-8. You can enter and exit ``REQUEST`` scope multiple times after that using context manager:
+6. You can enter and exit ``REQUEST`` scope multiple times after that using context manager:
 
-.. code-block:: python
+.. literalinclude:: ./quickstart_example.py
+   :language: python
+   :lines: 45-53
 
-    # subcontainer to access more short-living objects
-    with container() as request_container:
-        service = request_container.get(Service)
-        service = request_container.get(Service)  # same service instance
-    # at this point connection will be closed as we exited context manager
+7. Close container in the end:
 
-    # new subcontainer to have a new lifespan for request processing
-    with container() as request_container:
-        service = request_container.get(Service)  # new service instance
+.. literalinclude:: ./quickstart_example.py
+   :language: python
+   :lines: 55
 
-
-9. Close container in the end:
-
-.. code-block:: python
-
-   container.close()
-
-
-10. If you are using supported framework add decorators and middleware for it.
+8. If you are using supported framework add decorators and middleware for it.
 For more details see :ref:`integrations`
 
 .. code-block:: python

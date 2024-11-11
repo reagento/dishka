@@ -7,11 +7,11 @@ from dishka import (
     provide,
 )
 from .api_client import FakeWarehouseClient
-from .db import FakeDbConnection, FakeProductGateway, FakeUserGateway
+from .db import FakeCommitter, FakeProductGateway, FakeUserGateway
 from .use_cases import (
     AddProductsInteractor,
     ProductGateway,
-    UnitOfWork,
+    Committer,
     UserGateway,
     WarehouseClient,
 )
@@ -25,12 +25,12 @@ class AdaptersProvider(Provider):
     products = provide(FakeProductGateway, provides=ProductGateway)
 
     @provide
-    def connection(self) -> Iterable[FakeDbConnection]:
-        uow = FakeDbConnection()
-        yield uow
-        uow.close()
+    def connection(self) -> Iterable[FakeCommitter]:
+        committer = FakeCommitter()
+        yield committer
+        committer.close()
 
-    uow = alias(source=FakeDbConnection, provides=UnitOfWork)
+    committer = alias(source=FakeCommitter, provides=Committer)
 
     @provide(scope=Scope.APP)
     def warehouse(self) -> WarehouseClient:

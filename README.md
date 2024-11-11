@@ -71,19 +71,13 @@ class SomeClient:
     ...
 ```
 
-3. **Create Provider instance**. It is only used to set up all factories that will provide your objects.
+3. **Create Provider** instance and setup how to provide dependencies.
 
-```python
-from dishka import Provider
+Providers are only used to setup all factories providing your objects.
 
-provider = Provider()
-```
-
-4. **Configure dependencies.**
-
-We use `scope=Scope.APP` for dependencies created only once during the application's lifetime,
-and `scope=Scope.REQUEST` for those that should be recreated for each processing request/event/etc.
-For more details on scopes, refer to the [documentation.](https://dishka.readthedocs.io/en/latest/advanced/scopes.html)
+We use `scope=Scope.APP` for dependencies which are created only once in application lifetime,
+and `scope=Scope.REQUEST` for those which should be recreated for each processing request/event/etc.
+To read more about scopes, refer [documentation](https://dishka.readthedocs.io/en/latest/advanced/scopes.html)
 
 ```python
 from dishka import Provider, Scope
@@ -103,12 +97,12 @@ from dishka import Provider, provide, Scope
 class ConnectionProvider(Provider):
     @provide(scope=Scope.REQUEST)
     def new_connection(self) -> Iterable[Connection]:
-        conn = sqlite3.connect()
+        conn = sqlite3.connect(":memory:")
         yield conn
         conn.close()
 ```
 
-5. **Create the main `Container` instance**, passing in the providers, and step into the `APP` scope.
+4. **Create main `Container`** instance passing providers, and step into `APP` scope.
 
 ```python
 from dishka import make_container
@@ -116,15 +110,15 @@ from dishka import make_container
 container = make_container(service_provider, ConnectionProvider())
 ```
 
-6. **Access dependencies using the container.** The container holds a cache of dependencies and is used to retrieve
-   them. Use `.get` to access APP-scoped dependencies:
+5. **Access dependencies using the container.** Container holds dependencies cache and is used to retrieve them. Here, you can use `.get` method to access APP-scoped dependencies:
 
 ```python
 client = container.get(SomeClient)  # `SomeClient` has Scope.APP, so it is accessible here
 client = container.get(SomeClient)  # same instance of `SomeClient`
 ```
 
-7. After that, you can repeatedly **enter** and **exit the `REQUEST` scope using a context manager**:
+6. After that, you can repeatedly **enter** and **exit the `REQUEST` scope using a context manager**:
+
 
 ```python
 # subcontainer to access shorter-living objects
@@ -138,15 +132,15 @@ with container() as request_container:
     service = request_container.get(Service)  # new service instance
 ```
 
-8. **Close the container** when done:
+7. **Close the container** when done:
+
 
 ```python
 container.close()
 ```
 
-9. **Integrate with your framework.** If you're using a supported framework, add decorators and middleware for it.
-   For more details, see
-   the [integration documentation.](https://dishka.readthedocs.io/en/latest/integrations/index.html)
+8. **Integrate with your framework.** If you are using supported framework add decorators and middleware for it.
+For more details see [integrations doc](https://dishka.readthedocs.io/en/latest/integrations/index.html)
 
 ```python
 from dishka.integrations.fastapi import (

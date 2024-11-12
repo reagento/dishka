@@ -74,11 +74,11 @@ class SomeClient:
     ...
 ```
 
-3. **Create Provider** instance and set up how to provide dependencies.
+3. **Create Provider** instance and specify how to provide dependencies.
 
 Providers are used only to set up factories providing your objects.
 
-Use `scope=Scope.APP` for dependencies created once per application lifetime,
+Use `scope=Scope.APP` for dependencies created once for the entire application lifespan,
 and `scope=Scope.REQUEST` for those that need to be recreated for each request, event, etc.
 To learn more about scopes, see [documentation.](https://dishka.readthedocs.io/en/latest/advanced/scopes.html)
 
@@ -128,7 +128,7 @@ client = container.get(SomeClient)  # same instance of `SomeClient`
 with container() as request_container:
     service = request_container.get(Service)
     service = request_container.get(Service)  # same service instance
-# at this point, the connection will be closed as we exit the context manager
+# since we exited the context manager, the connection is now closed
 
 # new subcontainer with a new lifespan for request processing
 with container() as request_container:
@@ -168,7 +168,7 @@ testing purposes.
 Some of them live throughout your application runtime, while others are created and destroyed with each request.
 Dependencies can also rely on other objects, which then become their dependencies.
 
-**Scope** is the lifespan of a dependency. The standard scopes are (with some skipped):
+**Scope** is the lifespan of a dependency. The default scopes are (with some skipped):
 
 `APP` -> `REQUEST` -> `ACTION` -> `STEP`.
 
@@ -179,17 +179,17 @@ instance is returned.
 
 For a web application, enter `APP` scope on startup and `REQUEST` scope for each HTTP request.
 
-If the standard scope flow doesn't fit your needs, you can define your own `Scopes` class.
+If the standard scope flow doesn't fit your needs, you can define a custom scope through your own `Scopes` class.
 
 **Container** is what you use to get your dependencies.
 You simply call `.get(SomeType)`, and it finds a way to provide you with an instance of that type.
 The container itself doesn't create objects but manages their lifecycle and caches.
 It delegates object creation to providers added during setup.
 
-**Provider** is a collection of functions that actually provide certain objects.
-A `Provider` is a class with various attributes and methods, each created through `provide`, `alias`, or
+**Provider** is a collection of functions that provide concrete objects.
+A `Provider` is a class with attributes and methods, each being the result of `provide`, `alias`, or
 `decorate`.
-These can serve as provider methods, functions to assign attributes, or method decorators.
+They can be used as provider methods, functions to assign attributes, or method decorators.
 
 `@provide` can be used as a decorator for a method.
 This method will be called when the corresponding dependency has to be created.

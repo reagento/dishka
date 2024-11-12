@@ -47,7 +47,7 @@ See more in [technical requirements.](https://dishka.readthedocs.io/en/latest/re
 
 ### Quickstart
 
-1. **Install dishka.**
+1. **Install Dishka.**
 
 ```shell
 pip install dishka

@@ -24,6 +24,10 @@ on [dependency injection](https://dishka.readthedocs.io/en/latest/di_intro.html)
 tasks.
 It keeps DI in place without cluttering your code with global variables and scattered specifiers.
 
+To see how Dishka **stands out** among other dependency injection tools, check out
+the [detailed comparison](https://dishka.readthedocs.io/en/latest/alternatives.html) highlighting its unique
+advantages.
+
 #### Key features:
 
 * **Scopes**. Any object can have a lifespan for the entire app, a single request, or even more fractionally. Many

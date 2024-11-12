@@ -165,7 +165,7 @@ setup_dishka(container, app)
 **Dependency** is what you need for some parts of your code to work.
 Dependencies are simply objects you don't create directly in place and might want to replace someday, at least for
 testing purposes.
-Some of them live throughout your application's runtime, while others are created and destroyed with each request.
+Some of them live throughout your application runtime, while others are created and destroyed with each request.
 Dependencies can also rely on other objects, which then become their dependencies.
 
 **Scope** is the lifespan of a dependency. The standard scopes are (with some skipped):

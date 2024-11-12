@@ -179,7 +179,7 @@ instance is returned.
 
 For a web application, enter `APP` scope on startup and `REQUEST` scope for each HTTP request.
 
-If the standard scope flow doesn't fit your needs, you can define a custom scope through your own `Scopes` class.
+If the default scope flow doesn't fit your needs, you can create a custom scope by defining your own `Scope` class.
 
 **Container** is what you use to get your dependencies.
 You simply call `.get(SomeType)`, and it finds a way to provide you with an instance of that type.

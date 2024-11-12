@@ -36,7 +36,7 @@ the [detailed comparison](https://dishka.readthedocs.io/en/latest/alternatives.h
 * **Modular providers**. Instead of creating many separate functions or one large class, you can split factories
   into smaller classes for easier reuse.
 * **Clean dependencies**. You don't need to add custom markers to dependency code just to make it visible to the
-  library. Customization is managed by the library's providers, so only scope boundaries interact with the library API.
+  library. Customization is managed by library providers, so only scope boundaries interact with the library API.
 * **Simple API**. Only a few objects are needed to start using the library. Integration with your framework is
   straightforward, with examples provided.
 * **Speed**. The library is fast enough that performance is not a concern. In fact, it outperforms many

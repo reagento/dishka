@@ -25,7 +25,7 @@ tasks.
 It keeps DI in place without cluttering your code with global variables and scattered specifiers.
 
 To see how Dishka **stands out** among other dependency injection tools, check out
-the [detailed comparison](https://dishka.readthedocs.io/en/latest/alternatives.html) with other solutions.
+the [detailed comparison](https://dishka.readthedocs.io/en/latest/alternatives.html).
 
 #### Key features:
 

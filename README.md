@@ -17,10 +17,10 @@ Cute DI framework with scopes and agreeable API.
 This library provides **IoC container** that's genuinely useful.
 If you're tired of manually passing objects just to create other objects, which then create even more — this is for
 you.
-Not every project requires an IoC container, but take a look at what we offer.
+Not every project requires IoC container, but take a look at what we offer.
 
 Unlike other tools, this one focuses **only**
-on [dependency injection](https://dishka.readthedocs.io/en/latest/di_intro.html), without trying to solve unrelated
+on [dependency injection](https://dishka.readthedocs.io/en/latest/di_intro.html) without trying to solve unrelated
 tasks.
 It keeps DI in place without cluttering your code with global variables and scattered specifiers.
 
@@ -78,7 +78,7 @@ class SomeClient:
 
 Providers are used only to set up factories providing your objects.
 
-Use `scope=Scope.APP` for dependencies created once for the entire application lifespan,
+Use `scope=Scope.APP` for dependencies created once for the entire application lifetime,
 and `scope=Scope.REQUEST` for those that need to be recreated for each request, event, etc.
 To learn more about scopes, see [documentation.](https://dishka.readthedocs.io/en/latest/advanced/scopes.html)
 
@@ -105,7 +105,7 @@ class ConnectionProvider(Provider):
         conn.close()
 ```
 
-4. **Create main `Container`** instance by passing providers, and enter `APP` scope.
+4. **Create main `Container`** instance, passing providers, and enter `APP` scope.
 
 ```python
 from dishka import make_container
@@ -130,7 +130,7 @@ with container() as request_container:
     service = request_container.get(Service)  # same service instance
 # since we exited the context manager, the connection is now closed
 
-# new subcontainer with a new lifespan for request processing
+# new subcontainer to have a new lifespan for request processing
 with container() as request_container:
     service = request_container.get(Service)  # new service instance
 ```
@@ -165,43 +165,43 @@ setup_dishka(container, app)
 **Dependency** is what you need for some parts of your code to work.
 Dependencies are simply objects you don't create directly in place and might want to replace someday, at least for
 testing purposes.
-Some of them live throughout your application runtime, while others are created and destroyed with each request.
+Some of them live for the entire application lifetime, while others are created and destroyed with each request.
 Dependencies can also rely on other objects, which then become their dependencies.
 
-**Scope** is the lifespan of a dependency. The default scopes are (with some skipped):
+**Scope** is the lifespan of a dependency. The standard scopes are (with some skipped):
 
 `APP` -> `REQUEST` -> `ACTION` -> `STEP`.
 
-You decide when to enter and exit each scope, but this happens one by one.
-You assign a scope to each dependency when configuring its creation.
-By default, if the same dependency is requested multiple times within a single scope without leaving it, the same
+You decide when to enter and exit each scope, but this is done one by one.
+You set a scope for each dependency when you configure how it is created.
+If the same dependency is requested multiple times within a single scope without leaving it, then by default the same
 instance is returned.
 
 For a web application, enter `APP` scope on startup and `REQUEST` scope for each HTTP request.
 
-If the default scope flow doesn't fit your needs, you can create a custom scope by defining your own `Scope` class.
+You can create a custom scope by defining your own `Scope` class if the standard scope flow doesn't fit your needs.
 
 **Container** is what you use to get your dependencies.
-You simply call `.get(SomeType)`, and it finds a way to provide you with an instance of that type.
-The container itself doesn't create objects but manages their lifecycle and caches.
-It delegates object creation to providers added during setup.
+You simply call `.get(SomeType)` and it finds a way to provide you with an instance of that type.
+Container itself doesn't create objects but manages their lifecycle and caches.
+It delegates object creation to providers that are passed during creation.
 
 **Provider** is a collection of functions that provide concrete objects.
-A `Provider` is a class with attributes and methods, each being the result of `provide`, `alias`, or
+`Provider` is a class with attributes and methods, each being the result of `provide`, `alias`, or
 `decorate`.
 They can be used as provider methods, functions to assign attributes, or method decorators.
 
 `@provide` can be used as a decorator for a method.
 This method will be called when the corresponding dependency has to be created.
-Method name is unimportant: just make sure it's different from other `Provider` attributes.
-Type hints are crucial: they indicate what this method creates and what it requires.
+Name doesn't matter: just make sure it's different from other `Provider` attributes.
+Type hints do matter: they indicate what this method creates and what it requires.
 All method parameters are treated as dependencies and are created using the container.
 
 If `provide` is applied to a class, that class itself is treated as a factory (its `__init__` parameters are analyzed).
 Remember to assign this call to an attribute; otherwise, it will be ignored.
 
 **Component** is an isolated group of providers within the same container, identified by a unique string. When a
-dependency is requested, it is only searched for within the same component as its direct dependant, unless explicitly
+dependency is requested, it is only searched within the same component as its direct dependant, unless explicitly
 specified otherwise.
 
 This structure allows you to build different parts of the application separately without worrying about using the same

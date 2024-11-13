@@ -201,7 +201,7 @@ If `provide` is applied to a class, that class itself is treated as a factory (i
 Remember to assign this call to an attribute; otherwise, it will be ignored.
 
 **Component** is an isolated group of providers within the same container, identified by a unique string. When a
-dependency is requested, it is only searched for within the same component as the requesting object, unless explicitly
+dependency is requested, it is only searched for within the same component as its direct dependant, unless explicitly
 specified otherwise.
 
 This structure allows you to build different parts of the application separately without worrying about using the same

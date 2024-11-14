@@ -39,16 +39,16 @@ from dishka import make_container
 container = make_container(service_provider, ConnectionProvider())
 
 client = container.get(SomeClient)  # `SomeClient` has Scope.APP, so it is accessible here
-client = container.get(SomeClient)  # same instace of `SomeClient`
+client = container.get(SomeClient)  # same instance of `SomeClient`
 
 
-# subcotaniner to access more short-living objects
+# sub-container to access more short-living objects
 with container() as request_container:
     service = request_container.get(Service)
     service = request_container.get(Service)  # same service instance
 # at this point connection will be closed as we exited context manager
 
-# new subcontainer to have a new lifespan for request processing
+# new sub-container to have a new lifespan for request processing
 with container() as request_container:
     service = request_container.get(Service)  # new service instance
 

@@ -72,7 +72,7 @@ Streaming
 If we receive single request from user like in ``unary_unary`` or ``unary_stream`` methods,
 we operate only 2 scopes: ``APP`` and ``REQUEST``.
 
-``stream_unary`` and ``stream_streeam`` methods are different: for one application you have multiple connections (one per client) and each connection delivers multiple messages. To support this we use additional scope: ``SESSION``:
+``stream_unary`` and ``stream_stream`` methods are different: for one application you have multiple connections (one per client) and each connection delivers multiple messages. To support this we use additional scope: ``SESSION``:
 
     ``APP`` |rarr| ``SESSION`` |rarr| ``REQUEST``
 

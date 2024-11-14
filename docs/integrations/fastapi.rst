@@ -35,7 +35,7 @@ How to use
         def create_x(self, request: Request) -> X:
              ...
 
-3. *(optional)* Set route class to each of your fastapi routers to enable autoinjection (it works only for HTTP, not for websockets).
+3. *(optional)* Set route class to each of your fastapi routers to enable automatic injection (it works only for HTTP, not for websockets).
 
 .. code-block:: python
 

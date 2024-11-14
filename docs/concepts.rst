@@ -31,27 +31,37 @@ Scope
 ===========
 
 **Scope** is a lifespan of a dependency.
-Some dependencies can live while application is running, others are created and destroyed on each request. In more rare cases you need more short-lived objects. You set a scope for your dependency when you configure how to create it.
+Some dependencies live for the entire application lifetime, while others are created and destroyed with each request.
+In more rare cases, you need more short-lived objects.
+You set a scope for each dependency when you configure how it is created.
 
-Standard scopes are (excluding skipped):
+Standard scopes are (with some skipped):
 
-    ``APP`` |rarr| ``REQUEST`` |rarr| ``ACTION`` |rarr| ``STEP``
+    ``APP`` |rarr| ``REQUEST`` |rarr| ``ACTION`` |rarr| ``STEP``.
 
-You decide when to enter and exit them, but it is done one by one. If you entered ``APP`` scope then the next step deeper will enter ``REQUEST`` scope.
+You decide when to enter and exit each scope, but this is done one by one.
+If you enter the ``APP`` scope, then the next step deeper is to enter the ``REQUEST`` scope.
 
 .. note::
-    ``APP`` scope can be used for lazy initialization of singletons, while ``REQUEST`` scope is good for processing events like HTTP-requests or messenger updates. It is unlikely that you will need other scopes
+    ``APP`` scope can be used for lazy initialization of singletons, while ``REQUEST`` scope is good for processing events like HTTP requests or messenger updates. It is unlikely that you will need other scopes
 
 
-In dishka dependencies are lazy - they are created when you first request them. If the same dependency is requested multiple times within one scope then the same instance is returned (you can disable it for each dependency separately). A created dependency is kept until you exit the scope. And in that moment it is not just dropped away, but corresponding finalization steps are done. You can enter same scope multiple times concurrently so to have multiple instances of objects you can work simultaneously.
+In Dishka dependencies are lazy — they are created when you first request them.
+If the same dependency is requested multiple times within a single scope, then the same instance is returned (you can disable it for each dependency separately).
+A created dependency is kept until you exit the scope.
+And at that moment, it is not just dropped away, but the corresponding finalization steps are done.
+You can enter same scope multiple times concurrently so that to have multiple instances of objects you can work with simultaneously.
 
-Each object can depend on other objects from the same or previous scopes. So, if you have ``Config`` with scope of *APP* and ``Connection`` with scope of *REQUEST* you cannot have an *APP*-scoped object which requires a connection, but you can have *REQUEST*-scoped object which requires a ``Connection`` or a ``Config`` (or even both).
+Each object can depend on other objects from the same or previous scopes.
+So, if you have ``Config`` with scope of *APP* and ``Connection`` with scope of *REQUEST*,
+you cannot have *APP*-scoped object which requires a connection,
+but you can have *REQUEST*-scoped object which requires a ``Connection`` or a ``Config`` (or even both).
 
-If you are developing web application, you would enter ``APP`` scope on startup, and you would ``REQUEST`` scope in each HTTP-request.
+For a web application, enter ``APP`` scope on startup and ``REQUEST`` scope for each HTTP request.
 
-You can provide your own Scopes class if you are not satisfied with standard flow.
+You can create a custom scope by defining your own ``Scope`` class if the standard scope flow doesn't fit your needs.
 
-:ref:`Read more about custom and hidden scopes<scopes>`
+:ref:`Read more about custom and skipped scopes<scopes>`
 
 Container
 ==================

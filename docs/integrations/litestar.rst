@@ -66,7 +66,7 @@ How to use
     app = Litestar([endpoint], lifespan=[lifespan])
 
 
-6. Setup dishka integration. ``autoinject=True`` is required unless you explicitly use ``@inject`` decorator
+6. Setup dishka integration.
 
 .. code-block:: python
 

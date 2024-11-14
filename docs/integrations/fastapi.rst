@@ -81,7 +81,7 @@ How to use
 
     app = FastAPI(lifespan=lifespan)
 
-5. Setup dishka integration. ``autoinject=True`` is required unless you explicitly use ``@inject`` decorator
+5. Setup dishka integration.
 
 .. code-block:: python
 

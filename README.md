@@ -168,7 +168,7 @@ testing purposes.
 Some of them live for the entire application lifetime, while others are created and destroyed with each request.
 Dependencies can also rely on other objects, which then become their dependencies.
 
-**Scope** is the lifespan of a dependency. The standard scopes are (with some skipped):
+**Scope** is the lifespan of a dependency. Standard scopes are (with some skipped):
 
 `APP` -> `REQUEST` -> `ACTION` -> `STEP`.
 

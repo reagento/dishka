@@ -66,12 +66,14 @@ You can create a custom scope by defining your own ``Scope`` class if the standa
 Container
 ==================
 
-**Container** is an object you use to get your dependency.
+**Container** is an object you use to get your dependencies.
 
-You just call ``container.get(SomeType)`` and it finds a way to get you an instance of that type. It does not create things itself, but manages their lifecycle and caches. It delegates objects creation to providers which are passed during creation.
+You simply call ``.get(SomeType)`` and it finds a way to provide you with an instance of that type.
+Container itself doesn't create objects but manages their lifecycle and caches.
+It delegates object creation to providers that are passed during creation.
 
-Each container is assigned to a certain scope. To enter the nested scope you call it and use as a context manager.
-According to scopes order container can be used to get dependencies from its and previous scopes.
+Each container is assigned to a certain scope. To enter a nested scope, you call it and use it as a context manager.
+According to the scope order, container can be used to get dependencies from its own and previous scopes.
 
 .. code-block:: python
 
@@ -83,9 +85,10 @@ According to scopes order container can be used to get dependencies from its and
         connection = request_container.get(Connection)  # REQUEST-scoped object
         config = request_container.get(Config)  # APP-scoped object
 
-Async container is working in the same manner, but you should use async context manager and await the result of get
+Async container works in the same manner, but you should use async context manager and await the result of ``.get``.
 
-Some containers are concurrently safe, others are not: it is configured when you call a context manager. For web applications it is good to have APP-scoped container thread/task-safe, but REQUEST-scoped containers do not it, and it is default behavior.
+Some containers are concurrently safe, others are not: this is configured when you call a context manager.
+For web applications, it is good to have APP-scoped container thread/task-safe, but REQUEST-scoped containers do not require it, and this is the default behavior.
 
 
 :ref:`Read more about container API<container>`

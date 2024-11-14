@@ -9,8 +9,10 @@ Let's start with some terms.
 Dependency
 ==================
 
-**Dependency** is what you need for some part of your code to work.
-If you *database gateway* needs *database connection* to execute SQL queries, then the connection is a dependency for a gateway. If your business logic class requires *database gateway* or some *api client* then *api client* and *database gateway* are dependencies for a business logic. Here the ``Client`` is a dependency, while ``Service`` is a dependant.
+**Dependency** is what you need for some parts of your code to work.
+If your *database gateway* needs *database connection* to execute SQL queries, then the connection is a dependency for a gateway.
+If your business logic class requires *database gateway* or some *api client* then *api client* and *database gateway* are dependencies for a business logic.
+Here, the ``Client`` is a dependency, while ``Service`` is a dependant.
 
 .. code-block:: python
 
@@ -18,9 +20,11 @@ If you *database gateway* needs *database connection* to execute SQL queries, th
         def __init__(self, client: Client):
             self.client = client
 
-So, dependency is just object required for some other object. Dependencies can depend on other objects, which are their dependencies.
+So, dependency is just an object required by another object. Dependencies can depend on other objects, which are their dependencies.
 
-To follow dependency injection rule, dependent object should receive their dependencies and not request themselves. The same classes can be instantiated with different values of their dependencies. At least in tests.
+To follow dependency injection rule, dependent objects should receive their dependencies and not request them themselves.
+The same classes can be instantiated with different values of their dependencies.
+At least in tests.
 
 
 Scope

@@ -15,11 +15,11 @@ Cute DI framework with scopes and agreeable API.
 ### Purpose
 
 This library provides **IoC container** that's genuinely useful.
-If you're tired of manually passing objects just to create other objects, which then create even more — this is for
-you.
+If you're exhausted from endlessly passing objects just to create other objects, only to have those objects create even
+more — you're not alone, and we have a solution.
 Not every project requires IoC container, but take a look at what we offer.
 
-Unlike other tools, this one focuses **only**
+Unlike other tools, Dishka focuses **only**
 on [dependency injection](https://dishka.readthedocs.io/en/latest/di_intro.html) without trying to solve unrelated
 tasks.
 It keeps DI in place without cluttering your code with global variables and scattered specifiers.

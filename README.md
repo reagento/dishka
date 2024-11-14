@@ -74,7 +74,7 @@ class SomeClient:
     ...
 ```
 
-3. **Create Provider** instance and specify how to provide dependencies.
+3. **Create `Provider`** instance and specify how to provide dependencies.
 
 Providers are used only to set up factories providing your objects.
 

@@ -96,7 +96,9 @@ For web applications, it is good to have APP-scoped container thread/task-safe, 
 Provider
 ===============
 
-**Provider** is an object which members are used to construct dependencies. It is a normal object, but some attributes must be marked with special decorators so they will be used by a container. To create your own provider you inherit from ``Provider`` class and instantiate it when creating a container:
+**Provider** is an object which members are used to construct dependencies.
+It is a normal object, but some attributes must be marked with special decorators so they will be used by a container.
+To create your own provider, you inherit from ``Provider`` class and instantiate it when creating a container:
 
 .. code-block:: python
 
@@ -106,10 +108,10 @@ Provider
     container = make_container(MyProvider())
 
 
-There are 3 special functions:
+There are 4 special functions:
 
 * ``@provide`` is used to declare a factory providing a dependency. It can be used with some class or as a method decorator. :ref:`Read more<provide>`
-* ``alias`` is used to allow retrieving of the same object by different type hints. :ref:`Read more<alias>`
+* ``alias`` is used to allow retrieving the same object by different type hints. :ref:`Read more<alias>`
 * ``from_context`` is used to mark a dependency as context data, which will be set manually when entering a scope. :ref:`Read more<from-context>`
 * ``@decorate`` is used to modify or wrap an object which is already configured in another ``Provider``. :ref:`Read more<decorate>`
 

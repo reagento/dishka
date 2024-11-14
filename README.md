@@ -189,7 +189,7 @@ Container itself doesn't create objects but manages their lifecycle and caches.
 It delegates object creation to providers that are passed during creation.
 
 **Provider** is a collection of functions that provide concrete objects.
-`Provider` is a class with attributes and methods, each being the result of `provide`, `alias`, or
+`Provider` is a class with attributes and methods, each being the result of `provide`, `alias`, `from_context`, or
 `decorate`.
 They can be used as provider methods, functions to assign attributes, or method decorators.
 

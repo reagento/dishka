@@ -63,8 +63,8 @@ It is available on ``REQUEST`` scope.
 
     container = make_container(YourProvider(), FlaskProvider())
 
-5. Setup dishka integration. ``autoinject=True`` is required unless you explicitly use ``@inject`` decorator. It is important here to call it after registering all views and blueprints.
+5. Setup dishka integration. ``auto_inject=True`` is required unless you explicitly use ``@inject`` decorator. It is important here to call it after registering all views and blueprints.
 
 .. code-block:: python
 
-    setup_dishka(container=container, app=app, autoinject=True)
+    setup_dishka(container=container, app=app, auto_inject=True)

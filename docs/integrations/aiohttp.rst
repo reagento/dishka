@@ -64,11 +64,11 @@ It is available on ``SESSION`` and ``REQUEST`` scopes.
 
     container = make_async_container(YourProvider(), AiohttpProvider())
 
-5. Setup dishka integration. ``autoinject=True`` is required unless you explicitly use ``@inject`` decorator
+5. Setup dishka integration. ``auto_inject=True`` is required unless you explicitly use ``@inject`` decorator
 
 .. code-block:: python
 
-    setup_dishka(container=container, app=app, autoinject=True)
+    setup_dishka(container=container, app=app, auto_inject=True)
 
 
 6. *(optional)* Close container on app termination

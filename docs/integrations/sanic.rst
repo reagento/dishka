@@ -64,7 +64,7 @@ How to use
     container = make_async_container(YourProvider(), SanicProvider())
 
 
-6. Setup dishka integration. ``autoinject=True`` is required unless you explicitly use ``@inject`` decorator
+6. Setup dishka integration. ``auto_inject=True`` is required unless you explicitly use ``@inject`` decorator
 
 .. code-block:: python
 

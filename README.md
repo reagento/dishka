@@ -85,7 +85,6 @@ To learn more about scopes, see [documentation.](https://dishka.readthedocs.io/e
 ```python
 from dishka import Provider, Scope
 
-
 service_provider = Provider(scope=Scope.REQUEST)
 service_provider.provide(Service)
 service_provider.provide(DAOImpl, provides=DAO)
@@ -110,7 +109,6 @@ class ConnectionProvider(Provider):
 
 ```python
 from dishka import make_container
-
 
 container = make_container(service_provider, ConnectionProvider())
 ```
@@ -202,8 +200,8 @@ All method parameters are treated as dependencies and are created using the cont
 If `provide` is applied to a class, that class itself is treated as a factory (its `__init__` parameters are analyzed).
 Remember to assign this call to an attribute; otherwise, it will be ignored.
 
-**Component** is an isolated group of providers within the same container, identified by a unique string. When a
-dependency is requested, it is only searched within the same component as its direct dependant, unless explicitly
+**Component** is an isolated group of providers within the same container, identified by a unique string.
+When a dependency is requested, it is only searched within the same component as its direct dependant, unless explicitly
 specified otherwise.
 
 This structure allows you to build different parts of the application separately without worrying about using the same

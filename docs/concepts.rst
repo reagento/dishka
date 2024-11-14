@@ -117,9 +117,12 @@ There are 4 special functions:
 
 Component
 ====================
-**Component** - is an isolated group of providers within the same container identified by a string. When dependency is requested it is searched only within the same component as its dependant, unless it is declared explicitly.
+**Component** is an isolated group of providers within the same container, identified by a unique string.
+When a dependency is requested, it is only searched within the same component as its direct dependant, unless explicitly
+specified otherwise.
 
-This allows you to have multiple parts of application build separately without need to think if they use same types.
+This structure allows you to build different parts of the application separately without worrying about using the same
+types.
 
 .. code-block:: python
 
@@ -140,6 +143,7 @@ This allows you to have multiple parts of application build separately without n
         @provide(scope=Scope.APP)
         def foo(self) -> int:
             return 1
+
 
     container = make_container(MainProvider(), AdditionalProvider())
     container.get(float)  # returns 0.1

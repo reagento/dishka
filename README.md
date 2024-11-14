@@ -30,7 +30,7 @@ the [detailed comparison](https://dishka.readthedocs.io/en/latest/alternatives.h
 #### Key features:
 
 * **Scopes**. Any object can have a lifespan for the entire app, a single request, or even more fractionally. Many
-  frameworks either lack scopes entirely or offer only two. Here, you can define as many scopes as needed.
+  frameworks either lack scopes completely or offer only two. Here, you can define as many scopes as needed.
 * **Finalization**. Some dependencies, like database connections, need not only to be created but also carefully
   released. Many frameworks lack this essential feature.
 * **Modular providers**. Instead of creating many separate functions or one large class, you can split factories

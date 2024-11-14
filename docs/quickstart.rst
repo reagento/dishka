@@ -11,7 +11,7 @@ Quickstart
 
 .. literalinclude:: ./quickstart_example.py
    :language: python
-   :lines: 6-18
+   :lines: 6-21
 
 3. Create Provider instance and setup how to provide dependencies.
 
@@ -23,38 +23,37 @@ To read more about scopes, refer :ref:`scopes`
 
 .. literalinclude:: ./quickstart_example.py
    :language: python
-   :lines: 20-25
+   :lines: 24-30
 
 To provide connection we might need to write some custom code:
 
 .. literalinclude:: ./quickstart_example.py
    :language: python
-   :lines: 27-34
+   :lines: 33-41
 
 4. Create main ``Container`` instance passing providers, and step into ``APP`` scope.
 
 .. literalinclude:: ./quickstart_example.py
    :language: python
-   :lines: 37-39
+   :lines: 44-47
 
 5. Container holds dependencies cache and is used to retrieve them. Here, you can use ``.get`` method to access APP-scoped dependencies:
 
 .. literalinclude:: ./quickstart_example.py
    :language: python
-   :lines: 41-42
-
+   :lines: 49-50
 
 6. You can enter and exit ``REQUEST`` scope multiple times after that using context manager:
 
 .. literalinclude:: ./quickstart_example.py
    :language: python
-   :lines: 45-53
+   :lines: 52-60
 
 7. Close container in the end:
 
 .. literalinclude:: ./quickstart_example.py
    :language: python
-   :lines: 55
+   :lines: 62
 
 8. If you are using supported framework add decorators and middleware for it.
 For more details see :ref:`integrations`
@@ -65,10 +64,12 @@ For more details see :ref:`integrations`
         FromDishka, inject, setup_dishka,
     )
 
+
     @router.get("/")
     @inject
     async def index(service: FromDishka[Service]) -> str:
         ...
+
 
     ...
     setup_dishka(container, app)

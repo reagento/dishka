@@ -85,6 +85,7 @@ To learn more about scopes, see [documentation.](https://dishka.readthedocs.io/e
 ```python
 from dishka import Provider, Scope
 
+
 service_provider = Provider(scope=Scope.REQUEST)
 service_provider.provide(Service)
 service_provider.provide(DAOImpl, provides=DAO)
@@ -109,6 +110,7 @@ class ConnectionProvider(Provider):
 
 ```python
 from dishka import make_container
+
 
 container = make_container(service_provider, ConnectionProvider())
 ```

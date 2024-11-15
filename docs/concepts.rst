@@ -37,7 +37,7 @@ You set a scope for each dependency when you configure how it is created.
 
 Standard scopes are (with some skipped):
 
-    ``APP`` |rarr| ``REQUEST`` |rarr| ``ACTION`` |rarr| ``STEP``.
+    ``APP`` |rarr| ``REQUEST`` |rarr| ``ACTION`` |rarr| ``STEP``
 
 You decide when to enter and exit each scope, but this is done one by one.
 If you enter the ``APP`` scope, then the next step deeper is to enter the ``REQUEST`` scope.

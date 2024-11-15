@@ -30,7 +30,7 @@ the [detailed comparison](https://dishka.readthedocs.io/en/latest/alternatives.h
 #### Key features:
 
 * **Scopes**. Any object can have a lifespan for the entire app, a single request, or even more fractionally. Many
-  frameworks either lack scopes entirely or offer only two. Here, you can define as many scopes as needed.
+  frameworks either lack scopes completely or offer only two. Here, you can define as many scopes as needed.
 * **Finalization**. Some dependencies, like database connections, need not only to be created but also carefully
   released. Many frameworks lack this essential feature.
 * **Modular providers**. Instead of creating many separate functions or one large class, you can split factories
@@ -74,7 +74,7 @@ class SomeClient:
     ...
 ```
 
-3. **Create Provider** instance and specify how to provide dependencies.
+3. **Create `Provider`** instance and specify how to provide dependencies.
 
 Providers are used only to set up factories providing your objects.
 
@@ -187,7 +187,7 @@ Container itself doesn't create objects but manages their lifecycle and caches.
 It delegates object creation to providers that are passed during creation.
 
 **Provider** is a collection of functions that provide concrete objects.
-`Provider` is a class with attributes and methods, each being the result of `provide`, `alias`, or
+`Provider` is a class with attributes and methods, each being the result of `provide`, `alias`, `from_context`, or
 `decorate`.
 They can be used as provider methods, functions to assign attributes, or method decorators.
 
@@ -200,8 +200,8 @@ All method parameters are treated as dependencies and are created using the cont
 If `provide` is applied to a class, that class itself is treated as a factory (its `__init__` parameters are analyzed).
 Remember to assign this call to an attribute; otherwise, it will be ignored.
 
-**Component** is an isolated group of providers within the same container, identified by a unique string. When a
-dependency is requested, it is only searched within the same component as its direct dependant, unless explicitly
+**Component** is an isolated group of providers within the same container, identified by a unique string.
+When a dependency is requested, it is only searched within the same component as its direct dependant, unless explicitly
 specified otherwise.
 
 This structure allows you to build different parts of the application separately without worrying about using the same

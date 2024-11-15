@@ -64,11 +64,11 @@ It is available on ``SESSION`` and ``REQUEST`` scopes.
 
     container = make_async_container(YourProvider(), AiohttpProvider())
 
-5. Setup dishka integration. ``autoinject=True`` is required unless you explicitly use ``@inject`` decorator
+5. Setup dishka integration. ``auto_inject=True`` is required unless you explicitly use ``@inject`` decorator
 
 .. code-block:: python
 
-    setup_dishka(container=container, app=app, autoinject=True)
+    setup_dishka(container=container, app=app, auto_inject=True)
 
 
 6. *(optional)* Close container on app termination
@@ -100,7 +100,7 @@ To achieve REQUEST-scope you can enter in manually:
         websocket = web.WebsocketResponse()
         await websocket.prepare(request)
 
-        async for message in weboscket:
+        async for message in websocket:
             # enter the nested scope, which is Scope.REQUEST
             async with container() as request_container:
                 b = await request_container.get(B)  # object with Scope.REQUEST

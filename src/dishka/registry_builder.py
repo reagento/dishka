@@ -120,7 +120,7 @@ class RegistryBuilder:
             *,
             scopes: type[BaseScope],
             providers: Sequence[BaseProvider],
-            container_type: type,
+            container_key: DependencyKey,
             skip_validation: bool,
             validation_settings: ValidationSettings,
     ) -> None:
@@ -131,7 +131,7 @@ class RegistryBuilder:
         self.components: set[Component] = {DEFAULT_COMPONENT}
         self.alias_sources: dict[DependencyKey, Any] = {}
         self.aliases: dict[DependencyKey, Alias] = {}
-        self.container_type = container_type
+        self.container_key = container_key
         self.decorator_depth: dict[DependencyKey, int] = defaultdict(int)
         self.skip_validation = skip_validation
         self.validation_settings = validation_settings
@@ -170,16 +170,18 @@ class RegistryBuilder:
                 self.aliases[provides] = alias
 
     def _init_registries(self) -> None:
+        has_fallback = True
         for scope in self.scopes:
-            registry = Registry(scope)
+            registry = Registry(scope, has_fallback=has_fallback)
             context_var = ContextVariable(
-                provides=DependencyKey(self.container_type, DEFAULT_COMPONENT),
+                provides=self.container_key,
                 scope=scope,
                 override=False,
             )
             for component in self.components:
                 registry.add_factory(context_var.as_factory(component))
             self.registries[scope] = registry
+            has_fallback = False
 
     def _process_factory(
             self, provider: BaseProvider, factory: Factory,

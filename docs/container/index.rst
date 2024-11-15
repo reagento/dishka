@@ -46,7 +46,7 @@ or if you created *async* container:
         pass
 
 Container is needed for retrieving objects. To do it you need to call ``get(DependencyType)`` (and ``await`` it for async container).
-All retrieved dependencies are stored inside container of corresponding scope until you exit that scope. So, you if you call ``get`` multiple times you will receive the same instance. The rule is followed for indirect dependencies as well. Multiple dependencies of the same scope have their own cache.
+All retrieved dependencies are stored inside container of corresponding scope until you exit that scope. So, if you call ``get`` multiple times you will receive the same instance. The rule is followed for indirect dependencies as well. Multiple dependencies of the same scope have their own cache.
 
 .. code-block:: python
 

@@ -207,3 +207,18 @@ def test_passing_type_var_decorator():
     provider.decorate(type_var_decorator)
     container = make_container(provider)
     assert container.get(int) == (int, 1, A(42, y=42))
+
+
+
+def func_with_type(param: type[T], param2: type[int]) -> A[T]:
+    return param, param2
+
+
+def test_provide_type_non_generic():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(func_with_type, scope=Scope.REQUEST)
+    provider.provide(lambda: bool, provides=type[int])
+    container = make_container(provider)
+    with container() as c:
+        assert c.get(A[str]) == (str, bool)
+        assert c.get(A[int]) == (bool, bool)

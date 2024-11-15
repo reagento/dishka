@@ -3,7 +3,7 @@ Provider
 
 **Provider** is an object which members are used to construct dependencies. ``Provider`` contains different factories and other entities and then is used to create a ``Container``. You can have multiple providers in one application and combine them in different ways to make it more modular.
 
-To configure provider you can either inherit and use decorators on you methods or just create an instance and use its methods.
+To configure provider you can either inherit and use decorators on your methods or just create an instance and use its methods.
 
 For example, imagine you have two classes: connection which is retrieved from external library and a gateway which requires such a connection.
 

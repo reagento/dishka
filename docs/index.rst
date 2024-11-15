@@ -3,20 +3,29 @@ dishka
 
 Cute DI framework with scopes and agreeable API.
 
-This library is targeting to provide only an IoC-container but make it really useful.
-If you are tired manually passing objects to create others objects which are only used to create more objects - we have a solution.
+This library provides **IoC container** that's genuinely useful.
+If you're exhausted from endlessly passing objects just to create other objects, only to have those objects create even
+more — you're not alone, and we have a solution.
+Not every project requires IoC container, but take a look at what we offer.
 
-Unlike other instruments we are not trying to solve tasks not related to dependency injection. We want to keep DI in place, not soiling you code with global variables and additional specifiers in all places.
+Unlike other tools, Dishka focuses **only**
+on dependency injection without trying to solve unrelated tasks.
+It keeps DI in place without cluttering your code with global variables and scattered specifiers.
 
-Main ideas:
+Key features:
 
-* **Scopes**. Any object can have lifespan of the whole app, single request or even more fractionally. Many frameworks do not have scopes or have only 2 of them. Here you can have as many scopes as you need.
-* **Finalization**. Some dependencies like database connections must be not only created, but carefully released. Many framework lack this essential feature
-* **Modular providers**. Instead of creating lots of separate functions or contrariwise a big single class, you can split your factories into several classes, which makes them simpler reusable.
-* **Clean dependencies**. You do not need to add custom markers to the code of dependencies so to allow library to see them. All customization is done within providers code and only borders of scopes have to deal with library API.
-* **Simple API**. You need minimum of objects to start using library. You can easily integrate it with your task framework, examples provided.
-* **Speed**. It is fast enough so you not to worry about. It is even faster than many of the analogs.
-
+* **Scopes**. Any object can have a lifespan for the entire app, a single request, or even more fractionally. Many
+  frameworks either lack scopes completely or offer only two. Here, you can define as many scopes as needed.
+* **Finalization**. Some dependencies, like database connections, need not only to be created but also carefully
+  released. Many frameworks lack this essential feature.
+* **Modular providers**. Instead of creating many separate functions or one large class, you can split factories
+  into smaller classes for easier reuse.
+* **Clean dependencies**. You don't need to add custom markers to dependency code just to make it visible to the
+  library. Customization is managed by library providers, so only scope boundaries interact with the library API.
+* **Simple API**. Only a few objects are needed to start using the library. Integration with your framework is
+  straightforward, with examples provided.
+* **Speed**. The library is fast enough that performance is not a concern. In fact, it outperforms many
+  alternatives.
 
 .. toctree::
    :hidden:

@@ -14,13 +14,16 @@ from .factory_compiler import compile_factory
 
 
 class Registry:
-    __slots__ = ("scope", "factories", "compiled", "compiled_async")
+    __slots__ = (
+        "scope", "factories", "compiled", "compiled_async", "has_fallback",
+    )
 
-    def __init__(self, scope: BaseScope):
+    def __init__(self, scope: BaseScope, *, has_fallback: bool) -> None:
         self.scope = scope
         self.factories: dict[DependencyKey, Factory] = {}
         self.compiled: dict[DependencyKey, Callable[..., Any]] = {}
         self.compiled_async: dict[DependencyKey, Callable[..., Any]] = {}
+        self.has_fallback = has_fallback
 
     def add_factory(
             self,
@@ -64,7 +67,7 @@ class Registry:
             origin = get_origin(dependency.type_hint)
             if not origin:
                 return None
-            if origin is type:
+            if origin is type and self.has_fallback:
                 return self._get_type_var_factory(dependency)
 
             origin_key = DependencyKey(origin, dependency.component)
@@ -112,10 +115,10 @@ class Registry:
             hint = source_dependency.type_hint
             if isinstance(hint, TypeVar):
                 hint = params_replacement[hint]
-            elif get_origin(hint):
+            elif get_origin(hint) and (type_vars:=get_type_vars(hint)):
                 hint = hint[tuple(
                     params_replacement[param]
-                    for param in get_type_vars(hint)
+                    for param in type_vars
                 )]
             new_dependencies.append(DependencyKey(
                 hint, source_dependency.component,
@@ -125,10 +128,10 @@ class Registry:
             hint = source_dependency.type_hint
             if isinstance(hint, TypeVar):
                 hint = params_replacement[hint]
-            elif get_origin(hint):
+            elif get_origin(hint) and (type_vars:=get_type_vars(hint)):
                 hint = hint[tuple(
                     params_replacement[param]
-                    for param in get_type_vars(hint)
+                    for param in type_vars
                 )]
             new_kw_dependencies[name] = DependencyKey(
                 hint, source_dependency.component,

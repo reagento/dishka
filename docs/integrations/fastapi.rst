@@ -35,7 +35,7 @@ How to use
         def create_x(self, request: Request) -> X:
              ...
 
-3. *(optional)* Set route class to each of your fastapi routers to enable autoinjection (it works only for HTTP, not for websockets).
+3. *(optional)* Set route class to each of your fastapi routers to enable automatic injection (it works only for HTTP, not for websockets).
 
 .. code-block:: python
 
@@ -81,7 +81,7 @@ How to use
 
     app = FastAPI(lifespan=lifespan)
 
-5. Setup dishka integration. ``autoinject=True`` is required unless you explicitly use ``@inject`` decorator
+5. Setup dishka integration.
 
 .. code-block:: python
 

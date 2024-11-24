@@ -72,6 +72,8 @@ def exit_scope(
 
 class DishkaTask(Task):
     def __init__(self) -> None:
+        super().__init__()
+
         run = self.run
 
         if not is_dishka_injected(run):

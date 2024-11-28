@@ -159,14 +159,21 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
 
 .. code-block:: python
 
-    from dishka import WithParents, provide, Provider, Scope
+    from dishka import provide, Provider, Scope, make_container
+
     class MyProvider(Provider):
         scope=Scope.APP
-        a = provide(lambda: 1, provides=int)
-        a_override = provide(lambda: 2, provides=int, override=True)
-    container = make_async_container(MyProvider())
-    a = await container.get(int)
-    # 2
+
+        @provide
+        def get_int(self) -> int:
+            return 1
+
+        @provide(override=True)
+        def get_int2(self) -> int:
+            return 2
+
+    container = make_container(MyProvider())
+    a = container.get(int)  # 2
 
 
 * You can use factory with Generic classes

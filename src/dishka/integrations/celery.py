@@ -11,6 +11,7 @@ from typing import Any, Final, ParamSpec, TypeVar
 
 from celery import Celery, Task
 from celery.signals import task_postrun, task_prerun
+from celery.utils.functional import head_from_fun
 
 from dishka import Container, FromDishka
 from dishka.integrations.base import is_dishka_injected, wrap_injection
@@ -27,7 +28,7 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
         Parameter(
             name=CONTAINER_NAME,
             annotation=Container,
-            kind=Parameter.KEYWORD_ONLY,
+            kind=Parameter.VAR_KEYWORD,
         ),
     ]
     return wrap_injection(
@@ -77,4 +78,7 @@ class DishkaTask(Task):
         run = self.run
 
         if not is_dishka_injected(run):
-            self.run = inject(run)
+            injected_func = inject(run)
+            self.run = injected_func
+
+            self.__header__ = head_from_fun(injected_func)

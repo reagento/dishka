@@ -65,8 +65,20 @@ or for one task handler
     ):
         ...
 
+6. (optional) Setup signal to close container when worker process shutdown 
 
-6. Setup dishka integration
+.. code-block:: python
+
+    from celery import current_app
+    from celery.signals import worker_process_shutdown
+    from dishka import Container
+
+    @worker_process_shutdown.connect()
+    def close_dishka(*args, **kwargs):
+        container: Container = current_app.conf["dishka_container"]
+        container.close()
+
+7. Setup dishka integration
 
 .. code-block:: python
 

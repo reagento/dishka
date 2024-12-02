@@ -102,6 +102,14 @@ def wrap_injection(
             continue
         dependencies[name] = dep
 
+    if not dependencies:
+        try:
+            func.__dishka_injected__ = True  # type: ignore[attr-defined]
+        except AttributeError:
+            pass
+        else:
+            return func
+
     if remove_depends:
         new_annotations = {
             name: hint
@@ -115,7 +123,7 @@ def wrap_injection(
         ]
     else:
         new_annotations = hints.copy()
-        new_params = list(func_signature.parameters.copy().values())
+        new_params = list(func_signature.parameters.values())
 
     auto_injected_func: Callable[P, T | Awaitable[T]]
     if additional_params:

@@ -103,8 +103,12 @@ def wrap_injection(
         dependencies[name] = dep
 
     if not dependencies:
-        func.__dishka_injected__ = True  # type: ignore[attr-defined]
-        return func
+        try:
+            func.__dishka_injected__ = True  # type: ignore[attr-defined]
+        except AttributeError:
+            pass
+        else:
+            return func
 
     if remove_depends:
         new_annotations = {

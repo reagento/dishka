@@ -17,6 +17,14 @@ async def return_int_task(data: FromDishka[int]) -> int:
     return data
 
 
+@inject
+async def task_with_kwargs(
+    _: FromDishka[int],
+    **kwargs: str,
+) -> dict[str, str]:
+    return kwargs
+
+
 @asynccontextmanager
 async def create_broker() -> AsyncIterator[AsyncBroker]:
     in_memory_broker = InMemoryBroker().with_result_backend(
@@ -41,3 +49,15 @@ async def test_return_int_task() -> None:
         kiq = await task.kiq()
         result = await kiq.wait_result()
         assert result.return_value == hash("dishka")
+
+
+@pytest.mark.asyncio
+async def test_task_with_kwargs() -> None:
+    async with create_broker() as broker:
+        task = broker.task(task_with_kwargs)
+        kwargs = {"key": "value"}
+
+        kiq = await task.kiq(**kwargs)
+        result = await kiq.wait_result()
+
+        assert result.return_value == kwargs

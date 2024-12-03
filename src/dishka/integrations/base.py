@@ -2,6 +2,7 @@ from collections.abc import Awaitable, Callable, Sequence
 from inspect import (
     Parameter,
     Signature,
+    _ParameterKind,
     isasyncgenfunction,
     isgeneratorfunction,
     signature,
@@ -119,7 +120,7 @@ def wrap_injection(
 
     auto_injected_func: Callable[P, T | Awaitable[T]]
     if additional_params:
-        new_params.extend(additional_params)
+        new_params = _add_params(new_params, additional_params)
         for param in additional_params:
             new_annotations[param.name] = param.annotation
 
@@ -222,3 +223,27 @@ def _sync_injection_wrapper(
             return func(*args, **kwargs, **solved)
 
     return auto_injected_func
+
+
+def _add_params(
+    params: list[Parameter],
+    additional_params: Sequence[Parameter],
+):
+    params_kind_dict: dict[_ParameterKind, list[Parameter]] = {}
+
+    for param in params:
+        params_kind_dict.setdefault(param.kind, []).append(param)
+
+    for param in additional_params:
+        params_kind_dict.setdefault(param.kind, []).append(param)
+
+    result_params = []
+    result_params.extend(params_kind_dict.get(Parameter.POSITIONAL_ONLY, []))
+    result_params.extend(
+        params_kind_dict.get(Parameter.POSITIONAL_OR_KEYWORD, []),
+    )
+    result_params.extend(params_kind_dict.get(Parameter.VAR_POSITIONAL, []))
+    result_params.extend(params_kind_dict.get(Parameter.KEYWORD_ONLY, []))
+    result_params.extend(params_kind_dict.get(Parameter.VAR_KEYWORD, []))
+
+    return result_params

@@ -69,7 +69,7 @@ It works well unless you have many methods and they can call each other. Also we
         def action(self):
             self.client.get_data()
 
-    service = Service(client)
+    service = Service()
     service.client = Client(token)
     service.action()
 

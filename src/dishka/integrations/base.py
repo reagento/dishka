@@ -242,14 +242,14 @@ def _add_params(
     if len(var_positional) > 1:
         param_names = (param.name for param in var_positional)
         var_positional_names = ", *".join(param_names)
-        base_msg = "more than one var positional parameter: *"
+        base_msg = "more than one variadic positional parameter: *"
         msg = base_msg + var_positional_names
         raise ValueError(msg)
 
     var_keyword = params_kind_dict.get(Parameter.VAR_KEYWORD, [])
     if len(var_keyword) > 1:
         var_keyword_names = ", **".join(param.name for param in var_keyword)
-        msg = "more than one var keyword parameter: " + var_keyword_names
+        msg = "more than one variadic keyword parameter: " + var_keyword_names
         raise ValueError(msg)
 
     positional_only = params_kind_dict.get(Parameter.POSITIONAL_ONLY, [])

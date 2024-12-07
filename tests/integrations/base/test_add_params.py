@@ -59,7 +59,7 @@ def test_fail_add_second_args():
     func_params = list(func_signature.parameters.values())
 
     with pytest.raises(
-        ValueError, match="more than one var positional parameter",
+        ValueError, match="more than one variadic positional parameter",
     ):
         _add_params(func_params, additional_params)
 
@@ -73,6 +73,6 @@ def test_fail_add_second_kwargs():
     func_params = list(func_signature.parameters.values())
 
     with pytest.raises(
-        ValueError, match="more than one var keyword parameter",
+        ValueError, match="more than one variadic keyword parameter",
     ):
         _add_params(func_params, additional_params)

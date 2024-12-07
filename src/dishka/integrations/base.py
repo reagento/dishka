@@ -2,6 +2,7 @@ from collections.abc import Awaitable, Callable, Sequence
 from inspect import (
     Parameter,
     Signature,
+    _ParameterKind,
     isasyncgenfunction,
     isgeneratorfunction,
     signature,
@@ -127,7 +128,7 @@ def wrap_injection(
 
     auto_injected_func: Callable[P, T | Awaitable[T]]
     if additional_params:
-        new_params.extend(additional_params)
+        new_params = _add_params(new_params, additional_params)
         for param in additional_params:
             new_annotations[param.name] = param.annotation
 
@@ -230,3 +231,47 @@ def _sync_injection_wrapper(
             return func(*args, **kwargs, **solved)
 
     return auto_injected_func
+
+
+def _add_params(
+    params: Sequence[Parameter],
+    additional_params: Sequence[Parameter],
+):
+    params_kind_dict: dict[_ParameterKind, list[Parameter]] = {}
+
+    for param in params:
+        params_kind_dict.setdefault(param.kind, []).append(param)
+
+    for param in additional_params:
+        params_kind_dict.setdefault(param.kind, []).append(param)
+
+
+    var_positional = params_kind_dict.get(Parameter.VAR_POSITIONAL, [])
+    if len(var_positional) > 1:
+        param_names = (param.name for param in var_positional)
+        var_positional_names = ", *".join(param_names)
+        base_msg = "more than one variadic positional parameter: *"
+        msg = base_msg + var_positional_names
+        raise ValueError(msg)
+
+    var_keyword = params_kind_dict.get(Parameter.VAR_KEYWORD, [])
+    if len(var_keyword) > 1:
+        var_keyword_names = ", **".join(param.name for param in var_keyword)
+        msg = "more than one variadic keyword parameter: " + var_keyword_names
+        raise ValueError(msg)
+
+    positional_only = params_kind_dict.get(Parameter.POSITIONAL_ONLY, [])
+    positional_or_keyword = params_kind_dict.get(
+        Parameter.POSITIONAL_OR_KEYWORD,
+        [],
+    )
+    keyword_only = params_kind_dict.get(Parameter.KEYWORD_ONLY, [])
+
+    result_params = []
+    result_params.extend(positional_only)
+    result_params.extend(positional_or_keyword)
+    result_params.extend(var_positional)
+    result_params.extend(keyword_only)
+    result_params.extend(var_keyword)
+
+    return result_params

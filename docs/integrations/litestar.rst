@@ -76,4 +76,41 @@ How to use
 Websockets
 **********************
 
-Not supported yet
+.. include:: _websockets.rst
+
+In litestar, your view function is called once per event,
+and there is no way to determine if it is an http or websocket handler.
+Therefore, you should use the special ``inject_websocket`` decorator for websocket handlers.
+Also decorator can be only used to retrieve SESSION-scoped objects.
+To achieve REQUEST-scope you can enter in manually:
+
+.. code-block:: python
+
+    @websocket_listener("/")
+    @inject_websocket
+    async def get_with_request(
+        a: FromDishka[A],  # object with Scope.SESSION
+        container: FromDishka[AsyncContainer],  # container for Scope.SESSION
+        data: dict[str, str]
+    ) -> dict[str, str]:
+        # enter the nested scope, which is Scope.REQUEST
+        async with container() as request_container:
+            b = await request_container.get(B)  # object with Scope.REQUEST
+        return {"key": "value"}
+
+or with class-based handler:
+
+.. code-block:: python
+
+    class Handler(WebsocketListener):
+        path = "/"
+
+        @inject_websocket
+        async def on_receive(
+            a: FromDishka[A],  # object with Scope.SESSION
+            container: FromDishka[AsyncContainer],  # container for Scope.SESSION
+            data: dict[str, str]
+        ) -> dict[str, str]:
+            async with container() as request_container:
+                b = await request_container.get(B)  # object with Scope.REQUEST
+            return {"key": "value"}

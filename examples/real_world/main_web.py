@@ -13,7 +13,7 @@ from dishka.integrations.fastapi import (
 
 
 def create_fastapi_app() -> FastAPI:
-    app = FastAPI()
+    app = FastAPI(lifespan=lifespan)
     app.include_router(router)
     return app
 

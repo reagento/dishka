@@ -1,5 +1,5 @@
 -r test.txt
 
-faststream[nats]==0.5.0rc2
-typing-extensions==4.11.0
-anyio==4.6.2
+faststream[nats]==0.5.0rc2; python_version <= "3.12"
+typing-extensions==4.11.0; python_version <= "3.12"
+anyio==4.6.2; python_version <= "3.12"

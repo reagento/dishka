@@ -1,2 +1,2 @@
 -r test.txt
-aiogram==3.3.0; python_version <= "3.12"
+aiogram==3.3.0

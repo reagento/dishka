@@ -1,5 +1,5 @@
 -r test.txt
 
-faststream[nats]==0.5.26
+faststream[nats]==0.5.29
 typing-extensions==4.12.2
-anyio==4.7.0
+anyio==4.6.0

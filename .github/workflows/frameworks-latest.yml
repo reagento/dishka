@@ -34,5 +34,5 @@ jobs:
 
       - name: Run tests
         run: |
-          find requirements -name "*-latest.txt" -exec basename {} .txt \; | sed "s/-/_/g" | xargs -d , nox -db uv -e
+          find requirements -name "*-latest.txt" -exec basename {} .txt \; | sed "s/-/_/g" | xargs nox -db uv -e
 

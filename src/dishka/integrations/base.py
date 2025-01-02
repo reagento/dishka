@@ -156,6 +156,7 @@ def wrap_injection(
     auto_injected_func.__name__ = func.__name__
     auto_injected_func.__qualname__ = func.__qualname__
     auto_injected_func.__doc__ = func.__doc__
+    auto_injected_func.__module__ = func.__module__
     auto_injected_func.__annotations__ = new_annotations
     auto_injected_func.__signature__ = Signature(  # type: ignore[attr-defined]
         parameters=new_params,

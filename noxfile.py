@@ -7,7 +7,6 @@ import nox
 nox.options.default_venv_backend = "uv"
 nox.options.reuse_existing_virtualenvs = True
 
-PYTHON_3_13 = sys.version_info.minor == 13
 CMD = ("pytest", "--cov=dishka", "--cov-append", "--cov-report=term-missing", "-v")
 INSTALL_CMD = ("pytest", "pytest-cov", "-e", ".")
 
@@ -26,7 +25,7 @@ class IntegrationEnv:
 
 
 INTEGRATIONS = [
-    IntegrationEnv("aiogram", "330", lambda: not PYTHON_3_13),
+    IntegrationEnv("aiogram", "330", lambda: sys.version_info < (3, 13)),
     IntegrationEnv("aiogram", "3140"),
     IntegrationEnv("aiogram", "latest"),
     IntegrationEnv("aiogram_dialog", "210"),
@@ -40,13 +39,13 @@ INTEGRATIONS = [
     IntegrationEnv("fastapi", "0096"),
     IntegrationEnv("fastapi", "0109"),
     IntegrationEnv("fastapi", "latest"),
-    IntegrationEnv("faststream", "047", lambda: not PYTHON_3_13),
-    IntegrationEnv("faststream", "050", lambda: not PYTHON_3_13),
+    IntegrationEnv("faststream", "047", lambda: sys.version_info < (3, 13)),
+    IntegrationEnv("faststream", "050", lambda: sys.version_info < (3, 13)),
     IntegrationEnv("faststream", "0529"),
     IntegrationEnv("faststream", "latest"),
     IntegrationEnv("flask", "302"),
     IntegrationEnv("flask", "latest"),
-    IntegrationEnv("grpcio", "1641", lambda: not PYTHON_3_13),
+    IntegrationEnv("grpcio", "1641", lambda: sys.version_info < (3, 13)),
     IntegrationEnv("grpcio", "1680"),
     IntegrationEnv("grpcio", "latest"),
     IntegrationEnv("litestar", "230"),

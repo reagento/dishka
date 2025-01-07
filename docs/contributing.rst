@@ -53,13 +53,13 @@ All of them can be run using tox:
 
 .. code-block::
 
-    tox run
+    nox
 
 All integration tests are using specific versions of libraries by default. You can run them with latest version specifying it explicitly. E.g.:
 
 .. code-block::
 
-    tox run -e fastapi-latest
+    nox -s aiohttp_latest
 
 All requirement files for tests are located in ``/requirements`` dir
 

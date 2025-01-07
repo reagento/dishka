@@ -6,7 +6,10 @@ from .container_objects import CompiledFactory
 from .dependency_source import (
     Factory,
 )
-from .dependency_source.type_match import is_broader_or_same_type
+from .dependency_source.type_match import (
+    get_typevar_replacement,
+    is_broader_or_same_type,
+)
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope
@@ -104,12 +107,10 @@ class Registry:
     def _specialize_generic(
             self, factory: Factory, dependency_key: DependencyKey,
     ) -> Factory:
-        dependency = dependency_key.type_hint
-        params_replacement = dict(zip(
-            get_type_vars(factory.provides.type_hint),
-            get_args(dependency),
-            strict=False,
-        ))
+        params_replacement = get_typevar_replacement(
+            factory.provides.type_hint,
+            dependency_key.type_hint,
+        )
         new_dependencies: list[DependencyKey] = []
         for source_dependency in factory.dependencies:
             hint = source_dependency.type_hint

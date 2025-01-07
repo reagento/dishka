@@ -34,4 +34,4 @@ jobs:
 
       - name: Run tests
         run: |
-          nox -db uv -s latest
+          nox -t latest

@@ -4,6 +4,9 @@ from dataclasses import dataclass
 
 import nox
 
+nox.options.default_venv_backend = "uv"
+nox.options.reuse_existing_virtualenvs = True
+
 PYTHON_3_13 = sys.version_info.minor == 13
 CMD = ("pytest", "--cov=dishka", "--cov-append", "--cov-report=term-missing", "-v")
 INSTALL_CMD = ("pytest", "pytest-cov", "-e", ".")
@@ -22,7 +25,7 @@ class IntegrationEnv:
         return f"tests/integrations/{self.library}"
 
 
-INTEGRATION_ENVS = [
+INTEGRATIONS = [
     IntegrationEnv("aiogram", "330", lambda: not PYTHON_3_13),
     IntegrationEnv("aiogram", "3140"),
     IntegrationEnv("aiogram", "latest"),
@@ -59,9 +62,8 @@ INTEGRATION_ENVS = [
 ]
 
 
-for env in INTEGRATION_ENVS:
+for env in INTEGRATIONS:
     @nox.session(
-        reuse_venv=True,
         name=f"{env.library}_{env.version}",
         tags=[env.library, "latest" if env.version == "latest" else "non-latest"],
     )
@@ -72,7 +74,7 @@ for env in INTEGRATION_ENVS:
         session.run(*CMD, env.get_tests())
 
 
-@nox.session(reuse_venv=True)
+@nox.session(tags=["unit"])
 def unit(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,
@@ -81,24 +83,10 @@ def unit(session: nox.Session) -> None:
     session.run(*CMD, "tests/unit")
 
 
-@nox.session(reuse_venv=True)
+@nox.session(tags=["real-world"])
 def real_world(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,
         "-r", "examples/real_world/requirements_test.txt",
     )
     session.run(*CMD, "examples/real_world/tests/")
-
-
-@nox.session(tags=["latest"])
-def latest(session: nox.Session) -> None:
-    for env in INTEGRATION_ENVS:
-        if env.version == "latest":
-            session.notify(f"{env.library}_{env.version}")
-
-
-@nox.session(tags=["non-latest"], name="non-latest")
-def not_latest(session: nox.Session) -> None:
-    for env in INTEGRATION_ENVS:
-        if env.version != "latest":
-            session.notify(f"{env.library}_{env.version}")

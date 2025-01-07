@@ -1,270 +1,104 @@
 import sys
+from collections.abc import Callable
+from dataclasses import dataclass
 
 import nox
 
 PYTHON_3_13 = sys.version_info.minor == 13
 CMD = ("pytest", "--cov=dishka", "--cov-append", "--cov-report=term-missing", "-v")
-PATH = {
-    "aiogram_330": "requirements/aiogram-330.txt",
-    "aiogram_3140": "requirements/aiogram-3140.txt",
-    "aiogram_latest": "requirements/aiogram-latest.txt",
-    "aiogram_dialog_210": "requirements/aiogram-dialog-210.txt",
-    "aiogram_dialog_latest": "requirements/aiogram-dialog-latest.txt",
-    "aiohttp_393": "requirements/aiohttp-393.txt",
-    "aiohttp_latest": "requirements/aiohttp-latest.txt",
-    "arq_0250": "requirements/arq-0250.txt",
-    "arq_latest": "requirements/arq-latest.txt",
-    "click_817": "requirements/click-817.txt",
-    "click_latest": "requirements/click-latest.txt",
-    "fastapi_0096": "requirements/fastapi-0096.txt",
-    "fastapi_0109": "requirements/fastapi-0109.txt",
-    "fastapi_latest": "requirements/fastapi-latest.txt",
-    "faststream_047": "requirements/faststream-047.txt",
-    "faststream_050": "requirements/faststream-050.txt",
-    "faststream_0529": "requirements/faststream-0529.txt",
-    "faststream_latest": "requirements/faststream-latest.txt",
-    "flask_302": "requirements/flask-302.txt",
-    "flask_latest": "requirements/flask-latest.txt",
-    "grpcio_1641": "requirements/grpcio-1641.txt",
-    "grpcio_1680": "requirements/grpcio-1680.txt",
-    "grpcio_latest": "requirements/grpcio-latest.txt",
-    "litestar_230": "requirements/litestar-230.txt",
-    "litestar_latest": "requirements/litestar-latest.txt",
-    "sanic_23121": "requirements/sanic-23121.txt",
-    "sanic_latest": "requirements/sanic-latest.txt",
-    "starlette_0270": "requirements/starlette-0270.txt",
-    "starlette_latest": "requirements/starlette-latest.txt",
-    "taskiq_0110": "requirements/taskiq-0110.txt",
-    "taskiq_latest": "requirements/taskiq-latest.txt",
-    "telebot_415": "requirements/telebot-415.txt",
-    "telebot_latest": "requirements/telebot-latest.txt",
-    "unit": "requirements/test.txt",
-    "real_world_example": "examples/real_world/requirements_test.txt",
-}
-
-
-def install_requirements(session: nox.Session) -> None:
-    session.install("pytest", "pytest-cov", "-e", ".")
-    session.install("-r", PATH[session.name])
-
-
-def run_tests(session: nox.Session, path: str) -> None:
-    session.run(*CMD, path)
-
-
-@nox.session(reuse_venv=True)
-def aiogram_330(session: nox.Session) -> None:
-    if PYTHON_3_13:
-        session.skip("Skip tests on 3.13")
-    install_requirements(session)
-    run_tests(session, "tests/integrations/aiogram")
-
-
-@nox.session(reuse_venv=True)
-def aiogram_3140(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/aiogram")
-
-
-@nox.session(reuse_venv=True)
-def aiogram_latest(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/aiogram")
-
-
-@nox.session(reuse_venv=True)
-def aiogram_dialog_210(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/aiogram_dialog")
-
-
-@nox.session(reuse_venv=True)
-def aiogram_dialog_latest(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/aiogram_dialog")
-
-
-@nox.session(reuse_venv=True)
-def aiohttp_393(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/aiohttp")
-
-
-@nox.session(reuse_venv=True)
-def aiohttp_latest(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/aiohttp")
-
-
-@nox.session(reuse_venv=True)
-def arq_0250(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/arq")
-
-
-@nox.session(reuse_venv=True)
-def arq_latest(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/arq")
-
-
-@nox.session(reuse_venv=True)
-def click_817(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/click")
-
-
-@nox.session(reuse_venv=True)
-def click_latest(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/click")
-
-
-@nox.session(reuse_venv=True)
-def fastapi_0096(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/fastapi")
-
-
-@nox.session(reuse_venv=True)
-def fastapi_0109(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/fastapi")
-
-
-@nox.session(reuse_venv=True)
-def fastapi_latest(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/fastapi")
-
-
-@nox.session(reuse_venv=True)
-def faststream_047(session: nox.Session) -> None:
-    if PYTHON_3_13:
-        session.skip("Skip tests on 3.13")
-    install_requirements(session)
-    run_tests(session, "tests/integrations/faststream")
-
-
-@nox.session(reuse_venv=True)
-def faststream_050(session: nox.Session) -> None:
-    if PYTHON_3_13:
-        session.skip("Skip tests on 3.13")
-    install_requirements(session)
-    run_tests(session, "tests/integrations/faststream")
-
-
-@nox.session(reuse_venv=True)
-def faststream_0529(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/faststream")
-
-
-@nox.session(reuse_venv=True)
-def faststream_latest(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/faststream")
-
-
-@nox.session(reuse_venv=True)
-def flask_302(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/flask")
-
-
-@nox.session(reuse_venv=True)
-def flask_latest(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/flask")
-
-
-@nox.session(reuse_venv=True)
-def grpcio_1641(session: nox.Session) -> None:
-    if PYTHON_3_13:
-        session.skip("Skip tests on 3.13")
-    install_requirements(session)
-    run_tests(session, "tests/integrations/grpcio")
-
-
-@nox.session(reuse_venv=True)
-def grpcio_1680(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/grpcio")
-
-
-@nox.session(reuse_venv=True)
-def grpcio_latest(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/grpcio")
-
-
-@nox.session(reuse_venv=True)
-def litestar_230(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/litestar")
-
-
-@nox.session(reuse_venv=True)
-def litestar_latest(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/litestar")
-
-
-@nox.session(reuse_venv=True)
-def sanic_23121(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/sanic")
-
-
-@nox.session(reuse_venv=True)
-def sanic_latest(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/sanic")
-
-
-@nox.session(reuse_venv=True)
-def starlette_0270(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/starlette")
-
-
-@nox.session(reuse_venv=True)
-def starlette_latest(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/starlette")
-
-
-@nox.session(reuse_venv=True)
-def taskiq_0110(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/taskiq")
-
-
-@nox.session(reuse_venv=True)
-def taskiq_latest(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/taskiq")
-
-
-@nox.session(reuse_venv=True)
-def telebot_415(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/telebot")
-
-
-@nox.session(reuse_venv=True)
-def telebot_latest(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/integrations/telebot")
+INSTALL_CMD = ("pytest", "pytest-cov", "-e", ".")
+
+
+@dataclass(frozen=True, slots=True)
+class IntegrationEnv:
+    library: str
+    version: str
+    constraint: Callable[[], bool] = lambda: True
+
+    def get_req(self) -> str:
+        return f"requirements/{self.library.replace('_', '-')}-{self.version}.txt"
+
+    def get_tests(self) -> str:
+        return f"tests/integrations/{self.library}"
+
+
+INTEGRATION_ENVS = [
+    IntegrationEnv("aiogram", "330", lambda: not PYTHON_3_13),
+    IntegrationEnv("aiogram", "3140"),
+    IntegrationEnv("aiogram", "latest"),
+    IntegrationEnv("aiogram_dialog", "210"),
+    IntegrationEnv("aiogram_dialog", "latest"),
+    IntegrationEnv("aiohttp", "393"),
+    IntegrationEnv("aiohttp", "latest"),
+    IntegrationEnv("arq", "0250"),
+    IntegrationEnv("arq", "latest"),
+    IntegrationEnv("click", "817"),
+    IntegrationEnv("click", "latest"),
+    IntegrationEnv("fastapi", "0096"),
+    IntegrationEnv("fastapi", "0109"),
+    IntegrationEnv("fastapi", "latest"),
+    IntegrationEnv("faststream", "047", lambda: not PYTHON_3_13),
+    IntegrationEnv("faststream", "050", lambda: not PYTHON_3_13),
+    IntegrationEnv("faststream", "0529"),
+    IntegrationEnv("faststream", "latest"),
+    IntegrationEnv("flask", "302"),
+    IntegrationEnv("flask", "latest"),
+    IntegrationEnv("grpcio", "1641", lambda: not PYTHON_3_13),
+    IntegrationEnv("grpcio", "1680"),
+    IntegrationEnv("grpcio", "latest"),
+    IntegrationEnv("litestar", "230"),
+    IntegrationEnv("litestar", "latest"),
+    IntegrationEnv("sanic", "23121"),
+    IntegrationEnv("sanic", "latest"),
+    IntegrationEnv("starlette", "0270"),
+    IntegrationEnv("starlette", "latest"),
+    IntegrationEnv("taskiq", "0110"),
+    IntegrationEnv("taskiq", "latest"),
+    IntegrationEnv("telebot", "415"),
+    IntegrationEnv("telebot", "latest"),
+]
+
+
+for env in INTEGRATION_ENVS:
+    @nox.session(
+        reuse_venv=True,
+        name=f"{env.library}_{env.version}",
+        tags=[env.library, "latest" if env.version == "latest" else "non-latest"],
+    )
+    def session(session: nox.Session, env=env) -> None:
+        if not env.constraint():
+            session.skip("Skip tests on python 3.13 due to compatibility issues")
+        session.install(*INSTALL_CMD, "-r", env.get_req())
+        session.run(*CMD, env.get_tests())
 
 
 @nox.session(reuse_venv=True)
 def unit(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "tests/unit")
+    session.install(
+        *INSTALL_CMD,
+        "-r", "requirements/test.txt",
+    )
+    session.run(*CMD, "tests/unit")
 
 
 @nox.session(reuse_venv=True)
-def real_world_example(session: nox.Session) -> None:
-    install_requirements(session)
-    run_tests(session, "examples/real_world/tests/")
+def real_world(session: nox.Session) -> None:
+    session.install(
+        *INSTALL_CMD,
+        "-r", "examples/real_world/requirements_test.txt",
+    )
+    session.run(*CMD, "examples/real_world/tests/")
+
+
+@nox.session(tags=["latest"])
+def latest(session: nox.Session) -> None:
+    for env in INTEGRATION_ENVS:
+        if env.version == "latest":
+            session.notify(f"{env.library}_{env.version}")
+
+
+@nox.session(tags=["non-latest"], name="non-latest")
+def not_latest(session: nox.Session) -> None:
+    for env in INTEGRATION_ENVS:
+        if env.version != "latest":
+            session.notify(f"{env.library}_{env.version}")

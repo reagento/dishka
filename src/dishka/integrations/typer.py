@@ -1,4 +1,5 @@
 """Integration for Typer https://typer.tiangolo.com"""
+
 __all__ = [
     "FromDishka",
     "inject",
@@ -10,7 +11,6 @@ from typing import Final, TypeVar
 
 import typer
 from click import get_current_context
-from typer.models import CommandInfo
 
 from dishka import Container, FromDishka
 from .base import is_dishka_injected, wrap_injection
@@ -32,7 +32,9 @@ def inject(func: Callable[..., T]) -> Callable[..., T]:
 
 def _inject_commands(app: typer.Typer) -> None:
     for command in app.registered_commands:
-        if command.callback is not None and not is_dishka_injected(command.callback):
+        if command.callback is not None and not is_dishka_injected(
+            command.callback,
+        ):
             command.callback = inject(command.callback)
 
     for group in app.registered_groups:
@@ -47,7 +49,6 @@ def setup_dishka(
     finalize_container: bool = True,
     auto_inject: bool = False,
 ) -> None:
-
     @app.callback()
     def inject_dishka_container(context: typer.Context) -> None:
         context.meta[CONTAINER_NAME] = container

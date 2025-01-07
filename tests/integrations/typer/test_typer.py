@@ -1,8 +1,9 @@
-from contextlib import contextmanager
-from typing import Annotated, Any, Callable, ContextManager, Iterable, Iterator
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager, contextmanager
+from typing import Annotated, Any
 
-import typer
 import pytest
+import typer
 from typer.testing import CliRunner
 
 from dishka import FromDishka, make_container
@@ -15,12 +16,15 @@ from ..common import (
     AppProvider,
 )
 
-
-AppFactory = Callable[[Callable[..., Any], Provider], ContextManager[typer.Typer]]
+AppFactory = Callable[
+    [Callable[..., Any], Provider], AbstractContextManager[typer.Typer],
+]
 
 
 @contextmanager
-def dishka_app(handler: Callable[..., Any], provider: Provider) -> Iterator[typer.Typer]:
+def dishka_app(
+    handler: Callable[..., Any], provider: Provider,
+) -> Iterator[typer.Typer]:
     app = typer.Typer()
     app.command(name="test")(inject(handler))
 
@@ -32,26 +36,40 @@ def dishka_app(handler: Callable[..., Any], provider: Provider) -> Iterator[type
 
 
 @contextmanager
-def dishka_auto_app(handler: Callable[..., Any], provider: Provider) -> Iterator[typer.Typer]:
+def dishka_auto_app(
+    handler: Callable[..., Any], provider: Provider,
+) -> Iterator[typer.Typer]:
     app = typer.Typer()
     app.command(name="test")(handler)
 
     container = make_container(provider)
-    setup_dishka(container=container, app=app, finalize_container=False, auto_inject=True)
+    setup_dishka(
+        container=container,
+        app=app,
+        finalize_container=False,
+        auto_inject=True,
+    )
 
     yield app
     container.close()
 
 
 @contextmanager
-def dishka_nested_group_app(handler: Callable[..., Any], provider: Provider) -> Iterator[typer.Typer]:
+def dishka_nested_group_app(
+    handler: Callable[..., Any], provider: Provider,
+) -> Iterator[typer.Typer]:
     app = typer.Typer()
     group = typer.Typer()
     group.command(name="sub")(handler)
     app.add_typer(group, name="test")
 
     container = make_container(provider)
-    setup_dishka(container=container, app=app, finalize_container=False, auto_inject=True)
+    setup_dishka(
+        container=container,
+        app=app,
+        finalize_container=False,
+        auto_inject=True,
+    )
 
     yield app
     container.close()
@@ -71,7 +89,9 @@ def handle_with_app(
         dishka_auto_app,
     ],
 )
-def test_app_dependency(app_provider: AppProvider, app_factory: AppFactory) -> None:
+def test_app_dependency(
+    app_provider: AppProvider, app_factory: AppFactory,
+) -> None:
     runner = CliRunner()
     with app_factory(handle_with_app, app_provider) as command:
         result = runner.invoke(command, ["test"])
@@ -107,7 +127,9 @@ def handle_with_app_and_options(
         dishka_auto_app,
     ],
 )
-def test_app_dependency_with_option(app_provider: AppProvider, app_factory: AppFactory) -> None:
+def test_app_dependency_with_option(
+    app_provider: AppProvider, app_factory: AppFactory,
+) -> None:
     runner = CliRunner()
     with app_factory(handle_with_app_and_options, app_provider) as command:
         result = runner.invoke(command, ["test", "Wade"])
@@ -116,10 +138,18 @@ def test_app_dependency_with_option(app_provider: AppProvider, app_factory: AppF
         app_provider.request_released.assert_not_called()
 
 
-def test_app_dependency_with_nested_groups_and_option(app_provider: AppProvider) -> None:
+def test_app_dependency_with_nested_groups_and_option(
+    app_provider: AppProvider,
+) -> None:
     runner = CliRunner()
-    with dishka_nested_group_app(handle_with_app_and_options, app_provider) as command:
-        result = runner.invoke(command, ["test", "sub", "Wade", "--surname", "Wilson"])
+    with dishka_nested_group_app(
+        handle_with_app_and_options, app_provider,
+    ) as command:
+        result = runner.invoke(
+            command, ["test", "sub", "Wade", "--surname", "Wilson"],
+        )
         assert result.exit_code == 0, result.stdout
-        app_provider.app_mock.assert_called_with(APP_DEP_VALUE, "Wade", "Wilson")
+        app_provider.app_mock.assert_called_with(
+            APP_DEP_VALUE, "Wade", "Wilson",
+        )
         app_provider.request_released.assert_not_called()

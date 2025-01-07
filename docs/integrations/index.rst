@@ -40,12 +40,11 @@ You can create custom integrations for your framework of choice.
      -  :ref:`aiogram`
      -  :ref:`arq`
      -  :ref:`Click`
-     -  :ref:`Typer`
 
    * - :ref:`grpcio`
      - :ref:`Aiogram_dialog`
      - :ref:`FastStream`
-     -
+     - :ref:`Typer`
 
    * - :ref:`Fastapi`
      - :ref:`pyTelegramBotAPI<telebot>`

@@ -25,6 +25,7 @@ You can create custom integrations for your framework of choice.
    starlette
    taskiq
    telebot
+   typer
    adding_new
 
 .. list-table:: Built-in frameworks integrations
@@ -39,6 +40,7 @@ You can create custom integrations for your framework of choice.
      -  :ref:`aiogram`
      -  :ref:`arq`
      -  :ref:`Click`
+     -  :ref:`Typer`
 
    * - :ref:`grpcio`
      - :ref:`Aiogram_dialog`

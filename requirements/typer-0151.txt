@@ -1,0 +1,2 @@
+-r test.txt
+typer==0.15.1

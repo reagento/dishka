@@ -1,0 +1,3 @@
+-r test.txt
+rq==2.0.0
+fakeredis==2.26.2

@@ -70,7 +70,11 @@ def _inject_routes(router: web.UrlDispatcher) -> None:
         _inject_route(route)
 
     for resource in router.resources():
-        for route in resource._routes:  # type: ignore[attr-defined] # noqa: SLF001
+        try:
+            routes = iter(resource)
+        except TypeError:
+            continue
+        for route in routes:
             _inject_route(route)
 
 

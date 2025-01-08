@@ -24,13 +24,15 @@ Additionally, alias has own setting for caching: it caches by default regardless
 
 .. code-block:: python
 
-    from dishka import WithParents, provide, Provider, Scope, alias
+    from dishka import provide, Provider, Scope, alias, make_container
+
     class MyProvider(Provider):
         scope=Scope.APP
-        a = provide(lambda: 1, provides=int)
-        a_alias = alias(float, provides=int)
-        a_alias_override = alias(float, provides=int, override=True)
+        get_int = provide(int)
+        get_float = provide(float)
 
-    container = make_async_container(MyProvider())
-    a = await container.get(int)
-    # 2
+        a_alias = alias(int, provides=complex)
+        a_alias_override = alias(float, provides=complex, override=True)
+
+    container = make_container(MyProvider())
+    a = container.get(complex)  # 0.0

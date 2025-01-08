@@ -61,6 +61,15 @@ INTEGRATIONS = [
 ]
 
 
+@nox.session(tags=["integrations-base"])
+def integrations_base(session: nox.Session) -> None:
+    session.install(
+        *INSTALL_CMD,
+        "-r", "requirements/test.txt",
+    )
+    session.run(*CMD, "tests/integrations/base")
+
+
 for env in INTEGRATIONS:
     @nox.session(
         name=f"{env.library}_{env.version}",

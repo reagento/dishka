@@ -7,13 +7,7 @@ import nox
 nox.options.default_venv_backend = "uv"
 nox.options.reuse_existing_virtualenvs = True
 
-CMD = (
-    "pytest",
-    "--cov=dishka",
-    "--cov-append",
-    "--cov-report=term-missing",
-    "-v",
-)
+CMD = ("pytest", "--cov=dishka", "--cov-append", "--cov-report=term-missing", "-v")
 INSTALL_CMD = ("pytest", "pytest-cov", "-e", ".")
 
 
@@ -24,9 +18,7 @@ class IntegrationEnv:
     constraint: Callable[[], bool] = lambda: True
 
     def get_req(self) -> str:
-        return (
-            f"requirements/{self.library.replace('_', '-')}-{self.version}.txt"
-        )
+        return f"requirements/{self.library.replace('_', '-')}-{self.version}.txt"
 
     def get_tests(self) -> str:
         return f"tests/integrations/{self.library}"
@@ -72,19 +64,13 @@ INTEGRATIONS = [
 
 
 for env in INTEGRATIONS:
-
     @nox.session(
         name=f"{env.library}_{env.version}",
-        tags=[
-            env.library,
-            "latest" if env.version == "latest" else "non-latest",
-        ],
+        tags=[env.library, "latest" if env.version == "latest" else "non-latest"],
     )
     def session(session: nox.Session, env=env) -> None:
         if not env.constraint():
-            session.skip(
-                "Skip tests on python 3.13 due to compatibility issues"
-            )
+            session.skip("Skip tests on python 3.13 due to compatibility issues")
         session.install(*INSTALL_CMD, "-r", env.get_req())
         session.run(*CMD, env.get_tests())
 
@@ -93,8 +79,7 @@ for env in INTEGRATIONS:
 def unit(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,
-        "-r",
-        "requirements/test.txt",
+        "-r", "requirements/test.txt",
     )
     session.run(*CMD, "tests/unit")
 
@@ -103,7 +88,6 @@ def unit(session: nox.Session) -> None:
 def real_world(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,
-        "-r",
-        "examples/real_world/requirements_test.txt",
+        "-r", "examples/real_world/requirements_test.txt",
     )
     session.run(*CMD, "examples/real_world/tests/")

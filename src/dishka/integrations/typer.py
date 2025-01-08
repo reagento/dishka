@@ -21,95 +21,44 @@ from .base import is_dishka_injected, wrap_injection
 T = TypeVar("T")
 P = ParamSpec("P")
 CONTAINER_NAME: Final = "dishka_container"
+CONTAINER_NAME_REQ: Final = "dishka_container_req"
 
 
 def inject(func: Callable[P, T]) -> Callable[P, T]:
-    # Try to isolate a parameter in the function signature requesting a
-    # typer.Context
     hints = get_type_hints(func)
-    param_name = next(
+    context_hint = next(
         (name for name, hint in hints.items() if hint is typer.Context),
         None,
     )
-    if param_name is None:
-        # When the handler does not request a typer.Context, we need to add it
-        # in our wrapper to be able to inject it in into the container
-        def wrapper(context: typer.Context, *args: P.args, **kwargs: P.kwargs) -> T:
-            # Inject the typer context into the container
-            container: Container = context.meta[CONTAINER_NAME]
-            with container({typer.Context: context}, scope=Scope.REQUEST) as new_container:
-                context.meta[CONTAINER_NAME] = new_container
-
-                # Then proceed with the regular injection logic
-                injected_func = wrap_injection(
-                    func=func,
-                    container_getter=lambda _, __: click.get_current_context().meta[CONTAINER_NAME],
-                    remove_depends=True,
-                    is_async=False,
-                )
-                return injected_func(*args, **kwargs)
-
-        # We reuse the logic of `wrap_injection`, but only to build the expected
-        # signature (removing dishka dependencies, adding the typer.Context
-        # parameter)
-        expected_signature = wrap_injection(
-            func=func,
-            container_getter=lambda _, __: click.get_current_context().meta[CONTAINER_NAME],
-            additional_params=[Parameter(name="context", kind=Parameter.POSITIONAL_ONLY, annotation=typer.Context)],
-            remove_depends=True,
-            is_async=False,
-        )
-
+    if context_hint is None:
+        additional_params = [
+            Parameter(
+                name="___dishka_context",
+                annotation=typer.Context,
+                kind=Parameter.KEYWORD_ONLY,
+            ),
+        ]
     else:
-        # When the handler requests a typer.Context, we just need to find it and
-        # inject
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
-            # Get the context from the existing argument
-            if param_name in kwargs:
-                context: typer.Context = kwargs[param_name]  # type: ignore[assignment]
-            else:
-                maybe_context = next(
-                    # Even though we type `typer.Context`, we get a
-                    # `click.Context` instance
-                    (arg for arg in args if isinstance(arg, click.Context)), None,
-                )
-                if maybe_context is None:
-                    raise RuntimeError(f"Context argument {param_name} not provided at runtime.")
-                context = maybe_context
+        additional_params = []
 
-            # Inject the typer context into the container
-            container: Container = context.meta[CONTAINER_NAME]
-            with container({typer.Context: context}, scope=Scope.REQUEST) as new_container:
-                context.meta[CONTAINER_NAME] = new_container
+    param_name = context_hint or "___dishka_context"
 
-                # Then proceed with the regular injection logic
-                injected_func = wrap_injection(
-                    func=func,
-                    container_getter=lambda _, __: click.get_current_context().meta[CONTAINER_NAME],
-                    remove_depends=True,
-                    is_async=False,
-                )
-                return injected_func(*args, **kwargs)
+    def get_container(_, p):
+        context: typer.Context = p[param_name]
+        container = context.meta[CONTAINER_NAME]
 
-        # This time, no need to add a parameter to the signature
-        expected_signature = wrap_injection(
-            func=func,
-            container_getter=lambda _, __: get_current_context().meta[CONTAINER_NAME],
-            remove_depends=True,
-            is_async=False,
+        req_container = context.with_resource(
+            container({typer.Context: context}, scope=Scope.REQUEST),
         )
+        context.meta[CONTAINER_NAME_REQ] = req_container
+        return req_container
 
-    # Copy over all metadata from the expected injected function's signature to
-    # our wrapper
-    wrapper.__dishka_injected__ = True  # type: ignore[attr-defined]
-    wrapper.__name__ = expected_signature.__name__
-    wrapper.__qualname__ = expected_signature.__qualname__
-    wrapper.__doc__ = expected_signature.__doc__
-    wrapper.__module__ = expected_signature.__module__
-    wrapper.__annotations__ = expected_signature.__annotations__
-    wrapper.__signature__ = expected_signature.__signature__  # type: ignore[attr-defined]
-
-    return cast(Callable[P, T], wrapper)
+    return wrap_injection(
+        func=func,
+        is_async=False,
+        additional_params=additional_params,
+        container_getter=get_container,
+    )
 
 
 def _inject_commands(app: typer.Typer) -> None:

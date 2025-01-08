@@ -21,6 +21,7 @@ You can create custom integrations for your framework of choice.
    flask
    grpcio
    litestar
+   rq
    sanic
    starlette
    taskiq
@@ -52,7 +53,7 @@ You can create custom integrations for your framework of choice.
 
    * - :ref:`Flask`
      -
-     -
+     - :ref:`RQ`
      -
    * -  :ref:`Litestar`
      -
@@ -112,4 +113,3 @@ For FastAPI it will look like:
    app = FastAPI()
    container = make_async_container(your_provider, FastapiProvider())
    setup_dishka(container, app)
-

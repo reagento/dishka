@@ -5,9 +5,9 @@ https://typer.tiangolo.com/#example-upgrade with small modifications.
 from typing import Annotated, Protocol
 import typer
 from functools import partial
-from dishka import make_container, Provider
+from dishka import make_container, Provider, provide
 from dishka.entities.scope import Scope
-from dishka.integrations.typer import FromDishka, inject, setup_dishka
+from dishka.integrations.typer import FromDishka, TyperProvider, inject, setup_dishka
 
 
 class Greeter(Protocol):
@@ -15,11 +15,18 @@ class Greeter(Protocol):
     def __call__(self, text: str) -> None: ...
 
 
-provider = Provider(scope=Scope.APP)
+class ColorfulProvider(Provider):
 
-# We provide an advanced greeting experience with `typer.secho`
-# For a less advanced implementation, we could use `print`
-provider.provide(lambda: partial(typer.secho, fg="blue"), provides=Greeter)
+    @provide(scope=Scope.REQUEST)  # We need Scope.REQUEST for the context
+    def greeter(self, context: typer.Context) -> Greeter:
+        if context.command.name == "hello":
+            # Hello should most certainly be blue
+            return partial(typer.secho, fg="blue")
+        if context.command.name == "goodbye":
+            # Goodbye should be red
+            return partial(typer.secho, fg="red")
+        # Unexpected commands can be yellow
+        return partial(typer.secho, fg="yellow")
 
 
 app = typer.Typer()
@@ -41,9 +48,20 @@ def goodbye(greeter: FromDishka[Greeter], name: str, formal: bool = False) -> No
         greeter(f"Bye {name}!")
 
 
+@app.command()
+def hi(
+    greeter: FromDishka[Greeter],
+    name: Annotated[str, typer.Argument(..., help="The name to greet")],
+) -> None:
+    greeter(f"Hi {name}")
+
+
+# Build the container with the `TyperProvider` to get the `typer.Context`
+# parameter in REQUEST providers
+container = make_container(ColorfulProvider(scope=Scope.REQUEST), TyperProvider())
+
 # Setup dishka to inject the dependency container
 # *Must* be after defining the commands when using auto_inject
-container = make_container(provider)
 setup_dishka(container=container, app=app, auto_inject=True)
 
 

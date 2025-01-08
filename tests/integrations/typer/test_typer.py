@@ -6,19 +6,29 @@ import pytest
 import typer
 from typer.testing import CliRunner
 
-from dishka import FromDishka, make_container
-from dishka.integrations.typer import inject, setup_dishka
+from dishka import FromDishka, Scope, make_container
+from dishka.dependency_source.make_factory import provide
+from dishka.integrations.typer import TyperProvider, inject, setup_dishka
 from dishka.provider import Provider
 from ..common import (
     APP_DEP_VALUE,
+    REQUEST_DEP_VALUE,
     AppDep,
     AppMock,
     AppProvider,
+    RequestDep,
 )
 
 AppFactory = Callable[
     [Callable[..., Any], Provider], AbstractContextManager[typer.Typer],
 ]
+
+
+class SampleProvider(Provider):
+
+    @provide(scope=Scope.REQUEST)
+    def invoked_subcommand(self, context: typer.Context) -> str | None:
+        return context.command.name
 
 
 @contextmanager
@@ -28,7 +38,7 @@ def dishka_app(
     app = typer.Typer()
     app.command(name="test")(inject(handler))
 
-    container = make_container(provider)
+    container = make_container(provider, SampleProvider(), TyperProvider())
     setup_dishka(container=container, app=app, finalize_container=False)
 
     yield app
@@ -42,7 +52,7 @@ def dishka_auto_app(
     app = typer.Typer()
     app.command(name="test")(handler)
 
-    container = make_container(provider)
+    container = make_container(provider, SampleProvider(), TyperProvider())
     setup_dishka(
         container=container,
         app=app,
@@ -63,7 +73,7 @@ def dishka_nested_group_app(
     group.command(name="sub")(handler)
     app.add_typer(group, name="test")
 
-    container = make_container(provider)
+    container = make_container(provider, SampleProvider(), TyperProvider())
     setup_dishka(
         container=container,
         app=app,
@@ -153,3 +163,57 @@ def test_app_dependency_with_nested_groups_and_option(
             APP_DEP_VALUE, "Wade", "Wilson",
         )
         app_provider.request_released.assert_not_called()
+
+
+def handle_with_context_dependency(
+    a: FromDishka[RequestDep],
+    mock: FromDishka[AppMock],
+    command_name: FromDishka[str | None],
+) -> None:
+    """Function using a dependency """
+    mock(a)
+    assert command_name == "test"
+
+
+def handle_with_context_dependency_and_context_arg(
+    ctx_arg: typer.Context,
+    a: FromDishka[RequestDep],
+    mock: FromDishka[AppMock],
+    command_name: FromDishka[str | None],
+) -> None:
+    mock(a)
+    assert command_name == "test"
+    assert ctx_arg.command.name == "test"
+
+
+def handle_with_context_dependency_and_context_kwarg(
+    a: FromDishka[RequestDep],
+    mock: FromDishka[AppMock],
+    command_name: FromDishka[str | None],
+    *,
+    ctx_kwarg: typer.Context,  # Force as kwargs
+) -> None:
+    mock(a)
+    assert command_name == "test"
+    assert ctx_kwarg.command.name == "test"
+
+
+@pytest.mark.parametrize("app_factory", [dishka_app, dishka_auto_app])
+@pytest.mark.parametrize(
+    "handler_function", [
+        handle_with_context_dependency_and_context_arg,
+        handle_with_context_dependency_and_context_kwarg,
+        handle_with_context_dependency,
+    ],
+)
+def test_request_dependency_with_context_command(
+    app_provider: AppProvider,
+    app_factory: AppFactory,
+    handler_function: Callable[..., Any],
+) -> None:
+    runner = CliRunner()
+    with app_factory(handler_function, app_provider) as command:
+        result = runner.invoke(command, ["test"])
+        assert result.exit_code == 0, result.stdout
+        app_provider.app_mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()

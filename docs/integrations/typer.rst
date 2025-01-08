@@ -4,9 +4,12 @@ Typer
 =================================
 
 
-Though it is not required, you can use dishka-click integration. It features automatic injection to command handlers
-In contrast with other integrations there is no scope management.
+Though it is not required, you can use dishka-click integration. It features:
 
+* automatic APP and REQUEST scope management
+* automatic injection of dependencies into handler function
+* passing ``typer.Context`` object as a context data to providers
+* you can still request ``typer.Context`` as with usual typer commands
 
 
 How to use
@@ -16,30 +19,37 @@ How to use
 
 .. code-block:: python
 
-    from dishka.integrations.typer import setup_dishka, inject
+    from dishka.integrations.typer import setup_dishka, inject, TyperProvider
 
 
-2. Create a container and set it up with the typer app. Pass ``auto_inject=True`` if you do not want to use the ``@inject`` decorator explicitly.
+2. Create provider. You can use ``typer.Context`` as a factory parameter to access on REQUEST-scope.
 
 .. code-block:: python
 
-    app = typer.Typer()
+    class YourProvider(Provider):
+        @provide(scope=Scope.REQUEST)
+        def command_name(self, context: typer.Context) -> str | None:
+            return context.command.name
 
-    container = make_container(MyProvider())
-    setup_dishka(container=container, app=app, auto_inject=True)
+
+3. *(optional)* Use ``TyperProvider()`` when creating your container if you are using ``typer.Context`` in providers.
+
+.. code-block:: python
+
+    container = make_async_container(YourProvider(), Typerprovider())
 
 
-3. Mark those of your command handlers parameters which are to be injected with ``FromDishka[]``
+4. Mark those of your command handlers parameters which are to be injected with ``FromDishka[]``. You can use ``typer.Context`` in the command as usual.
 
 .. code-block:: python
 
     app = typer.Typer()
 
     @app.command(name="greet")
-    def greet_user(greeter: FromDishka[Greeter], user: Annotated[str, typer.Argument()]) -> None:
+    def greet_user(ctx: typer.Context, greeter: FromDishka[Greeter], user: Annotated[str, typer.Argument()]) -> None:
         ...
 
-3a. *(optional)* decorate them using ``@inject`` if you want to mark commands explicitly
+4a. *(optional)* decorate commands using ``@inject`` if you want to mark them explicitly
 
 .. code-block:: python
 
@@ -47,3 +57,10 @@ How to use
     @inject  # Use this decorator *before* the command decorator
     def greet_user(greeter: FromDishka[Greeter], user: Annotated[str, typer.Argument()]) -> None:
         ...
+
+
+5. *(optional)* Use ``auto_inject=True`` when setting up dishka to automatically inject dependencies into your command handlers. When doing this, ensure all commands have already been created when you call setup. This limitation is not required when using ``@inject`` manually.
+
+.. code-block:: python
+
+    setup_dishka(container=container, app=app, auto_inject=True)

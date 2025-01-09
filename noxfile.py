@@ -61,7 +61,7 @@ INTEGRATIONS = [
 ]
 
 
-@nox.session(tags=["integrations-base"])
+@nox.session(tags=["ci"])
 def integrations_base(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,
@@ -73,7 +73,7 @@ def integrations_base(session: nox.Session) -> None:
 for env in INTEGRATIONS:
     @nox.session(
         name=f"{env.library}_{env.version}",
-        tags=[env.library, "latest" if env.version == "latest" else "non-latest"],
+        tags=[env.library, "latest" if env.version == "latest" else "ci"],
     )
     def session(session: nox.Session, env=env) -> None:
         if not env.constraint():
@@ -82,7 +82,7 @@ for env in INTEGRATIONS:
         session.run(*CMD, env.get_tests())
 
 
-@nox.session(tags=["unit"])
+@nox.session(tags=["ci"])
 def unit(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,
@@ -91,7 +91,7 @@ def unit(session: nox.Session) -> None:
     session.run(*CMD, "tests/unit")
 
 
-@nox.session(tags=["real-world"])
+@nox.session(tags=["ci"])
 def real_world(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,

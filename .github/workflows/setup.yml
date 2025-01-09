@@ -46,7 +46,7 @@ jobs:
 
     - name: Run tests
       run: |
-        nox -t non-latest unit real-world
+        nox -t ci
 
     - name: Build doc
       run: |

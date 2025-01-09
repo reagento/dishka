@@ -22,7 +22,7 @@ pytestmark = pytest.mark.filterwarnings("ignore:CLIENT SETNAME")
 
 
 def app_job(a: FromDishka[AppDep], app_mock: FromDishka[AppMock]):
-    pass  # pragma: no coverage
+    app_mock(a)
 
 
 def request_job(
@@ -158,15 +158,12 @@ def test_perform_app_job(
     fake_redis_conn: FakeStrictRedis,
     app_provider: AppProvider,
 ):
-    mock_call = Mock(name="mock_perform_job", return_value=True)
-    mock_queue = Mock(spec=Queue)
+    queue = Queue(connection=fake_redis_conn)
+    job = queue.enqueue(app_job)
 
-    with patch.object(Worker, "perform_job", mock_call) as mock_perform_job:
-        job = Job.create(func=app_job, connection=fake_redis_conn)
+    worker.perform_job(job, queue)
 
-        worker.perform_job(job, mock_queue)
-
-    mock_perform_job.assert_called_once_with(job, mock_queue)
+    app_provider.app_mock.assert_called_once()
     app_provider.app_released.assert_not_called()
 
     worker.teardown()

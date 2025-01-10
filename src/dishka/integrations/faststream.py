@@ -1,7 +1,7 @@
 __all__ = (
+    "FastStreamProvider",
     "FromDishka",
     "inject",
-    "FastStreamProvider",
     "setup_dishka",
 )
 

@@ -16,7 +16,7 @@ class FactoryType(Enum):
 
 
 class FactoryData:
-    __slots__ = ("source", "provides", "scope", "type")
+    __slots__ = ("provides", "scope", "source", "type")
 
     def __init__(
             self,

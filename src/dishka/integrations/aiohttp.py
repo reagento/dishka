@@ -1,9 +1,9 @@
 __all__ = [
     "DISHKA_CONTAINER_KEY",
+    "AiohttpProvider",
     "FromDishka",
     "inject",
     "setup_dishka",
-    "AiohttpProvider",
 ]
 
 from collections.abc import Callable, Coroutine

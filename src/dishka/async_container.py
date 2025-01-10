@@ -28,14 +28,14 @@ T = TypeVar("T")
 
 class AsyncContainer:
     __slots__ = (
+        "_cache",
+        "_context",
+        "_exits",
         "child_registries",
         "close_parent",
         "lock",
         "parent_container",
         "registry",
-        "_cache",
-        "_context",
-        "_exits",
     )
 
     def __init__(

@@ -19,7 +19,7 @@ from dishka._adaptix.type_tools.fundamentals import (
 )
 from dishka.entities.provides_marker import ProvideMultiple
 
-__all__ = ["WithParents", "ParentsResolver"]
+__all__ = ["ParentsResolver", "WithParents"]
 
 IGNORE_TYPES: Final = (
     type,

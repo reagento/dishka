@@ -15,7 +15,7 @@ def context_stub() -> NoReturn:
 
 
 class ContextVariable:
-    __slots__ = ("provides", "scope", "override")
+    __slots__ = ("override", "provides", "scope")
 
     def __init__(
             self, *,

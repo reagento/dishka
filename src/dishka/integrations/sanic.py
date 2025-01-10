@@ -1,8 +1,8 @@
 __all__ = [
     "FromDishka",
+    "SanicProvider",
     "inject",
     "setup_dishka",
-    "SanicProvider",
 ]
 
 from collections.abc import Iterable

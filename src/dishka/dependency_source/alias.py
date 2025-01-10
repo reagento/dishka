@@ -14,7 +14,7 @@ def _identity(x: Any) -> Any:
 
 
 class Alias:
-    __slots__ = ("source", "provides", "cache", "component", "override")
+    __slots__ = ("cache", "component", "override", "provides", "source")
 
     def __init__(
             self, *,

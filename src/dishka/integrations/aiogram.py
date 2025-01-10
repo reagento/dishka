@@ -9,6 +9,7 @@ __all__ = [
 
 import warnings
 from collections.abc import Awaitable, Callable, Container
+from functools import partial
 from inspect import Parameter, signature
 from typing import Any, Final, ParamSpec, TypeVar, cast
 
@@ -94,10 +95,20 @@ def setup_dishka(
 
     for observer in router.observers.values():
         observer.outer_middleware(middleware)
-        if auto_inject and observer.event_name != "update":
-            for handler in observer.handlers:
-                if is_dishka_injected(handler.callback):
-                    continue
+
+    if auto_inject:
+        callback = partial(inject_handlers, router=router)
+        router.startup.register(callback)
+
+
+def inject_handlers(router: Router) -> None:
+    """Inject dishka to the router handlers."""
+    for observer in router.observers.values():
+        if observer.event_name == "update":
+            continue
+
+        for handler in observer.handlers:
+            if not is_dishka_injected(handler.callback):
                 _inject_handler(handler)
 
 

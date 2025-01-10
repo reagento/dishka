@@ -4,6 +4,8 @@ __all__ = [
     "CONTAINER_NAME",
     "FromDishka",
     "inject",
+    "inject_handler",
+    "inject_router",
     "setup_dishka",
 ]
 

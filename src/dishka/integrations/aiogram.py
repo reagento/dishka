@@ -7,6 +7,7 @@ __all__ = [
     "setup_dishka",
 ]
 
+import warnings
 from collections.abc import Awaitable, Callable, Container
 from inspect import Parameter, signature
 from typing import Any, Final, ParamSpec, TypeVar, cast
@@ -61,6 +62,14 @@ class ContainerMiddleware(BaseMiddleware):
 
 
 class AutoInjectMiddleware(BaseMiddleware):
+    def __init__(self):
+        warnings.warn(
+            f"{self.__class__.__name__} is slow, "
+            "use `setup_dishka` instead if you care about performance",
+            UserWarning,
+            stacklevel=2,
+        )
+
     async def __call__(
         self,
         handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
@@ -71,15 +80,7 @@ class AutoInjectMiddleware(BaseMiddleware):
         if is_dishka_injected(old_handler.callback):
             return await handler(event, data)
 
-        new_handler = HandlerObject(
-            callback=inject(old_handler.callback),
-            filters=old_handler.filters,
-            flags=old_handler.flags,
-        )
-        old_handler.callback = new_handler.callback
-        old_handler.params = new_handler.params
-        old_handler.varkw = new_handler.varkw
-        old_handler.awaitable = new_handler.awaitable
+        _inject_handler(old_handler)
         return await handler(event, data)
 
 
@@ -90,9 +91,29 @@ def setup_dishka(
     auto_inject: bool = False,
 ) -> None:
     middleware = ContainerMiddleware(container)
-    auto_inject_middleware = AutoInjectMiddleware()
 
     for observer in router.observers.values():
         observer.outer_middleware(middleware)
         if auto_inject and observer.event_name != "update":
-            observer.middleware(auto_inject_middleware)
+            for handler in observer.handlers:
+                if is_dishka_injected(handler.callback):
+                    continue
+                _inject_handler(handler)
+
+
+def _inject_handler(handler: HandlerObject) -> HandlerObject:
+    """Inject dishka for callback in aiogram's handler."""
+    # temp_handler is used to apply original __post_init__ processing
+    # for callback object wrapped by injector
+    temp_handler = HandlerObject(
+        callback=inject(handler.callback),
+        filters=handler.filters,
+        flags=handler.flags,
+    )
+
+    # since injector modified callback and params,
+    # we should update them in the original handler
+    handler.callback = temp_handler.callback
+    handler.params = temp_handler.params
+
+    return handler

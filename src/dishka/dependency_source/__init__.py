@@ -1,10 +1,15 @@
 __all__ = [
+    "Alias",
+    "ContextVariable",
+    "Decorator",
     "DependencySource",
-    "alias", "Alias",
-    "context_var", "ContextVariable", "from_context",
-    "decorate", "Decorator",
-    "provide", "provide_all",
     "Factory",
+    "alias",
+    "context_var",
+    "decorate",
+    "from_context",
+    "provide",
+    "provide_all",
 ]
 
 from .alias import Alias

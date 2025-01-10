@@ -1,8 +1,8 @@
 __all__ = [
     "FromDishka",
+    "TelebotProvider",
     "inject",
     "setup_dishka",
-    "TelebotProvider",
 ]
 
 from collections.abc import Callable

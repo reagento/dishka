@@ -1,9 +1,9 @@
 __all__ = [
     "FromDishka",
+    "LitestarProvider",
     "inject",
     "inject_websocket",
     "setup_dishka",
-    "LitestarProvider",
 ]
 
 from collections.abc import Callable

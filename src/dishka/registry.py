@@ -18,7 +18,11 @@ from .factory_compiler import compile_factory
 
 class Registry:
     __slots__ = (
-        "scope", "factories", "compiled", "compiled_async", "has_fallback",
+        "compiled",
+        "compiled_async",
+        "factories",
+        "has_fallback",
+        "scope",
     )
 
     def __init__(self, scope: BaseScope, *, has_fallback: bool) -> None:

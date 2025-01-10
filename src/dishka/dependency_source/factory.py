@@ -14,10 +14,10 @@ from dishka.entities.scope import BaseScope
 
 class Factory(FactoryData):
     __slots__ = (
-        "dependencies",
-        "kw_dependencies",
-        "is_to_bind",
         "cache",
+        "dependencies",
+        "is_to_bind",
+        "kw_dependencies",
         "override",
     )
 

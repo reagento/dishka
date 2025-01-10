@@ -10,7 +10,7 @@ from .type_match import get_typevar_replacement, is_broader_or_same_type
 
 
 class Decorator:
-    __slots__ = ("provides", "factory")
+    __slots__ = ("factory", "provides")
 
     def __init__(
             self,

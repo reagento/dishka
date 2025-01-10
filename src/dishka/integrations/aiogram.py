@@ -81,7 +81,7 @@ class AutoInjectMiddleware(BaseMiddleware):
         if is_dishka_injected(old_handler.callback):
             return await handler(event, data)
 
-        _inject_handler(old_handler)
+        inject_handler(old_handler)
         return await handler(event, data)
 
 
@@ -97,11 +97,11 @@ def setup_dishka(
         observer.outer_middleware(middleware)
 
     if auto_inject:
-        callback = partial(inject_handlers, router=router)
+        callback = partial(inject_router, router=router)
         router.startup.register(callback)
 
 
-def inject_handlers(router: Router) -> None:
+def inject_router(router: Router) -> None:
     """Inject dishka to the router handlers."""
     for observer in router.observers.values():
         if observer.event_name == "update":
@@ -109,10 +109,10 @@ def inject_handlers(router: Router) -> None:
 
         for handler in observer.handlers:
             if not is_dishka_injected(handler.callback):
-                _inject_handler(handler)
+                inject_handler(handler)
 
 
-def _inject_handler(handler: HandlerObject) -> HandlerObject:
+def inject_handler(handler: HandlerObject) -> HandlerObject:
     """Inject dishka for callback in aiogram's handler."""
     # temp_handler is used to apply original __post_init__ processing
     # for callback object wrapped by injector

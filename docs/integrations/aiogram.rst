@@ -72,3 +72,10 @@ How to use
 
     setup_dishka(container=container, router=dp, auto_inject=True)
 
+
+7. *(optional)* Close container on dispatcher shutdown
+
+.. code-block:: python
+
+    dispatcher.shutdown.register(container.close)
+

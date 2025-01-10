@@ -31,6 +31,23 @@ async def dishka_app(handler, provider):
 
 
 @asynccontextmanager
+async def dishka_early_inject_app(handler, provider):
+    dp = Dispatcher()
+
+    # first apply auto_inject
+    container = make_async_container(provider)
+    setup_dishka(container, router=dp, auto_inject=True)
+
+    # then register raw handler
+    dp.message.register(handler)
+
+    await dp.emit_startup()
+    yield dp
+    await dp.emit_shutdown()
+    await container.close()
+
+
+@asynccontextmanager
 async def dishka_auto_app(handler, provider):
     dp = Dispatcher()
     dp.message()(handler)
@@ -120,3 +137,14 @@ async def handle_get_async_container(
 async def test_get_async_container(bot, app_provider: AppProvider):
     async with dishka_app(handle_get_async_container, app_provider) as dp:
         await send_message(bot, dp)
+
+
+@pytest.mark.asyncio
+async def test_early_autoinject(bot, app_provider: AppProvider):
+    async with dishka_early_inject_app(
+        handler=handle_with_request,
+        provider=app_provider,
+    ) as dp:
+        await send_message(bot, dp)
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()

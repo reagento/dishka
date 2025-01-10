@@ -1,13 +1,21 @@
+from collections.abc import Callable
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
-from aiogram import Dispatcher
-from aiogram.types import Chat, Message, Update, User
+from aiogram import Bot, Dispatcher
+from aiogram.dispatcher.event.handler import HandlerObject
+from aiogram.types import Chat, Message, TelegramObject, Update, User
 
 from dishka import AsyncContainer, make_async_container
-from dishka.integrations.aiogram import FromDishka, inject, setup_dishka
+from dishka.integrations.aiogram import (
+    AutoInjectMiddleware,
+    FromDishka,
+    inject,
+    setup_dishka,
+)
+from dishka.integrations.base import is_dishka_injected
 from ..common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
@@ -148,3 +156,51 @@ async def test_early_autoinject(bot, app_provider: AppProvider):
         await send_message(bot, dp)
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_double_inject(bot, app_provider: AppProvider):
+    """Apply auto_inject for already injected handler."""
+    injected_handler = inject(handle_with_request)
+    assert is_dishka_injected(injected_handler)
+
+    async with dishka_auto_app(
+        handler=injected_handler,
+        provider=app_provider,
+    ) as dp:
+        await send_message(bot, dp)
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "handler",
+    [
+        pytest.param(handle_with_request, id="raw-handler"),
+        pytest.param(inject(handle_with_request), id="injected"),
+    ],
+)
+@pytest.mark.asyncio
+async def test_autoinject_middleware(
+        bot: Bot,
+        app_provider: AppProvider,
+        handler: Callable,
+):
+    original_filters = []
+    original_flags = {}
+
+    handler_object = AsyncMock(HandlerObject)
+    handler_object.callback = handler
+    handler_object.filters = original_filters
+    handler_object.flags = original_flags
+
+    middleware = AutoInjectMiddleware()
+    await middleware(
+        handler=handler_object,
+        event=Mock(TelegramObject),
+        data={"handler": handler_object},
+    )
+
+    assert is_dishka_injected(handler_object.callback)
+    assert handler_object.filters is original_filters
+    assert handler_object.flags is original_flags

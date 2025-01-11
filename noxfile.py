@@ -82,7 +82,7 @@ for env in INTEGRATIONS:
         session.run(*CMD, env.get_tests())
 
 
-@nox.session(tags=["ci"])
+@nox.session(tags=["ci", "unit"])
 def unit(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,

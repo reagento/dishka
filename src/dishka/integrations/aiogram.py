@@ -12,7 +12,7 @@ __all__ = [
 
 import warnings
 from collections.abc import Awaitable, Callable, Container
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from functools import partial
 from inspect import Parameter, signature
 from typing import Any, Final, ParamSpec, TypeVar, cast
@@ -115,7 +115,13 @@ class ContainerMiddleware(BaseMiddleware):
 
     def _resolve_event_context(self, data: dict[str, Any]) -> EventContext:
         if IS_AIOGRAM_HAS_EVENT_CONTEXT:
-            return EventContext(**asdict(data["event_context"]))
+            real_event_context = data["event_context"]
+            return EventContext(
+                chat=real_event_context.chat,
+                user=real_event_context.user,
+                thread_id=real_event_context.thread_id,
+                business_connection_id=real_event_context.business_connection_id,
+            )
 
         chat: Chat | None = data.get("event_chat")
         user: User | None = data.get("event_from_user")

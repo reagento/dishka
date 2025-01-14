@@ -29,8 +29,8 @@ class MyProvider(Provider):
         return obj.from_user
 
     @provide(scope=Scope.REQUEST)
-    async def get_chat(self, middleware_data: AiogramMiddlewareData) -> Chat:
-        return middleware_data.event_context.chat
+    async def get_chat(self, middleware_data: AiogramMiddlewareData) -> Chat | None:
+        return middleware_data.get("event_chat")
 
 
 # app
@@ -45,9 +45,10 @@ async def start(
     message: Message,
     user: FromDishka[User],
     value: FromDishka[int],
-    chat: FromDishka[Chat],
+    chat: FromDishka[Chat | None],
 ):
-    await message.answer(f"Hello, {value}, {chat.username}, {user.full_name}!")
+    chat_name = chat.username if chat else None
+    await message.answer(f"Hello, {value}, {chat_name}, {user.full_name}!")
 
 
 async def main():

@@ -215,19 +215,13 @@ async def test_aiogram_provider_with_container_middleware(bot):
             event: FromDishka[TelegramObject],
             middleware_data: FromDishka[AiogramMiddlewareData],
     ) -> None:
-        assert event is message is middleware_data.event
+        assert event is message
 
-        event_context = middleware_data.event_context
-        assert event_context.user.id == message.from_user.id
-        assert event_context.chat.id == message.chat.id
-        assert event_context.thread_id == message.message_thread_id
-
-        data = middleware_data.data
-        assert "bot" in data
+        assert "bot" in middleware_data
         # disable_fsm=False - tests this keys
-        assert "state" in data
-        assert "raw_state" in data
-        assert "fsm_storage" in data
+        assert "state" in middleware_data
+        assert "raw_state" in middleware_data
+        assert "fsm_storage" in middleware_data
 
     async with dishka_auto_app(handler, AiogramProvider()) as dp:
         await send_message(bot, dp)

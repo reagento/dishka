@@ -10,6 +10,8 @@ from aiogram.types import Chat, Message, TelegramObject, Update, User
 
 from dishka import AsyncContainer, make_async_container
 from dishka.integrations.aiogram import (
+    AiogramMiddlewareData,
+    AiogramProvider,
     AutoInjectMiddleware,
     FromDishka,
     inject,
@@ -204,3 +206,22 @@ async def test_autoinject_middleware(
     assert is_dishka_injected(handler_object.callback)
     assert handler_object.filters is original_filters
     assert handler_object.flags is original_flags
+
+
+@pytest.mark.asyncio
+async def test_aiogram_provider_with_container_middleware(bot):
+    async def handler(
+            message: Message,
+            event: FromDishka[TelegramObject],
+            middleware_data: FromDishka[AiogramMiddlewareData],
+    ) -> None:
+        assert event is message
+
+        assert "bot" in middleware_data
+        # disable_fsm=False - tests this keys
+        assert "state" in middleware_data
+        assert "raw_state" in middleware_data
+        assert "fsm_storage" in middleware_data
+
+    async with dishka_auto_app(handler, AiogramProvider()) as dp:
+        await send_message(bot, dp)

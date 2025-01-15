@@ -1,5 +1,6 @@
 __all__ = [
     "CONTAINER_NAME",
+    "AiogramMiddlewareData",
     "AiogramProvider",
     "AutoInjectMiddleware",
     "FromDishka",
@@ -13,7 +14,7 @@ import warnings
 from collections.abc import Awaitable, Callable, Container
 from functools import partial
 from inspect import Parameter, signature
-from typing import Any, Final, ParamSpec, TypeVar, cast
+from typing import Any, Final, NewType, ParamSpec, TypeVar, cast
 
 from aiogram import BaseMiddleware, Router
 from aiogram.dispatcher.event.handler import HandlerObject
@@ -25,6 +26,7 @@ from .base import is_dishka_injected, wrap_injection
 P = ParamSpec("P")
 T = TypeVar("T")
 CONTAINER_NAME: Final = "dishka_container"
+AiogramMiddlewareData = NewType("AiogramMiddlewareData", dict[str, Any])
 
 
 def inject(func: Callable[P, T]) -> Callable[P, T]:
@@ -47,6 +49,7 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
 
 class AiogramProvider(Provider):
     event = from_context(TelegramObject, scope=Scope.REQUEST)
+    middleware_data = from_context(AiogramMiddlewareData, scope=Scope.REQUEST)
 
 
 class ContainerMiddleware(BaseMiddleware):
@@ -59,7 +62,12 @@ class ContainerMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        async with self.container({TelegramObject: event}) as sub_container:
+        async with self.container(
+                {
+                    TelegramObject: event,
+                    AiogramMiddlewareData: data,
+                },
+        ) as sub_container:
             data[CONTAINER_NAME] = sub_container
             return await handler(event, data)
 

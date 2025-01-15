@@ -58,5 +58,5 @@ How to use
 
 .. code-block:: python
 
-    setup_dishka(container=container, broker=broker)
+    setup_dishka(container=container, app=app)
 

@@ -25,6 +25,7 @@ You can create custom integrations for your framework of choice.
    starlette
    taskiq
    telebot
+   typer
    adding_new
 
 .. list-table:: Built-in frameworks integrations
@@ -43,7 +44,7 @@ You can create custom integrations for your framework of choice.
    * - :ref:`grpcio`
      - :ref:`Aiogram_dialog`
      - :ref:`FastStream`
-     -
+     - :ref:`Typer`
 
    * - :ref:`Fastapi`
      - :ref:`pyTelegramBotAPI<telebot>`

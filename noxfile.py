@@ -58,6 +58,8 @@ INTEGRATIONS = [
     IntegrationEnv("taskiq", "latest"),
     IntegrationEnv("telebot", "415"),
     IntegrationEnv("telebot", "latest"),
+    IntegrationEnv("typer", "0151"),
+    IntegrationEnv("typer", "latest"),
 ]
 
 

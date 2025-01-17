@@ -3,7 +3,7 @@ from typing import Any, Protocol
 
 import pytest
 
-from dishka import Provider, Scope, alias, decorate, provide
+from dishka import Provider, Scope, alias, decorate, make_container, provide
 from dishka.dependency_source.make_factory import make_factory, provide_all
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import (
@@ -306,3 +306,43 @@ def test_invalid_decorator():
 
     with pytest.raises(ValueError):  # noqa: PT011
         decorate(decorator)
+
+
+def test_provide_all_as_provider_method():
+    def a() -> int:
+        return 100
+
+    def b(num: int) -> float:
+        return num / 2
+
+    provider = Provider(scope=Scope.APP)
+    provider.provide_all(a, b)
+
+    container = make_container(provider)
+
+    hundred = container.get(int)
+    assert hundred == 100
+
+    fifty = container.get(float)
+    assert fifty == 50.0
+
+
+def test_provide_all_in_class():
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        def a(self) -> int:
+            return 100
+
+        def b(self, num: int) -> float:
+            return num / 2
+
+        abcd = provide_all(a, b)
+
+    container = make_container(MyProvider())
+
+    hundred = container.get(int)
+    assert hundred == 100
+
+    fifty = container.get(float)
+    assert fifty == 50.0

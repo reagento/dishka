@@ -1,8 +1,8 @@
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 from fakeredis import FakeStrictRedis
-from rq import Queue, Worker
+from rq import Queue
 from rq.job import Job
 
 from dishka import FromDishka
@@ -30,7 +30,7 @@ def request_job(
     r: FromDishka[RequestDep],
     mock: FromDishka[Mock],
 ):
-    pass  # pragma: no coverage
+    mock(r)
 
 
 def job_without_deps():
@@ -175,17 +175,14 @@ def test_perform_request_job(
     fake_redis_conn: FakeStrictRedis,
     app_provider: AppProvider,
 ):
-    mock_call = Mock(name="mock_perform_job", return_value=True)
-    mock_queue = Mock(spec=Queue)
+    queue = Queue(connection=fake_redis_conn)
+    job = queue.enqueue(request_job)
 
-    with patch.object(Worker, "perform_job", mock_call) as mock_perform_job:
-        job = Job.create(func=request_job, connection=fake_redis_conn)
+    worker.perform_job(job, queue)
 
-        worker.perform_job(job, mock_queue)
-
-        mock_perform_job.assert_called_once_with(job, mock_queue)
-        app_provider.app_released.assert_not_called()
-        app_provider.request_released.assert_called()
+    app_provider.mock.assert_called_once()
+    app_provider.app_released.assert_not_called()
+    app_provider.request_released.assert_called()
 
     worker.teardown()
     app_provider.app_released.assert_called()

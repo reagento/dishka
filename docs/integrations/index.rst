@@ -26,6 +26,7 @@ You can create custom integrations for your framework of choice.
    taskiq
    telebot
    adding_new
+   celery
 
 .. list-table:: Built-in frameworks integrations
    :header-rows: 1
@@ -52,7 +53,7 @@ You can create custom integrations for your framework of choice.
 
    * - :ref:`Flask`
      -
-     -
+     - :ref:`Celery`
      -
    * -  :ref:`Litestar`
      -

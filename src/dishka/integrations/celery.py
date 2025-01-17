@@ -1,8 +1,8 @@
 __all__ = [
+    "DishkaTask",
     "FromDishka",
     "inject",
     "setup_dishka",
-    "DishkaTask",
 ]
 
 from collections.abc import Callable

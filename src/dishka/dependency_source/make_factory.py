@@ -627,7 +627,7 @@ def _provide_all(
     for single_provides in provides:
         source = _provide(
             source=single_provides,
-            provides=single_provides,
+            provides=None,
             scope=scope,
             cache=cache,
             is_in_class=is_in_class,

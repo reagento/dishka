@@ -1,4 +1,3 @@
-import warnings
 from asyncio import iscoroutinefunction
 from collections.abc import (
     AsyncGenerator,
@@ -294,15 +293,6 @@ def _make_factory_by_function(
             # add self to dependencies, so it can be easily removed
             # if we will bind factory to provider instance
             hints = {self.name: Any, **hints}
-        if not self or self.name is not None:
-            warnings.warn(
-                f"You are trying to use function `{source.__name__}` "
-                "without `self` argument "
-                "inside Provider class, it would be treated as method. "
-                "Consider wrapping it with `staticmethod`, "
-                "registering on a provider instance or adding `self`.",
-                stacklevel=5,
-            )
     possible_dependency = hints.pop("return", _empty)
 
     kw_dependency_keys = {

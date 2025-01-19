@@ -294,7 +294,7 @@ def _make_factory_by_function(
             # add self to dependencies, so it can be easily removed
             # if we will bind factory to provider instance
             hints = {self.name: Any, **hints}
-        if not self or self.name is not None:
+        if not self or self.name != "self":
             warnings.warn(
                 f"You are trying to use function `{source.__name__}` "
                 "without `self` argument "

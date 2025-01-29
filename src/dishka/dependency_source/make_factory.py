@@ -252,6 +252,22 @@ def _make_factory_by_class(
         override=override,
     )
 
+def _check_self_name(
+        source: Callable[..., Any] | classmethod,  # type: ignore[type-arg]
+        self: Parameter | None,
+):
+    if isinstance(source, classmethod):
+        return
+    if self and self.name == "self":
+        return
+    warnings.warn(
+        f"You are trying to use function `{source.__name__}` "
+        "without `self` argument "
+        "inside Provider class, it would be treated as method. "
+        "Consider wrapping it with `staticmethod`, "
+        "registering on a provider instance or adding `self`.",
+        stacklevel=6,
+    )
 
 def _make_factory_by_function(
         *,
@@ -261,6 +277,7 @@ def _make_factory_by_function(
         cache: bool,
         is_in_class: bool,
         override: bool,
+        check_self_name: bool,
 ) -> Factory:
     # typing.cast is applied as unwrap takes a Callable object
     raw_source = unwrap(cast(Callable[..., Any], source))
@@ -294,15 +311,8 @@ def _make_factory_by_function(
             # add self to dependencies, so it can be easily removed
             # if we will bind factory to provider instance
             hints = {self.name: Any, **hints}
-        if not self or self.name != "self":
-            warnings.warn(
-                f"You are trying to use function `{source.__name__}` "
-                "without `self` argument "
-                "inside Provider class, it would be treated as method. "
-                "Consider wrapping it with `staticmethod`, "
-                "registering on a provider instance or adding `self`.",
-                stacklevel=5,
-            )
+        if check_self_name:
+            _check_self_name(source, self)
     possible_dependency = hints.pop("return", _empty)
 
     kw_dependency_keys = {
@@ -409,13 +419,14 @@ def _make_factory_by_other_callable(
         to_check = source.__func__  # type: ignore[attr-defined]
     else:
         to_check = type(source).__call__
-    factory = make_factory(
+    factory = _make_factory_by_function(
         provides=provides,
         source=to_check,
         cache=cache,
         scope=scope,
         is_in_class=True,
         override=override,
+        check_self_name=False,
     )
     if factory.is_to_bind:
         dependencies = factory.dependencies[1:]  # remove `self`
@@ -467,6 +478,7 @@ def make_factory(
             cache=cache,
             is_in_class=is_in_class,
             override=override,
+            check_self_name=True,
         )
     elif isbuiltin(source):
         return _make_factory_by_function(
@@ -476,6 +488,7 @@ def make_factory(
             cache=cache,
             is_in_class=False,
             override=override,
+            check_self_name=False,
         )
     elif isinstance(source, staticmethod):
         return _make_factory_by_static_method(

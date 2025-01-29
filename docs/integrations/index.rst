@@ -28,6 +28,7 @@ Some of the integrations are supported by a community, refer to their documentat
    telebot
    adding_new
    celery
+   RQ <https://github.com/prepin/dishka-rq>
    Quart <https://github.com/hrimov/quart-dishka>
 
 .. list-table:: Built-in frameworks integrations
@@ -59,7 +60,7 @@ Some of the integrations are supported by a community, refer to their documentat
      -
    * -  :ref:`Litestar`
      -
-     -
+     - `RQ <https://github.com/prepin/dishka-rq>`_ (:abbr:`com (Community support)`)
      -
    * -  :ref:`Sanic`
      -

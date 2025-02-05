@@ -10,7 +10,7 @@ For this analysis we imagined several cases. Not all applications require all of
 * Some objects such as database connections may require async initialization and finalization.
 * Some dependencies must be shared between other objects. For example: databases connection can be used by multiple data-mappers and unit-of-work within single processing request.
 
-Actually, everything can be done in your code: DI-framework is not a required thing for an application. But isn't it more pleasure when everything is just working out of the box?
+Actually, everything can be done in your code: DI-framework is not a required thing for an application. But isn't it more pleasant when everything is just working out of the box?
 
 There might be errors in this comparison, some features are not well described while still exist in selected libraries. Some features can be implemented manually, but this topic is not about your code - it is about existing libraries.
 

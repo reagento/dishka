@@ -3,7 +3,7 @@ Alternatives
 
 **Dishka** was developed according to the needs of real applications. Available features were described in other parts of documentation like :ref:`technical-requirements`. But there are other libraries on the market.
 
-For this analyze we imagined several cases. Not all applications require all of them, but they might be needed at some point in their lifetime:
+For this analysis we imagined several cases. Not all applications require all of them, but they might be needed at some point in their lifetime:
 
 * For some apps (like AWS Lambdas) you do not need to create all singletons at startup as it serves only few requests.
 * For some apps (like desktop) you will use threads, for others you will use asyncio

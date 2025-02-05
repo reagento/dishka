@@ -159,7 +159,7 @@ FastAPI depends provides simple but effective API to inject dependencies, but th
 
 * It can be used only inside FastAPI.
 * You cannot use it for lazy initialization of singletons
-* It mixes up Dependency Injection and Request decomposition. That leads to incorrect openapi specification or even broken app.
+* It mixes up Dependency Injection and Request decomposition. That leads to incorrect OpenAPI specification or even broken app.
 * You have to declare each dependency with ``Depends`` on each level of application. So either your business logic contains details of IoC-container or you have to duplicate constructor signatures.
 * It is not very fast in runtime, though you might never notice that
 * Almost all examples in documentation ignore ``dependency_overrides``, which is actually a main thing to use FastAPI as IoC-container.

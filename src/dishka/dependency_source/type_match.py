@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from typing import Any, ForwardRef, TypeVar, get_args, get_origin
 
 from dishka._adaptix.type_tools.basic_utils import eval_forward_ref, is_generic
+from dishka.exceptions import UnsupportedGenericBoundsError
 
 
 def eval_maybe_forward(t: Any, wrapper: Any) -> Any:
@@ -52,7 +53,7 @@ class _TypeMatcher:
     def _is_bound_broader(self, t1: TypeVar, t2: Any) -> bool:
         bound1 = eval_maybe_forward(t1.__bound__, t1)
         if get_origin(bound1):
-            raise ValueError(f"Generic bounds are not supported: {t1}")
+            raise UnsupportedGenericBoundsError(t1)
         if not isinstance(t2, TypeVar):
             if get_origin(t2):
                 t2 = get_origin(t2)

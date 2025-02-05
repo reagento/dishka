@@ -16,8 +16,11 @@ from .context_proxy import ContextProxy
 from .dependency_source import Factory
 from .entities.validation_settigs import DEFAULT_VALIDATION, ValidationSettings
 from .exceptions import (
+    ChildScopeNotFoundError,
     ExitError,
+    NoChildScopesError,
     NoFactoryError,
+    NoNonSkippedScopesError,
 )
 from .provider import BaseProvider
 from .registry import Registry
@@ -96,7 +99,7 @@ class Container:
         :return: context manager for inner scope
         """
         if not self.child_registries:
-            raise ValueError("No child scopes found")
+            raise NoChildScopesError
         child = Container(
             *self.child_registries,
             parent_container=self,
@@ -106,7 +109,7 @@ class Container:
         if scope is None:
             while child.registry.scope.skip:
                 if not child.child_registries:
-                    raise ValueError("No non-skipped scopes found.")
+                    raise NoNonSkippedScopesError
                 child = Container(
                     *child.child_registries,
                     parent_container=child,
@@ -117,8 +120,7 @@ class Container:
         else:
             while child.registry.scope is not scope:
                 if not child.child_registries:
-                    raise ValueError(f"Cannot find {scope} as a child of "
-                                     f"current {self.registry.scope}")
+                    raise ChildScopeNotFoundError(scope, self.registry.scope)
                 child = Container(
                     *child.child_registries,
                     parent_container=child,
@@ -194,7 +196,7 @@ class Container:
                 errors.append(err)
 
         if errors:
-            raise ExitError("Cleanup context errors", errors)
+            raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
 
 class ContextWrapper:

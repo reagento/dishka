@@ -18,7 +18,7 @@ lint.ignore = [
     "PT023",
     "SIM108",
     "SIM114",
-    "TRY003",
+    #"TRY003",
     "TC003",
     "RET505",
     "PLR0913",
@@ -29,7 +29,7 @@ lint.ignore = [
 ]
 
 [lint.per-file-ignores]
-"tests/**" = ["TID252", "PLR2004", "S101"]
+"tests/**" = ["TID252", "PLR2004", "S101", "TRY003"]
 
 [lint.isort]
 no-lines-before = ["local-folder"]

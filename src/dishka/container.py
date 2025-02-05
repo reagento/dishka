@@ -55,7 +55,10 @@ class Container:
         if context:
             for key, value in context.items():
                 if not isinstance(key, DependencyKey):
-                    key = DependencyKey(key, DEFAULT_COMPONENT)
+                    key = DependencyKey(  # noqa: PLW2901
+                        key,
+                        DEFAULT_COMPONENT,
+                    )
                 self._context[key] = value
         self._cache = {**self._context}
         self.parent_container = parent_container

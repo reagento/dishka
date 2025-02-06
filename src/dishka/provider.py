@@ -6,7 +6,7 @@ from typing import Any, TypeGuard
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.scope import BaseScope
-from dishka.exceptions import (
+from dishka.exceptions.scopes import (
     NoScopeSetInContextError,
     NoScopeSetInProvideError,
 )

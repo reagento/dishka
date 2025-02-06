@@ -21,7 +21,7 @@ from dishka.entities.provides_marker import ProvideMultiple
 
 __all__ = ["ParentsResolver", "WithParents"]
 
-from dishka.exceptions import StartingClassIgnoredError
+from dishka.exceptions.fabrication import StartingClassIgnoredError
 
 IGNORE_TYPES: Final = (
     type,

@@ -52,10 +52,10 @@ from dishka.entities.key import (
 )
 from dishka.entities.provides_marker import ProvideMultiple
 from dishka.entities.scope import BaseScope
-from dishka.exceptions import (
+from dishka.exceptions.fabrication import NotAFactoryError
+from dishka.exceptions.types import (
     MissingHintsError,
     MissingReturnHintError,
-    NotAFactoryError,
     UndefinedTypeAnalysisError,
     UnsupportedGeneratorReturnTypeError,
 )

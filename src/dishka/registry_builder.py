@@ -14,13 +14,15 @@ from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope, InvalidScopes, Scope
 from .entities.validation_settigs import ValidationSettings
-from .exceptions import (
+from .exceptions.fabrication import (
     AliasedFactoryNotFoundError,
+    NoFactoryError,
+)
+from .exceptions.graph import (
     CycleDependenciesError,
     GraphMissingFactoryError,
     ImplicitOverrideDetectedError,
     InvalidGraphError,
-    NoFactoryError,
     NothingOverriddenError,
     UnknownScopeError,
 )

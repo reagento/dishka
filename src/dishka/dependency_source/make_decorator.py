@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Any, overload
 
-from dishka.exceptions import IndependentDecoratorError
+from dishka.exceptions.decorator import IndependentDecoratorError
 from .composite import CompositeDependencySource, ensure_composite
 from .decorator import Decorator
 from .make_factory import make_factory

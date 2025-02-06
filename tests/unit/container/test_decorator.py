@@ -12,7 +12,7 @@ from dishka import (
     make_container,
     provide,
 )
-from dishka.exceptions import CycleDependenciesError, NoFactoryError
+from dishka.exceptions.graph import CycleDependenciesError, NoFactoryError
 
 
 class A:

@@ -63,7 +63,7 @@ def test_parse_factory(source, provider_type, is_to_bound):
 
 
 def test_parse_factory_invalid_hint():
-    def foo() -> int:
+    def foo(self) -> int:
         yield 1
 
     with pytest.raises(TypeError):
@@ -71,7 +71,7 @@ def test_parse_factory_invalid_hint():
 
 
 def test_parse_factory_invalid_hint_async():
-    async def foo() -> int:
+    async def foo(self) -> int:
         yield 1
 
     with pytest.raises(TypeError):
@@ -301,7 +301,7 @@ def test_decorator():
 
 
 def test_invalid_decorator():
-    def decorator(param: int) -> str:
+    def decorator(self, param: int) -> str:
         return "hello"
 
     with pytest.raises(ValueError):  # noqa: PT011

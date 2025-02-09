@@ -17,15 +17,21 @@ lint.ignore = [
     "PT001",
     "PT023",
     "SIM108",
-    "SIM114",
-    #"TRY003",
-    "TC003",
     "RET505",
     "PLR0913",
-    "UP038",
-    "TC001",
     "SIM103",
     "ISC003",
+
+    # identitcal by code != identical by meaning
+    "SIM114",
+
+    # awful things, never use.
+    # It makes runtime work differently from typechecker
+    "TC001",
+    "TC003",
+
+    # only affects perfomance and brings nothing useful
+    "UP038",
 ]
 
 [lint.per-file-ignores]

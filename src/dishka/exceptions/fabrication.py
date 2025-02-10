@@ -1,16 +1,13 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 
 from dishka._adaptix.common import TypeHint
+from dishka.dependency_source import Factory
 from dishka.entities.factory_type import FactoryData
+from dishka.entities.key import DependencyKey
 from dishka.exceptions.base import DishkaError
 from dishka.text_rendering import get_name
 from dishka.text_rendering.path import PathRenderer
 from dishka.text_rendering.suggestion import render_suggestions_for_missing
-
-if TYPE_CHECKING:
-    from dishka import DependencyKey
-    from dishka.dependency_source import Factory
 
 _renderer = PathRenderer()
 
@@ -22,17 +19,17 @@ class UnsupportedFactoryError(DishkaError):
 class NoFactoryError(DishkaError):
     def __init__(
             self,
-            requested: "DependencyKey",
-            path: Sequence["Factory"] = (),
-            suggest_other_scopes: Sequence["Factory"] = (),
-            suggest_other_components: Sequence["Factory"] = (),
+            requested: DependencyKey,
+            path: Sequence[Factory] = (),
+            suggest_other_scopes: Sequence[Factory] = (),
+            suggest_other_components: Sequence[Factory] = (),
     ) -> None:
         self.requested = requested
         self.path = list(path)
         self.suggest_other_scopes = suggest_other_scopes
         self.suggest_other_components = suggest_other_components
 
-    def add_path(self, requested_by: "Factory") -> None:
+    def add_path(self, requested_by: Factory) -> None:
         self.path.insert(0, requested_by)
 
     def __str__(self) -> str:
@@ -79,7 +76,7 @@ class StartingClassIgnoredError(ValueError, DishkaError):
 
 class AliasedFactoryNotFoundError(ValueError, DishkaError):
     def __init__(
-            self, dependency: "DependencyKey", alias: FactoryData,
+            self, dependency: DependencyKey, alias: FactoryData,
     ) -> None:
         self.dependency = dependency
         self.alias_provider = alias.provides

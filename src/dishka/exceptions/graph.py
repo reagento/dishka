@@ -1,14 +1,11 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 
 from dishka.dependency_source import Factory
+from dishka.entities.scope import BaseScope
 from dishka.exceptions.base import DishkaError
 from dishka.exceptions.fabrication import NoFactoryError
 from dishka.text_rendering import get_name
 from dishka.text_rendering.path import PathRenderer
-
-if TYPE_CHECKING:
-    from dishka import BaseScope
 
 _renderer = PathRenderer()
 
@@ -20,8 +17,8 @@ class InvalidGraphError(DishkaError):
 class UnknownScopeError(InvalidGraphError):
     def __init__(
             self,
-            scope: "BaseScope | None",
-            expected: type["BaseScope"],
+            scope: BaseScope | None,
+            expected: type[BaseScope],
             extend_message: str = "",
     ) -> None:
         self.scope = scope
@@ -37,7 +34,7 @@ class UnknownScopeError(InvalidGraphError):
 
 
 class CycleDependenciesError(InvalidGraphError):
-    def __init__(self, path: Sequence["Factory"]) -> None:
+    def __init__(self, path: Sequence[Factory]) -> None:
         self.path = path
 
     def __str__(self) -> str:
@@ -54,7 +51,7 @@ class GraphMissingFactoryError(NoFactoryError, InvalidGraphError):
 
 
 class ImplicitOverrideDetectedError(InvalidGraphError):
-    def __init__(self, new: "Factory", existing: "Factory") -> None:
+    def __init__(self, new: Factory, existing: Factory) -> None:
         self.new = new
         self.existing = existing
 
@@ -71,7 +68,7 @@ class ImplicitOverrideDetectedError(InvalidGraphError):
 
 
 class NothingOverriddenError(InvalidGraphError):
-    def __init__(self, factory: "Factory") -> None:
+    def __init__(self, factory: Factory) -> None:
         self.factory = factory
 
     def __str__(self) -> str:

@@ -1,9 +1,5 @@
-from typing import TYPE_CHECKING
-
+from dishka.entities.scope import BaseScope
 from dishka.exceptions.base import DishkaError
-
-if TYPE_CHECKING:
-    from dishka import BaseScope
 
 
 class NoScopeSetInProvideError(ValueError, DishkaError):
@@ -54,8 +50,8 @@ class NoNonSkippedScopesError(ValueError, DishkaError):
 class ChildScopeNotFoundError(ValueError, DishkaError):
     def __init__(
             self,
-            assumed_child_scope: "BaseScope | None",
-            current_scope: "BaseScope | None",
+            assumed_child_scope: BaseScope | None,
+            current_scope: BaseScope | None,
     ) -> None:
         self.child_scope = assumed_child_scope
         self.current_scope = current_scope

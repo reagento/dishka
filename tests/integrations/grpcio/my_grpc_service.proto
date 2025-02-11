@@ -9,6 +9,7 @@ message MyResponse { string message = 1; }
 service MyService {
     rpc MyMethod(MyRequest) returns (MyResponse);
     rpc MyUnaryStreamMethod(MyRequest) returns (stream MyResponse);
+    rpc MyUnaryStreamMethodGen(MyRequest) returns (stream MyResponse);
     rpc MyStreamUnaryMethod(stream MyRequest) returns (MyResponse);
     rpc MyStreamStreamMethod(stream MyRequest) returns (stream MyResponse);
 }

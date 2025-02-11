@@ -1,5 +1,4 @@
-from collections.abc import AsyncIterable, Iterable
-from concurrent.futures import ThreadPoolExecutor
+from collections.abc import AsyncIterable
 from unittest.mock import Mock
 import os.path
 
@@ -7,9 +6,9 @@ import grpc.aio
 import pytest
 import pytest_asyncio
 
-from dishka import Container
+from dishka import AsyncContainer
 from dishka.integrations.grpcio import (
-    DishkaInterceptor,
+    DishkaAioInterceptor,
     FromDishka,
     inject,
 )
@@ -24,32 +23,30 @@ myprotos, myservices = grpc.protos_and_services(
     os.path.join(code_dir, "my_grpc_service.proto")
 )
 
+
 @pytest_asyncio.fixture
-async def dishka_grpc_app(container):
-    server = grpc.server(
-        ThreadPoolExecutor(max_workers=10),
-        interceptors=[
-            DishkaInterceptor(container),
-        ],
-    )
+async def dishka_grpc_app(async_container):
+    server = grpc.aio.server(interceptors=[
+        DishkaAioInterceptor(async_container),
+    ])
     myservices.add_MyServiceServicer_to_server(MyService(), server)
     server.add_insecure_port("localhost:50051")
-    server.start()
+    await server.start()
     yield server
-    server.stop(0)
+    await server.stop(0)
 
 
-@pytest.fixture
-def client(dishka_grpc_app):
-    with (
-        grpc.insecure_channel("localhost:50051") as channel,
+@pytest_asyncio.fixture
+async def client(dishka_grpc_app):
+    async with (
+        grpc.aio.insecure_channel("localhost:50051") as channel,
     ):
         yield myservices.MyServiceStub(channel)
 
 
 class MyService(myservices.MyServiceServicer):
     @inject
-    def MyMethod(  # noqa: N802
+    async def MyMethod(  # noqa: N802
             self,
             request: myprotos.MyRequest,
             context: grpc.ServicerContext,
@@ -61,69 +58,88 @@ class MyService(myservices.MyServiceServicer):
         return myprotos.MyResponse(message="Hello")
 
     @inject
-    def MyUnaryStreamMethod(  # noqa: N802
+    async def MyUnaryStreamMethod(  # noqa: N802
             self,
             request: myprotos.MyRequest,
             context: grpc.ServicerContext,
             mock: FromDishka[Mock],
-            a: FromDishka[RequestDep],
+            request_dep: FromDishka[RequestDep],
     ) -> AsyncIterable[myprotos.MyResponse]:
-        # unsupported on sync version
-        raise NotImplementedError()
+        mock(request_dep)
+        for i in range(5):
+            await context.write(myprotos.MyResponse(message=f"Hello {i}"))
 
     @inject
-    def MyUnaryStreamMethodGen(  # noqa: N802
+    async def MyUnaryStreamMethodGen(  # noqa: N802
             self,
             request: myprotos.MyRequest,
             context: grpc.ServicerContext,
             mock: FromDishka[Mock],
-            a: FromDishka[RequestDep],
+            request_dep: FromDishka[RequestDep],
     ) -> AsyncIterable[myprotos.MyResponse]:
-        mock(a)
-
+        mock(request_dep)
         for i in range(5):
+            # await context.write(MyResponse(message=f"Hello {i}"))
             yield myprotos.MyResponse(message=f"Hello {i}")
 
     @inject
-    def MyStreamStreamMethod(  # noqa: N802
+    async def MyStreamStreamMethod(  # noqa: N802
             self,
-            request_iterator: Iterable[myprotos.MyRequest],
+            request_iterator: AsyncIterable[myprotos.MyRequest],
             context: grpc.ServicerContext,
-            container: FromDishka[Container],
+            container: FromDishka[AsyncContainer],
     ) -> AsyncIterable[myprotos.MyResponse]:
-        with container() as ctr:
-            ctr.get(Mock)(ctr.get(RequestDep))
-            for _ in request_iterator:
+        async with container() as ctr:
+            (await ctr.get(Mock))(await ctr.get(RequestDep))
+            async for _ in request_iterator:
                 yield myprotos.MyResponse(message="Hello")
 
     @inject
-    def MyStreamUnaryMethod(  # noqa: N802
+    async def MyStreamUnaryMethod(  # noqa: N802
             self,
-            request_iterator: Iterable[myprotos.MyRequest],
+            request_iterator: AsyncIterable[myprotos.MyRequest],
             context: grpc.ServicerContext,
-            container: FromDishka[Container],
+            container: FromDishka[AsyncContainer],
     ) -> myprotos.MyResponse:
-        with container() as ctr:
-            ctr.get(Mock)(ctr.get(RequestDep))
+        async with container() as ctr:
+            (await ctr.get(Mock))(await ctr.get(RequestDep))
 
-            messages = [response.name for response in request_iterator]
+            messages = [response.name async for response in request_iterator]
             return myprotos.MyResponse(message=" ".join(messages))
 
 
-def test_grpc_unary_unary(
+@pytest.mark.asyncio
+async def test_grpc_unary_unary(
         client: myservices.MyServiceStub, app_provider: AppProvider,
 ):
-    response = client.MyMethod(myprotos.MyRequest(name="Test"))
+    response = await client.MyMethod(myprotos.MyRequest(name="Test"))
     assert response.message == "Hello"
     app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
     app_provider.request_released.assert_called_once()
 
 
-def test_grpc_unary_stream(
+@pytest.mark.asyncio
+async def test_grpc_unary_stream(
+        client: myservices.MyServiceStub, app_provider: AppProvider,
+):
+    responses = client.MyUnaryStreamMethod(myprotos.MyRequest(name="Test"))
+    messages = [response.message async for response in responses]
+    assert messages == [
+        "Hello 0",
+        "Hello 1",
+        "Hello 2",
+        "Hello 3",
+        "Hello 4",
+    ]
+    app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+    app_provider.request_released.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_grpc_unary_stream_gen(
         client: myservices.MyServiceStub, app_provider: AppProvider,
 ):
     responses = client.MyUnaryStreamMethodGen(myprotos.MyRequest(name="Test"))
-    messages = [response.message for response in responses]
+    messages = [response.message async for response in responses]
     assert messages == [
         "Hello 0",
         "Hello 1",
@@ -135,22 +151,24 @@ def test_grpc_unary_stream(
     app_provider.request_released.assert_called_once()
 
 
-def test_grpc_stream_unary_request_dependency(
+@pytest.mark.asyncio
+async def test_grpc_stream_unary_request_dependency(
         client: myservices.MyServiceStub, app_provider: AppProvider,
 ):
     request_iterator = (myprotos.MyRequest(name="Test") for _ in range(5))
-    response = client.MyStreamUnaryMethod(request_iterator)
+    response = await client.MyStreamUnaryMethod(request_iterator)
     assert response.message == "Test Test Test Test Test"
     app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
     app_provider.request_released.assert_called_once()
 
 
-def test_grpc_stream_stream_request_dependency(
+@pytest.mark.asyncio
+async def test_grpc_stream_stream_request_dependency(
         client: myservices.MyServiceStub, app_provider: AppProvider,
 ):
     request_iterator = iter([myprotos.MyRequest(name="Test") for _ in range(5)])
     responses = client.MyStreamStreamMethod(request_iterator)
-    messages = [response.message for response in responses]
+    messages = [response.message async for response in responses]
     assert messages == ["Hello"] * 5
     app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
     app_provider.request_released.assert_called_once()

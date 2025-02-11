@@ -68,8 +68,8 @@ class Container:
         self._exits: list[Exit] = []
         self.close_parent = close_parent
 
-@property
-    def scope() -> Scope:
+    @property
+    def scope(self) -> Scope:
         return self.registry.scope
 
     @property

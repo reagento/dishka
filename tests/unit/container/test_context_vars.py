@@ -11,7 +11,8 @@ from dishka import (
     provide,
 )
 from dishka.dependency_source import from_context
-from dishka.exceptions import InvalidGraphError, NoContextValueError
+from dishka.exceptions.base import NoContextValueError
+from dishka.exceptions.graph import InvalidGraphError
 
 
 def test_simple():

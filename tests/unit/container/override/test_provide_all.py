@@ -2,7 +2,7 @@ import pytest
 
 from dishka import Provider, Scope, make_container, provide_all
 from dishka.entities.validation_settigs import STRICT_VALIDATION
-from dishka.exceptions import ImplicitOverrideDetectedError
+from dishka.exceptions.graph import ImplicitOverrideDetectedError
 
 
 def test_not_override() -> None:

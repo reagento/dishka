@@ -68,6 +68,10 @@ class Container:
         self._exits: list[Exit] = []
         self.close_parent = close_parent
 
+@property
+    def scope() -> Scope:
+        return self.registry.scope
+
     @property
     def context(self) -> MutableMapping[DependencyKey, Any]:
         warnings.warn(

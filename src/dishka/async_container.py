@@ -69,7 +69,7 @@ class AsyncContainer:
         self.close_parent = close_parent
 
     @property
-    def scope(self) -> Scope:
+    def scope(self) -> BaseScope:
         return self.registry.scope
 
     @property

@@ -28,7 +28,7 @@ Overview
      - :abbr:`Auto-wiring(Simplified registration of classes based on their init)`
      - Context data
      - :abbr:`Zero-globals(Can be used without global state)`
-   * - `dishka <https://github.com/ragento/dishka>`_
+   * - `dishka <https://github.com/reagento/dishka>`_
      - ✅✅
      - ✅
      - ✅

@@ -1,5 +1,4 @@
 from sqlite3 import Connection
-from typing import Annotated
 
 from fastapi import FastAPI, APIRouter
 

@@ -1,6 +1,6 @@
 from collections.abc import AsyncIterable
+from pathlib import Path
 from unittest.mock import Mock
-import os.path
 
 import grpc.aio
 import pytest
@@ -18,9 +18,9 @@ from ..common import (
     RequestDep,
 )
 
-code_dir = os.path.relpath(os.path.dirname(__file__), os.path.curdir)
+code_dir = Path(__file__).parent / "my_grpc_service.proto"
 myprotos, myservices = grpc.protos_and_services(
-    os.path.join(code_dir, "my_grpc_service.proto")
+    str(code_dir.relative_to(Path.cwd())),
 )
 
 
@@ -79,11 +79,10 @@ class MyService(myservices.MyServiceServicer):
     ) -> AsyncIterable[myprotos.MyResponse]:
         mock(request_dep)
         for i in range(5):
-            # await context.write(MyResponse(message=f"Hello {i}"))
             yield myprotos.MyResponse(message=f"Hello {i}")
 
     @inject
-    async def MyStreamStreamMethod(  # noqa: N802
+    async def MyStreamStreamMethodGen(  # noqa: N802
             self,
             request_iterator: AsyncIterable[myprotos.MyRequest],
             context: grpc.ServicerContext,
@@ -93,6 +92,18 @@ class MyService(myservices.MyServiceServicer):
             (await ctr.get(Mock))(await ctr.get(RequestDep))
             async for _ in request_iterator:
                 yield myprotos.MyResponse(message="Hello")
+
+    @inject
+    async def MyStreamStreamMethod(  # noqa: N802
+            self,
+            request_iterator: AsyncIterable[myprotos.MyRequest],
+            context: grpc.ServicerContext,
+            container: FromDishka[AsyncContainer],
+    ) -> None:
+        async with container() as ctr:
+            (await ctr.get(Mock))(await ctr.get(RequestDep))
+            async for _ in request_iterator:
+                await context.write(myprotos.MyResponse(message="Hello"))
 
     @inject
     async def MyStreamUnaryMethod(  # noqa: N802
@@ -166,8 +177,26 @@ async def test_grpc_stream_unary_request_dependency(
 async def test_grpc_stream_stream_request_dependency(
         client: myservices.MyServiceStub, app_provider: AppProvider,
 ):
-    request_iterator = iter([myprotos.MyRequest(name="Test") for _ in range(5)])
+    request_iterator = iter([
+        myprotos.MyRequest(name="Test")
+        for _ in range(5)
+    ])
     responses = client.MyStreamStreamMethod(request_iterator)
+    messages = [response.message async for response in responses]
+    assert messages == ["Hello"] * 5
+    app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+    app_provider.request_released.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_grpc_stream_stream_gen_request_dependency(
+        client: myservices.MyServiceStub, app_provider: AppProvider,
+):
+    request_iterator = iter([
+        myprotos.MyRequest(name="Test")
+        for _ in range(5)
+    ])
+    responses = client.MyStreamStreamMethodGen(request_iterator)
     messages = [response.message async for response in responses]
     assert messages == ["Hello"] * 5
     app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)

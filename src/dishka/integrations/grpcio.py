@@ -8,7 +8,7 @@ __all__ = [
 
 from collections.abc import Awaitable, Callable, Iterator
 from contextvars import ContextVar
-from inspect import isasyncgenfunction, iscoroutinefunction, iscoroutine
+from inspect import isasyncgenfunction, iscoroutine, iscoroutinefunction
 from typing import Any, ParamSpec, TypeVar
 
 from google.protobuf.message import Message
@@ -203,6 +203,7 @@ class DishkaAioInterceptor(AioServerInterceptor):  # type: ignore[misc]
                     return await res
                 async for result in res:
                     await context.write(result)
+                return None
 
         async def stream_stream_behavior(
             request_iterator: Iterator[Message],
@@ -219,6 +220,7 @@ class DishkaAioInterceptor(AioServerInterceptor):  # type: ignore[misc]
                     return await res
                 async for result in res:
                     await context.write(result)
+                return None
 
         if rpc_handler.unary_unary:
             return unary_unary_rpc_method_handler(

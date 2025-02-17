@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterable, Iterable
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from unittest.mock import Mock
-import os.path
 
 import grpc.aio
 import pytest
@@ -19,10 +19,11 @@ from ..common import (
     RequestDep,
 )
 
-code_dir = os.path.relpath(os.path.dirname(__file__), os.path.curdir)
+code_dir = Path(__file__).parent / "my_grpc_service.proto"
 myprotos, myservices = grpc.protos_and_services(
-    os.path.join(code_dir, "my_grpc_service.proto")
+    str(code_dir.relative_to(Path.cwd())),
 )
+
 
 @pytest_asyncio.fixture
 async def dishka_grpc_app(container):
@@ -69,7 +70,7 @@ class MyService(myservices.MyServiceServicer):
             a: FromDishka[RequestDep],
     ) -> AsyncIterable[myprotos.MyResponse]:
         # unsupported on sync version
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @inject
     def MyUnaryStreamMethodGen(  # noqa: N802
@@ -85,7 +86,7 @@ class MyService(myservices.MyServiceServicer):
             yield myprotos.MyResponse(message=f"Hello {i}")
 
     @inject
-    def MyStreamStreamMethod(  # noqa: N802
+    def MyStreamStreamMethodGen(  # noqa: N802
             self,
             request_iterator: Iterable[myprotos.MyRequest],
             context: grpc.ServicerContext,
@@ -95,6 +96,16 @@ class MyService(myservices.MyServiceServicer):
             ctr.get(Mock)(ctr.get(RequestDep))
             for _ in request_iterator:
                 yield myprotos.MyResponse(message="Hello")
+
+    @inject
+    def MyStreamStreamMethod(  # noqa: N802
+            self,
+            request_iterator: Iterable[myprotos.MyRequest],
+            context: grpc.ServicerContext,
+            container: FromDishka[Container],
+    ) -> None:
+        # unsupported on sync version
+        raise NotImplementedError
 
     @inject
     def MyStreamUnaryMethod(  # noqa: N802
@@ -148,8 +159,11 @@ def test_grpc_stream_unary_request_dependency(
 def test_grpc_stream_stream_request_dependency(
         client: myservices.MyServiceStub, app_provider: AppProvider,
 ):
-    request_iterator = iter([myprotos.MyRequest(name="Test") for _ in range(5)])
-    responses = client.MyStreamStreamMethod(request_iterator)
+    request_iterator = iter([
+        myprotos.MyRequest(name="Test")
+        for _ in range(5)
+    ])
+    responses = client.MyStreamStreamMethodGen(request_iterator)
     messages = [response.message for response in responses]
     assert messages == ["Hello"] * 5
     app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)

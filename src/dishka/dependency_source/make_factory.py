@@ -417,14 +417,21 @@ def _make_factory_by_other_callable(
 ) -> Factory:
     if _is_bound_method(source):
         to_check = source.__func__  # type: ignore[attr-defined]
+        is_in_class = True
     else:
-        to_check = type(source).__call__
+        call_method = source.__call__  # type: ignore[attr-defined]
+        if _is_bound_method(call_method):
+            to_check = call_method.__func__  # type: ignore[attr-defined]
+            is_in_class = True
+        else:
+            to_check = call_method
+            is_in_class = False
     factory = _make_factory_by_function(
         provides=provides,
         source=to_check,
         cache=cache,
         scope=scope,
-        is_in_class=True,
+        is_in_class=is_in_class,
         override=override,
         check_self_name=False,
     )

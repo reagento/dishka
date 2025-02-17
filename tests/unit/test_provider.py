@@ -182,9 +182,25 @@ class MyCallable:
         return "hello"
 
 
-def test_callable():
+class MyClassCallable:
+    @classmethod
+    def __call__(cls: object, param: int) -> str:
+        return "hello"
+
+
+class MyStaticCallable:
+    @staticmethod
+    def __call__(param: int) -> str:
+        return "hello"
+
+
+@pytest.mark.parametrize(
+    "cls",
+    [MyCallable, MyClassCallable, MyStaticCallable],
+)
+def test_callable(cls):
     class MyProvider(Provider):
-        foo = provide(MyCallable())
+        foo = provide(cls())
 
     provider = MyProvider(scope=Scope.REQUEST)
     assert len(provider.factories) == 1

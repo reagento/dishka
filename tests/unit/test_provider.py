@@ -63,7 +63,7 @@ def test_parse_factory(source, provider_type, is_to_bound):
 
 
 def test_parse_factory_invalid_hint():
-    def foo() -> int:
+    def foo(self) -> int:
         yield 1
 
     with pytest.raises(TypeError):
@@ -71,7 +71,7 @@ def test_parse_factory_invalid_hint():
 
 
 def test_parse_factory_invalid_hint_async():
-    async def foo() -> int:
+    async def foo(self) -> int:
         yield 1
 
     with pytest.raises(TypeError):
@@ -182,9 +182,25 @@ class MyCallable:
         return "hello"
 
 
-def test_callable():
+class MyClassCallable:
+    @classmethod
+    def __call__(cls: object, param: int) -> str:
+        return "hello"
+
+
+class MyStaticCallable:
+    @staticmethod
+    def __call__(param: int) -> str:
+        return "hello"
+
+
+@pytest.mark.parametrize(
+    "cls",
+    [MyCallable, MyClassCallable, MyStaticCallable],
+)
+def test_callable(cls):
     class MyProvider(Provider):
-        foo = provide(MyCallable())
+        foo = provide(cls())
 
     provider = MyProvider(scope=Scope.REQUEST)
     assert len(provider.factories) == 1
@@ -301,7 +317,7 @@ def test_decorator():
 
 
 def test_invalid_decorator():
-    def decorator(param: int) -> str:
+    def decorator(self, param: int) -> str:
         return "hello"
 
     with pytest.raises(ValueError):  # noqa: PT011

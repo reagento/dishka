@@ -3,7 +3,7 @@ from typing import Generic, TypeVar
 import pytest
 
 from dishka import Provider, Scope, make_container, provide
-from dishka.exceptions import GraphMissingFactoryError
+from dishka.exceptions.graph import GraphMissingFactoryError
 
 T = TypeVar("T")
 U = TypeVar("U")

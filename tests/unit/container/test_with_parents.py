@@ -24,7 +24,7 @@ from dishka.entities.with_parents import (
     WithParents,
     is_type_var_tuple,
 )
-from dishka.exceptions import NoFactoryError
+from dishka.exceptions.fabrication import NoFactoryError
 
 if HAS_PY_311:
     from typing import TypeVarTuple, Unpack

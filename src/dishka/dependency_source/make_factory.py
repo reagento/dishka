@@ -419,7 +419,9 @@ def _make_factory_by_other_callable(
         to_check = source.__func__  # type: ignore[attr-defined]
         is_in_class = True
     else:
-        call_method = source.__call__  # type: ignore[attr-defined]
+        call_method = getattr(source, "__call__")
+        if not call_method:
+            raise ValueError(f"Failed to analyze `{source}`")
         if _is_bound_method(call_method):
             to_check = call_method.__func__  # type: ignore[attr-defined]
             is_in_class = True

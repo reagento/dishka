@@ -47,7 +47,7 @@ def is_protocol(tp: object) -> bool:
     if not isinstance(tp, type):
         return False
 
-    return Protocol in tp.__bases__
+    return Protocol in tp.__bases__  # type: ignore[comparison-overlap]
 
 
 def create_union(args: tuple):

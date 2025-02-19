@@ -6,7 +6,9 @@ from .text_rendering import get_name
 from .text_rendering.suggestion import render_suggestions_for_missing
 
 try:
-    from builtins import ExceptionGroup  # type: ignore[attr-defined, unused-ignore]
+    from builtins import (
+        ExceptionGroup,  # type: ignore[attr-defined, unused-ignore]
+    )
 
 except ImportError:
     from exceptiongroup import (  # type: ignore[no-redef, import-not-found, unused-ignore]

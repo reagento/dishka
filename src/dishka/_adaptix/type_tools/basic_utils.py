@@ -43,7 +43,7 @@ def is_named_tuple_class(tp) -> bool:
     )
 
 
-def is_protocol(tp):
+def is_protocol(tp: object) -> bool:
     if not isinstance(tp, type):
         return False
 

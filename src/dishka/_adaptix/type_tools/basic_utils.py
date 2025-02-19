@@ -64,7 +64,7 @@ if HAS_PY_312:
             bool(get_type_vars(tp))
             and (
                 is_subclass_soft(strip_alias(tp), Generic)
-                or isinstance(tp, typing.TypeAliasType)  # type: ignore[attr-defined]
+                or isinstance(tp, typing.TypeAliasType)  # type: ignore[attr-defined, unused-ignore]
             )
         )
 else:

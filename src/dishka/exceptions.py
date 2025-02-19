@@ -6,8 +6,8 @@ from .text_rendering import get_name
 from .text_rendering.suggestion import render_suggestions_for_missing
 
 try:
-    from builtins import (
-        ExceptionGroup,  # type: ignore[attr-defined, unused-ignore]
+    from builtins import (  # type: ignore[attr-defined, unused-ignore]
+        ExceptionGroup,
     )
 
 except ImportError:
@@ -45,7 +45,10 @@ class CycleDependenciesError(InvalidGraphError):
         return f"Cycle dependencies detected.{hint}\n{details}"
 
 
-class ExitError(ExceptionGroup[Exception], DishkaError):
+class ExitError(
+    ExceptionGroup[Exception],  # type: ignore[misc, unused-ignore]
+    DishkaError,
+):
     pass
 
 

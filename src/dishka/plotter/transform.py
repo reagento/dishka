@@ -1,7 +1,7 @@
 from typing import Any
 
 from dishka import AsyncContainer, BaseScope, Container, DependencyKey
-from dishka._adaptix.type_tools import is_protocol
+from dishka._adaptix.type_tools.basic_utils import is_protocol
 from dishka.dependency_source import Factory
 from dishka.entities.factory_type import FactoryType
 from dishka.registry import Registry

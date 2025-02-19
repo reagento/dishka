@@ -353,7 +353,7 @@ class RegistryBuilder:
         decorator: Decorator,
         registry: Registry,
         old_factory: Factory,
-    ):
+    ) -> None:
         provides = old_factory.provides
         if provides.component is None:
             raise ValueError(f"Unexpected empty component for {provides}")
@@ -444,7 +444,7 @@ class RegistryBuilder:
             GraphValidator(registries).validate()
         return tuple(registries)
 
-    def _post_process_generic_factories(self):
+    def _post_process_generic_factories(self) -> None:
         found = [
             (registry, factory)
             for registry in self.registries.values()

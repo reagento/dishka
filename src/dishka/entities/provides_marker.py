@@ -20,7 +20,7 @@ else:
     provides_lock = threading.Lock()
 
     class ProvideMultiple(Generic[Variants]):
-        def __class_getitem__(cls, item: tuple[Any]):
+        def __class_getitem__(cls, item: tuple[Any]) -> Any:
             with provides_lock:
                 cls.__parameters__ = [Variants]*len(item)  # type: ignore[attr-defined, misc]
                 return super().__class_getitem__(item)  # type: ignore[misc]

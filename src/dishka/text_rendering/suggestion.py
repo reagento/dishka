@@ -10,7 +10,7 @@ def render_suggestions_for_missing(
         requested_key: DependencyKey,
         suggest_other_scopes: Sequence[Factory],
         suggest_other_components: Sequence[Factory],
-):
+) -> str:
     suggestion = ""
     if suggest_other_scopes:
         scopes = " or ".join(

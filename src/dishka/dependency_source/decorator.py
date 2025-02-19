@@ -23,7 +23,7 @@ class Decorator:
         else:
             self.provides = factory.provides
 
-    def is_generic(self):
+    def is_generic(self) -> bool:
         return (
             isinstance(self.provides.type_hint, TypeVar)
             or get_origin(self.provides.type_hint) is not None

@@ -43,11 +43,11 @@ def is_named_tuple_class(tp) -> bool:
     )
 
 
-def is_protocol(tp):
+def is_protocol(tp: object) -> bool:
     if not isinstance(tp, type):
         return False
 
-    return Protocol in tp.__bases__
+    return Protocol in tp.__bases__  # type: ignore[comparison-overlap]
 
 
 def create_union(args: tuple):
@@ -64,7 +64,7 @@ if HAS_PY_312:
             bool(get_type_vars(tp))
             and (
                 is_subclass_soft(strip_alias(tp), Generic)
-                or isinstance(tp, typing.TypeAliasType)  # type: ignore[attr-defined]
+                or isinstance(tp, typing.TypeAliasType)  # type: ignore[attr-defined, unused-ignore]
             )
         )
 else:

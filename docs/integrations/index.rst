@@ -16,20 +16,20 @@ Some of the integrations are supported by a community, refer to their documentat
    aiogram_dialog
    aiohttp
    arq
+   celery
    click
    fastapi
    faststream
    flask
    grpcio
    litestar
+   RQ <https://github.com/prepin/dishka-rq>
    sanic
    starlette
    taskiq
    telebot
-   adding_new
-   celery
-   RQ <https://github.com/prepin/dishka-rq>
    Quart <https://github.com/hrimov/quart-dishka>
+   adding_new
 
 .. list-table:: Built-in frameworks integrations
    :header-rows: 1

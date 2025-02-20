@@ -255,7 +255,7 @@ def _make_factory_by_class(
 def _check_self_name(
         source: Callable[..., Any] | classmethod,  # type: ignore[type-arg]
         self: Parameter | None,
-):
+) -> None:
     if isinstance(source, classmethod):
         return
     if self and self.name == "self":
@@ -421,7 +421,7 @@ def _make_factory_by_other_callable(
     else:
         call_method = source.__call__   # type: ignore[operator]
         if _is_bound_method(call_method):
-            to_check = call_method.__func__  # type: ignore[attr-defined]
+            to_check = call_method.__func__
             is_in_class = True
         else:
             to_check = call_method

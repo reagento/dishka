@@ -4,7 +4,7 @@
 Scope management
 *************************
 
-In dishka scope determines a lifespan of dependency. Firstly, when creating provider, your attach dependency to its scope. Then, when you use container you enter scope and dependency is retained once it is requested until you exist that scope.
+In dishka scope determines a lifespan of dependency. Firstly, when creating provider, your attach dependency to its scope. Then, when you use container you enter scope and dependency is retained once it is requested until you exit that scope.
 
 The set of scopes is defined once per container and providers should use the same scopes. You are not limited to standard scopes and can create custom ones, but it is hardly ever needed.
 

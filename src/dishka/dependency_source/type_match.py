@@ -74,7 +74,7 @@ class _TypeMatcher:
 
     def _is_broader_or_same_type_var(self, t1: TypeVar, t2: Any) -> bool:
         if t1 in self.type_var_subst:
-            return self.type_var_subst[t1] == t2
+            return self.type_var_subst[t1] == t2  # type: ignore[no-any-return]
         self.type_var_subst[t1] = t2
 
         if not t1.__bound__ and not t1.__constraints__:

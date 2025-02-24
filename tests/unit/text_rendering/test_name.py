@@ -28,7 +28,7 @@ class GenericA(Generic[T]):
 @pytest.mark.parametrize(
     ("obj", "include_module", "name"), [
         (A0, False, "A0"),
-        (A0, True, "unit.text_rendering.test_name.A0"),
+        (A0, True, "tests.unit.text_rendering.test_name.A0"),
         (A0.A1, False, "A0.A1"),
         (A0.A1.foo, False, "A0.A1.foo"),
         (A0.A1.foo_class, False, "A0.A1.foo_class"),

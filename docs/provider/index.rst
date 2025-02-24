@@ -73,7 +73,7 @@ Your class-based provider can have ``__init__`` method and methods access ``self
     container = make_container(provider)
 
 
-Dependencies have scope and there are three places to set it (according to their priority):
+Dependencies have scope and there are three places to set it (from highest to lowest priority):
 
 * When registering single factory passing to ``provide`` method
 

@@ -3,14 +3,14 @@ Alternatives
 
 **Dishka** was developed according to the needs of real applications. Available features were described in other parts of documentation like :ref:`technical-requirements`. But there are other libraries on the market.
 
-For this analyze we imagined several cases. Not all applications require all of them, but they might be needed at some point in their lifetime:
+For this analysis we imagined several cases. Not all applications require all of them, but they might be needed at some point in their lifetime:
 
 * For some apps (like AWS Lambdas) you do not need to create all singletons at startup as it serves only few requests.
 * For some apps (like desktop) you will use threads, for others you will use asyncio
 * Some objects such as database connections may require async initialization and finalization.
 * Some dependencies must be shared between other objects. For example: databases connection can be used by multiple data-mappers and unit-of-work within single processing request.
 
-Actually, everything can be done in your code: DI-framework is not a required thing for an application. But isn't it more pleasure when everything is just working out of the box?
+Actually, everything can be done in your code: DI-framework is not a required thing for an application. But isn't it more pleasant when everything is just working out of the box?
 
 There might be errors in this comparison, some features are not well described while still exist in selected libraries. Some features can be implemented manually, but this topic is not about your code - it is about existing libraries.
 
@@ -28,7 +28,7 @@ Overview
      - :abbr:`Auto-wiring(Simplified registration of classes based on their init)`
      - Context data
      - :abbr:`Zero-globals(Can be used without global state)`
-   * - `dishka <https://github.com/ragento/dishka>`_
+   * - `dishka <https://github.com/reagento/dishka>`_
      - ✅✅
      - ✅
      - ✅
@@ -44,7 +44,7 @@ Overview
      - ✅
      - ✅
      - ✅
-   * - `Fastapi Depends <https://fastapi.tiangolo.com>`_
+   * - `FastAPI Depends <https://fastapi.tiangolo.com>`_
      - ✅❌
      - ✅
      - ✅
@@ -155,14 +155,14 @@ Why not di?
 Why not Fastapi?
 =========================
 
-Fastapi depends provides simple but effective API to inject dependencies, but there are downsides:
+FastAPI depends provides simple but effective API to inject dependencies, but there are downsides:
 
-* It can be used only inside fastapi.
+* It can be used only inside FastAPI.
 * You cannot use it for lazy initialization of singletons
-* It mixes up Dependency Injection and Request decomposition. That leads to incorrect openapi specification or even broken app.
+* It mixes up Dependency Injection and Request decomposition. That leads to incorrect OpenAPI specification or even broken app.
 * You have to declare each dependency with ``Depends`` on each level of application. So either your business logic contains details of IoC-container or you have to duplicate constructor signatures.
 * It is not very fast in runtime, though you might never notice that
-* Almost all examples in documentation ignore ``dependency_overrides``, which is actually a main thing to use fastapi as IoC-container.
+* Almost all examples in documentation ignore ``dependency_overrides``, which is actually a main thing to use FastAPI as IoC-container.
 
 Why not svcs?
 ======================

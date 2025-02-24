@@ -82,7 +82,7 @@ async def test_task_with_kwargs(task_func) -> None:
         (inject(return_int_task), "dishka.integrations.base:return_int_task"),
         (
             inject(patch_module=True)(return_int_task),
-            "integrations.taskiq.test_taskiq:return_int_task",
+            "tests.integrations.taskiq.test_taskiq:return_int_task",
         ),
     ],
 )

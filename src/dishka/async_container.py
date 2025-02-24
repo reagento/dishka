@@ -75,6 +75,10 @@ class AsyncContainer:
         self.close_parent = close_parent
 
     @property
+    def scope(self) -> BaseScope:
+        return self.registry.scope
+
+    @property
     def context(self) -> MutableMapping[DependencyKey, Any]:
         warnings.warn(
             "`container.context` is deprecated",

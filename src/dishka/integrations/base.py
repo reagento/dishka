@@ -125,6 +125,11 @@ def wrap_injection(
     else:
         new_annotations = hints.copy()
         new_params = list(func_signature.parameters.values())
+    # fix hints
+    new_params = [
+        param.replace(annotation=hints.get(param.name, param.annotation))
+        for param in new_params
+    ]
 
     auto_injected_func: Callable[P, T | Awaitable[T]]
     if additional_params:

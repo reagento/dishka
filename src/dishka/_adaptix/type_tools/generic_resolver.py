@@ -50,7 +50,8 @@ class GenericResolver(Generic[K, M]):
 
     def _unpack_args(self, args):
         if HAS_UNPACK and any(strip_alias(arg) == typing.Unpack for arg in args):
-            return tuple(arg.source for arg in normalize_type(tuple[args]).args)
+            subscribed = tuple[args]  # type: ignore[valid-type]
+            return tuple(arg.source for arg in normalize_type(subscribed).args)
         return args
 
     def _get_type_var_to_actual(self, type_vars, args):

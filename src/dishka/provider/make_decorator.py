@@ -6,7 +6,7 @@ from dishka.dependency_source import (
     Decorator,
     ensure_composite,
 )
-from dishka.exceptions.decorator import IndependentDecoratorError
+from dishka.dependency_source.decorator import IndependentDecoratorError
 from .make_factory import make_factory
 from .unpack_provides import unpack_decorator
 

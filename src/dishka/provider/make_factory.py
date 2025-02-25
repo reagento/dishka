@@ -58,12 +58,12 @@ from dishka.entities.key import (
 )
 from dishka.entities.provides_marker import ProvideMultiple
 from dishka.entities.scope import BaseScope
-from dishka.exceptions.fabrication import NotAFactoryError
-from dishka.exceptions.types import (
+from .exceptions import (
+    NotAFactoryError,
+    UnsupportedGeneratorReturnTypeError,
     MissingHintsError,
     MissingReturnHintError,
     UndefinedTypeAnalysisError,
-    UnsupportedGeneratorReturnTypeError,
 )
 from dishka.text_rendering import get_name
 from .unpack_provides import unpack_factory

@@ -13,7 +13,7 @@ from dishka import (
     make_container,
     provide,
 )
-from dishka.exceptions.fabrication import NoFactoryError
+from dishka.exceptions import NoFactoryError
 
 
 class MainProvider(Provider):

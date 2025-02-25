@@ -12,7 +12,7 @@ from dishka.dependency_source import (
 )
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.scope import BaseScope
-from dishka.exceptions.scopes import (
+from .exceptions import (
     NoScopeSetInContextError,
     NoScopeSetInProvideError,
 )

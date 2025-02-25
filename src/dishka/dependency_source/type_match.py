@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from typing import Any, ForwardRef, TypeVar, get_args, get_origin
 
 from dishka._adaptix.type_tools.basic_utils import eval_forward_ref, is_generic
-from dishka.exceptions.types import UnsupportedGenericBoundsError
+from dishka.dependency_source.exceptions import UnsupportedGenericBoundsError
 
 
 def eval_maybe_forward(t: Any, wrapper: Any) -> Any:

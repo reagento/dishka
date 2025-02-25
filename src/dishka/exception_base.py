@@ -8,10 +8,6 @@ except ImportError:
         ExceptionGroup,
     )
 
-from dishka.text_rendering.path import PathRenderer
-
-_renderer = PathRenderer()
-
 
 class DishkaError(Exception):
     pass
@@ -25,4 +21,12 @@ class ExitError(
 
 
 class NoContextValueError(DishkaError):
+    pass
+
+
+class UnsupportedFactoryError(DishkaError):
+    pass
+
+
+class InvalidGraphError(DishkaError):
     pass

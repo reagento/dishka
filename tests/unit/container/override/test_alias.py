@@ -5,7 +5,7 @@ from dishka.entities.validation_settigs import (
     STRICT_VALIDATION,
     ValidationSettings,
 )
-from dishka.exceptions.graph import (
+from dishka.exceptions import (
     ImplicitOverrideDetectedError,
     NothingOverriddenError,
 )

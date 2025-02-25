@@ -15,12 +15,11 @@ from dishka import (
     make_container,
     provide,
 )
-from dishka.exceptions.base import ExitError, NoContextValueError
-from dishka.exceptions.fabrication import (
-    NoFactoryError,
-    UnsupportedFactoryError,
+from dishka.exception_base import (
+    ExitError, NoContextValueError, UnsupportedFactoryError
 )
-from dishka.exceptions.graph import UnknownScopeError
+from dishka.exceptions import NoFactoryError
+from dishka.exceptions import UnknownScopeError
 
 
 class MyError(Exception):

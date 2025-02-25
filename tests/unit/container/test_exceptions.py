@@ -16,10 +16,11 @@ from dishka import (
     provide,
 )
 from dishka.exception_base import (
-    ExitError, NoContextValueError, UnsupportedFactoryError
+    ExitError,
+    NoContextValueError,
+    UnsupportedFactoryError,
 )
-from dishka.exceptions import NoFactoryError
-from dishka.exceptions import UnknownScopeError
+from dishka.exceptions import NoFactoryError, UnknownScopeError
 
 
 class MyError(Exception):

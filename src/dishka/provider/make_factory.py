@@ -58,14 +58,14 @@ from dishka.entities.key import (
 )
 from dishka.entities.provides_marker import ProvideMultiple
 from dishka.entities.scope import BaseScope
+from dishka.text_rendering import get_name
 from .exceptions import (
-    NotAFactoryError,
-    UnsupportedGeneratorReturnTypeError,
     MissingHintsError,
     MissingReturnHintError,
+    NotAFactoryError,
     UndefinedTypeAnalysisError,
+    UnsupportedGeneratorReturnTypeError,
 )
-from dishka.text_rendering import get_name
 from .unpack_provides import unpack_factory
 
 _empty = signature(lambda a: 0).parameters["a"].annotation

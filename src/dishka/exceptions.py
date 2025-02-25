@@ -1,14 +1,13 @@
 from collections.abc import Sequence
 
-from .entities.scope import BaseScope
-from .entities.key import DependencyKey
 from dishka.dependency_source import Factory
 from dishka.entities.factory_type import FactoryData
 from dishka.exception_base import DishkaError, InvalidGraphError
 from dishka.text_rendering import get_name
-from dishka.text_rendering.suggestion import render_suggestions_for_missing
-
 from dishka.text_rendering.path import PathRenderer
+from dishka.text_rendering.suggestion import render_suggestions_for_missing
+from .entities.key import DependencyKey
+from .entities.scope import BaseScope
 
 _renderer = PathRenderer()
 

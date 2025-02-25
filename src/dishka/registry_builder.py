@@ -14,16 +14,16 @@ from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope, InvalidScopes, Scope
 from .entities.validation_settigs import ValidationSettings
+from .exception_base import InvalidGraphError
 from .exceptions import (
     AliasedFactoryNotFoundError,
-    NoFactoryError,
     CycleDependenciesError,
     GraphMissingFactoryError,
     ImplicitOverrideDetectedError,
+    NoFactoryError,
     NothingOverriddenError,
     UnknownScopeError,
 )
-from .exception_base import InvalidGraphError
 from .provider import BaseProvider
 from .registry import Registry
 

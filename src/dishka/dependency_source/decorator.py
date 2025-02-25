@@ -6,10 +6,10 @@ from typing import Any, TypeVar, get_args, get_origin
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
+from dishka.exception_base import DishkaError
+from dishka.text_rendering import get_name
 from .factory import Factory
 from .type_match import get_typevar_replacement, is_broader_or_same_type
-from ..exception_base import DishkaError
-from ..text_rendering import get_name
 
 
 class Decorator:

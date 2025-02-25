@@ -12,11 +12,11 @@ from dishka.dependency_source import (
 )
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.scope import BaseScope
+from .base_provider import BaseProvider, ProviderWrapper
 from .exceptions import (
     NoScopeSetInContextError,
     NoScopeSetInProvideError,
 )
-from .base_provider import BaseProvider, ProviderWrapper
 from .make_alias import alias
 from .make_context_var import from_context
 from .make_decorator import decorate_on_instance

@@ -2,14 +2,43 @@ from collections.abc import Sequence
 
 from dishka.dependency_source import Factory
 from dishka.entities.factory_type import FactoryData
-from dishka.exception_base import DishkaError, InvalidGraphError
+from dishka.exception_base import DishkaError
 from dishka.text_rendering import get_name
 from dishka.text_rendering.path import PathRenderer
 from dishka.text_rendering.suggestion import render_suggestions_for_missing
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope
 
+try:
+    from builtins import (  # type: ignore[attr-defined, unused-ignore]
+        ExceptionGroup,
+    )
+
+except ImportError:
+    from exceptiongroup import (  # type: ignore[no-redef, import-not-found, unused-ignore]
+        ExceptionGroup,
+    )
+
 _renderer = PathRenderer()
+
+
+class ExitError(
+    ExceptionGroup[Exception],  # type: ignore[misc, unused-ignore]
+    DishkaError,
+):
+    pass
+
+
+class NoContextValueError(DishkaError):
+    pass
+
+
+class UnsupportedFactoryError(DishkaError):
+    pass
+
+
+class InvalidGraphError(DishkaError):
+    pass
 
 
 class NoFactoryError(DishkaError):

@@ -22,7 +22,7 @@ from typing import cast
 from dishka.entities.factory_type import FactoryType
 from .container_objects import CompiledFactory, Exit
 from .dependency_source import Factory
-from .exception_base import NoContextValueError, UnsupportedFactoryError
+from .exceptions import NoContextValueError, UnsupportedFactoryError
 
 
 def make_args(args: list[str], kwargs: list[str]) -> str:

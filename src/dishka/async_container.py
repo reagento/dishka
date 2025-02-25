@@ -15,9 +15,9 @@ from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .dependency_source import Factory
 from .entities.validation_settigs import DEFAULT_VALIDATION, ValidationSettings
-from .exception_base import ExitError
 from .exceptions import (
     ChildScopeNotFoundError,
+    ExitError,
     NoChildScopesError,
     NoFactoryError,
     NoNonSkippedScopesError,

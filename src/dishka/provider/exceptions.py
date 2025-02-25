@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any
 
 from dishka.exception_base import DishkaError
@@ -128,4 +128,16 @@ class NoScopeSetInContextError(ValueError, DishkaError):
         return (
             f"No scope is set for {self.provides_name}.\n"
             f"Set in from_context() call or within {self.provider_name}"
+        )
+
+
+class IndependentDecoratorError(ValueError, DishkaError):
+    def __init__(self, source: Callable[..., Any] | type) -> None:
+        self.source = source
+
+    def __str__(self) -> str:
+        name = get_name(self.source, include_module=True)
+        return (
+            f"Decorator {name} does not depends on provided type.\n"
+            f"Did you mean @provide instead of @decorate?"
         )

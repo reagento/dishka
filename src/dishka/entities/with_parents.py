@@ -21,7 +21,7 @@ from dishka.entities.provides_marker import ProvideMultiple
 
 __all__ = ["ParentsResolver", "WithParents"]
 
-from .exceptions import StartingClassIgnoredError
+from dishka.exception_base import DishkaError
 
 IGNORE_TYPES: Final = (
     type,
@@ -176,3 +176,11 @@ else:
             if len(parents) > 1:
                 return ProvideMultiple[tuple(parents)]
             return parents[0]
+
+
+class StartingClassIgnoredError(ValueError, DishkaError):
+    def __init__(self, hint: TypeHint) -> None:
+        self.hint = hint
+
+    def __str__(self) -> str:
+        return f"The starting class {self.hint!r} is in ignored types"

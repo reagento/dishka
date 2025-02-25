@@ -1,9 +1,12 @@
 from collections.abc import Callable
 from typing import Any, overload
 
+from dishka.dependency_source import (
+    CompositeDependencySource,
+    Decorator,
+    ensure_composite,
+)
 from dishka.text_rendering import get_name
-from .composite import CompositeDependencySource, ensure_composite
-from .decorator import Decorator
 from .make_factory import make_factory
 from .unpack_provides import unpack_decorator
 

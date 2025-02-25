@@ -45,6 +45,11 @@ from dishka._adaptix.type_tools.generic_resolver import (
     GenericResolver,
     MembersStorage,
 )
+from dishka.dependency_source import (
+    CompositeDependencySource,
+    Factory,
+    ensure_composite,
+)
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import (
     dependency_key_to_hint,
@@ -54,8 +59,6 @@ from dishka.entities.key import (
 from dishka.entities.provides_marker import ProvideMultiple
 from dishka.entities.scope import BaseScope
 from dishka.text_rendering import get_name
-from .composite import CompositeDependencySource, ensure_composite
-from .factory import Factory
 from .unpack_provides import unpack_factory
 
 _empty = signature(lambda a: 0).parameters["a"].annotation

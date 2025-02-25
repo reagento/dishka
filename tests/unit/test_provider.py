@@ -4,12 +4,12 @@ from typing import Any, Protocol
 import pytest
 
 from dishka import Provider, Scope, alias, decorate, make_container, provide
-from dishka.dependency_source.make_factory import make_factory, provide_all
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import (
     hint_to_dependency_key,
     hints_to_dependency_keys,
 )
+from dishka.provider.make_factory import make_factory, provide_all
 from .sample_providers import (
     ClassA,
     async_func_a,

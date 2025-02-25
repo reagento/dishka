@@ -1,7 +1,13 @@
 from typing import NewType
 
-from dishka import Container, Provider, Scope, make_container, provide
-from dishka.dependency_source import from_context
+from dishka import (
+    Container,
+    Provider,
+    Scope,
+    from_context,
+    make_container,
+    provide,
+)
 
 Request = NewType("Request", int)
 

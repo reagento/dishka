@@ -2,7 +2,7 @@ import textwrap
 
 import pytest
 
-from dishka.dependency_source.make_factory import make_factory
+from dishka.provider.make_factory import make_factory
 from dishka.text_rendering.path import PathRenderer
 
 

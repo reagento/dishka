@@ -1,9 +1,12 @@
 from typing import Any
 
+from dishka.dependency_source import (
+    Alias,
+    CompositeDependencySource,
+    ensure_composite,
+)
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
-from .alias import Alias
-from .composite import CompositeDependencySource, ensure_composite
 from .unpack_provides import unpack_alias
 
 

@@ -13,6 +13,10 @@ from dishka.dependency_source import (
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.scope import BaseScope
 from .base_provider import BaseProvider, ProviderWrapper
+from .exceptions import (
+    NoScopeSetInContextError,
+    NoScopeSetInProvideError,
+)
 from .make_alias import alias
 from .make_context_var import from_context
 from .make_decorator import decorate_on_instance
@@ -100,22 +104,19 @@ class Provider(BaseProvider):
                 self.aliases.append(source)
             if isinstance(source, Factory):
                 if source.scope is None:
-                    src_name = self._source_name(source)
-                    provides_name = self._provides_name(source)
-                    raise ValueError(
-                        f"No scope is set for {provides_name}.\n"
-                        f"Set in provide() call for {src_name} or "
-                        f"within {self._name()}",
+                    raise NoScopeSetInProvideError(
+                        self._provides_name(source),
+                        self._source_name(source),
+                        self._name(),
                     )
                 self.factories.append(source)
             if isinstance(source, Decorator):
                 self.decorators.append(source)
             if isinstance(source, ContextVariable):
                 if source.scope is None:
-                    provides_name = self._provides_name(source)
-                    raise ValueError(
-                        f"No scope is set for {provides_name}.\n"
-                        f"Set in from_context() call or within {self._name()}",
+                    raise NoScopeSetInContextError(
+                        self._provides_name(source),
+                        self._name(),
                     )
                 self.context_vars.append(source)
 

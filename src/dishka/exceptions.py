@@ -1,9 +1,13 @@
 from collections.abc import Sequence
 
-from dishka.entities.key import DependencyKey
-from .dependency_source import Factory
-from .text_rendering import get_name
-from .text_rendering.suggestion import render_suggestions_for_missing
+from dishka.dependency_source import Factory
+from dishka.entities.factory_type import FactoryData
+from dishka.exception_base import DishkaError
+from dishka.text_rendering import get_name
+from dishka.text_rendering.path import PathRenderer
+from dishka.text_rendering.suggestion import render_suggestions_for_missing
+from .entities.key import DependencyKey
+from .entities.scope import BaseScope
 
 try:
     from builtins import (  # type: ignore[attr-defined, unused-ignore]
@@ -15,34 +19,7 @@ except ImportError:
         ExceptionGroup,
     )
 
-from .text_rendering.path import PathRenderer
-
 _renderer = PathRenderer()
-
-
-class DishkaError(Exception):
-    pass
-
-
-class InvalidGraphError(DishkaError):
-    pass
-
-
-class UnknownScopeError(InvalidGraphError):
-    pass
-
-
-class CycleDependenciesError(InvalidGraphError):
-    def __init__(self, path: Sequence[Factory]) -> None:
-        self.path = path
-
-    def __str__(self) -> str:
-        if len(self.path) == 1:
-            hint = " Did you mean @decorate instead of @provide?"
-        else:
-            hint = ""
-        details = _renderer.render(self.path)
-        return f"Cycle dependencies detected.{hint}\n{details}"
 
 
 class ExitError(
@@ -52,11 +29,15 @@ class ExitError(
     pass
 
 
+class NoContextValueError(DishkaError):
+    pass
+
+
 class UnsupportedFactoryError(DishkaError):
     pass
 
 
-class NoContextValueError(DishkaError):
+class InvalidGraphError(DishkaError):
     pass
 
 
@@ -102,6 +83,78 @@ class NoFactoryError(DishkaError):
             ) + suggestion
 
 
+class AliasedFactoryNotFoundError(ValueError, DishkaError):
+    def __init__(
+            self, dependency: DependencyKey, alias: FactoryData,
+    ) -> None:
+        self.dependency = dependency
+        self.alias_provider = alias.provides
+
+    def __str__(self) -> str:
+        return (
+            f"Factory for {self.dependency} "
+            f"aliased from {self.alias_provider} is not found"
+        )
+
+
+class NoChildScopesError(ValueError, DishkaError):
+    def __str__(self) -> str:
+        return "No child scopes found"
+
+
+class NoNonSkippedScopesError(ValueError, DishkaError):
+    def __str__(self) -> str:
+        return "No non-skipped scopes found."
+
+
+class ChildScopeNotFoundError(ValueError, DishkaError):
+    def __init__(
+            self,
+            assumed_child_scope: BaseScope | None,
+            current_scope: BaseScope | None,
+    ) -> None:
+        self.child_scope = assumed_child_scope
+        self.current_scope = current_scope
+
+    def __str__(self) -> str:
+        return (
+            f"Cannot find {self.child_scope} as a "
+            f"child of current {self.current_scope}"
+        )
+
+
+class UnknownScopeError(InvalidGraphError):
+    def __init__(
+            self,
+            scope: BaseScope | None,
+            expected: type[BaseScope],
+            extend_message: str = "",
+    ) -> None:
+        self.scope = scope
+        self.expected = expected
+        self.extend_message = extend_message
+
+    def __str__(self) -> str:
+        return " ".join((
+            f"Scope {self.scope} is unknown, "
+            f"expected one of {self.expected}",
+            self.extend_message,
+        ))
+
+
+class CycleDependenciesError(InvalidGraphError):
+    def __init__(self, path: Sequence[Factory]) -> None:
+        self.path = path
+
+    def __str__(self) -> str:
+        if len(self.path) == 1:
+            hint = " Did you mean @decorate instead of @provide?"
+        else:
+            hint = ""
+        details = _renderer.render(self.path)
+        return f"Cycle dependencies detected.{hint}\n{details}"
+
+
 class GraphMissingFactoryError(NoFactoryError, InvalidGraphError):
     pass
 
@@ -136,4 +189,3 @@ class NothingOverriddenError(InvalidGraphError):
             f" * Try removing override=True from {name}\n"
             f" * Check the order of providers\n"
         )
-

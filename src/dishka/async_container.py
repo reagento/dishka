@@ -16,8 +16,11 @@ from .context_proxy import ContextProxy
 from .dependency_source import Factory
 from .entities.validation_settigs import DEFAULT_VALIDATION, ValidationSettings
 from .exceptions import (
+    ChildScopeNotFoundError,
     ExitError,
+    NoChildScopesError,
     NoFactoryError,
+    NoNonSkippedScopesError,
 )
 from .provider import BaseProvider
 from .registry import Registry
@@ -55,7 +58,10 @@ class AsyncContainer:
         if context:
             for key, value in context.items():
                 if not isinstance(key, DependencyKey):
-                    key = DependencyKey(key, DEFAULT_COMPONENT)
+                    key = DependencyKey(  # noqa: PLW2901
+                        key,
+                        DEFAULT_COMPONENT,
+                    )
                 self._context[key] = value
         self._cache = {**self._context}
         self.parent_container = parent_container
@@ -97,7 +103,7 @@ class AsyncContainer:
         :return: async context manager for inner scope
         """
         if not self.child_registries:
-            raise ValueError("No child scopes found")
+            raise NoChildScopesError
 
         child = AsyncContainer(
             *self.child_registries,
@@ -108,7 +114,7 @@ class AsyncContainer:
         if scope is None:
             while child.registry.scope.skip:
                 if not child.child_registries:
-                    raise ValueError("No non-skipped scopes found.")
+                    raise NoNonSkippedScopesError
                 child = AsyncContainer(
                     *child.child_registries,
                     parent_container=child,
@@ -119,8 +125,7 @@ class AsyncContainer:
         else:
             while child.registry.scope is not scope:
                 if not child.child_registries:
-                    raise ValueError(f"Cannot find {scope} as a child of "
-                                     f"current {self.registry.scope}")
+                    raise ChildScopeNotFoundError(scope, self.registry.scope)
                 child = AsyncContainer(
                     *child.child_registries,
                     parent_container=child,
@@ -199,7 +204,7 @@ class AsyncContainer:
             except Exception as err:  # noqa: BLE001
                 errors.append(err)
         if errors:
-            raise ExitError("Cleanup context errors", errors)
+            raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
 
 class AsyncContextWrapper:

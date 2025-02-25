@@ -19,7 +19,9 @@ def alias(
         override: bool = False,
 ) -> CompositeDependencySource:
     if component is provides is None:
-        raise ValueError("Either component or provides must be set in alias")
+        raise ValueError(  # noqa: TRY003
+            "Either component or provides must be set in alias",
+        )
     if provides is None:
         provides = source
 

@@ -6,7 +6,7 @@ from dishka.dependency_source import (
     Decorator,
     ensure_composite,
 )
-from dishka.text_rendering import get_name
+from .exceptions import IndependentDecoratorError
 from .make_factory import make_factory
 from .unpack_provides import unpack_decorator
 
@@ -32,11 +32,7 @@ def _decorate(
         decorator.provides not in decorator.factory.kw_dependencies.values()
         and decorator.provides not in decorator.factory.dependencies
     ):
-        name = get_name(source, include_module=True)
-        raise ValueError(
-            f"Decorator {name} does not depends on provided type.\n"
-            f"Did you mean @provide instead of @decorate?",
-        )
+        raise IndependentDecoratorError(source)
 
     composite.dependency_sources.extend(unpack_decorator(decorator))
     return composite

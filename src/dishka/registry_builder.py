@@ -15,6 +15,7 @@ from .entities.key import DependencyKey
 from .entities.scope import BaseScope, InvalidScopes, Scope
 from .entities.validation_settigs import ValidationSettings
 from .exceptions import (
+    AliasedFactoryNotFoundError,
     CycleDependenciesError,
     GraphMissingFactoryError,
     ImplicitOverrideDetectedError,
@@ -145,10 +146,7 @@ class RegistryBuilder:
         for provider in self.providers:
             for factory in provider.factories:
                 if not isinstance(factory.scope, self.scopes):
-                    raise UnknownScopeError(
-                        f"Scope {factory.scope} is unknown, "
-                        f"expected one of {self.scopes}",
-                    )
+                    raise UnknownScopeError(factory.scope, self.scopes)
                 provides = factory.provides.with_component(provider.component)
                 self.dependency_scopes[provides] = factory.scope
             for context_var in provider.context_vars:
@@ -342,10 +340,7 @@ class RegistryBuilder:
         dependency = alias.dependencies[0]
         factory = registry.get_factory(dependency)
         if factory is None:
-            raise ValueError(
-                f"Factory for {dependency} "
-                f"aliased from {alias.provides} is not found",
-            )
+            raise AliasedFactoryNotFoundError(dependency, alias)
         return factory.source is decorator.factory.source
 
     def _decorate_factory(
@@ -356,7 +351,9 @@ class RegistryBuilder:
     ) -> None:
         provides = old_factory.provides
         if provides.component is None:
-            raise ValueError(f"Unexpected empty component for {provides}")
+            raise ValueError(  # noqa: TRY003
+                f"Unexpected empty component for {provides}",
+            )
         if (
             old_factory.type is FactoryType.ALIAS
                 and self._is_alias_decorated(decorator, registry, old_factory)
@@ -366,12 +363,12 @@ class RegistryBuilder:
         decorated_component = f"{DECORATED_COMPONENT_PREFIX}{depth}"
         self.decorator_depth[provides] += 1
         if old_factory is None:
-            raise InvalidGraphError(
+            raise InvalidGraphError(  # noqa: TRY003
                 "Cannot apply decorator because there is"
                 f"no factory for {provides}",
             )
         if old_factory.type is FactoryType.CONTEXT:
-            raise InvalidGraphError(
+            raise InvalidGraphError(  # noqa: TRY003
                 f"Cannot apply decorator to context data {provides}",
             )
         old_factory.provides = DependencyKey(
@@ -392,9 +389,11 @@ class RegistryBuilder:
     ) -> None:
         if context_var.scope is None:
             raise UnknownScopeError(
-                f"Scope {context_var.scope} is unknown, "
-                f"expected one of {self.scopes}. Define it"
-                f"explicitly in Provider or from_context",
+                context_var.scope,
+                self.scopes,
+                extend_message=(
+                    "Define it explicitly in Provider or from_context"
+                ),
             )
         registry = self.registries[context_var.scope]
         for component in self.components:

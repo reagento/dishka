@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Any, overload
 
-from dishka.dependency_source.composite import (
+from dishka.dependency_source import (
     CompositeDependencySource,
     Decorator,
     ensure_composite,

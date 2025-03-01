@@ -1,3 +1,5 @@
+from typing import Protocol
+
 import pytest
 
 from dishka import (
@@ -6,9 +8,12 @@ from dishka import (
     alias,
     make_async_container,
     make_container,
-    provide,
+    provide, decorate,
 )
 from dishka.plotter import render_d2, render_mermaid
+
+class P(Protocol):
+    pass
 
 
 class MyProvider(Provider):
@@ -16,6 +21,14 @@ class MyProvider(Provider):
     @provide(scope=Scope.APP)
     def foo(self) -> int:
         return 1
+
+    @provide(scope=Scope.REQUEST)
+    def bar(self, i: int) -> P:
+        ...
+
+    @decorate
+    def foobar(self, i: int) -> int:
+        return i
 
     float_alias = alias(source=int, provides=float)
 

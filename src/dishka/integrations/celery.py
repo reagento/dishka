@@ -8,7 +8,7 @@ __all__ = [
 from collections.abc import Callable
 from typing import Any, Final, ParamSpec, TypeVar
 
-from celery import Celery, Task, current_app
+from celery import Celery, Task
 from celery.signals import task_postrun, task_prerun
 from celery.utils.functional import head_from_fun
 
@@ -16,7 +16,6 @@ from dishka import Container, FromDishka
 from dishka.integrations.base import is_dishka_injected, wrap_injection
 
 CONTAINER_NAME: Final = "dishka_container"
-CONTAINER_NAME_REQ: Final = "dishka_container_req"
 
 
 T = TypeVar("T")
@@ -27,9 +26,7 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
     return wrap_injection(
         func=func,
         is_async=False,
-        container_getter=lambda args, kwargs: current_app.conf[
-            CONTAINER_NAME_REQ
-        ],
+        container_getter=lambda args, kwargs: kwargs.pop(CONTAINER_NAME),
     )
 
 
@@ -47,7 +44,7 @@ def enter_scope(
 ) -> None:
     if CONTAINER_NAME in task.app.conf:
         container: Container = task.app.conf[CONTAINER_NAME]
-        task.app.conf[CONTAINER_NAME_REQ] = container().__enter__()
+        task.request.kwargs[CONTAINER_NAME] = container().__enter__()
 
 
 @task_postrun.connect()
@@ -59,8 +56,8 @@ def exit_scope(
     retval,
     **other,
 ) -> None:
-    if CONTAINER_NAME_REQ in task.app.conf:
-        container: Container = task.app.conf.pop(CONTAINER_NAME_REQ)
+    if CONTAINER_NAME in task.request.kwargs:
+        container: Container = task.request.kwargs[CONTAINER_NAME]
         container.close()
 
 

@@ -8,9 +8,11 @@ __all__ = (
 import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any, ParamSpec, TypeVar, cast
+from typing import Any, ParamSpec, TypeVar, Union, cast, Optional
 
 from faststream import BaseMiddleware, FastStream, context
+from faststream.broker.core.abc import ABCBroker
+from faststream.asgi import AsgiFastStream
 from faststream.__about__ import __version__
 from faststream.broker.message import StreamMessage
 from faststream.types import DecodedMessage
@@ -81,15 +83,28 @@ else:
 
 def setup_dishka(
         container: AsyncContainer,
-        app: FastStream,
+        app: Optional[Union[FastStream, AsgiFastStream]] = None,
+        broker: Optional[ABCBroker] = None,
         *,
         finalize_container: bool = True,
         auto_inject: bool = False,
 ) -> None:
-    assert app.broker, "You can't patch FastStream application without broker"  # noqa: S101
+    if app is None and broker is None:
+        raise ValueError("You must provide either app or broker")
 
-    if finalize_container:
+    if app is not None:
+        broker = app.broker
+    else:
+        broker = broker
+
+    if app is not None and finalize_container:
         app.after_shutdown(container.close)
+    else:
+        warnings.warn(
+            "For use `finalize_container=True` you must provide `app` argument.",
+            category=RuntimeWarning,
+            stacklevel=1,
+        )
 
     if FASTSTREAM_OLD_MIDDLEWARES:
         app.broker.middlewares = (  # type: ignore[attr-defined]
@@ -109,27 +124,27 @@ or use @inject at each subscriber manually.
             )
 
     else:
-        app.broker._middlewares = (  # noqa: SLF001
+        broker._middlewares = (  # noqa: SLF001
             DishkaMiddleware(container),
-            *app.broker._middlewares,  # noqa: SLF001
+            *broker._middlewares,  # noqa: SLF001
         )
 
-        for subscriber in app.broker._subscribers.values():  # noqa: SLF001
+        for subscriber in broker._subscribers.values():  # noqa: SLF001
             subscriber._broker_middlewares = (  # noqa: SLF001
                 DishkaMiddleware(container),
                 *subscriber._broker_middlewares,  # noqa: SLF001
             )
 
-        for publisher in app.broker._publishers.values():  # noqa: SLF001
+        for publisher in broker._publishers.values():  # noqa: SLF001
             publisher._broker_middlewares = (  # noqa: SLF001
                 DishkaMiddleware(container),
                 *publisher._broker_middlewares,  # noqa: SLF001
             )
 
         if auto_inject:
-            app.broker._call_decorators = (  # noqa: SLF001
+            broker._call_decorators = (  # noqa: SLF001
                 inject,
-                *app.broker._call_decorators,  # noqa: SLF001
+                *broker._call_decorators,  # noqa: SLF001
             )
 
 

@@ -13,6 +13,7 @@ from typing import Any, ParamSpec, TypeVar, cast, Optional
 from faststream import BaseMiddleware, context
 from faststream.broker.core.abc import ABCBroker
 from faststream._internal.application import Application
+from faststream.broker.fastapi import StreamRouter
 from faststream.__about__ import __version__
 from faststream.broker.message import StreamMessage
 from faststream.types import DecodedMessage
@@ -83,8 +84,8 @@ else:
 
 def setup_dishka(
         container: AsyncContainer,
-        app: Optional[Application] = None,
-        broker: Optional[ABCBroker] = None,
+        app: Application | StreamRouter | None = None,
+        broker: ABCBroker | None = None,
         *,
         finalize_container: bool = True,
         auto_inject: bool = False,
@@ -108,9 +109,9 @@ def setup_dishka(
         )
 
     if FASTSTREAM_OLD_MIDDLEWARES:
-        app.broker.middlewares = (  # type: ignore[attr-defined]
+        broker.middlewares = (  # type: ignore[attr-defined]
             DishkaMiddleware(container),
-            *app.broker.middlewares,  # type: ignore[attr-defined]
+            *broker.middlewares,  # type: ignore[attr-defined]
         )
 
         if auto_inject:

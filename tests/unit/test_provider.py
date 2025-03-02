@@ -9,6 +9,7 @@ from dishka.entities.key import (
     hint_to_dependency_key,
     hints_to_dependency_keys,
 )
+from dishka.provider.exceptions import NoScopeSetInProvideError, NoScopeSetInContextError
 from dishka.provider.make_factory import make_factory, provide_all
 from .sample_providers import (
     ClassA,
@@ -60,6 +61,41 @@ def test_parse_factory(source, provider_type, is_to_bound):
     assert factory.scope == Scope.REQUEST
     assert factory.source == source
     assert factory.type == provider_type
+
+
+def test_provide_no_scope():
+    provider = Provider()
+    with pytest.raises(NoScopeSetInProvideError):
+        provider.provide(source=int)
+    with pytest.raises(NoScopeSetInProvideError):
+        provider.provide(A, provides=B)
+
+    def b() -> int:
+        return 1
+
+    with pytest.raises(NoScopeSetInProvideError):
+        provider.provide(b, provides=B)
+
+    b.__qualname__ = ''
+
+    with pytest.raises(NoScopeSetInProvideError):
+        provider.provide(b, provides=B)
+
+    class C:
+        pass
+
+
+    C.__qualname__ = ''
+
+    def c() -> C:
+        return C()
+
+    b.__qualname__ = ''
+    with pytest.raises(NoScopeSetInProvideError):
+        provider.provide(c, provides=C)
+
+    with pytest.raises(NoScopeSetInContextError):
+        provider.from_context(b)
 
 
 def test_parse_factory_invalid_hint():

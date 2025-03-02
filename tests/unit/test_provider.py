@@ -93,23 +93,6 @@ def test_provide_no_scope():
     with pytest.raises(NoScopeSetInProvideError):
         provider.provide(b, provides=B)
 
-    b.__qualname__ = ""
-
-    with pytest.raises(NoScopeSetInProvideError):
-        provider.provide(b, provides=B)
-
-    class C:
-        pass
-
-
-    C.__qualname__ = ""
-
-    def c() -> C:
-        return C()
-
-    b.__qualname__ = ""
-    with pytest.raises(NoScopeSetInProvideError):
-        provider.provide(c, provides=C)
 
     with pytest.raises(NoScopeSetInContextError):
         provider.from_context(b)

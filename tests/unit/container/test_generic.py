@@ -249,7 +249,6 @@ def test_provide_partial_generic():
     provider.provide(func_with_at2)
     container = make_container(provider)
     assert container.get(Multi[int, A[bool]]) is bool
-    provider = Provider(scope=Scope.APP)
 
     provider = Provider(scope=Scope.APP)
     provider.provide(func_with_t2t)

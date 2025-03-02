@@ -8,13 +8,13 @@ __all__ = (
 import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any, ParamSpec, TypeVar, cast, Optional
+from typing import Any, ParamSpec, TypeVar, cast
 
 from faststream import BaseMiddleware, context
-from faststream.broker.core.abc import ABCBroker
-from faststream._internal.application import Application
-from faststream.broker.fastapi import StreamRouter
 from faststream.__about__ import __version__
+from faststream._internal.application import Application
+from faststream.broker.core.abc import ABCBroker
+from faststream.broker.fastapi import StreamRouter
 from faststream.broker.message import StreamMessage
 from faststream.types import DecodedMessage
 from faststream.utils.context import ContextRepo
@@ -48,9 +48,9 @@ if FASTSTREAM_OLD_MIDDLEWARES:
     class DishkaMiddleware(_DishkaBaseMiddleware):
         @asynccontextmanager
         async def consume_scope(  # type: ignore[override]
-                self,
-                *args: Any,
-                **kwargs: Any,
+            self,
+            *args: Any,
+            **kwargs: Any,
         ) -> AsyncIterator[DecodedMessage]:
             async with self.container() as request_container:
                 with context.scope("dishka", request_container):
@@ -64,9 +64,9 @@ else:
 
     class DishkaMiddleware(_DishkaBaseMiddleware):  # type: ignore[no-redef]
         async def consume_scope(
-                self,
-                call_next: Callable[[Any], Awaitable[Any]],
-                msg: StreamMessage[Any],
+            self,
+            call_next: Callable[[Any], Awaitable[Any]],
+            msg: StreamMessage[Any],
         ) -> AsyncIterator[DecodedMessage]:
             async with self.container(
                 {
@@ -83,27 +83,27 @@ else:
 
 
 def setup_dishka(
-        container: AsyncContainer,
-        app: Application | StreamRouter | None = None,
-        broker: ABCBroker | None = None,
-        *,
-        finalize_container: bool = True,
-        auto_inject: bool = False,
+    container: AsyncContainer,
+    app: Application | StreamRouter | None = None,
+    broker: ABCBroker | None = None,
+    *,
+    finalize_container: bool = True,
+    auto_inject: bool = False,
 ) -> None:
     if app is None and broker is None:
-        raise ValueError("You must provide either app or broker")
+        raise ValueError( # noqa: TRY003
+            "You must provide either app or broker "
+            "to setup dishka integration.",
+        )
 
-    if app is not None:
-        assert app.broker, "You can't patch FastStream application without broker"
-        broker = app.broker
-    else:
-        broker = broker
+    broker = broker or getattr(app, "broker", None)
 
     if app is not None and finalize_container:
         app.after_shutdown(container.close)
     else:
         warnings.warn(
-            "For use `finalize_container=True` you must provide `app` argument.",
+            "For use `finalize_container=True` "
+            "you must provide `app` argument.",
             category=RuntimeWarning,
             stacklevel=1,
         )

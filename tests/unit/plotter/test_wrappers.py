@@ -6,11 +6,13 @@ from dishka import (
     Provider,
     Scope,
     alias,
+    decorate,
     make_async_container,
     make_container,
-    provide, decorate,
+    provide,
 )
 from dishka.plotter import render_d2, render_mermaid
+
 
 class P(Protocol):
     pass

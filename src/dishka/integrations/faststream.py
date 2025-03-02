@@ -93,6 +93,7 @@ def setup_dishka(
         raise ValueError("You must provide either app or broker")
 
     if app is not None:
+        assert app.broker, "You can't patch FastStream application without broker"
         broker = app.broker
     else:
         broker = broker

@@ -8,11 +8,11 @@ __all__ = (
 import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any, ParamSpec, TypeVar, Union, cast, Optional
+from typing import Any, ParamSpec, TypeVar, cast, Optional
 
-from faststream import BaseMiddleware, FastStream, context
+from faststream import BaseMiddleware, context
 from faststream.broker.core.abc import ABCBroker
-from faststream.asgi import AsgiFastStream
+from faststream._internal.application import Application
 from faststream.__about__ import __version__
 from faststream.broker.message import StreamMessage
 from faststream.types import DecodedMessage
@@ -83,7 +83,7 @@ else:
 
 def setup_dishka(
         container: AsyncContainer,
-        app: Optional[Union[FastStream, AsgiFastStream]] = None,
+        app: Optional[Application] = None,
         broker: Optional[ABCBroker] = None,
         *,
         finalize_container: bool = True,

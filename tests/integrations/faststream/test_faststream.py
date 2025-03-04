@@ -118,6 +118,7 @@ async def test_autoinject_after_subscriber(app_provider: AppProvider):
 
     await container.close()
 
+
 @pytest.mark.asyncio
 @pytest.mark.skipif(
     FASTSTREAM_OLD_MIDDLEWARES,

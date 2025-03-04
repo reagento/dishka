@@ -8,13 +8,10 @@ __all__ = (
 import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any, ParamSpec, TypeVar, cast
+from typing import Any, ParamSpec, TypeVar, Union, cast
 
 from faststream import BaseMiddleware, context
 from faststream.__about__ import __version__
-from faststream._internal.application import Application
-from faststream.broker.core.abc import ABCBroker
-from faststream.broker.fastapi import StreamRouter
 from faststream.broker.message import StreamMessage
 from faststream.types import DecodedMessage
 from faststream.utils.context import ContextRepo
@@ -44,6 +41,11 @@ class _DishkaBaseMiddleware(BaseMiddleware):
 
 
 if FASTSTREAM_OLD_MIDDLEWARES:
+    from faststream.broker.core.asynchronous import BrokerAsyncUsecase
+
+    ABCBroker = BrokerAsyncUsecase
+    Application = None
+    StreamRouter = None
 
     class DishkaMiddleware(_DishkaBaseMiddleware):
         @asynccontextmanager
@@ -61,6 +63,16 @@ if FASTSTREAM_OLD_MIDDLEWARES:
                         yield result
 
 else:
+    from faststream.broker.core.abc import ABCBroker
+    try:
+        from faststream._internal.application import Application
+    except ImportError:
+        Application = None
+
+    try:
+        from faststream.broker.fastapi import StreamRouter
+    except ImportError:
+        StreamRouter = None
 
     class DishkaMiddleware(_DishkaBaseMiddleware):  # type: ignore[no-redef]
         async def consume_scope(
@@ -84,14 +96,14 @@ else:
 
 def setup_dishka(
     container: AsyncContainer,
-    app: Application | StreamRouter | None = None,
+    app: Union[Application, StreamRouter, None] = None,  # noqa: UP007
     broker: ABCBroker | None = None,
     *,
     finalize_container: bool = True,
     auto_inject: bool = False,
 ) -> None:
     if app is None and broker is None:
-        raise ValueError( # noqa: TRY003
+        raise ValueError(  # noqa: TRY003
             "You must provide either app or broker "
             "to setup dishka integration.",
         )

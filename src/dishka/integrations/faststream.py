@@ -64,6 +64,7 @@ if FASTSTREAM_OLD_MIDDLEWARES:
 
 else:
     from faststream.broker.core.abc import ABCBroker
+
     try:
         from faststream._internal.application import Application
     except ImportError:
@@ -102,7 +103,20 @@ def setup_dishka(
     finalize_container: bool = True,
     auto_inject: bool = False,
 ) -> None:
-    if app is None and broker is None:
+    """
+    Setup dishka integration with FastStream.
+    You must provide either app or broker.
+
+    Args:
+        container: AsyncContainer instance.
+        app: FastStream Application or StreamRouter instance.
+        broker: FastStream broker instance.
+        finalize_container: bool. Can be used only with app.
+        auto_inject: bool.
+    """
+    if (app is None and broker is None) or (
+        app is not None and broker is not None
+    ):
         raise ValueError(  # noqa: TRY003
             "You must provide either app or broker "
             "to setup dishka integration.",

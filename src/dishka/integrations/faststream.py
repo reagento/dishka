@@ -8,9 +8,9 @@ __all__ = (
 import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any, ParamSpec, TypeVar, cast
+from typing import Any, ParamSpec, TypeVar, Union, cast
 
-from faststream import BaseMiddleware, FastStream, context
+from faststream import BaseMiddleware, context
 from faststream.__about__ import __version__
 from faststream.broker.message import StreamMessage
 from faststream.types import DecodedMessage
@@ -41,13 +41,18 @@ class _DishkaBaseMiddleware(BaseMiddleware):
 
 
 if FASTSTREAM_OLD_MIDDLEWARES:
+    from faststream.broker.core.asynchronous import BrokerAsyncUsecase
+
+    ABCBroker = BrokerAsyncUsecase
+    Application = None
+    StreamRouter = None
 
     class DishkaMiddleware(_DishkaBaseMiddleware):
         @asynccontextmanager
         async def consume_scope(  # type: ignore[override]
-                self,
-                *args: Any,
-                **kwargs: Any,
+            self,
+            *args: Any,
+            **kwargs: Any,
         ) -> AsyncIterator[DecodedMessage]:
             async with self.container() as request_container:
                 with context.scope("dishka", request_container):
@@ -58,12 +63,23 @@ if FASTSTREAM_OLD_MIDDLEWARES:
                         yield result
 
 else:
+    from faststream.broker.core.abc import ABCBroker
+
+    try:
+        from faststream._internal.application import Application
+    except ImportError:
+        Application = None
+
+    try:
+        from faststream.broker.fastapi import StreamRouter
+    except ImportError:
+        StreamRouter = None
 
     class DishkaMiddleware(_DishkaBaseMiddleware):  # type: ignore[no-redef]
         async def consume_scope(
-                self,
-                call_next: Callable[[Any], Awaitable[Any]],
-                msg: StreamMessage[Any],
+            self,
+            call_next: Callable[[Any], Awaitable[Any]],
+            msg: StreamMessage[Any],
         ) -> AsyncIterator[DecodedMessage]:
             async with self.container(
                 {
@@ -80,21 +96,48 @@ else:
 
 
 def setup_dishka(
-        container: AsyncContainer,
-        app: FastStream,
-        *,
-        finalize_container: bool = True,
-        auto_inject: bool = False,
+    container: AsyncContainer,
+    app: Union[Application, StreamRouter, None] = None,  # noqa: UP007
+    broker: ABCBroker | None = None,
+    *,
+    finalize_container: bool = True,
+    auto_inject: bool = False,
 ) -> None:
-    assert app.broker, "You can't patch FastStream application without broker"  # noqa: S101
+    """
+    Setup dishka integration with FastStream.
+    You must provide either app or broker.
 
-    if finalize_container:
+    Args:
+        container: AsyncContainer instance.
+        app: FastStream Application or StreamRouter instance.
+        broker: FastStream broker instance.
+        finalize_container: bool. Can be used only with app.
+        auto_inject: bool.
+    """
+    if (app is None and broker is None) or (
+        app is not None and broker is not None
+    ):
+        raise ValueError(  # noqa: TRY003
+            "You must provide either app or broker "
+            "to setup dishka integration.",
+        )
+
+    broker = broker or getattr(app, "broker", None)
+
+    if app is not None and finalize_container:
         app.after_shutdown(container.close)
+    else:
+        warnings.warn(
+            "For use `finalize_container=True` "
+            "you must provide `app` argument.",
+            category=RuntimeWarning,
+            stacklevel=1,
+        )
 
     if FASTSTREAM_OLD_MIDDLEWARES:
-        app.broker.middlewares = (  # type: ignore[attr-defined]
+        broker.middlewares = (  # type: ignore[attr-defined]
             DishkaMiddleware(container),
-            *app.broker.middlewares,  # type: ignore[attr-defined]
+            *broker.middlewares,  # type: ignore[attr-defined]
         )
 
         if auto_inject:
@@ -109,27 +152,27 @@ or use @inject at each subscriber manually.
             )
 
     else:
-        app.broker._middlewares = (  # noqa: SLF001
+        broker._middlewares = (  # noqa: SLF001
             DishkaMiddleware(container),
-            *app.broker._middlewares,  # noqa: SLF001
+            *broker._middlewares,  # noqa: SLF001
         )
 
-        for subscriber in app.broker._subscribers.values():  # noqa: SLF001
+        for subscriber in broker._subscribers.values():  # noqa: SLF001
             subscriber._broker_middlewares = (  # noqa: SLF001
                 DishkaMiddleware(container),
                 *subscriber._broker_middlewares,  # noqa: SLF001
             )
 
-        for publisher in app.broker._publishers.values():  # noqa: SLF001
+        for publisher in broker._publishers.values():  # noqa: SLF001
             publisher._broker_middlewares = (  # noqa: SLF001
                 DishkaMiddleware(container),
                 *publisher._broker_middlewares,  # noqa: SLF001
             )
 
         if auto_inject:
-            app.broker._call_decorators = (  # noqa: SLF001
+            broker._call_decorators = (  # noqa: SLF001
                 inject,
-                *app.broker._call_decorators,  # noqa: SLF001
+                *broker._call_decorators,  # noqa: SLF001
             )
 
 

@@ -7,13 +7,7 @@ import nox
 nox.options.default_venv_backend = "uv"
 nox.options.reuse_existing_virtualenvs = True
 
-CMD = (
-    "pytest",
-    "--cov=dishka",
-    "--cov-append",
-    "--cov-report=term-missing",
-    "-v",
-)
+CMD = ("pytest", "--cov=dishka", "--cov-append", "--cov-report=term-missing", "-v")
 INSTALL_CMD = ("pytest", "pytest-cov", "-e", ".")
 
 
@@ -86,8 +80,7 @@ INTEGRATIONS = [
 def integrations_base(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,
-        "-r",
-        "requirements/test.txt",
+        "-r", "requirements/test.txt",
     )
     session.run(*CMD, "tests/integrations/base")
 

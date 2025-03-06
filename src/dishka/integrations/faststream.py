@@ -148,7 +148,7 @@ def setup_dishka(
     if FASTSTREAM_04:
         # FastStream 0.4 - 0.5
         broker.middlewares = (
-            _DishkaBaseMiddleware(container),
+            DishkaMiddleware(container),
             *broker.middlewares,
         )
 
@@ -167,7 +167,7 @@ or use @inject at each subscriber manually.
 
     elif getattr(broker, "add_middleware", None):
         # FastStream 0.5.6 and higher
-        broker.add_middleware(_DishkaBaseMiddleware(container))
+        broker.add_middleware(DishkaMiddleware(container))
 
     else:
         # FastStream 0.5 - 0.5.6
@@ -179,19 +179,19 @@ or use @inject at each subscriber manually.
         )
 
         broker._middlewares = (  # noqa: SLF001
-            _DishkaBaseMiddleware(container),
+            DishkaMiddleware(container),
             *broker._middlewares,  # noqa: SLF001
         )
 
         for subscriber in broker._subscribers.values():  # noqa: SLF001
             subscriber._broker_middlewares = (  # noqa: SLF001
-                _DishkaBaseMiddleware(container),
+                DishkaMiddleware(container),
                 *subscriber._broker_middlewares,  # noqa: SLF001
             )
 
         for publisher in broker._publishers.values():  # noqa: SLF001
             publisher._broker_middlewares = (  # noqa: SLF001
-                _DishkaBaseMiddleware(container),
+                DishkaMiddleware(container),
                 *publisher._broker_middlewares,  # noqa: SLF001
             )
 

@@ -25,7 +25,7 @@ Getting started
 .. code-block::
 
     pip install -r requirements_dev.txt
-    pip install -e .
+    uv pip install -e .
 
 Running linters
 =====================
@@ -45,15 +45,23 @@ Running tests
 ========================
 
 Project contains several types of tests:
+
 * unit tests of library itself
 * integration with other libraries
 * tests of example app
 
-All of them can be run using tox:
+All of them can be run using nox:
 
 .. code-block::
 
     nox
+
+You can run integration tests for all specified versions of library:
+
+.. code-block::
+
+    nox -t aiohttp
+
 
 All integration tests are using specific versions of libraries by default. You can run them with latest version specifying it explicitly. E.g.:
 

@@ -24,9 +24,7 @@ class IntegrationEnv:
     constraint: Constraint | None = None
 
     def get_req(self) -> str:
-        return (
-            f"requirements/{self.library.replace('_', '-')}-{self.version}.txt"
-        )
+        return f"requirements/{self.library.replace('_', '-')}-{self.version}.txt"
 
     def get_tests(self) -> str:
         return f"tests/integrations/{self.library}"

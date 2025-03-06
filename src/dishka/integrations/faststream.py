@@ -39,6 +39,13 @@ FASTSTREAM_05 = FASTSTREAM_VERSION.startswith("0.5")
 FASTSTREAM_LATES = not FASTSTREAM_04 and not FASTSTREAM_05
 
 if FASTSTREAM_04:
+    warnings.warn(
+        "FastStream 0.4 is deprecated and intgration will be removed"
+        " in the 1.6.0 dishka major release.",
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
+
     from faststream.broker.core.abc import (  # type: ignore[attr-defined]
         BrokerUsecase as BrokerType,
     )

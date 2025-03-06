@@ -214,7 +214,7 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
     )
 
 
-class DishkaMiddleware(BaseMiddleware):
+class _DishkaMiddleware(BaseMiddleware):
     def __init__(
         self,
         container: AsyncContainer,
@@ -282,9 +282,9 @@ class DishkaMiddleware(BaseMiddleware):
                     )
 
 
-class _DishkaBaseMiddleware:
+class DishkaMiddleware:
     def __init__(self, container: AsyncContainer) -> None:
         self.container = container
 
-    def __call__(self, *args: Any, **kwargs: Any) -> "DishkaMiddleware":
-        return DishkaMiddleware(self.container, *args, **kwargs)
+    def __call__(self, *args: Any, **kwargs: Any) -> "_DishkaMiddleware":
+        return _DishkaMiddleware(self.container, *args, **kwargs)

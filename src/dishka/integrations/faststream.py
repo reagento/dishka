@@ -43,7 +43,7 @@ if FASTSTREAM_04:
         "FastStream 0.4 is deprecated and integration will be removed"
         " in the 1.6.0 dishka release.",
         category=DeprecationWarning,
-        stacklevel=2,
+        stacklevel=1,
     )
 
     from faststream.broker.core.abc import (  # type: ignore[attr-defined]
@@ -153,7 +153,7 @@ Please, update your FastStream installation
 or use @inject at each subscriber manually.
             """,
                 category=RuntimeWarning,
-                stacklevel=1,
+                stacklevel=2,
             )
 
         return

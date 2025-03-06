@@ -63,6 +63,13 @@ elif FASTSTREAM_05:
     from faststream.broker.core.usecase import BrokerUsecase as BrokerType
 
     if FASTSTREAM_VERSION < "0.5.16":
+         warnings.warn(
+            "FastStream < 0.5.16 is deprecated and integration will be removed"
+            " in the 1.7.0 dishka release.",
+            category=DeprecationWarning,
+            stacklevel=1,
+        )
+
         Application: TypeAlias = FastStream  # type: ignore[no-redef,misc]
 
     else:

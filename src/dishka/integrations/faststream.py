@@ -8,7 +8,14 @@ __all__ = (
 import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any, ParamSpec, Protocol, TypeAlias, TypeVar, cast
+from typing import (
+    Any,
+    ParamSpec,
+    Protocol,
+    TypeAlias,
+    TypeVar,
+    cast,
+)
 
 from faststream import BaseMiddleware, FastStream, context
 from faststream.__about__ import (
@@ -79,10 +86,6 @@ else:
         Application |= StreamRouter  # type: ignore[assignment]
 
 
-T = TypeVar("T")
-P = ParamSpec("P")
-
-
 class ApplicationLike(Protocol):
     broker: BrokerType[Any, Any]
 
@@ -122,7 +125,7 @@ def setup_dishka(
                 "you must provide `app: FastStream | AsgiFastStream` "
                 "argument.",
                 category=RuntimeWarning,
-                stacklevel=1,
+                stacklevel=2,
             )
 
     broker = broker or getattr(app, "broker", None)
@@ -178,6 +181,10 @@ or use @inject at each subscriber manually.
         )
 
 
+T = TypeVar("T")
+P = ParamSpec("P")
+
+
 def inject(func: Callable[P, T]) -> Callable[P, T]:
     return wrap_injection(
         func=func,
@@ -204,7 +211,9 @@ class DishkaMiddleware(BaseMiddleware):
             *args: Any,
             **kwargs: Any,
         ) -> AsyncIterator[DecodedMessage]:
-            async with self.container() as request_container:
+            async with self.container({
+                ContextRepo: context,
+            }) as request_container:
                 with context.scope("dishka", request_container):
                     async with super().consume_scope(  # type: ignore[attr-defined]
                         *args,
@@ -227,6 +236,25 @@ class DishkaMiddleware(BaseMiddleware):
                 },
             ) as request_container:
                 with context.scope("dishka", request_container):
+                    return cast(
+                        AsyncIterator[DecodedMessage],
+                        await call_next(msg),
+                    )
+
+    else:
+        async def consume_scope(  # type: ignore[misc]
+            self,
+            call_next: Callable[[Any], Awaitable[Any]],
+            msg: StreamMessage[Any],
+        ) -> AsyncIterator[DecodedMessage]:
+            async with self.container(
+                {
+                    StreamMessage: msg,
+                    ContextRepo: context,
+                    type(msg): msg,
+                },
+            ) as request_container:
+                with self.context.scope("dishka", request_container):  # type: ignore[attr-defined]
                     return cast(
                         AsyncIterator[DecodedMessage],
                         await call_next(msg),

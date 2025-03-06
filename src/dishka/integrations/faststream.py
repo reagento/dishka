@@ -40,8 +40,8 @@ FASTSTREAM_LATES = not FASTSTREAM_04 and not FASTSTREAM_05
 
 if FASTSTREAM_04:
     warnings.warn(
-        "FastStream 0.4 is deprecated and intgration will be removed"
-        " in the 1.6.0 dishka major release.",
+        "FastStream 0.4 is deprecated and integration will be removed"
+        " in the 1.6.0 dishka release.",
         category=DeprecationWarning,
         stacklevel=2,
     )
@@ -164,6 +164,13 @@ or use @inject at each subscriber manually.
 
     else:
         # FastStream 0.5 - 0.5.6
+        warnings.warn(
+            "FastStream < 0.5.6 is deprecated and integration will be removed"
+            " in the 1.7.0 dishka release.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+
         broker._middlewares = (  # noqa: SLF001
             _DishkaBaseMiddleware(container),
             *broker._middlewares,  # noqa: SLF001

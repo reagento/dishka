@@ -17,7 +17,7 @@ AppMock = NewType("AppMock", Mock)
 
 
 class AppProvider(Provider):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.app_released = Mock()
         self.request_released = Mock()
@@ -41,7 +41,7 @@ class AppProvider(Provider):
         self.websocket_released()
 
     @provide(scope=Scope.REQUEST)
-    def mock(self) -> Mock:
+    def get_mock(self) -> Mock:
         return self.mock
 
     @provide(scope=Scope.APP)
@@ -50,7 +50,7 @@ class AppProvider(Provider):
 
 
 class WebSocketAppProvider(Provider):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.app_released = Mock()
         self.request_released = Mock()
@@ -73,5 +73,5 @@ class WebSocketAppProvider(Provider):
         self.websocket_released()
 
     @provide(scope=Scope.SESSION)
-    def mock(self) -> Mock:
+    def get_mock(self) -> Mock:
         return self.mock

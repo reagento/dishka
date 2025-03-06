@@ -1,5 +1,6 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -8,7 +9,7 @@ from faststream.nats import NatsBroker, TestNatsBroker
 
 from dishka import make_async_container
 from dishka.integrations.faststream import (
-    FASTSTREAM_OLD_MIDDLEWARES,
+    FASTSTREAM_04,
     FromDishka,
     inject,
     setup_dishka,
@@ -23,7 +24,10 @@ from ..common import (
 
 
 @asynccontextmanager
-async def dishka_app(view, provider) -> AsyncIterator[NatsBroker]:
+async def dishka_app(
+    view: Callable[..., Any],
+    provider: AppProvider,
+) -> AsyncIterator[NatsBroker]:
     broker = NatsBroker()
     broker.subscriber("test")(inject(view))
 
@@ -47,7 +51,7 @@ async def get_with_app(
 
 
 @pytest.mark.asyncio
-async def test_app_dependency(app_provider: AppProvider):
+async def test_app_dependency(app_provider: AppProvider) -> None:
     async with dishka_app(get_with_app, app_provider) as client:
         assert await client.publish("", "test", rpc=True) == "passed"
 
@@ -65,7 +69,7 @@ async def get_with_request(
 
 
 @pytest.mark.asyncio
-async def test_request_dependency(app_provider: AppProvider):
+async def test_request_dependency(app_provider: AppProvider) -> None:
     async with dishka_app(get_with_request, app_provider) as client:
         assert await client.publish("", "test", rpc=True) == "passed"
 
@@ -75,10 +79,10 @@ async def test_request_dependency(app_provider: AppProvider):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(
-    FASTSTREAM_OLD_MIDDLEWARES,
+    FASTSTREAM_04,
     reason="Requires FastStream 0.5.0+",
 )
-async def test_autoinject_before_subscriber(app_provider: AppProvider):
+async def test_autoinject_before_subscriber(app_provider: AppProvider) -> None:
     broker = NatsBroker()
     app = FastStream(broker)
 
@@ -98,10 +102,10 @@ async def test_autoinject_before_subscriber(app_provider: AppProvider):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(
-    FASTSTREAM_OLD_MIDDLEWARES,
+    FASTSTREAM_04,
     reason="Requires FastStream 0.5.0+",
 )
-async def test_autoinject_after_subscriber(app_provider: AppProvider):
+async def test_autoinject_after_subscriber(app_provider: AppProvider) -> None:
     broker = NatsBroker()
     app = FastStream(broker)
 
@@ -121,10 +125,10 @@ async def test_autoinject_after_subscriber(app_provider: AppProvider):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(
-    FASTSTREAM_OLD_MIDDLEWARES,
+    FASTSTREAM_04,
     reason="Requires FastStream 0.5.0+",
 )
-async def test_faststream_with_broker(app_provider: AppProvider):
+async def test_faststream_with_broker(app_provider: AppProvider) -> None:
     broker = NatsBroker()
     broker.subscriber("test")(get_with_request)
     container = make_async_container(app_provider)

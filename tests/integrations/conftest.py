@@ -5,19 +5,19 @@ from .common import AppProvider, WebSocketAppProvider
 
 
 @pytest.fixture
-def app_provider():
+def app_provider() -> AppProvider:
     return AppProvider()
 
 
 @pytest.fixture
-def ws_app_provider():
+def ws_app_provider() -> WebSocketAppProvider:
     return WebSocketAppProvider()
 
 @pytest.fixture
-def async_container(app_provider):
+def async_container(app_provider: AppProvider) -> AppProvider:
     return make_async_container(app_provider)
 
 
 @pytest.fixture
-def container(app_provider):
+def container(app_provider: AppProvider) -> AppProvider:
     return make_container(app_provider)

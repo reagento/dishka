@@ -12,10 +12,16 @@ INSTALL_CMD = ("pytest", "pytest-cov", "-e", ".")
 
 
 @dataclass(frozen=True, slots=True)
+class Constraint:
+    reason: str = ""
+    condition: Callable[[], bool] = lambda: True
+
+
+@dataclass(frozen=True, slots=True)
 class IntegrationEnv:
     library: str
     version: str
-    constraint: Callable[[], bool] = lambda: True
+    constraint: Constraint | None = None
 
     def get_req(self) -> str:
         return f"requirements/{self.library.replace('_', '-')}-{self.version}.txt"
@@ -24,8 +30,13 @@ class IntegrationEnv:
         return f"tests/integrations/{self.library}"
 
 
+constraint_3_13 = Constraint(
+    "Skip tests on python 3.13 due to compatibility issues",
+    lambda: sys.version_info < (3, 13),
+)
+
 INTEGRATIONS = [
-    IntegrationEnv("aiogram", "330", lambda: sys.version_info < (3, 13)),
+    IntegrationEnv("aiogram", "330", constraint_3_13),
     IntegrationEnv("aiogram", "3140"),
     IntegrationEnv("aiogram", "latest"),
     IntegrationEnv("aiogram_dialog", "210"),
@@ -39,13 +50,13 @@ INTEGRATIONS = [
     IntegrationEnv("fastapi", "0096"),
     IntegrationEnv("fastapi", "0109"),
     IntegrationEnv("fastapi", "latest"),
-    IntegrationEnv("faststream", "047", lambda: sys.version_info < (3, 13)),
-    IntegrationEnv("faststream", "050", lambda: sys.version_info < (3, 13)),
+    IntegrationEnv("faststream", "047", constraint_3_13),
+    IntegrationEnv("faststream", "050", constraint_3_13),
     IntegrationEnv("faststream", "0529"),
     IntegrationEnv("faststream", "latest"),
     IntegrationEnv("flask", "302"),
     IntegrationEnv("flask", "latest"),
-    IntegrationEnv("grpcio", "1641", lambda: sys.version_info < (3, 13)),
+    IntegrationEnv("grpcio", "1641", constraint_3_13),
     IntegrationEnv("grpcio", "1680"),
     IntegrationEnv("grpcio", "latest"),
     IntegrationEnv("litestar", "230"),
@@ -78,8 +89,9 @@ for env in INTEGRATIONS:
         tags=[env.library, "latest" if env.version == "latest" else "ci"],
     )
     def session(session: nox.Session, env=env) -> None:
-        if not env.constraint():
-            session.skip("Skip tests on python 3.13 due to compatibility issues")
+        if env.constraint and not env.constraint.condition():
+            session.skip(env.constraint.reason)
+
         session.install(*INSTALL_CMD, "-r", env.get_req())
         session.run(*CMD, env.get_tests())
 

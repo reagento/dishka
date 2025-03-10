@@ -157,6 +157,7 @@ def wrap_injection(
             ),
         )
 
+    auto_injected_func.__dishka_orig_func__ = func
     auto_injected_func.__dishka_injected__ = True  # type: ignore[attr-defined]
     auto_injected_func.__name__ = func.__name__
     auto_injected_func.__qualname__ = func.__qualname__

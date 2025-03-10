@@ -7,7 +7,7 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi.testclient import TestClient
 
-from dishka import make_async_container
+from dishka import Scope, make_async_container, provide
 from dishka.integrations.fastapi import (
     DishkaRoute,
     FromDishka,
@@ -18,6 +18,7 @@ from ..common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
     AppDep,
+    AppMock,
     AppProvider,
     RequestDep,
 )
@@ -64,6 +65,44 @@ async def test_app_dependency(app_provider: AppProvider, app_factory):
     async with app_factory(get_with_app, app_provider) as client:
         client.get("/")
         app_provider.mock.assert_called_with(APP_DEP_VALUE)
+        app_provider.app_released.assert_not_called()
+    app_provider.app_released.assert_called()
+
+
+class Wrapper:
+    def __init__(
+        self,
+        a: AppDep,
+        app_mock: AppMock,
+    ):
+        self.a = a
+        self.app_mock = app_mock
+
+    async def get_with_app(
+            self,
+            a: FromDishka[AppDep],
+            app_mock: FromDishka[AppMock],
+    ) -> None:
+        assert self.a == a
+        assert self.app_mock == app_mock
+        app_mock(a)
+
+
+class LocalProvider(AppProvider):
+    scope = Scope.APP
+
+    wrapper = provide(Wrapper)
+
+
+@pytest.mark.parametrize("app_factory", [
+    dishka_app, dishka_auto_app,
+])
+@pytest.mark.asyncio
+async def test_app_dependency_class(app_factory):
+    app_provider = LocalProvider()
+    async with app_factory(Wrapper.get_with_app, app_provider) as client:
+        client.get("/")
+        app_provider.app_mock.assert_called_with(APP_DEP_VALUE)
         app_provider.app_released.assert_not_called()
     app_provider.app_released.assert_called()
 

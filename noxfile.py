@@ -79,6 +79,7 @@ def integrations_base(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,
         "-r", "requirements/test.txt",
+        silent=False,
     )
     session.run(*CMD, "tests/integrations/base")
 
@@ -92,7 +93,7 @@ for env in INTEGRATIONS:
         if env.constraint and not env.constraint.condition():
             session.skip(env.constraint.reason)
 
-        session.install(*INSTALL_CMD, "-r", env.get_req())
+        session.install(*INSTALL_CMD, "-r", env.get_req(), silent=False)
         session.run(*CMD, env.get_tests())
 
 
@@ -101,6 +102,7 @@ def unit(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,
         "-r", "requirements/test.txt",
+        silent=False,
     )
     session.run(*CMD, "tests/unit")
 
@@ -110,5 +112,6 @@ def real_world(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,
         "-r", "examples/real_world/requirements_test.txt",
+        silent=False,
     )
     session.run(*CMD, "examples/real_world/tests/")

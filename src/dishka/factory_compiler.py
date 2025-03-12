@@ -25,21 +25,12 @@ from .dependency_source import Factory
 from .exceptions import NoContextValueError, UnsupportedFactoryError
 
 
-def make_args(args: list[str], kwargs: list[str]) -> str:
-    res = ", ".join(
-        f"{{await}}getter({arg})"
-        for arg in args
+def make_args(args: list[str], kwargs: dict[str, str]) -> str:
+    """Format arguments for the factory function."""
+    return ", ".join(
+        [f"{{await}}getter({arg})" for arg in args] +
+        [f"{arg}={{await}}getter({var})" for arg, var in kwargs.items()],
     )
-    if not kwargs:
-        return res
-    if res:
-        res += ", "
-    res += ", ".join(
-        f"{arg}={{await}}getter({arg})"
-        for arg in kwargs
-    )
-    return res
-
 
 GENERATOR = """
 {async}def get(getter, exits, context):
@@ -115,7 +106,14 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
         f"_dishka_arg{i}": dep
         for i, dep in enumerate(factory.dependencies)
     }
-    kwargs = factory.kw_dependencies
+    kwargs_to_globals = {
+        name: f"_dishka_kwarg_{name}"
+        for name in factory.kw_dependencies
+    }
+    kwargs = {
+        kwargs_to_globals[name]: dep
+        for name, dep in factory.kw_dependencies.items()
+    }
 
     if is_async:
         async_ = "async "
@@ -125,19 +123,15 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
         async_ = ""
         await_ = ""
         body_template = SYNC_BODIES.get(factory.type, INVALID)
-    if factory.cache:
-        cache = CACHE
-    else:
-        cache = ""
 
-    args_str = make_args(list(args), list(kwargs)).format_map({
+    args_str = make_args(list(args), kwargs_to_globals).format_map({
         "await": await_,
     })
     body = body_template.format_map({
         "async": async_,
         "await": await_,
         "args": args_str,
-        "cache": cache,
+        "cache": CACHE if factory.cache else "",
     })
     func_globals = {
         "source": factory.source,

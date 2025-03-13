@@ -1,6 +1,5 @@
 from collections.abc import Sequence
 
-from dishka.dependency_source import Factory
 from dishka.entities.factory_type import FactoryData
 from dishka.exception_base import DishkaError
 from dishka.text_rendering import get_name
@@ -45,23 +44,20 @@ class NoFactoryError(DishkaError):
     def __init__(
             self,
             requested: DependencyKey,
-            path: Sequence[Factory] = (),
-            suggest_other_scopes: Sequence[Factory] = (),
-            suggest_other_components: Sequence[Factory] = (),
+            path: Sequence[FactoryData] = (),
+            suggest_other_scopes: Sequence[FactoryData] = (),
+            suggest_other_components: Sequence[FactoryData] = (),
     ) -> None:
         self.requested = requested
         self.path = list(path)
         self.suggest_other_scopes = suggest_other_scopes
         self.suggest_other_components = suggest_other_components
+        self.scope: BaseScope | None = None
 
-    def add_path(self, requested_by: Factory) -> None:
+    def add_path(self, requested_by: FactoryData) -> None:
         self.path.insert(0, requested_by)
 
     def __str__(self) -> str:
-        requested_name = (
-            f"({get_name(self.requested.type_hint, include_module=False)}, "
-            f"component={self.requested.component!r})"
-        )
         suggestion = render_suggestions_for_missing(
             requested_for=self.path[-1] if self.path else None,
             requested_key=self.requested,
@@ -71,11 +67,20 @@ class NoFactoryError(DishkaError):
         if suggestion:
             suggestion = f"Hint:{suggestion}"
         if self.path:
+            requested_name = (
+                f"({get_name(self.requested.type_hint, include_module=False)}, "
+                f"component={self.requested.component!r})"
+            )
             return (
                 f"Cannot find factory for {requested_name}. "
                 f"It is missing or has invalid scope.\n"
             ) + _renderer.render(self.path, self.requested) + suggestion
         else:
+            requested_name = (
+                f"({get_name(self.requested.type_hint, include_module=False)}, "
+                f"component={self.requested.component!r}, "
+                f"scope={self.scope!s})"
+            )
             return (
                 f"Cannot find factory for {requested_name}. "
                 f"Check scopes in your providers. "
@@ -143,7 +148,7 @@ class UnknownScopeError(InvalidGraphError):
 
 
 class CycleDependenciesError(InvalidGraphError):
-    def __init__(self, path: Sequence[Factory]) -> None:
+    def __init__(self, path: Sequence[FactoryData]) -> None:
         self.path = path
 
     def __str__(self) -> str:
@@ -160,7 +165,7 @@ class GraphMissingFactoryError(NoFactoryError, InvalidGraphError):
 
 
 class ImplicitOverrideDetectedError(InvalidGraphError):
-    def __init__(self, new: Factory, existing: Factory) -> None:
+    def __init__(self, new: FactoryData, existing: FactoryData) -> None:
         self.new = new
         self.existing = existing
 
@@ -177,7 +182,7 @@ class ImplicitOverrideDetectedError(InvalidGraphError):
 
 
 class NothingOverriddenError(InvalidGraphError):
-    def __init__(self, factory: Factory) -> None:
+    def __init__(self, factory: FactoryData) -> None:
         self.factory = factory
 
     def __str__(self) -> str:

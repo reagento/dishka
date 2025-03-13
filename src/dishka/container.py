@@ -8,7 +8,7 @@ from types import TracebackType
 from typing import Any, TypeVar, cast, overload
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
-from dishka.entities.factory_type import FactoryType
+from dishka.entities.factory_type import FactoryType, FactoryData
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope, Scope
 from .container_objects import Exit
@@ -157,6 +157,17 @@ class Container:
     ) -> Any:
         lock = self.lock
         key = DependencyKey(dependency_type, component)
+        try:
+            if not lock:
+                return self._get_unlocked(key)
+            with lock:
+                return self._get_unlocked(key)
+        except NoFactoryError as e:
+            e.scope = self.scope
+            raise
+
+    def _get(self, key: DependencyKey) -> Any:
+        lock = self.lock
         if not lock:
             return self._get_unlocked(key)
         with lock:
@@ -169,9 +180,7 @@ class Container:
         if not compiled:
             if not self.parent_container:
                 raise NoFactoryError(key)
-            return self.parent_container.get(
-                key.type_hint, key.component,
-            )
+            return self.parent_container._get(key)
         try:
             return compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:

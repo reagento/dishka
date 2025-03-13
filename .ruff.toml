@@ -28,7 +28,9 @@ lint.ignore = [
     # awful things, never use.
     # It makes runtime work differently from typechecker
     "TC001",
+    "TC002",
     "TC003",
+    "TC006",
 
     # only affects perfomance and brings nothing useful
     "UP038",

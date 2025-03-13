@@ -158,10 +158,22 @@ class AsyncContainer:
     ) -> Any:
         lock = self.lock
         key = DependencyKey(dependency_type, component)
+        try:
+            if not lock:
+                return await self._get_unlocked(key)
+            async with lock:
+                return await self._get_unlocked(key)
+        except NoFactoryError as e:
+            e.scope = self.scope
+            raise
+
+    async def _get(self, key: DependencyKey) -> Any:
+        lock = self.lock
         if not lock:
             return await self._get_unlocked(key)
         async with lock:
             return await self._get_unlocked(key)
+
 
     async def _get_unlocked(self, key: DependencyKey) -> Any:
         if key in self._cache:
@@ -170,9 +182,7 @@ class AsyncContainer:
         if not compiled:
             if not self.parent_container:
                 raise NoFactoryError(key)
-            return await self.parent_container.get(
-                key.type_hint, key.component,
-            )
+            return await self.parent_container._get(key)  # noqa: SLF001
         try:
             return await compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:

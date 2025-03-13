@@ -157,6 +157,17 @@ class Container:
     ) -> Any:
         lock = self.lock
         key = DependencyKey(dependency_type, component)
+        try:
+            if not lock:
+                return self._get_unlocked(key)
+            with lock:
+                return self._get_unlocked(key)
+        except NoFactoryError as e:
+            e.scope = self.scope
+            raise
+
+    def _get(self, key: DependencyKey) -> Any:
+        lock = self.lock
         if not lock:
             return self._get_unlocked(key)
         with lock:
@@ -169,9 +180,7 @@ class Container:
         if not compiled:
             if not self.parent_container:
                 raise NoFactoryError(key)
-            return self.parent_container.get(
-                key.type_hint, key.component,
-            )
+            return self.parent_container._get(key)  # noqa: SLF001
         try:
             return compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:

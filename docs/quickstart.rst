@@ -26,7 +26,7 @@ To learn more about scopes, see :ref:`scopes`
    :language: python
    :lines: 24-30
 
-To provide a connection, you might need some custom code:
+To provide a releasable connection, you might need some custom code:
 
 .. literalinclude:: ./quickstart_example.py
    :language: python

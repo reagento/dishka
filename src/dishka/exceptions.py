@@ -66,23 +66,26 @@ class NoFactoryError(DishkaError):
         )
         if suggestion:
             suggestion = f"Hint:{suggestion}"
+        requested_name = get_name(
+            self.requested.type_hint, include_module=False,
+        )
         if self.path:
-            requested_name = (
-                f"({get_name(self.requested.type_hint, include_module=False)}, "
+            requested_repr = (
+                f"({requested_name}, "
                 f"component={self.requested.component!r})"
             )
             return (
-                f"Cannot find factory for {requested_name}. "
+                f"Cannot find factory for {requested_repr}. "
                 f"It is missing or has invalid scope.\n"
             ) + _renderer.render(self.path, self.requested) + suggestion
         else:
-            requested_name = (
-                f"({get_name(self.requested.type_hint, include_module=False)}, "
+            requested_repr = (
+                f"({requested_name}, "
                 f"component={self.requested.component!r}, "
                 f"scope={self.scope!s})"
             )
             return (
-                f"Cannot find factory for {requested_name}. "
+                f"Cannot find factory for {requested_repr}. "
                 f"Check scopes in your providers. "
                 f"It is missing or has invalid scope."
             ) + suggestion

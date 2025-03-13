@@ -182,7 +182,7 @@ class AsyncContainer:
         if not compiled:
             if not self.parent_container:
                 raise NoFactoryError(key)
-            return await self.parent_container._get(key)
+            return await self.parent_container._get(key)  # noqa: SLF001
         try:
             return await compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:

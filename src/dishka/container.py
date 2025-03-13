@@ -8,7 +8,7 @@ from types import TracebackType
 from typing import Any, TypeVar, cast, overload
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
-from dishka.entities.factory_type import FactoryType, FactoryData
+from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope, Scope
 from .container_objects import Exit
@@ -180,7 +180,7 @@ class Container:
         if not compiled:
             if not self.parent_container:
                 raise NoFactoryError(key)
-            return self.parent_container._get(key)
+            return self.parent_container._get(key)  # noqa: SLF001
         try:
             return compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:

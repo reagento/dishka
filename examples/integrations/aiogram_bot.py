@@ -40,8 +40,7 @@ router = Router()
 
 
 @router.message()
-# If auto_inject=True is not passed, you need to manually apply the @inject decorator
-#@inject
+@inject  # if auto_inject=True is specified in the setup_dishka, then you do not need to specify a decorator
 async def start(
     message: Message,
     user: FromDishka[User],
@@ -63,7 +62,7 @@ async def main():
         MyProvider(),
         AiogramProvider(),
     )
-    setup_dishka(container=container, router=dp, auto_inject=True)
+    setup_dishka(container=container, router=dp)
     try:
         await dp.start_polling(bot)
     finally:

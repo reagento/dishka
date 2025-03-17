@@ -95,6 +95,28 @@ Dependencies have scope and there are three places to set it (from highest to lo
     class MyProvider(Provider):
         scope=Scope.APP
 
+.. raw:: html
+
+    <br>
+
+
+.. warning::
+
+   Provider internally defines attributes like ``factories``, ``aliases``, ``decorators``, and ``context_vars``.
+   Overriding them in your subclass will break dependency resolution. Use another name.
+
+    .. code-block:: python
+
+        class MyProvider(Provider):
+            scope = ...
+
+            factories = provide(SomeClass)  # ERROR
+
+.. raw:: html
+
+    <br>
+
+
 Though it is a normal object, not all attributes are analyzed by ``Container``, but only those which are marked with special functions:
 
 .. toctree::

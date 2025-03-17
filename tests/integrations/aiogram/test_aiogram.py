@@ -111,7 +111,7 @@ async def handle_with_app(
 
 
 @pytest.mark.parametrize("app_factory", [
-    dishka_app, dishka_auto_app, dishka_auto_app_with_sub_router
+    dishka_app, dishka_auto_app, dishka_auto_app_with_sub_router,
 ])
 @pytest.mark.asyncio
 async def test_app_dependency(bot, app_provider: AppProvider, app_factory):

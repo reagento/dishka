@@ -108,7 +108,8 @@ def setup_dishka(
 
     if auto_inject:
         callback = partial(inject_router, router=router)
-        router.startup.register(callback)
+        for sub_router in router.chain_tail:
+            sub_router.startup.register(callback)
 
 
 def inject_router(router: Router) -> None:

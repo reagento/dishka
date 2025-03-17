@@ -23,6 +23,7 @@ Some of the integrations are supported by a community, refer to their documentat
    flask
    grpcio
    litestar
+   rapidy
    RQ <https://github.com/prepin/dishka-rq>
    sanic
    starlette
@@ -61,6 +62,10 @@ Some of the integrations are supported by a community, refer to their documentat
    * -  :ref:`Litestar`
      -
      - `RQ <https://github.com/prepin/dishka-rq>`_ (:abbr:`com (Community support)`)
+     -
+   * -  :ref:`Rapidy`
+     -
+     -
      -
    * -  :ref:`Sanic`
      -

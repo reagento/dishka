@@ -43,6 +43,8 @@ INTEGRATIONS = [
     IntegrationEnv("aiogram_dialog", "latest"),
     IntegrationEnv("aiohttp", "393"),
     IntegrationEnv("aiohttp", "latest"),
+    IntegrationEnv("rapidy", "100"),
+    IntegrationEnv("rapidy", "latest"),
     IntegrationEnv("arq", "0250"),
     IntegrationEnv("arq", "latest"),
     IntegrationEnv("click", "817"),

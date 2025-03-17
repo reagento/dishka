@@ -109,11 +109,13 @@ Dependencies have scope and there are three places to set it (from highest to lo
 
         class MyProvider(Provider):
             scope = ...
+
             factories = provide(SomeClass)  # ERROR
 
 .. raw:: html
 
     <br>
+
 
 Though it is a normal object, not all attributes are analyzed by ``Container``, but only those which are marked with special functions:
 

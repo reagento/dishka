@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, Router
 from aiogram.dispatcher.event.handler import HandlerObject
 from aiogram.types import Chat, Message, TelegramObject, Update, User
 
@@ -70,6 +70,22 @@ async def dishka_auto_app(handler, provider):
     await container.close()
 
 
+@asynccontextmanager
+async def dishka_auto_app_with_sub_router(handler, provider):
+    dp = Dispatcher()
+    router = Router()
+    router.message()(handler)
+    dp.include_router(router)
+
+    container = make_async_container(provider)
+    setup_dishka(container, router=dp, auto_inject=True)
+
+    await dp.emit_startup()
+    yield dp
+    await dp.emit_shutdown()
+    await container.close()
+
+
 async def send_message(bot, dp):
     await dp.feed_update(bot, Update(
         update_id=1,
@@ -95,7 +111,7 @@ async def handle_with_app(
 
 
 @pytest.mark.parametrize("app_factory", [
-    dishka_app, dishka_auto_app,
+    dishka_app, dishka_auto_app, dishka_auto_app_with_sub_router,
 ])
 @pytest.mark.asyncio
 async def test_app_dependency(bot, app_provider: AppProvider, app_factory):

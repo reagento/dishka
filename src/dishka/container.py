@@ -11,6 +11,7 @@ from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope, Scope
+from ._adaptix.type_tools.basic_utils import is_type_alias_type
 from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .dependency_source import Factory
@@ -156,6 +157,8 @@ class Container:
             component: Component | None = DEFAULT_COMPONENT,
     ) -> Any:
         lock = self.lock
+        if is_type_alias_type(dependency_type):
+            dependency_type = dependency_type.__value__
         key = DependencyKey(dependency_type, component)
         try:
             if not lock:

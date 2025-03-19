@@ -135,3 +135,8 @@ def get_type_vars_of_parametrized(tp: TypeHint) -> VarTuple[TypeVar]:
 
 def eval_forward_ref(namespace: dict[str, Any], forward_ref: ForwardRef):
     return forward_ref._evaluate(namespace, None, recursive_guard=frozenset())
+
+
+def is_type_alias_type(tp: TypeHint) -> bool:
+    return hasattr(tp, '__value__') and (isinstance(tp.__value__, type)
+                                         or isinstance(tp.__value__, types.GenericAlias))

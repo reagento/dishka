@@ -360,7 +360,8 @@ class RegistryBuilder:
         ):
             return
         depth = self.decorator_depth[provides]
-        decorated_component = f"{DECORATED_COMPONENT_PREFIX}{depth}"
+        decorated_component = (f"{DECORATED_COMPONENT_PREFIX}{depth}_"
+                               f"{provides.component}")
         self.decorator_depth[provides] += 1
         if old_factory is None:
             raise InvalidGraphError(  # noqa: TRY003

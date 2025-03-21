@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Annotated, Any, NamedTuple, get_args, get_origin
 
-from dishka._adaptix.type_tools.basic_utils import is_type_alias_type
 from .component import DEFAULT_COMPONENT, Component
 from .provides_marker import AnyOf
+from .type_alias_type import is_type_alias_type
 
 
 class _FromComponent(NamedTuple):

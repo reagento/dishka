@@ -3,6 +3,7 @@ __all__ = [
     "FastapiProvider",
     "FromDishka",
     "inject",
+    "inject_sync",
     "setup_dishka",
 ]
 
@@ -33,17 +34,20 @@ from .starlette import ContainerMiddleware, SyncContainerMiddleware
 T = TypeVar("T")
 P = ParamSpec("P")
 
+
 def _async_depends(dependency: DependencyKey) -> Any:
     async def dishka_depends(request: Request) -> dependency:
         return await request.state.dishka_container.get(
-            dependency.type_hint, component=dependency.component,
+            dependency.type_hint,
+            component=dependency.component,
         )
+
     return Annotated[dependency.type_hint, Depends(dishka_depends)]
 
 
 def _replace_depends(
     func: Callable[P, T],
-        depends_factory: Callable[[DependencyKey],Any],
+    depends_factory: Callable[[DependencyKey], Any],
 ) -> Callable[P, T]:
     hints = get_type_hints(func, include_extras=True)
     func_signature = signature(func)
@@ -63,10 +67,7 @@ def _replace_depends(
     return func
 
 
-def inject(func: Callable[P, T]) -> Callable[P, T]:
-    if not iscoroutinefunction(func) and not isasyncgenfunction(func):
-        return _replace_depends(func, _async_depends)
-
+def _find_request_param(func: Callable[P, T]) -> str | None:
     hints = get_type_hints(func)
     request_hint = next(
         (name for name, hint in hints.items() if hint is Request),
@@ -76,20 +77,40 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
         (name for name, hint in hints.items() if hint is WebSocket),
         None,
     )
-    if request_hint is None and websocket_hint is None:
-        additional_params = [
-            Parameter(
-                name="___dishka_request",
-                annotation=Request,
-                kind=Parameter.KEYWORD_ONLY,
-            ),
-        ]
-    else:
+    return request_hint or websocket_hint
+
+
+DISHKA_REQUEST_PARAM = Parameter(
+    name="___dishka_request",
+    annotation=Request,
+    kind=Parameter.KEYWORD_ONLY,
+)
+
+
+def inject(func: Callable[P, T]) -> Callable[P, T]:
+    if not iscoroutinefunction(func) and not isasyncgenfunction(func):
+        return _replace_depends(func, _async_depends)
+    return _wrap_fastapi_injection(func=func, is_async=True)
+
+
+def inject_sync(func: Callable[P, T]) -> Callable[P, T]:
+    return _wrap_fastapi_injection(func=func, is_async=False)
+
+
+def _wrap_fastapi_injection(
+    *,
+    func: Callable[P, T],
+    is_async: bool,
+) -> Callable[P, T]:
+    param_name = _find_request_param(func)
+    if param_name:
         additional_params = []
-    param_name = request_hint or websocket_hint or "___dishka_request"
+    else:
+        additional_params = [DISHKA_REQUEST_PARAM]
+        param_name = DISHKA_REQUEST_PARAM.name
     return wrap_injection(
         func=func,
-        is_async=True,
+        is_async=is_async,
         additional_params=additional_params,
         container_getter=lambda _, p: p[param_name].state.dishka_container,
     )

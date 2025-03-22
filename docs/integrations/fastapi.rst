@@ -13,6 +13,12 @@ Though it is not required, you can use dishka-fastapi integration. It features:
 How to use
 ****************
 
+.. note::
+    We suppose that you are using ``AsyncContainer`` with FastAPI.
+    If it is not right and you are using sync ``Container``, the overall approach is the same,
+    but there are few corrections, see :ref:`below<fastapi_sync>`.
+
+
 1. Import
 
 ..  code-block:: python
@@ -112,3 +118,49 @@ To achieve REQUEST-scope you can enter in manually:
             async with container() as request_container:
                 b = await request_container.get(B)  # object with Scope.REQUEST
 
+
+Auto-injection is not available for websockets.
+
+.. _fastapi_sync:
+
+Using with sync Container
+**********************************
+
+If you are using sync ``Container``, created using ``make_container`` function, you should change severla things:
+
+* use ``inject_sync`` instead of ``inject`` function.
+* use ``DishkaSyncRoute`` instead if ``DishkaRoute`` if you are using autoinjection
+* use ``Container`` in websocket handler instead of ``AsyncContainer`` and normal ``with`` instead of ``async with``
+
+
+..  code-block:: python
+
+    from dishka.integrations.fastapi import (
+        FromDishka,
+        FastapiProvider,
+        inject_sync,
+        setup_dishka,
+    )
+    from dishka import make_container, Provider, provide, Scope
+
+
+    router = APIRouter()
+
+
+    @router.get('/')
+    @inject_sync
+    def endpoint(
+        gateway: FromDishka[Gateway],
+    ) -> ResponseModel:
+        ...
+
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        yield
+        app.state.dishka_container.close()
+
+    app = FastAPI(lifespan=lifespan)
+    app.include_router(router)
+    container = make_container(YourProvider(), FastapiProvider())
+    setup_dishka(container=container, app=app)

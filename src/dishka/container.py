@@ -157,9 +157,8 @@ class Container:
             component: Component | None = DEFAULT_COMPONENT,
     ) -> Any:
         lock = self.lock
-        if is_type_alias_type(dependency_type):
-            while hasattr(dependency_type, "__value__"):
-                dependency_type = dependency_type.__value__
+        while is_type_alias_type(dependency_type):
+            dependency_type = dependency_type.__value__
         key = DependencyKey(dependency_type, component)
         try:
             if not lock:

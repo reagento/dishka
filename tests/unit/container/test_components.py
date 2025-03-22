@@ -235,3 +235,38 @@ def test_result_component():
 
     container = make_container(ResultProvider().to_component("YYY"))
     assert container.get(float) == 42
+
+
+class Decorate2ComponentProviderX(Provider):
+    scope = Scope.APP
+    component = "X"
+
+    @provide
+    def foo(self) -> int:
+        return 42
+
+    @decorate
+    def bar(self, x: int) -> int:
+        return x + 1
+
+
+class Decorate2ComponentProviderY(Provider):
+    scope = Scope.APP
+    component = "Y"
+
+    @provide
+    def foo(self) -> int:
+        return -1
+
+    @decorate
+    def bar(self, x: int) -> int:
+        return x - 1
+
+
+def test_decorate_two_components():
+    container = make_container(
+        Decorate2ComponentProviderX(),
+        Decorate2ComponentProviderY(),
+    )
+    assert container.get(int, component="X") == 43
+    assert container.get(int, component="Y") == -2

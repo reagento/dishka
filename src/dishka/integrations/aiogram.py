@@ -113,13 +113,14 @@ def setup_dishka(
 
 def inject_router(router: Router) -> None:
     """Inject dishka to the router handlers."""
-    for observer in router.observers.values():
-        if observer.event_name == "update":
-            continue
+    for sub_router in router.chain_tail:
+        for observer in sub_router.observers.values():
+            if observer.event_name == "update":
+                continue
 
-        for handler in observer.handlers:
-            if not is_dishka_injected(handler.callback):
-                inject_handler(handler)
+            for handler in observer.handlers:
+                if not is_dishka_injected(handler.callback):
+                    inject_handler(handler)
 
 
 def inject_handler(handler: HandlerObject) -> HandlerObject:

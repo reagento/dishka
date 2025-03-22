@@ -7,11 +7,11 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi.testclient import TestClient
 
-from dishka import make_async_container
+from dishka import make_container
 from dishka.integrations.fastapi import (
-    DishkaRoute,
+    DishkaSyncRoute,
     FromDishka,
-    inject,
+    inject_sync,
     setup_dishka,
 )
 from ..common import (
@@ -26,30 +26,30 @@ from ..common import (
 @asynccontextmanager
 async def dishka_app(view, provider) -> TestClient:
     router = fastapi.APIRouter()
-    router.get("/")(inject(view))
+    router.get("/")(inject_sync(view))
     app = fastapi.FastAPI()
     app.include_router(router)
-    container = make_async_container(provider)
+    container = make_container(provider)
     setup_dishka(container, app)
     async with LifespanManager(app):
         yield fastapi.testclient.TestClient(app)
-    await container.close()
+    container.close()
 
 
 @asynccontextmanager
 async def dishka_auto_app(view, provider) -> TestClient:
-    router = fastapi.APIRouter(route_class=DishkaRoute)
+    router = fastapi.APIRouter(route_class=DishkaSyncRoute)
     router.get("/")(view)
     app = fastapi.FastAPI()
     app.include_router(router)
-    container = make_async_container(provider)
+    container = make_container(provider)
     setup_dishka(container, app)
     async with LifespanManager(app):
         yield fastapi.testclient.TestClient(app)
-    await container.close()
+    container.close()
 
 
-async def get_with_app(
+def get_with_app(
         a: FromDishka[AppDep],
         mock: FromDishka[Mock],
 ) -> None:
@@ -68,7 +68,7 @@ async def test_app_dependency(app_provider: AppProvider, app_factory):
     app_provider.app_released.assert_called()
 
 
-async def get_with_request(
+def get_with_request(
         a: FromDishka[RequestDep],
         mock: FromDishka[Mock],
 ) -> None:
@@ -82,7 +82,7 @@ async def test_request_dependency(app_provider: AppProvider):
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
 
-async def get_compat(
+def get_compat(
         a: FromDishka[RequestDep],
         mock: FromDishka[Mock],
 ) -> None:
@@ -110,15 +110,15 @@ async def test_request_dependency2(app_provider: AppProvider):
         app_provider.request_released.assert_called_once()
 
 
-@inject
-async def additional(
+@inject_sync
+def additional(
         a: FromDishka[RequestDep],
         mock: FromDishka[Mock],
 ):
     mock(a)
 
 
-async def get_with_depends(
+def get_with_depends(
         a: Annotated[None, fastapi.Depends(additional)],
 ) -> None:
     pass
@@ -127,21 +127,6 @@ async def get_with_depends(
 @pytest.mark.asyncio
 async def test_fastapi_depends(app_provider: AppProvider):
     async with dishka_app(get_with_depends, app_provider) as client:
-        client.get("/")
-        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
-        app_provider.request_released.assert_called_once()
-
-
-def get_sync(
-        a: FromDishka[RequestDep],
-        mock: FromDishka[Mock],
-) -> None:
-    mock(a)
-
-
-@pytest.mark.asyncio
-async def test_sync(app_provider: AppProvider):
-    async with dishka_app(get_sync, app_provider) as client:
         client.get("/")
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()

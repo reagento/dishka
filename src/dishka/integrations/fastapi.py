@@ -20,6 +20,7 @@ from fastapi.routing import APIRoute
 
 from dishka import (
     AsyncContainer,
+    Container,
     DependencyKey,
     FromDishka,
     Provider,
@@ -27,7 +28,7 @@ from dishka import (
     from_context,
 )
 from .base import default_parse_dependency, wrap_injection
-from .starlette import ContainerMiddleware
+from .starlette import ContainerMiddleware, SyncContainerMiddleware
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -110,6 +111,9 @@ class FastapiProvider(Provider):
     websocket = from_context(WebSocket, scope=Scope.SESSION)
 
 
-def setup_dishka(container: AsyncContainer, app: FastAPI) -> None:
-    app.add_middleware(ContainerMiddleware)
+def setup_dishka(container: AsyncContainer | Container, app: FastAPI) -> None:
+    if isinstance(container, AsyncContainer):
+        app.add_middleware(ContainerMiddleware)
+    else:
+        app.add_middleware(SyncContainerMiddleware)
     app.state.dishka_container = container

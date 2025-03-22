@@ -6,11 +6,13 @@ from collections.abc import (
     Sequence,
 )
 from dataclasses import dataclass
+from enum import Enum
 from inspect import (
     Parameter,
     Signature,
     _ParameterKind,
     isasyncgenfunction,
+    iscoroutinefunction,
     isgeneratorfunction,
     signature,
 )
@@ -45,14 +47,14 @@ DependsClass: TypeAlias = cast(
 
 
 def _get_auto_injected_async_gen_scoped(
-    container_getter: ContainerGetter[AsyncContainer],
-    additional_params: Sequence[Parameter],
-    dependencies: dict[str, DependencyKey],
-    func: Callable[P, AsyncIterator[T]],
+        container_getter: ContainerGetter[AsyncContainer],
+        additional_params: Sequence[Parameter],
+        dependencies: dict[str, DependencyKey],
+        func: Callable[P, AsyncIterator[T]],
 ) -> Callable[P, AsyncIterator[T]]:
     async def auto_injected_generator(
-        *args: P.args,
-        **kwargs: P.kwargs,
+            *args: P.args,
+            **kwargs: P.kwargs,
     ) -> AsyncIterator[T]:
         for param in additional_params:
             kwargs.pop(param.name)
@@ -73,14 +75,14 @@ def _get_auto_injected_async_gen_scoped(
 
 
 def _get_auto_injected_async_gen(
-    container_getter: ContainerGetter[AsyncContainer],
-    additional_params: Sequence[Parameter],
-    dependencies: dict[str, DependencyKey],
-    func: Callable[P, AsyncIterator[T]],
+        container_getter: ContainerGetter[AsyncContainer],
+        additional_params: Sequence[Parameter],
+        dependencies: dict[str, DependencyKey],
+        func: Callable[P, AsyncIterator[T]],
 ) -> Callable[P, AsyncIterator[T]]:
     async def auto_injected_generator(
-        *args: P.args,
-        **kwargs: P.kwargs,
+            *args: P.args,
+            **kwargs: P.kwargs,
     ) -> AsyncIterator[T]:
         for param in additional_params:
             kwargs.pop(param.name)
@@ -100,16 +102,15 @@ def _get_auto_injected_async_gen(
 
 
 def _get_auto_injected_async_func_scoped(
-    container_getter: ContainerGetter[AsyncContainer],
-    additional_params: Sequence[Parameter],
-    dependencies: dict[str, DependencyKey],
-    func: Callable[P, Awaitable[T]],
+        container_getter: ContainerGetter[AsyncContainer],
+        additional_params: Sequence[Parameter],
+        dependencies: dict[str, DependencyKey],
+        func: Callable[P, Awaitable[T]],
 ) -> Callable[P, Awaitable[T]]:
     async def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
+        container = container_getter(args, kwargs)
         for param in additional_params:
             kwargs.pop(param.name)
-
-        container = container_getter(args, kwargs)
         async with container() as container:
             solved = {
                 name: await container.get(
@@ -124,10 +125,10 @@ def _get_auto_injected_async_func_scoped(
 
 
 def _get_auto_injected_async_func(
-    container_getter: ContainerGetter[AsyncContainer],
-    additional_params: Sequence[Parameter],
-    dependencies: dict[str, DependencyKey],
-    func: Callable[P, Awaitable[T]],
+        container_getter: ContainerGetter[AsyncContainer],
+        additional_params: Sequence[Parameter],
+        dependencies: dict[str, DependencyKey],
+        func: Callable[P, Awaitable[T]],
 ) -> Callable[P, Awaitable[T]]:
     async def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         container = container_getter(args, kwargs)
@@ -146,14 +147,14 @@ def _get_auto_injected_async_func(
 
 
 def _get_auto_injected_sync_gen_scoped(
-    container_getter: ContainerGetter[Container],
-    additional_params: Sequence[Parameter],
-    dependencies: dict[str, DependencyKey],
-    func: Callable[P, Iterator[T]],
+        container_getter: ContainerGetter[Container],
+        additional_params: Sequence[Parameter],
+        dependencies: dict[str, DependencyKey],
+        func: Callable[P, Iterator[T]],
 ) -> Callable[P, Iterator[T]]:
     def auto_injected_generator(
-        *args: P.args,
-        **kwargs: P.kwargs,
+            *args: P.args,
+            **kwargs: P.kwargs,
     ) -> Iterator[T]:
         for param in additional_params:
             kwargs.pop(param.name)
@@ -170,14 +171,14 @@ def _get_auto_injected_sync_gen_scoped(
 
 
 def _get_auto_injected_sync_gen(
-    container_getter: ContainerGetter[Container],
-    additional_params: Sequence[Parameter],
-    dependencies: dict[str, DependencyKey],
-    func: Callable[P, Iterator[T]],
+        container_getter: ContainerGetter[Container],
+        additional_params: Sequence[Parameter],
+        dependencies: dict[str, DependencyKey],
+        func: Callable[P, Iterator[T]],
 ) -> Callable[P, Iterator[T]]:
     def auto_injected_generator(
-        *args: P.args,
-        **kwargs: P.kwargs,
+            *args: P.args,
+            **kwargs: P.kwargs,
     ) -> Iterator[T]:
         container = container_getter(args, kwargs)
         for param in additional_params:
@@ -192,10 +193,10 @@ def _get_auto_injected_sync_gen(
 
 
 def _get_auto_injected_sync_func_scoped(
-    container_getter: ContainerGetter[Container],
-    additional_params: Sequence[Parameter],
-    dependencies: dict[str, DependencyKey],
-    func: Callable[P, T],
+        container_getter: ContainerGetter[Container],
+        additional_params: Sequence[Parameter],
+        dependencies: dict[str, DependencyKey],
+        func: Callable[P, T],
 ) -> Callable[P, T]:
     def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         for param in additional_params:
@@ -213,10 +214,10 @@ def _get_auto_injected_sync_func_scoped(
 
 
 def _get_auto_injected_sync_func(
-    container_getter: ContainerGetter[Container],
-    additional_params: Sequence[Parameter],
-    dependencies: dict[str, DependencyKey],
-    func: Callable[P, T],
+        container_getter: ContainerGetter[Container],
+        additional_params: Sequence[Parameter],
+        dependencies: dict[str, DependencyKey],
+        func: Callable[P, T],
 ) -> Callable[P, T]:
     def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         container = container_getter(args, kwargs)
@@ -232,60 +233,78 @@ def _get_auto_injected_sync_func(
     return auto_injected_func
 
 
+class FunctionType(Enum):
+    GENERATOR = "generator"
+    ASYNC_GENERATOR = "async_generator"
+    CALLABLE = "callable"
+    ASYNC_CALLABLE = "async_callable"
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class InjectedFuncType:
-    is_async: bool
-    is_generator: bool
-    is_scoped: bool
+    is_async_container: bool
+    manage_scope: bool
+    func_type: FunctionType
 
 
 _GET_AUTO_INJECTED_FUNC_DICT = {
     InjectedFuncType(
-        is_async=True,
-        is_generator=True,
-        is_scoped=True,
+        is_async_container=True,
+        manage_scope=True,
+        func_type=FunctionType.ASYNC_GENERATOR,
     ): _get_auto_injected_async_gen_scoped,
     InjectedFuncType(
-        is_async=True,
-        is_generator=True,
-        is_scoped=False,
+        is_async_container=True,
+        manage_scope=False,
+        func_type=FunctionType.ASYNC_GENERATOR,
     ): _get_auto_injected_async_gen,
     InjectedFuncType(
-        is_async=True,
-        is_generator=False,
-        is_scoped=True,
+        is_async_container=True,
+        func_type=FunctionType.ASYNC_CALLABLE,
+        manage_scope=True,
     ): _get_auto_injected_async_func_scoped,
     InjectedFuncType(
-        is_async=True,
-        is_generator=False,
-        is_scoped=False,
+        is_async_container=True,
+        func_type=FunctionType.ASYNC_CALLABLE,
+        manage_scope=False,
     ): _get_auto_injected_async_func,
     InjectedFuncType(
-        is_async=False,
-        is_generator=True,
-        is_scoped=True,
+        is_async_container=False,
+        manage_scope=True,
+        func_type=FunctionType.GENERATOR,
     ): _get_auto_injected_sync_gen_scoped,
     InjectedFuncType(
-        is_async=False,
-        is_generator=True,
-        is_scoped=False,
+        is_async_container=False,
+        manage_scope=False,
+        func_type=FunctionType.GENERATOR,
     ): _get_auto_injected_sync_gen,
     InjectedFuncType(
-        is_async=False,
-        is_generator=False,
-        is_scoped=True,
+        is_async_container=False,
+        manage_scope=True,
+        func_type=FunctionType.CALLABLE,
     ): _get_auto_injected_sync_func_scoped,
     InjectedFuncType(
-        is_async=False,
-        is_generator=False,
-        is_scoped=False,
+        is_async_container=False,
+        manage_scope=False,
+        func_type=FunctionType.CALLABLE,
     ): _get_auto_injected_sync_func,
 }
 
 
+def get_func_type(func: Callable) -> FunctionType:
+    if isasyncgenfunction(func):
+        return FunctionType.ASYNC_GENERATOR
+    elif isgeneratorfunction(func):
+        return FunctionType.GENERATOR
+    elif iscoroutinefunction(func):
+        return FunctionType.ASYNC_CALLABLE
+    else:
+        return FunctionType.CALLABLE
+
+
 def default_parse_dependency(
-    parameter: Parameter,
-    hint: Any,
+        parameter: Parameter,
+        hint: Any,
 ) -> DependencyKey | None:
     """Resolve dependency type or return None if it is not a dependency."""
     if get_origin(hint) is not Annotated:
@@ -305,39 +324,39 @@ def default_parse_dependency(
 
 @overload
 def wrap_injection(
-    *,
-    func: Callable[P, T],
-    container_getter: ContainerGetter[Container],
-    is_async: Literal[False] = False,
-    remove_depends: bool = True,
-    additional_params: Sequence[Parameter] = (),
-    parse_dependency: DependencyParser = default_parse_dependency,
-    manage_scope: bool = False,
+        *,
+        func: Callable[P, T],
+        container_getter: ContainerGetter[Container],
+        is_async: Literal[False] = False,
+        remove_depends: bool = True,
+        additional_params: Sequence[Parameter] = (),
+        parse_dependency: DependencyParser = default_parse_dependency,
+        manage_scope: bool = False,
 ) -> Callable[P, T]: ...
 
 
 @overload
 def wrap_injection(
-    *,
-    func: Callable[P, T],
-    container_getter: ContainerGetter[AsyncContainer],
-    is_async: Literal[True] = True,
-    remove_depends: bool = True,
-    additional_params: Sequence[Parameter] = (),
-    parse_dependency: DependencyParser = default_parse_dependency,
-    manage_scope: bool = False,
+        *,
+        func: Callable[P, T],
+        container_getter: ContainerGetter[AsyncContainer],
+        is_async: Literal[True] = True,
+        remove_depends: bool = True,
+        additional_params: Sequence[Parameter] = (),
+        parse_dependency: DependencyParser = default_parse_dependency,
+        manage_scope: bool = False,
 ) -> Callable[P, T]: ...
 
 
 def wrap_injection(
-    *,
-    func: Callable[P, T],
-    container_getter: ContainerGetter[Container | AsyncContainer],
-    is_async: bool = False,
-    remove_depends: bool = True,
-    additional_params: Sequence[Parameter] = (),
-    parse_dependency: DependencyParser = default_parse_dependency,
-    manage_scope: bool = False,
+        *,
+        func: Callable[P, T],
+        container_getter: ContainerGetter[Container | AsyncContainer],
+        is_async: bool = False,
+        remove_depends: bool = True,
+        additional_params: Sequence[Parameter] = (),
+        parse_dependency: DependencyParser = default_parse_dependency,
+        manage_scope: bool = False,
 ) -> Callable[P, T]:
     hints = get_type_hints(func, include_extras=True)
     func_signature = signature(func)
@@ -386,22 +405,20 @@ def wrap_injection(
 
     if is_async:
         func = cast(Callable[P, Awaitable[T]], func)
-        is_generator = isasyncgenfunction(func)
         container_getter = cast(
             ContainerGetter[AsyncContainer],
             container_getter,
         )
     else:
-        is_generator = isgeneratorfunction(func)
         container_getter = cast(
             ContainerGetter[Container],
             container_getter,
         )
 
     injected_func_type = InjectedFuncType(
-        is_async=is_async,
-        is_generator=is_generator,
-        is_scoped=manage_scope,
+        is_async_container=is_async,
+        manage_scope=manage_scope,
+        func_type=get_func_type(func),
     )
     get_auto_injected_func = _GET_AUTO_INJECTED_FUNC_DICT[injected_func_type]
 
@@ -431,8 +448,8 @@ def is_dishka_injected(func: Callable[..., Any]) -> bool:
 
 
 def _add_params(
-    params: Sequence[Parameter],
-    additional_params: Sequence[Parameter],
+        params: Sequence[Parameter],
+        additional_params: Sequence[Parameter],
 ):
     params_kind_dict: dict[_ParameterKind, list[Parameter]] = {}
 

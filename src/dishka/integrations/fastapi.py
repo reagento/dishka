@@ -1,5 +1,6 @@
 __all__ = [
     "DishkaRoute",
+    "DishkaSyncRoute",
     "FastapiProvider",
     "FromDishka",
     "inject",
@@ -124,6 +125,16 @@ class DishkaRoute(APIRoute):
         **kwargs: Any,
     ) -> None:
         endpoint = inject(endpoint)
+        super().__init__(path, endpoint, **kwargs)
+
+class DishkaSyncRoute(APIRoute):
+    def __init__(
+        self,
+        path: str,
+        endpoint: Callable[..., Any],
+        **kwargs: Any,
+    ) -> None:
+        endpoint = inject_sync(endpoint)
         super().__init__(path, endpoint, **kwargs)
 
 

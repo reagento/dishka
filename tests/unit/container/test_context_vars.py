@@ -6,11 +6,11 @@ from dishka import (
     Provider,
     Scope,
     decorate,
+    from_context,
     make_async_container,
     make_container,
     provide,
 )
-from dishka.dependency_source import from_context
 from dishka.exceptions import InvalidGraphError, NoContextValueError
 
 

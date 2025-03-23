@@ -1,18 +1,20 @@
 __all__ = [
+    "Alias",
+    "CompositeDependencySource",
+    "ContextVariable",
+    "Decorator",
     "DependencySource",
-    "alias", "Alias",
-    "context_var", "ContextVariable", "from_context",
-    "decorate", "Decorator",
-    "provide", "provide_all",
     "Factory",
+    "context_stub",
+    "ensure_composite",
 ]
 
 from .alias import Alias
-from .composite import DependencySource
-from .context_var import ContextVariable
+from .composite import (
+    CompositeDependencySource,
+    DependencySource,
+    ensure_composite,
+)
+from .context_var import ContextVariable, context_stub
 from .decorator import Decorator
 from .factory import Factory
-from .make_alias import alias
-from .make_context_var import from_context
-from .make_decorator import decorate
-from .make_factory import provide, provide_all

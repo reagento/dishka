@@ -1,3 +1,4 @@
+import warnings
 from asyncio import iscoroutinefunction
 from collections.abc import (
     AsyncGenerator,
@@ -44,6 +45,11 @@ from dishka._adaptix.type_tools.generic_resolver import (
     GenericResolver,
     MembersStorage,
 )
+from dishka.dependency_source import (
+    CompositeDependencySource,
+    Factory,
+    ensure_composite,
+)
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import (
     dependency_key_to_hint,
@@ -53,8 +59,13 @@ from dishka.entities.key import (
 from dishka.entities.provides_marker import ProvideMultiple
 from dishka.entities.scope import BaseScope
 from dishka.text_rendering import get_name
-from .composite import CompositeDependencySource, ensure_composite
-from .factory import Factory
+from .exceptions import (
+    MissingHintsError,
+    MissingReturnHintError,
+    NotAFactoryError,
+    UndefinedTypeAnalysisError,
+    UnsupportedGeneratorReturnTypeError,
+)
 from .unpack_provides import unpack_factory
 
 _empty = signature(lambda a: 0).parameters["a"].annotation
@@ -129,10 +140,7 @@ def _async_generator_result(hint: Any) -> Any:
         args = name
         guess = "AsyncIterable"
 
-    raise TypeError(
-        f"Unsupported return type `{name}` for async generator. "
-        f"Did you mean {guess}[{args}]?",
-    )
+    raise UnsupportedGeneratorReturnTypeError(name, guess, args, is_async=True)
 
 
 def _generator_result(hint: Any) -> Any:
@@ -162,10 +170,7 @@ def _generator_result(hint: Any) -> Any:
         args = name
         guess = "Iterable"
 
-    raise TypeError(
-        f"Unsupported return type `{name}` for generator. "
-        f"Did you mean {guess}[{args}]?",
-    )
+    raise UnsupportedGeneratorReturnTypeError(name, guess, args)
 
 
 def _clean_result_hint(
@@ -208,27 +213,14 @@ def _make_factory_by_class(
         source = get_args(source)[0]
     init = strip_alias(source).__init__
     if missing_hints := _params_without_hints(init, skip_self=True):
-        name = get_name(source, include_module=True) + ".__init__"
-        missing = ", ".join(missing_hints)
-        raise ValueError(
-            f"Failed to analyze `{name}`. \n"
-            f"Some parameters do not have type hints: {missing}\n",
-        )
+        raise MissingHintsError(source, missing_hints, append_init=True)
     # we need to fix concrete generics and normal classes as well
     # as classes can be children of concrete generics
     res = GenericResolver(_get_init_members)
     try:
         hints = dict(res.get_resolved_members(source).members)
     except NameError as e:
-        name = get_name(source, include_module=True) + ".__init__"
-        raise NameError(
-            f"Failed to analyze `{name}`. \n"
-            f"Type '{e.name}' is not defined\n\n"
-            f"If your are using `if TYPE_CHECKING` to import '{e.name}' "
-            f"then try removing it. \n"
-            f"Or, create a separate factory with all types imported.",
-            name=e.name,
-        ) from e
+        raise UndefinedTypeAnalysisError(source, e.name) from e
 
     hints.pop("return", _empty)
     params = signature(init).parameters
@@ -251,6 +243,22 @@ def _make_factory_by_class(
         override=override,
     )
 
+def _check_self_name(
+        source: Callable[..., Any] | classmethod,  # type: ignore[type-arg]
+        self: Parameter | None,
+) -> None:
+    if isinstance(source, classmethod):
+        return
+    if self and self.name == "self":
+        return
+    warnings.warn(
+        f"You are trying to use function `{source.__name__}` "
+        "without `self` argument "
+        "inside Provider class, it would be treated as method. "
+        "Consider wrapping it with `staticmethod`, "
+        "registering on a provider instance or adding `self`.",
+        stacklevel=6,
+    )
 
 def _make_factory_by_function(
         *,
@@ -260,17 +268,13 @@ def _make_factory_by_function(
         cache: bool,
         is_in_class: bool,
         override: bool,
+        check_self_name: bool,
 ) -> Factory:
     # typing.cast is applied as unwrap takes a Callable object
     raw_source = unwrap(cast(Callable[..., Any], source))
     missing_hints = _params_without_hints(raw_source, skip_self=is_in_class)
     if missing_hints:
-        name = get_name(source, include_module=True)
-        missing = ", ".join(missing_hints)
-        raise ValueError(
-            f"Failed to analyze `{name}`. \n"
-            f"Some parameters do not have type hints: {missing}\n",
-        )
+        raise MissingHintsError(source, missing_hints)
 
     params = signature(raw_source).parameters
     factory_type = _guess_factory_type(raw_source)
@@ -278,21 +282,15 @@ def _make_factory_by_function(
     try:
         hints = get_type_hints(source, include_extras=True)
     except NameError as e:
-        name = get_name(source, include_module=True)
-        raise NameError(
-            f"Failed to analyze `{name}`. \n"
-            f"Type '{e.name}' is not defined. \n\n"
-            f"If your are using `if TYPE_CHECKING` to import '{e.name}' "
-            f"then try removing it. \n"
-            f"Or, create a separate factory with all types imported.",
-            name=e.name,
-        ) from e
+        raise UndefinedTypeAnalysisError(source, e.name) from e
     if is_in_class:
         self = next(iter(params.values()), None)
         if self and self.name not in hints:
             # add self to dependencies, so it can be easily removed
             # if we will bind factory to provider instance
             hints = {self.name: Any, **hints}
+        if check_self_name:
+            _check_self_name(source, self)
     possible_dependency = hints.pop("return", _empty)
 
     kw_dependency_keys = {
@@ -304,9 +302,7 @@ def _make_factory_by_function(
 
     if not provides:
         if possible_dependency is _empty:
-            name = get_name(source, include_module=True)
-            raise ValueError(f"Failed to analyze `{name}`. \n"
-                             f"Missing return type hint.")
+            raise MissingReturnHintError(source)
         try:
             provides = _clean_result_hint(factory_type, possible_dependency)
         except TypeError as e:
@@ -334,25 +330,12 @@ def _make_factory_by_static_method(
         override: bool,
 ) -> Factory:
     if missing_hints := _params_without_hints(source, skip_self=False):
-        name = get_name(source, include_module=True)
-        missing = ", ".join(missing_hints)
-        raise ValueError(
-            f"Failed to analyze `{name}`. \n"
-            f"Some parameters do not have type hints: {missing}\n",
-        )
+        raise MissingHintsError(source, missing_hints)
     factory_type = _guess_factory_type(source.__wrapped__)
     try:
         hints = get_type_hints(source, include_extras=True)
     except NameError as e:
-        name = get_name(source, include_module=True)
-        raise NameError(
-            f"Failed to analyze `{name}`. \n"
-            f"Type '{e.name}' is not defined. \n\n"
-            f"If your are using `if TYPE_CHECKING` to import '{e.name}' "
-            f"then try removing it. \n"
-            f"Or, create a separate factory with all types imported.",
-            name=e.name,
-        ) from e
+        raise UndefinedTypeAnalysisError(source, e.name) from e
 
     possible_dependency = hints.pop("return", _empty)
 
@@ -366,9 +349,7 @@ def _make_factory_by_static_method(
 
     if not provides:
         if possible_dependency is _empty:
-            name = get_name(source, include_module=True)
-            raise ValueError(f"Failed to analyze `{name}`. \n"
-                             f"Missing return type hint.")
+            raise MissingReturnHintError(source)
         try:
             provides = _clean_result_hint(factory_type, possible_dependency)
         except TypeError as e:
@@ -397,15 +378,23 @@ def _make_factory_by_other_callable(
 ) -> Factory:
     if _is_bound_method(source):
         to_check = source.__func__  # type: ignore[attr-defined]
+        is_in_class = True
     else:
-        to_check = type(source).__call__
-    factory = make_factory(
+        call_method = source.__call__   # type: ignore[operator]
+        if _is_bound_method(call_method):
+            to_check = call_method.__func__
+            is_in_class = True
+        else:
+            to_check = call_method
+            is_in_class = False
+    factory = _make_factory_by_function(
         provides=provides,
         source=to_check,
         cache=cache,
         scope=scope,
-        is_in_class=True,
+        is_in_class=is_in_class,
         override=override,
+        check_self_name=False,
     )
     if factory.is_to_bind:
         dependencies = factory.dependencies[1:]  # remove `self`
@@ -457,6 +446,7 @@ def make_factory(
             cache=cache,
             is_in_class=is_in_class,
             override=override,
+            check_self_name=True,
         )
     elif isbuiltin(source):
         return _make_factory_by_function(
@@ -466,6 +456,7 @@ def make_factory(
             cache=cache,
             is_in_class=False,
             override=override,
+            check_self_name=False,
         )
     elif isinstance(source, staticmethod):
         return _make_factory_by_static_method(
@@ -484,7 +475,7 @@ def make_factory(
             override=override,
         )
     else:
-        raise TypeError(f"Cannot use {type(source)} as a factory")
+        raise NotAFactoryError(type(source))
 
 
 def _provide(
@@ -627,7 +618,7 @@ def _provide_all(
     for single_provides in provides:
         source = _provide(
             source=single_provides,
-            provides=single_provides,
+            provides=None,
             scope=scope,
             cache=cache,
             is_in_class=is_in_class,

@@ -222,3 +222,35 @@ def test_provide_type_non_generic():
     with container() as c:
         assert c.get(A[str]) == (str, bool)
         assert c.get(A[int]) == (bool, bool)
+
+
+T2 = TypeVar("T2")
+class Multi(Generic[T, T2]):
+    pass
+
+def func_with_at2(b: type[T2]) -> Multi[int, A[T2]]:
+    return b
+
+def func_with_t2(b: type[T2]) -> Multi[int, T2]:
+    return b
+
+
+def func_with_t2t(b: type[T2], a: type[T]) -> Multi[A[T], T2]:
+    return b, a
+
+
+def test_provide_partial_generic():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(func_with_t2)
+    container = make_container(provider)
+    assert container.get(Multi[int, bool]) is bool
+
+    provider = Provider(scope=Scope.APP)
+    provider.provide(func_with_at2)
+    container = make_container(provider)
+    assert container.get(Multi[int, A[bool]]) is bool
+
+    provider = Provider(scope=Scope.APP)
+    provider.provide(func_with_t2t)
+    container = make_container(provider)
+    assert container.get(Multi[A[int], A[bool]]) == (A[bool], int)

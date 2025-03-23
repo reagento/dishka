@@ -1,23 +1,26 @@
-from __future__ import annotations
-
 import inspect
 from collections.abc import Callable, Sequence
 from typing import Any, TypeGuard
 
-from dishka.entities.component import DEFAULT_COMPONENT, Component
-from dishka.entities.scope import BaseScope
-from .dependency_source import (
+from dishka.dependency_source import (
     Alias,
+    CompositeDependencySource,
     ContextVariable,
     Decorator,
     DependencySource,
     Factory,
-    alias,
-    from_context,
 )
-from .dependency_source.composite import CompositeDependencySource
-from .dependency_source.make_decorator import decorate_on_instance
-from .dependency_source.make_factory import (
+from dishka.entities.component import DEFAULT_COMPONENT, Component
+from dishka.entities.scope import BaseScope
+from .base_provider import BaseProvider, ProviderWrapper
+from .exceptions import (
+    NoScopeSetInContextError,
+    NoScopeSetInProvideError,
+)
+from .make_alias import alias
+from .make_context_var import from_context
+from .make_decorator import decorate_on_instance
+from .make_factory import (
     provide_all_on_instance,
     provide_on_instance,
 )
@@ -28,15 +31,6 @@ def is_dependency_source(
 ) -> TypeGuard[CompositeDependencySource]:
     return isinstance(attribute, CompositeDependencySource)
 
-
-class BaseProvider:
-    def __init__(self, component: Component | None) -> None:
-        if component is not None:
-            self.component = component
-        self.factories: list[Factory] = []
-        self.aliases: list[Alias] = []
-        self.decorators: list[Decorator] = []
-        self.context_vars: list[ContextVariable] = []
 
 
 class Provider(BaseProvider):
@@ -110,22 +104,19 @@ class Provider(BaseProvider):
                 self.aliases.append(source)
             if isinstance(source, Factory):
                 if source.scope is None:
-                    src_name = self._source_name(source)
-                    provides_name = self._provides_name(source)
-                    raise ValueError(
-                        f"No scope is set for {provides_name}.\n"
-                        f"Set in provide() call for {src_name} or "
-                        f"within {self._name()}",
+                    raise NoScopeSetInProvideError(
+                        self._provides_name(source),
+                        self._source_name(source),
+                        self._name(),
                     )
                 self.factories.append(source)
             if isinstance(source, Decorator):
                 self.decorators.append(source)
             if isinstance(source, ContextVariable):
                 if source.scope is None:
-                    provides_name = self._provides_name(source)
-                    raise ValueError(
-                        f"No scope is set for {provides_name}.\n"
-                        f"Set in from_context() call or within {self._name()}",
+                    raise NoScopeSetInContextError(
+                        self._provides_name(source),
+                        self._name(),
                     )
                 self.context_vars.append(source)
 
@@ -224,11 +215,3 @@ class Provider(BaseProvider):
             sources=composite.dependency_sources,
         )
         return composite
-
-
-class ProviderWrapper(BaseProvider):
-    def __init__(self, component: Component, provider: Provider) -> None:
-        super().__init__(component)
-        self.factories.extend(provider.factories)
-        self.aliases.extend(provider.aliases)
-        self.decorators.extend(provider.decorators)

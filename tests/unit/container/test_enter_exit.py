@@ -34,7 +34,7 @@ def test_sync_create(provide_scope, start_scope, expected_scope):
             return 100
 
     container = make_container(MyProvider(), start_scope=start_scope)
-    assert container.registry.scope is expected_scope
+    assert container.scope is expected_scope
     a = container.get(ClassA)
     assert a
     assert a.dep == 100
@@ -66,7 +66,7 @@ async def test_async_create(provide_scope, start_scope, expected_scope):
             return 100
 
     container = make_async_container(MyProvider(), start_scope=start_scope)
-    assert container.registry.scope is expected_scope
+    assert container.scope is expected_scope
     a = await container.get(ClassA)
     assert a
     assert a.dep == 100

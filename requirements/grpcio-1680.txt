@@ -1,0 +1,4 @@
+-r test.txt
+grpcio==1.68.0
+grpcio-tools==1.68.0
+grpcio-testing==1.68.0

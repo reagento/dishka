@@ -130,3 +130,18 @@ async def test_fastapi_depends(app_provider: AppProvider):
         client.get("/")
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
+
+
+def get_sync(
+        a: FromDishka[RequestDep],
+        mock: FromDishka[Mock],
+) -> None:
+    mock(a)
+
+
+@pytest.mark.asyncio
+async def test_sync(app_provider: AppProvider):
+    async with dishka_app(get_sync, app_provider) as client:
+        client.get("/")
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()

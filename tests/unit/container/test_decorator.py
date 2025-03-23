@@ -77,8 +77,8 @@ def test_decorator():
     assert isinstance(a.a, A)
 
 
-def kwarg_decorator(x: int, *, a: A) -> A:
-    return ADecorator(a)
+def kwarg_decorator(x: int, *, source: A) -> A:
+    return ADecorator(source)
 
 
 def test_kwargs():

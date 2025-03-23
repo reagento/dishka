@@ -1,9 +1,12 @@
 from collections.abc import Callable
 from typing import Any, overload
 
-from dishka.text_rendering import get_name
-from .composite import CompositeDependencySource, ensure_composite
-from .decorator import Decorator
+from dishka.dependency_source import (
+    CompositeDependencySource,
+    Decorator,
+    ensure_composite,
+)
+from .exceptions import IndependentDecoratorError
 from .make_factory import make_factory
 from .unpack_provides import unpack_decorator
 
@@ -29,11 +32,7 @@ def _decorate(
         decorator.provides not in decorator.factory.kw_dependencies.values()
         and decorator.provides not in decorator.factory.dependencies
     ):
-        name = get_name(source, include_module=True)
-        raise ValueError(
-            f"Decorator {name} does not depends on provided type.\n"
-            f"Did you mean @provide instead of @decorate?",
-        )
+        raise IndependentDecoratorError(source)
 
     composite.dependency_sources.extend(unpack_decorator(decorator))
     return composite

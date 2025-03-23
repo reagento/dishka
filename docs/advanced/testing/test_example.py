@@ -1,6 +1,5 @@
 from collections.abc import Iterable
 from sqlite3 import Connection, connect
-from typing import Annotated
 from unittest.mock import Mock
 
 import pytest

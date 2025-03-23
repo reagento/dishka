@@ -40,11 +40,19 @@ How to use
 .. code-block:: python
 
     @broker.task
-    @inject
+    @inject(patch_module=True)
     async def start(
         gateway: FromDishka[Gateway],
     ):
         ...
+
+
+.. warning::
+   In version 1.5, the ``patch_module``  parameter was added to the ``inject`` decorator, which is responsible for overriding the ``__module__`` attribute of the function that participates in the formation of ``task_name``. 
+
+   It is recommended to use the value ``patch_module=True``, to correctly generate the default ``task_name`` according to the module in which the task handler was defined. 
+
+   The default value is ``False``, for backward compatibility with versions < 1.5. In future releases, the default value may be changed to ``True``.
 
 
 4. *(optional)* Use ``TaskiqProvider()`` when creating container if you are going to use ``taskiq.TaskiqMessage`` in providers.

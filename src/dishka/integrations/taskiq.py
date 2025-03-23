@@ -4,7 +4,9 @@ __all__ = [
     "setup_dishka",
 ]
 
+import warnings
 from collections.abc import Callable, Generator
+from functools import partial
 from inspect import Parameter
 from typing import Annotated, Any, Final
 
@@ -67,7 +69,22 @@ def _get_container(
     yield context.message.labels[CONTAINER_NAME]
 
 
-def inject(func: Callable[..., Any]) -> Callable[..., Any]:
+def inject(
+    func: Callable[..., Any] | None = None,
+    *,
+    patch_module: bool = False,
+) -> Callable[..., Any]:
+    if func is None:
+        return partial(_inject_wrapper, patch_module=patch_module)
+
+    return _inject_wrapper(func, patch_module=patch_module)
+
+
+def _inject_wrapper(
+    func: Callable[..., Any],
+    *,
+    patch_module: bool,
+) -> Callable[..., Any]:
     annotation = Annotated[
         AsyncContainer, TaskiqDepends(_get_container),
     ]
@@ -77,13 +94,26 @@ def inject(func: Callable[..., Any]) -> Callable[..., Any]:
         kind=Parameter.KEYWORD_ONLY,
     )]
 
-    return wrap_injection(
+    wrapper = wrap_injection(
         func=func,
         is_async=True,
         remove_depends=True,
         additional_params=additional_params,
         container_getter=lambda _, p: p[CONTAINER_NAME],
     )
+
+    if not patch_module:
+        warnings.warn(
+            "Behavior without patch module is deprecated"
+            ", use patch_module = True",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        wrapper.__module__ = wrap_injection.__module__
+
+    return wrapper
+
 
 
 def setup_dishka(

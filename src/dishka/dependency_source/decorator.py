@@ -10,7 +10,7 @@ from .type_match import get_typevar_replacement, is_broader_or_same_type
 
 
 class Decorator:
-    __slots__ = ("provides", "factory")
+    __slots__ = ("factory", "provides")
 
     def __init__(
             self,
@@ -23,7 +23,7 @@ class Decorator:
         else:
             self.provides = factory.provides
 
-    def is_generic(self):
+    def is_generic(self) -> bool:
         return (
             isinstance(self.provides.type_hint, TypeVar)
             or get_origin(self.provides.type_hint) is not None

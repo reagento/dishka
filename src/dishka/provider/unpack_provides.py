@@ -1,12 +1,14 @@
 from collections.abc import Sequence
 from typing import get_args, get_origin
 
+from dishka.dependency_source import (
+    Alias,
+    Decorator,
+    DependencySource,
+    Factory,
+)
 from dishka.entities.key import DependencyKey
 from dishka.entities.provides_marker import ProvideMultiple
-from .alias import Alias
-from .composite import DependencySource
-from .decorator import Decorator
-from .factory import Factory
 
 
 def unpack_factory(factory: Factory) -> Sequence[DependencySource]:

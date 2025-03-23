@@ -1,15 +1,33 @@
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    Generator,
+    Iterable,
+    Iterator,
+)
+from functools import partial
 from random import random
-from typing import Any, Protocol
+from types import NoneType
+from typing import Annotated, Any, Protocol
 
 import pytest
 
-from dishka import Provider, Scope, alias, decorate, provide
-from dishka.dependency_source.make_factory import make_factory, provide_all
+from dishka import Provider, Scope, alias, decorate, make_container, provide
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import (
     hint_to_dependency_key,
     hints_to_dependency_keys,
 )
+from dishka.provider.exceptions import (
+    MissingHintsError,
+    MissingReturnHintError,
+    NoScopeSetInContextError,
+    NoScopeSetInProvideError,
+    NotAFactoryError,
+    UndefinedTypeAnalysisError,
+)
+from dishka.provider.make_factory import make_factory, provide_all
 from .sample_providers import (
     ClassA,
     async_func_a,
@@ -62,8 +80,26 @@ def test_parse_factory(source, provider_type, is_to_bound):
     assert factory.type == provider_type
 
 
+def test_provide_no_scope():
+    provider = Provider()
+    with pytest.raises(NoScopeSetInProvideError):
+        provider.provide(source=int)
+    with pytest.raises(NoScopeSetInProvideError):
+        provider.provide(A, provides=B)
+
+    def b() -> int:
+        return 1
+
+    with pytest.raises(NoScopeSetInProvideError):
+        provider.provide(b, provides=B)
+
+
+    with pytest.raises(NoScopeSetInContextError):
+        provider.from_context(b)
+
+
 def test_parse_factory_invalid_hint():
-    def foo() -> int:
+    def foo(self) -> int:
         yield 1
 
     with pytest.raises(TypeError):
@@ -71,7 +107,7 @@ def test_parse_factory_invalid_hint():
 
 
 def test_parse_factory_invalid_hint_async():
-    async def foo() -> int:
+    async def foo(self) -> int:
         yield 1
 
     with pytest.raises(TypeError):
@@ -182,9 +218,25 @@ class MyCallable:
         return "hello"
 
 
-def test_callable():
+class MyClassCallable:
+    @classmethod
+    def __call__(cls: object, param: int) -> str:
+        return "hello"
+
+
+class MyStaticCallable:
+    @staticmethod
+    def __call__(param: int) -> str:
+        return "hello"
+
+
+@pytest.mark.parametrize(
+    "cls",
+    [MyCallable, MyClassCallable, MyStaticCallable],
+)
+def test_callable(cls):
     class MyProvider(Provider):
-        foo = provide(MyCallable())
+        foo = provide(cls())
 
     provider = MyProvider(scope=Scope.REQUEST)
     assert len(provider.factories) == 1
@@ -301,8 +353,163 @@ def test_decorator():
 
 
 def test_invalid_decorator():
-    def decorator(param: int) -> str:
+    def decorator(self, param: int) -> str:
         return "hello"
 
     with pytest.raises(ValueError):  # noqa: PT011
         decorate(decorator)
+
+
+def test_provide_all_as_provider_method():
+    def a() -> int:
+        return 100
+
+    def b(num: int) -> float:
+        return num / 2
+
+    provider = Provider(scope=Scope.APP)
+    provider.provide_all(a, b)
+
+    container = make_container(provider)
+
+    hundred = container.get(int)
+    assert hundred == 100
+
+    fifty = container.get(float)
+    assert fifty == 50.0
+
+
+def test_provide_all_in_class():
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        def a(self) -> int:
+            return 100
+
+        def b(self, num: int) -> float:
+            return num / 2
+
+        abcd = provide_all(a, b)
+
+    container = make_container(MyProvider())
+
+    hundred = container.get(int)
+    assert hundred == 100
+
+    fifty = container.get(float)
+    assert fifty == 50.0
+
+
+make_factory_by_source = partial(
+    make_factory,
+    provides=None,
+    scope=Scope.REQUEST,
+    cache=True,
+    is_in_class=False,
+    override=False,
+)
+
+
+def test_static_method():
+    with pytest.raises(TypeError):
+        class S1(Provider):
+
+            @provide(scope=Scope.APP)
+            @staticmethod
+            def s() -> AsyncGenerator[None, None]:
+                yield
+
+    with pytest.raises(MissingReturnHintError):
+        class S2(Provider):
+
+            @provide(scope=Scope.APP)
+            @staticmethod
+            def s():
+                yield
+
+    with pytest.raises(MissingHintsError):
+        class S3(Provider):
+
+            @provide(scope=Scope.APP)
+            @staticmethod
+            def s(a):
+                yield
+
+    with pytest.raises(UndefinedTypeAnalysisError):
+        class S4(Provider):
+
+            @provide(scope=Scope.APP)
+            @staticmethod
+            def s(a:"S5"):  #noqa: F821
+                yield
+
+
+def test_no_hints():
+    with pytest.raises(MissingHintsError):
+        class C1(Provider):
+            @provide(scope=Scope.APP)
+            def c(self, a) -> int:
+                return 1
+
+    with pytest.raises(MissingReturnHintError):
+        class C2(Provider):
+            @provide(scope=Scope.APP)
+            def c(self, a: int):
+                return 1
+
+    def c() -> "C4":  #noqa: F821
+        return 1
+
+    with pytest.raises(UndefinedTypeAnalysisError):
+
+        class C3(Provider):
+            cp = provide(source=c)
+
+def test_annotated_factory():
+    assert make_factory_by_source(source=Annotated[A, "Annotated"])
+
+
+def test_self():
+
+    with pytest.warns():
+        class P(Provider):
+
+            @provide(scope=Scope.APP)
+            def a(celph) -> int:  #noqa: N805
+                return 1
+
+
+def foo_aiterable() -> AsyncIterable[NoneType]:
+    yield
+
+
+def foo_aiterator() -> AsyncIterator[int]:
+    yield 1
+
+def foo_agen() -> AsyncGenerator[None, None]:
+    yield
+
+
+async def foo_gen() -> Generator[int, None, None]:
+    yield 1
+
+
+async def foo_iterator() -> Iterator[str]:
+    yield ""
+
+async def foo_iterable() -> Iterable[float]:
+    yield 0
+
+
+@pytest.mark.parametrize("source", [
+    foo_gen, foo_aiterable, foo_aiterator,
+    foo_agen, foo_iterable, foo_iterator,
+])
+def test_factory_error_hints(source):
+    with pytest.raises(TypeError):
+        make_factory_by_source(source=source)
+
+
+def test_not_a_factory():
+    with pytest.raises(NotAFactoryError):
+        make_factory_by_source(source=None)

@@ -14,10 +14,14 @@ from dishka.entities.scope import BaseScope, Scope
 from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .dependency_source import Factory
+from .entities.type_alias_type import is_type_alias_type
 from .entities.validation_settigs import DEFAULT_VALIDATION, ValidationSettings
 from .exceptions import (
+    ChildScopeNotFoundError,
     ExitError,
+    NoChildScopesError,
     NoFactoryError,
+    NoNonSkippedScopesError,
 )
 from .provider import BaseProvider
 from .registry import Registry
@@ -28,14 +32,14 @@ T = TypeVar("T")
 
 class Container:
     __slots__ = (
+        "_cache",
+        "_context",
+        "_exits",
         "child_registries",
         "close_parent",
         "lock",
         "parent_container",
         "registry",
-        "_cache",
-        "_context",
-        "_exits",
     )
 
     def __init__(
@@ -55,7 +59,10 @@ class Container:
         if context:
             for key, value in context.items():
                 if not isinstance(key, DependencyKey):
-                    key = DependencyKey(key, DEFAULT_COMPONENT)
+                    key = DependencyKey(  # noqa: PLW2901
+                        key,
+                        DEFAULT_COMPONENT,
+                    )
                 self._context[key] = value
         self._cache = {**self._context}
         self.parent_container = parent_container
@@ -67,6 +74,10 @@ class Container:
             self.lock = None
         self._exits: list[Exit] = []
         self.close_parent = close_parent
+
+    @property
+    def scope(self) -> BaseScope:
+        return self.registry.scope
 
     @property
     def context(self) -> MutableMapping[DependencyKey, Any]:
@@ -93,7 +104,7 @@ class Container:
         :return: context manager for inner scope
         """
         if not self.child_registries:
-            raise ValueError("No child scopes found")
+            raise NoChildScopesError
         child = Container(
             *self.child_registries,
             parent_container=self,
@@ -103,7 +114,7 @@ class Container:
         if scope is None:
             while child.registry.scope.skip:
                 if not child.child_registries:
-                    raise ValueError("No non-skipped scopes found.")
+                    raise NoNonSkippedScopesError
                 child = Container(
                     *child.child_registries,
                     parent_container=child,
@@ -114,8 +125,7 @@ class Container:
         else:
             while child.registry.scope is not scope:
                 if not child.child_registries:
-                    raise ValueError(f"Cannot find {scope} as a child of "
-                                     f"current {self.registry.scope}")
+                    raise ChildScopeNotFoundError(scope, self.registry.scope)
                 child = Container(
                     *child.child_registries,
                     parent_container=child,
@@ -147,7 +157,20 @@ class Container:
             component: Component | None = DEFAULT_COMPONENT,
     ) -> Any:
         lock = self.lock
+        while is_type_alias_type(dependency_type):
+            dependency_type = dependency_type.__value__
         key = DependencyKey(dependency_type, component)
+        try:
+            if not lock:
+                return self._get_unlocked(key)
+            with lock:
+                return self._get_unlocked(key)
+        except NoFactoryError as e:
+            e.scope = self.scope
+            raise
+
+    def _get(self, key: DependencyKey) -> Any:
+        lock = self.lock
         if not lock:
             return self._get_unlocked(key)
         with lock:
@@ -160,9 +183,7 @@ class Container:
         if not compiled:
             if not self.parent_container:
                 raise NoFactoryError(key)
-            return self.parent_container.get(
-                key.type_hint, key.component,
-            )
+            return self.parent_container._get(key)  # noqa: SLF001
         try:
             return compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:
@@ -191,7 +212,7 @@ class Container:
                 errors.append(err)
 
         if errors:
-            raise ExitError("Cleanup context errors", errors)
+            raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
 
 class ContextWrapper:

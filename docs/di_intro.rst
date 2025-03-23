@@ -69,7 +69,7 @@ It works well unless you have many methods and they can call each other. Also we
         def action(self):
             self.client.get_data()
 
-    service = Service(client)
+    service = Service()
     service.client = Client(token)
     service.action()
 
@@ -159,7 +159,7 @@ What is IoC-container?
 
 IoC-container is a special object (or a framework providing such an object) which provides required objects following dependency injection rules and manages their lifetime. DI-framework is another name for such frameworks.
 
-Common mistake is to treat IoC-container as a single way to inject dependencies. It has nothing common with reality. Dependency injection can be done just by passing one object to another, but in complex application it is not so easy to do. As it was shown above you might want to create a separate object to encapsulate all DI-related logic. ``Container`` in previous example is an example of hand-written primitive IoC-container.
+Common mistake is to treat IoC-container as the only possible way to inject dependencies. It is not required to be so. Dependency injection can be done just by passing one object to another, but in complex application it is not so easy to do. As it was shown above you might want to create a separate object to encapsulate all DI-related logic. ``Container`` in previous example is an example of hand-written primitive IoC-container.
 
 Bigger is your application, more complex factories you need, more necessary is to automate creation of a container. You do not need to use IoC-container to test one small part of application, but it can be essential for launching it in whole. Fortunately, there are frameworks for it. But again, beware of spreading container-related details around your application code with an exception on scope boundaries.
 

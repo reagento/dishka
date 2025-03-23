@@ -1,15 +1,20 @@
 __all__ = [
-    "AutoInjectMiddleware",
-    "AiogramProvider",
     "CONTAINER_NAME",
+    "AiogramMiddlewareData",
+    "AiogramProvider",
+    "AutoInjectMiddleware",
     "FromDishka",
     "inject",
+    "inject_handler",
+    "inject_router",
     "setup_dishka",
 ]
 
+import warnings
 from collections.abc import Awaitable, Callable, Container
+from functools import partial
 from inspect import Parameter, signature
-from typing import Any, Final, ParamSpec, TypeVar, cast
+from typing import Any, Final, NewType, ParamSpec, TypeVar, cast
 
 from aiogram import BaseMiddleware, Router
 from aiogram.dispatcher.event.handler import HandlerObject
@@ -21,6 +26,7 @@ from .base import is_dishka_injected, wrap_injection
 P = ParamSpec("P")
 T = TypeVar("T")
 CONTAINER_NAME: Final = "dishka_container"
+AiogramMiddlewareData = NewType("AiogramMiddlewareData", dict[str, Any])
 
 
 def inject(func: Callable[P, T]) -> Callable[P, T]:
@@ -43,6 +49,7 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
 
 class AiogramProvider(Provider):
     event = from_context(TelegramObject, scope=Scope.REQUEST)
+    middleware_data = from_context(AiogramMiddlewareData, scope=Scope.REQUEST)
 
 
 class ContainerMiddleware(BaseMiddleware):
@@ -55,12 +62,25 @@ class ContainerMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        async with self.container({TelegramObject: event}) as sub_container:
+        async with self.container(
+                {
+                    TelegramObject: event,
+                    AiogramMiddlewareData: data,
+                },
+        ) as sub_container:
             data[CONTAINER_NAME] = sub_container
             return await handler(event, data)
 
 
 class AutoInjectMiddleware(BaseMiddleware):
+    def __init__(self):
+        warnings.warn(
+            f"{self.__class__.__name__} is slow, "
+            "use `setup_dishka` instead if you care about performance",
+            UserWarning,
+            stacklevel=2,
+        )
+
     async def __call__(
         self,
         handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
@@ -71,15 +91,7 @@ class AutoInjectMiddleware(BaseMiddleware):
         if is_dishka_injected(old_handler.callback):
             return await handler(event, data)
 
-        new_handler = HandlerObject(
-            callback=inject(old_handler.callback),
-            filters=old_handler.filters,
-            flags=old_handler.flags,
-        )
-        old_handler.callback = new_handler.callback
-        old_handler.params = new_handler.params
-        old_handler.varkw = new_handler.varkw
-        old_handler.awaitable = new_handler.awaitable
+        inject_handler(old_handler)
         return await handler(event, data)
 
 
@@ -90,9 +102,40 @@ def setup_dishka(
     auto_inject: bool = False,
 ) -> None:
     middleware = ContainerMiddleware(container)
-    auto_inject_middleware = AutoInjectMiddleware()
 
     for observer in router.observers.values():
         observer.outer_middleware(middleware)
-        if auto_inject and observer.event_name != "update":
-            observer.middleware(auto_inject_middleware)
+
+    if auto_inject:
+        callback = partial(inject_router, router=router)
+        router.startup.register(callback)
+
+
+def inject_router(router: Router) -> None:
+    """Inject dishka to the router handlers."""
+    for sub_router in router.chain_tail:
+        for observer in sub_router.observers.values():
+            if observer.event_name == "update":
+                continue
+
+            for handler in observer.handlers:
+                if not is_dishka_injected(handler.callback):
+                    inject_handler(handler)
+
+
+def inject_handler(handler: HandlerObject) -> HandlerObject:
+    """Inject dishka for callback in aiogram's handler."""
+    # temp_handler is used to apply original __post_init__ processing
+    # for callback object wrapped by injector
+    temp_handler = HandlerObject(
+        callback=inject(handler.callback),
+        filters=handler.filters,
+        flags=handler.flags,
+    )
+
+    # since injector modified callback and params,
+    # we should update them in the original handler
+    handler.callback = temp_handler.callback
+    handler.params = temp_handler.params
+
+    return handler

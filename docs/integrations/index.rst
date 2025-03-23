@@ -7,6 +7,7 @@ Using with frameworks
 
 There are some integrations in library, however you are not limited to them only.
 You can create custom integrations for your framework of choice.
+Some of the integrations are supported by a community, refer to their documentation as well.
 
 .. toctree::
    :hidden:
@@ -15,16 +16,19 @@ You can create custom integrations for your framework of choice.
    aiogram_dialog
    aiohttp
    arq
+   celery
    click
    fastapi
    faststream
    flask
    grpcio
    litestar
+   RQ <https://github.com/prepin/dishka-rq>
    sanic
    starlette
    taskiq
    telebot
+   Quart <https://github.com/hrimov/quart-dishka>
    adding_new
 
 .. list-table:: Built-in frameworks integrations
@@ -52,17 +56,21 @@ You can create custom integrations for your framework of choice.
 
    * - :ref:`Flask`
      -
-     -
+     - :ref:`Celery`
      -
    * -  :ref:`Litestar`
      -
-     -
+     - `RQ <https://github.com/prepin/dishka-rq>`_ (:abbr:`com (Community support)`)
      -
    * -  :ref:`Sanic`
      -
      -
      -
    * -  :ref:`Starlette`
+     -
+     -
+     -
+   * -  `Quart <https://github.com/hrimov/quart-dishka>`_ (:abbr:`com (Community support)`)
      -
      -
      -

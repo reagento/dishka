@@ -341,10 +341,7 @@ class InjectedFuncType:
             FunctionType.GENERATOR,
             FunctionType.CALLABLE,
         ):
-            message = (
-                "An async container cannot be used in a synchronous context."
-            )
-            raise InvalidInjectedFuncTypeError(message)
+            raise InvalidInjectedFuncTypeError
 
 
 _GET_AUTO_INJECTED_FUNC_DICT = {

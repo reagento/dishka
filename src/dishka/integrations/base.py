@@ -35,6 +35,7 @@ from dishka.container import Container
 from dishka.entities.component import DEFAULT_COMPONENT
 from dishka.entities.depends_marker import FromDishka
 from dishka.entities.key import DependencyKey, _FromComponent
+from dishka.integrations.exceptions import InvalidInjectedFuncTypeError
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -334,6 +335,13 @@ class InjectedFuncType:
     is_async_container: bool
     manage_scope: bool
     func_type: FunctionType
+
+    def __post_init__(self) -> None:
+        if self.is_async_container and self.func_type in (
+            FunctionType.GENERATOR,
+            FunctionType.CALLABLE,
+        ):
+            raise InvalidInjectedFuncTypeError
 
 
 _GET_AUTO_INJECTED_FUNC_DICT = {

@@ -82,7 +82,6 @@ def create_type_vars_map(obj: TypeHint) -> dict[TypeHint, TypeHint]:
     return type_vars_map
 
 
-
 class ParentsResolver:
     def get_parents(self, child_type: TypeHint) -> list[TypeHint]:
         if is_ignored_type(strip_alias(child_type)):

@@ -87,7 +87,7 @@ class MermaidRenderer(Renderer):
                 res += self._render_node(node) + "\n"
             res += "}\n"
         for child in group.children:
-            res += self._render_group(child,  name) + "\n"
+            res += self._render_group(child, name) + "\n"
         return res
 
     def _render_links(self, group: Group) -> str:

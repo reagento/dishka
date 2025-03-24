@@ -264,7 +264,7 @@ def _make_factory_by_function(
         *,
         provides: Any,
         scope: BaseScope | None,
-        source: Callable[..., Any] | classmethod, # type: ignore[type-arg]
+        source: Callable[..., Any] | classmethod,  # type: ignore[type-arg]
         cache: bool,
         is_in_class: bool,
         override: bool,

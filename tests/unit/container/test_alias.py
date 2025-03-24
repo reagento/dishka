@@ -67,14 +67,12 @@ def test_implicit():
     mock.assert_called_once()
 
 
-
 def test_implicit_no_source():
     provider = Provider(scope=Scope.APP)
     provider.provide_all(AnyOf[float, str])
     container = make_container(provider)
     assert container.get(float) == 0.0
     assert container.get(str) == 0.0
-
 
 
 def test_implicit_all():
@@ -102,6 +100,7 @@ def test_implicit_generator():
 def test_implicit_generator_alt():
     class MyProvider(Provider):
         value = 0
+
         @provide(scope=Scope.APP)
         def foo(self) -> AnyOf[Iterable[float], Iterable[int]]:
             self.value += 1
@@ -131,6 +130,7 @@ async def test_implicit_async_generator():
 async def test_implicit_async_generator_alt():
     class MyProvider(Provider):
         value = 0
+
         @provide(scope=Scope.APP)
         async def foo(self) -> AnyOf[AsyncIterable[float], AsyncIterable[int]]:
             self.value += 1

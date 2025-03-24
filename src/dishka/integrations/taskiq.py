@@ -115,7 +115,6 @@ def _inject_wrapper(
     return wrapper
 
 
-
 def setup_dishka(
     container: AsyncContainer,
     broker: AsyncBroker,

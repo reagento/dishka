@@ -93,7 +93,6 @@ def test_provide_no_scope():
     with pytest.raises(NoScopeSetInProvideError):
         provider.provide(b, provides=B)
 
-
     with pytest.raises(NoScopeSetInContextError):
         provider.from_context(b)
 
@@ -440,7 +439,7 @@ def test_static_method():
 
             @provide(scope=Scope.APP)
             @staticmethod
-            def s(a:"S5"):  #noqa: F821
+            def s(a: "S5"):  # noqa: F821
                 yield
 
 
@@ -457,13 +456,14 @@ def test_no_hints():
             def c(self, a: int):
                 return 1
 
-    def c() -> "C4":  #noqa: F821
+    def c() -> "C4":  # noqa: F821
         return 1
 
     with pytest.raises(UndefinedTypeAnalysisError):
 
         class C3(Provider):
             cp = provide(source=c)
+
 
 def test_annotated_factory():
     assert make_factory_by_source(source=Annotated[A, "Annotated"])
@@ -475,7 +475,7 @@ def test_self():
         class P(Provider):
 
             @provide(scope=Scope.APP)
-            def a(celph) -> int:  #noqa: N805
+            def a(celph) -> int:  # noqa: N805
                 return 1
 
 
@@ -485,6 +485,7 @@ def foo_aiterable() -> AsyncIterable[NoneType]:
 
 def foo_aiterator() -> AsyncIterator[int]:
     yield 1
+
 
 def foo_agen() -> AsyncGenerator[None, None]:
     yield
@@ -496,6 +497,7 @@ async def foo_gen() -> Generator[int, None, None]:
 
 async def foo_iterator() -> Iterator[str]:
     yield ""
+
 
 async def foo_iterable() -> Iterable[float]:
     yield 0

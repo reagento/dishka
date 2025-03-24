@@ -184,10 +184,10 @@ def _clean_result_hint(
         return _generator_result(possible_dependency)
 
     if is_type_alias_type(possible_dependency):
-        options = (possible_dependency, )
+        options: tuple[Any, ...] = (possible_dependency, )
         while is_type_alias_type(possible_dependency):
             possible_dependency = possible_dependency.__value__
-            options = (possible_dependency, ) + options
+            options = (possible_dependency, *options)
         return AnyOf[options]
     return possible_dependency
 

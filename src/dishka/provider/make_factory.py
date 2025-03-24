@@ -56,8 +56,9 @@ from dishka.entities.key import (
     hint_to_dependency_key,
     hints_to_dependency_keys,
 )
-from dishka.entities.provides_marker import ProvideMultiple
+from dishka.entities.provides_marker import AnyOf, ProvideMultiple
 from dishka.entities.scope import BaseScope
+from dishka.entities.type_alias_type import is_type_alias_type
 from dishka.text_rendering import get_name
 from .exceptions import (
     MissingHintsError,
@@ -181,6 +182,13 @@ def _clean_result_hint(
         return _async_generator_result(possible_dependency)
     elif factory_type == FactoryType.GENERATOR:
         return _generator_result(possible_dependency)
+
+    if is_type_alias_type(possible_dependency):
+        options = (possible_dependency, )
+        while is_type_alias_type(possible_dependency):
+            possible_dependency = possible_dependency.__value__
+            options = (possible_dependency, ) + options
+        return AnyOf[options]
     return possible_dependency
 
 

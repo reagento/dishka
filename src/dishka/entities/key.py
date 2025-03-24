@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Annotated, Any, NamedTuple, get_args, get_origin
 
 from .component import DEFAULT_COMPONENT, Component
-from .provides_marker import AnyOf
 from .type_alias_type import is_type_alias_type
 
 
@@ -40,8 +39,8 @@ def dependency_key_to_hint(key: DependencyKey) -> Any:
 
 
 def hint_to_dependency_key(hint: Any) -> DependencyKey:
-    if is_type_alias_type(hint):
-        hint = AnyOf[hint, hint.__value__]
+    while is_type_alias_type(hint):
+        hint = hint.__value__
     if get_origin(hint) is not Annotated:
         return DependencyKey(hint, None)
     args = get_args(hint)

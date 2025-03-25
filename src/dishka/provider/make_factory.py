@@ -243,6 +243,7 @@ def _make_factory_by_class(
         override=override,
     )
 
+
 def _check_self_name(
         source: Callable[..., Any] | classmethod,  # type: ignore[type-arg]
         self: Parameter | None,
@@ -259,6 +260,7 @@ def _check_self_name(
         "registering on a provider instance or adding `self`.",
         stacklevel=6,
     )
+
 
 def _make_factory_by_function(
         *,

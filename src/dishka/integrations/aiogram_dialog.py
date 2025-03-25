@@ -15,7 +15,7 @@ def _container_getter(
     args: tuple[Any, ...],
     kwargs: dict[str, Any],
 ) -> AsyncContainer:
-    if len(args) == 0:
+    if not args:
         container = kwargs[CONTAINER_NAME]
     elif len(args) == TWO:
         container = args[-1].middleware_data[CONTAINER_NAME]

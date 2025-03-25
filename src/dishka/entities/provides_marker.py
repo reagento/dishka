@@ -11,6 +11,7 @@ if sys.version_info >= (3, 11):
     from typing import TypeVarTuple, Unpack
 
     Variants = TypeVarTuple("Variants")
+
     class ProvideMultiple(Generic[Unpack[Variants]]):
         pass
 else:

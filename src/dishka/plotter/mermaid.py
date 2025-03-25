@@ -35,7 +35,7 @@ class MermaidRenderer(Renderer):
         return (
             f'class {node.id}["{name}"]'
             + "{\n"
-            + ((f"    {node.source_name}()\n") if node.source_name else " \n")
+            + (f"    {node.source_name}()\n" if node.source_name else " \n")
             + "".join(
                 f"    {self.nodes[dep].name}\n" for dep in node.dependencies
             )

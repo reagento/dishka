@@ -127,6 +127,7 @@ class DishkaRoute(APIRoute):
         endpoint = inject(endpoint)
         super().__init__(path, endpoint, **kwargs)
 
+
 class DishkaSyncRoute(APIRoute):
     def __init__(
         self,

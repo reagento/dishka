@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Annotated, Any, NamedTuple, get_args, get_origin
 
 from .component import DEFAULT_COMPONENT, Component
-from .type_alias_type import is_type_alias_type
 
 
 class _FromComponent(NamedTuple):
@@ -39,8 +38,6 @@ def dependency_key_to_hint(key: DependencyKey) -> Any:
 
 
 def hint_to_dependency_key(hint: Any) -> DependencyKey:
-    while is_type_alias_type(hint):
-        hint = hint.__value__
     if get_origin(hint) is not Annotated:
         return DependencyKey(hint, None)
     args = get_args(hint)
@@ -51,10 +48,3 @@ def hint_to_dependency_key(hint: Any) -> DependencyKey:
     if from_component is None:
         return DependencyKey(args[0], None)
     return DependencyKey(args[0], from_component.component)
-
-
-def hints_to_dependency_keys(hints: list[Any]) -> list[DependencyKey]:
-    return [
-        hint_to_dependency_key(type_hint)
-        for type_hint in hints
-    ]

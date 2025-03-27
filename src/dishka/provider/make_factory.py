@@ -272,6 +272,7 @@ def _make_factory_by_class(
         override=override,
     )
 
+
 def _check_self_name(
         source: Callable[..., Any] | classmethod,  # type: ignore[type-arg]
         self: Parameter | None,
@@ -289,11 +290,12 @@ def _check_self_name(
         stacklevel=6,
     )
 
+
 def _make_factory_by_function(
         *,
         provides: Any,
         scope: BaseScope | None,
-        source: Callable[..., Any] | classmethod, # type: ignore[type-arg]
+        source: Callable[..., Any] | classmethod,  # type: ignore[type-arg]
         cache: bool,
         is_in_class: bool,
         override: bool,

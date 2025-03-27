@@ -6,4 +6,3 @@ class InvalidInjectedFuncTypeError(DishkaError):
         return (
             "An async container cannot be used in a synchronous context."
         )
-

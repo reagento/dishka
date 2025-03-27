@@ -32,7 +32,6 @@ def is_dependency_source(
     return isinstance(attribute, CompositeDependencySource)
 
 
-
 class Provider(BaseProvider):
     """
     A collection of dependency sources.

@@ -209,7 +209,6 @@ def test_passing_type_var_decorator():
     assert container.get(int) == (int, 1, A(42, y=42))
 
 
-
 def func_with_type(param: type[T], param2: type[int]) -> A[T]:
     return param, param2
 

@@ -77,4 +77,3 @@ def decorate_on_instance(
         provides: Any = None,
 ) -> CompositeDependencySource:
     return _decorate(source, provides, is_in_class=False)
-

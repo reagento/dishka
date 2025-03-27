@@ -20,6 +20,7 @@ class P(Protocol):
 
 class MyProvider(Provider):
     component = "XXX"
+
     @provide(scope=Scope.APP)
     def foo(self) -> int:
         return 1

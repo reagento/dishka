@@ -32,6 +32,7 @@ def make_args(args: list[str], kwargs: dict[str, str]) -> str:
         [f"{arg}={{await}}getter({var})" for arg, var in kwargs.items()],
     )
 
+
 GENERATOR = """
 {async}def get(getter, exits, context):
     generator = source({args})

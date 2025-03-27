@@ -62,7 +62,7 @@ def create_type_vars_map(obj: TypeHint) -> dict[TypeHint, TypeHint]:
     arguments = list(get_generic_args(obj))
     reversed_arguments = False
     while True:
-        if len(type_vars) == 0:
+        if not type_vars:
             break
 
         type_var = type_vars[0]
@@ -80,7 +80,6 @@ def create_type_vars_map(obj: TypeHint) -> dict[TypeHint, TypeHint]:
             reversed_arguments = not reversed_arguments
 
     return type_vars_map
-
 
 
 class ParentsResolver:

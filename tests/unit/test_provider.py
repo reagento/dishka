@@ -17,7 +17,6 @@ from dishka import Provider, Scope, alias, decorate, make_container, provide
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import (
     hint_to_dependency_key,
-    hints_to_dependency_keys,
 )
 from dishka.provider.exceptions import (
     MissingHintsError,
@@ -73,7 +72,10 @@ def test_parse_factory(source, provider_type, is_to_bound):
     factory = composite.dependency_sources[0]
 
     assert factory.provides == hint_to_dependency_key(ClassA)
-    assert factory.dependencies == hints_to_dependency_keys([Any, int])
+    assert factory.dependencies == [
+        hint_to_dependency_key(Any),
+        hint_to_dependency_key(int),
+    ]
     assert factory.is_to_bind == is_to_bound
     assert factory.scope == Scope.REQUEST
     assert factory.source == source
@@ -130,7 +132,7 @@ def test_parse_factory_cls(source, provider_type, is_to_bound):
         override=False,
     )
     assert factory.provides == hint_to_dependency_key(ClassA)
-    assert factory.dependencies == hints_to_dependency_keys([int])
+    assert factory.dependencies == [hint_to_dependency_key(int)]
     assert factory.is_to_bind == is_to_bound
     assert factory.scope == Scope.REQUEST
     assert factory.source == source
@@ -242,7 +244,7 @@ def test_callable(cls):
     assert len(provider.factories) == 1
     factory = provider.factories[0]
     assert factory.provides == hint_to_dependency_key(str)
-    assert factory.dependencies == hints_to_dependency_keys([int])
+    assert factory.dependencies == [hint_to_dependency_key(int)]
 
 
 def test_provide_as_method():
@@ -253,13 +255,16 @@ def test_provide_as_method():
     assert len(foo.dependency_sources) == 1
     factory = foo.dependency_sources[0]
     assert factory.provides == hint_to_dependency_key(str)
-    assert factory.dependencies == hints_to_dependency_keys([int])
+    assert factory.dependencies == [hint_to_dependency_key(int)]
 
     foo = provider.provide(sync_func_a)
     assert len(foo.dependency_sources) == 1
     factory = foo.dependency_sources[0]
     assert factory.provides == hint_to_dependency_key(ClassA)
-    assert factory.dependencies == hints_to_dependency_keys([Any, int])
+    assert factory.dependencies == [
+        hint_to_dependency_key(Any),
+        hint_to_dependency_key(int),
+    ]
 
     foo = provider.alias(source=int, provides=str)
     assert len(foo.dependency_sources) == 1
@@ -348,7 +353,10 @@ def test_decorator():
     assert len(foo.dependency_sources) == 1
     factory = foo.dependency_sources[0]
     assert factory.provides == hint_to_dependency_key(ClassA)
-    expected_deps = hints_to_dependency_keys([ClassA, int])
+    expected_deps = [
+        hint_to_dependency_key(ClassA),
+        hint_to_dependency_key(int),
+    ]
     assert factory.factory.dependencies == expected_deps
 
 

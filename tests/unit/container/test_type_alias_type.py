@@ -110,7 +110,10 @@ def test_type_alias_component(component_provider):
     def foo() -> IntegerWithComponent:
         return 42
 
-    container = make_container(ComponentDepProvider(), component_provider)
+    container = make_container(
+        ComponentDepProvider(),
+        component_provider,
+    )
     assert container.get(int, component="X") == 42
     assert container.get(str) == "42"
 
@@ -118,6 +121,9 @@ def test_type_alias_component(component_provider):
 @pytest.mark.parametrize("component_provider", COMPONENT_PRIVDER_VALUES)
 @pytest.mark.asyncio
 async def test_type_alias_component_async(component_provider):
-    container = make_async_container(ComponentDepProvider(), component_provider)
+    container = make_async_container(
+        ComponentDepProvider(),
+        component_provider,
+    )
     assert await container.get(int, component="X") == 42
     assert await container.get(str) == "42"

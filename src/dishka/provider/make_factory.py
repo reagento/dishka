@@ -117,7 +117,10 @@ def _get_dependencies(
     return [
         hint_to_dependency_key(unwrap_type_alias(hints.get(name)))
         for name, param in params.items()
-        if param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
+        if param.kind in (
+            Parameter.POSITIONAL_ONLY,
+            Parameter.POSITIONAL_OR_KEYWORD,
+        )
     ]
 
 

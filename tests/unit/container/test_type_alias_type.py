@@ -63,7 +63,7 @@ class MainProvider(Provider):
 
     @provide
     def get_bytes_memoryview(
-        self, value: BytesMemoryView,
+        self, value: bytes | memoryview,
     ) -> AnyOf[bytes, memoryview]:
         return value + b"1"
 

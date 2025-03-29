@@ -4,6 +4,7 @@ from typing import Any
 import pytest
 
 from dishka import (
+    AnyOf,
     Provider,
     Scope,
     make_async_container,
@@ -18,8 +19,11 @@ if sys.version_info < (3, 12):
     )
 
 from .type_alias_type_provider import (
+    BytesMemoryView,
     Integer,
     IntegerWithComponent,
+    IntStr,
+    IterableInt,
     ListFloat,
     WrappedInteger,
     WrappedIntegerDep,
@@ -30,8 +34,8 @@ class MainProvider(Provider):
     scope = Scope.APP
 
     @provide
-    def get_integer(self) -> Integer:
-        return 1
+    def get_iterable_int(self) -> IterableInt:
+        yield 1
 
     @provide
     def get_list_float(self) -> ListFloat:
@@ -49,6 +53,19 @@ class MainProvider(Provider):
     def get_complex(self, dep: WrappedIntegerDep) -> complex:
         return dep
 
+    @provide
+    def get_integer_string_union(self) -> IntStr:
+        return "foo"
+
+    @provide
+    def get_bytes_memoryview_union(self) -> BytesMemoryView:
+        return b"foo"
+
+    @provide
+    def get_bytes_memoryview(
+        self, value: bytes | memoryview,
+    ) -> AnyOf[bytes, memoryview]:
+        return value + b"1"
 
 HINT_VALUES = [
     (int, 1),
@@ -56,6 +73,10 @@ HINT_VALUES = [
     (complex, 1),
     (list[float], [1.1, 1.2]),
     (WrappedInteger, 1),
+    (IntStr, "foo"),
+    (BytesMemoryView, b"foo"),
+    (bytes, b"foo1"),
+    (memoryview, b"foo1"),
 ]
 
 

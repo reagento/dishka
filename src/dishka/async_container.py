@@ -174,7 +174,6 @@ class AsyncContainer:
         async with lock:
             return await self._get_unlocked(key)
 
-
     async def _get_unlocked(self, key: DependencyKey) -> Any:
         if key in self._cache:
             return self._cache[key]
@@ -198,7 +197,7 @@ class AsyncContainer:
         for exit_generator in self._exits[::-1]:
             try:
                 if exit_generator.type is FactoryType.ASYNC_GENERATOR:
-                    await exit_generator.callable.asend(exception) # type: ignore[attr-defined]
+                    await exit_generator.callable.asend(exception)  # type: ignore[attr-defined]
                 elif exit_generator.type is FactoryType.GENERATOR:
                     exit_generator.callable.send(exception)  # type: ignore[attr-defined]
             except StopIteration:  # noqa: PERF203

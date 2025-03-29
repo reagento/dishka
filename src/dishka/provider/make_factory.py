@@ -142,6 +142,7 @@ def _type_repr(hint: Any) -> str:
 
 
 def _async_generator_result(hint: Any) -> Any:
+    hint = unwrap_type_alias(hint)
     if get_origin(hint) is ProvideMultiple:
         return ProvideMultiple[tuple(  # type: ignore[misc]
             _async_generator_result(x) for x in get_args(hint)
@@ -172,6 +173,7 @@ def _async_generator_result(hint: Any) -> Any:
 
 
 def _generator_result(hint: Any) -> Any:
+    hint = unwrap_type_alias(hint)
     if get_origin(hint) is ProvideMultiple:
         return ProvideMultiple[tuple(  # type: ignore[misc]
             _generator_result(x) for x in get_args(hint)
@@ -201,22 +203,26 @@ def _generator_result(hint: Any) -> Any:
     raise UnsupportedGeneratorReturnTypeError(name, guess, args)
 
 
+def _alias_to_anyof(possible_dependency: Any) -> Any:
+    if not is_type_alias_type(possible_dependency):
+        return possible_dependency
+    options: tuple[Any, ...] = (possible_dependency, )
+    while is_type_alias_type(possible_dependency):
+        possible_dependency = possible_dependency.__value__
+        options = (possible_dependency, *options)
+    return AnyOf[options]
+
+
 def _clean_result_hint(
     factory_type: FactoryType,
     possible_dependency: Any,
 ) -> Any:
     if factory_type == FactoryType.ASYNC_GENERATOR:
-        return _async_generator_result(possible_dependency)
+        possible_dependency = _async_generator_result(possible_dependency)
     elif factory_type == FactoryType.GENERATOR:
-        return _generator_result(possible_dependency)
+        possible_dependency = _generator_result(possible_dependency)
 
-    if is_type_alias_type(possible_dependency):
-        options: tuple[Any, ...] = (possible_dependency, )
-        while is_type_alias_type(possible_dependency):
-            possible_dependency = possible_dependency.__value__
-            options = (possible_dependency, *options)
-        return AnyOf[options]
-    return possible_dependency
+    return _alias_to_anyof(possible_dependency)
 
 
 def _params_without_hints(func: Any, *, skip_self: bool) -> Sequence[str]:
@@ -272,6 +278,7 @@ def _make_factory_by_class(
         override=override,
     )
 
+
 def _check_self_name(
         source: Callable[..., Any] | classmethod,  # type: ignore[type-arg]
         self: Parameter | None,
@@ -289,11 +296,12 @@ def _check_self_name(
         stacklevel=6,
     )
 
+
 def _make_factory_by_function(
         *,
         provides: Any,
         scope: BaseScope | None,
-        source: Callable[..., Any] | classmethod, # type: ignore[type-arg]
+        source: Callable[..., Any] | classmethod,  # type: ignore[type-arg]
         cache: bool,
         is_in_class: bool,
         override: bool,

@@ -30,6 +30,7 @@ class Transformer:
         if not key.component:
             return False
         return key.component.startswith(DECORATED_COMPONENT_PREFIX)
+
     def _node_type(self, factory: Factory) -> NodeType:
         for dep in factory.dependencies:
             if self._is_decorated(dep):
@@ -65,7 +66,6 @@ class Transformer:
                 group.nodes.remove(moved)
                 target_group.nodes.append(moved)
                 self._trace_decorator(moved, target_group)
-
 
     def _make_factories(
             self, scope: BaseScope, group: Group, registry: Registry,
@@ -127,7 +127,7 @@ class Transformer:
                 res.append(group)
         return res
 
-    def transform(self, container: Container|AsyncContainer) -> list[Group]:
+    def transform(self, container: Container | AsyncContainer) -> list[Group]:
         registries = [container.registry, *container.child_registries]
         result = []
         for registry in registries:

@@ -21,6 +21,7 @@ from dishka.integrations.base import wrap_injection
 P = ParamSpec("P")
 T = TypeVar("T")
 
+
 def inject(func: Callable[P, T]):
     return _inject_wrapper(func, "request", Request)
 

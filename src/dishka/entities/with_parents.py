@@ -7,6 +7,8 @@ from typing import (
     Protocol,
     TypeAlias,
     TypeVar,
+    get_args,
+    get_origin,
 )
 
 from dishka._adaptix.common import TypeHint
@@ -37,9 +39,11 @@ IGNORE_TYPES: Final = (
 TypeVarsMap: TypeAlias = dict[TypeHint, TypeHint]
 
 if HAS_PY_311:
+
     def is_type_var_tuple(obj: TypeHint) -> bool:
         return getattr(obj, "__typing_is_unpacked_typevartuple__", False)
 else:
+
     def is_type_var_tuple(obj: TypeHint) -> bool:
         return False
 
@@ -55,17 +59,20 @@ def is_ignored_type(origin_type: TypeHint) -> bool:
 def create_type_vars_map(obj: TypeHint) -> dict[TypeHint, TypeHint]:
     origin_obj = strip_alias(obj)
     type_vars = list(get_type_vars(origin_obj) or get_type_vars(obj))
+
     if not type_vars:
         return {}
 
     type_vars_map = {}
     arguments = list(get_generic_args(obj))
     reversed_arguments = False
+
     while True:
         if not type_vars:
             break
 
         type_var = type_vars[0]
+
         if isinstance(type_var, TypeVar):
             del type_vars[0]
             type_vars_map[type_var] = arguments.pop(0)
@@ -91,7 +98,8 @@ class ParentsResolver:
         return self._get_parents_for_mro(child_type)
 
     def _get_parents_for_generic(
-        self, child_type: TypeHint,
+        self,
+        child_type: TypeHint,
     ) -> list[TypeHint]:
         parents: list[TypeHint] = []
         self._recursion_get_parents(
@@ -110,6 +118,7 @@ class ParentsResolver:
         origin_child_type = strip_alias(child_type)
         parametrized = is_parametrized(child_type)
         orig_bases = has_orig_bases(origin_child_type)
+
         if not orig_bases and not parametrized:
             parents.extend(
                 self._get_parents_for_mro(origin_child_type),
@@ -126,10 +135,27 @@ class ParentsResolver:
         )
         if not orig_bases:
             return
-        for parent_type in origin_child_type.__orig_bases__:
+
+        bases = getattr(origin_child_type, "__orig_bases__", None)
+        if bases is None:
+            bases = getattr(origin_child_type, "__bases__", ())
+
+        for parent_type in bases:
             origin_parent_type = strip_alias(parent_type)
             if is_ignored_type(origin_parent_type):
                 continue
+
+            if (
+                hasattr(origin_child_type, "__type_params__") and
+                is_parametrized(parent_type)
+            ):
+                origin = get_origin(parent_type)
+                if origin is not None:
+                    args = get_args(parent_type)
+                    new_args = [
+                        new_type_vars_map.get(arg, arg) for arg in args
+                    ]
+                    parent_type = origin[tuple(new_args)]  # noqa: PLW2901
 
             self._recursion_get_parents(
                 child_type=parent_type,
@@ -138,7 +164,8 @@ class ParentsResolver:
             )
 
     def _get_parents_for_mro(
-        self, child_type: TypeHint,
+        self,
+        child_type: TypeHint,
     ) -> list[TypeHint]:
         return [
             parent_type for parent_type in child_type.mro()

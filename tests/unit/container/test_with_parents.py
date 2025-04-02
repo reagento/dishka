@@ -16,9 +16,11 @@ from dishka import (
     Provider,
     Scope,
     make_container,
+    provide,
+    provide_all,
 )
 from dishka._adaptix.common import TypeHint
-from dishka._adaptix.feature_requirement import HAS_PY_311
+from dishka._adaptix.feature_requirement import HAS_PY_311, HAS_PY_312
 from dishka.entities.with_parents import (
     ParentsResolver,
     WithParents,
@@ -30,6 +32,21 @@ if HAS_PY_311:
     from typing import TypeVarTuple, Unpack
 
     Ts = TypeVarTuple("TS")  # noqa: PLC0132
+
+if HAS_PY_312:
+    from .test_pep695_new_syntax import (
+        A,
+        Base,
+        Base1,
+        Base2,
+        Combined,
+        D,
+        Impl,
+        Inner,
+        InnerImpl,
+        Outer,
+        Wrapper,
+    )
 
 T = TypeVar("T")
 B = TypeVar("B")
@@ -131,6 +148,7 @@ if HAS_PY_311:
 else:
     params = []
 
+
 @pytest.mark.parametrize(
     ("obj", "val1", "val2"),
     params,
@@ -153,6 +171,7 @@ def test_type_var_and_type_var_tuple(
         is container.get(val1)
         is container.get(val2)
     )
+
 
 def test_deep_inheritance() -> None:
     class A1(Generic[T], float): ...
@@ -224,3 +243,128 @@ class JsonMapping(dict[str, str | int]): ...
 )
 def test_structures(structure: TypeHint, result: list[TypeHint]) -> None:
     assert ParentsResolver().get_parents(structure) == result
+
+
+@pytest.mark.skipif(
+    not HAS_PY_312,
+    reason="PEP 695 syntax requires Python 3.12+",
+)
+def test_pep695_generic_protocol():
+    class MyProvider(Provider):
+        scope = Scope.APP
+        deps = provide_all(
+            WithParents[A[int]],
+            WithParents[A[str]],
+        )
+        one = provide(lambda c: 1, provides=int)
+        two = provide(lambda c: "2", provides=str)
+
+    container = make_container(MyProvider())
+    assert isinstance(container.get(D[int]).dep, int)
+    assert isinstance(container.get(D[str]).dep, str)
+
+
+@pytest.mark.skipif(
+    not HAS_PY_312,
+    reason="PEP 695 syntax requires Python 3.12+",
+)
+def test_pep695_multiple_generics():
+    class MyProvider(Provider):
+        scope = Scope.APP
+        deps = provide_all(
+            WithParents[Impl[int, str]],
+            WithParents[Impl[str, int]],
+        )
+        int_ = provide(lambda c: 42, provides=int)
+        str_ = provide(lambda c: "text", provides=str)
+
+    container = make_container(MyProvider())
+    impl1 = container.get(Base[int, str])
+    impl2 = container.get(Base[str, int])
+
+    assert isinstance(impl1.first, int)
+    assert isinstance(impl1.second, str)
+    assert isinstance(impl2.first, str)
+    assert isinstance(impl2.second, int)
+
+
+@pytest.mark.skipif(
+    not HAS_PY_312,
+    reason="PEP 695 syntax requires Python 3.12+",
+)
+def test_pep695_nested_generics():
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        @provide(provides=int)
+        def provide_int(self) -> int:
+            return 100
+
+        @provide(provides=str)
+        def provide_str(self) -> str:
+            return "nested"
+
+        @provide(provides=Inner[int])
+        def provide_inner_int(self) -> Inner[int]:
+            return InnerImpl(100)
+
+        @provide(provides=Inner[str])
+        def provide_inner_str(self) -> Inner[str]:
+            return InnerImpl("nested")
+
+        @provide(provides=Wrapper[int])
+        def provide_wrapper_int(self, inner: Inner[int]) -> Wrapper[int]:
+            return Wrapper(inner)
+
+        @provide(provides=Wrapper[str])
+        def provide_wrapper_str(self, inner: Inner[str]) -> Wrapper[str]:
+            return Wrapper(inner)
+
+        @provide(provides=Outer[Inner[int]])
+        def provide_outer_int(
+                self, wrapper: Wrapper[int],
+        ) -> Outer[Inner[int]]:
+            return wrapper
+
+        @provide(provides=Outer[Inner[str]])
+        def provide_outer_str(
+                self, wrapper: Wrapper[str],
+        ) -> Outer[Inner[str]]:
+            return wrapper
+
+    container = make_container(MyProvider())
+
+    wrapper_int = container.get(Outer[Inner[int]])
+    wrapper_str = container.get(Outer[Inner[str]])
+
+    assert isinstance(wrapper_int.value.data, int)
+    assert wrapper_int.value.data == 100
+    assert isinstance(wrapper_str.value.data, str)
+    assert wrapper_str.value.data == "nested"
+
+
+@pytest.mark.skipif(
+    not HAS_PY_312,
+    reason="PEP 695 syntax requires Python 3.12+",
+)
+def test_pep695_multiple_inheritance():
+    class MyProvider(Provider):
+        scope = Scope.APP
+        deps = provide_all(
+            WithParents[Combined[int, str]],
+            WithParents[Combined[str, int]],
+        )
+        int_val = provide(lambda c: 7, provides=int)
+        str_val = provide(lambda c: "seven", provides=str)
+
+    container = make_container(MyProvider())
+
+    comb1 = container.get(Base1[int])
+    comb2 = container.get(Base2[int])
+    comb3 = container.get(Base1[str])
+    comb4 = container.get(Base2[str])
+
+    assert isinstance(comb1.value1, int)
+    assert isinstance(comb2.value2, int)
+    assert isinstance(comb3.value1, str)
+    assert isinstance(comb4.value2, str)

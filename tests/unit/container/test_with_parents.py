@@ -34,7 +34,7 @@ if HAS_PY_311:
     Ts = TypeVarTuple("TS")  # noqa: PLC0132
 
 if HAS_PY_312:
-    from .test_pep695_new_syntax import (
+    from .pep695_new_syntax import (
         A,
         Base,
         Base1,

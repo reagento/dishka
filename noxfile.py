@@ -7,7 +7,6 @@ import nox
 nox.options.default_venv_backend = "uv"
 nox.options.reuse_existing_virtualenvs = True
 
-CMD = ("pytest", "--cov=dishka", "--cov-append", "--cov-report=term-missing", "-v")
 INSTALL_CMD = ("pytest", "pytest-cov", "-e", ".")
 
 
@@ -81,7 +80,7 @@ def integrations_base(session: nox.Session) -> None:
         "-r", "requirements/test.txt",
         silent=False,
     )
-    session.run(*CMD, "tests/integrations/base")
+    session.run("pytest", "tests/integrations/base")
 
 
 for env in INTEGRATIONS:
@@ -94,7 +93,7 @@ for env in INTEGRATIONS:
             session.skip(env.constraint.reason)
 
         session.install(*INSTALL_CMD, "-r", env.get_req(), silent=False)
-        session.run(*CMD, env.get_tests())
+        session.run("pytest", env.get_tests())
 
 
 @nox.session(tags=["ci"])
@@ -104,7 +103,7 @@ def unit(session: nox.Session) -> None:
         "-r", "requirements/test.txt",
         silent=False,
     )
-    session.run(*CMD, "tests/unit")
+    session.run("pytest", "tests/unit")
 
 
 @nox.session(tags=["ci"])
@@ -114,4 +113,4 @@ def real_world(session: nox.Session) -> None:
         "-r", "examples/real_world/requirements_test.txt",
         silent=False,
     )
-    session.run(*CMD, "examples/real_world/tests/")
+    session.run("pytest", "examples/real_world/tests/")

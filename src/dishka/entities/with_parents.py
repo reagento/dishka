@@ -138,7 +138,7 @@ class ParentsResolver:
 
         bases = getattr(origin_child_type, "__orig_bases__", None)
         if bases is None:
-            bases = getattr(origin_child_type, "__bases__", ())
+            bases = getattr(origin_child_type, "__orig_bases__", None) or ()
 
         for parent_type in bases:
             origin_parent_type = strip_alias(parent_type)

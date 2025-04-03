@@ -8,9 +8,10 @@ from dishka import (
     AnyOf,
     Provider,
     Scope,
+    from_context,
     make_async_container,
     make_container,
-    provide, from_context,
+    provide,
 )
 
 if sys.version_info < (3, 12):
@@ -21,13 +22,14 @@ if sys.version_info < (3, 12):
 
 from .type_alias_type_provider import (
     BytesMemoryView,
+    ContextTest,
     Integer,
     IntegerWithComponent,
     IntStr,
     IterableInt,
     ListFloat,
     WrappedInteger,
-    WrappedIntegerDep, ContextTest,
+    WrappedIntegerDep,
 )
 
 
@@ -167,28 +169,48 @@ class TypeAliasWithContext(Provider):
 
 @pytest.mark.parametrize("context_value", [None])
 @pytest.mark.asyncio
-async def test_type_alias_with_none_context_in_async_container(context_value: None):
-    container = make_async_container(TypeAliasWithContext(), context={ContextTest: context_value})
+async def test_type_alias_with_none_context_in_async_container(
+        context_value: None,
+):
+    container = make_async_container(
+        TypeAliasWithContext(),
+        context={ContextTest: context_value},
+    )
     with pytest.raises(TypeError) as exp:
         await container.get(Plugin)
 
     assert isinstance(exp.value, TypeError)
 
-@pytest.mark.parametrize("context_value", ["", " ", "test_value", "1243", "false"])
+@pytest.mark.parametrize(
+    "context_value",
+    ["", " ", "test_value", "1243", "false"],
+)
 @pytest.mark.asyncio
 async def test_type_alias_with_context_in_async_container(context_value: str):
-    container = make_async_container(TypeAliasWithContext(), context={ContextTest: context_value})
+    container = make_async_container(
+        TypeAliasWithContext(),
+        context={ContextTest: context_value},
+    )
     assert await container.get(Plugin) == Plugin(name=context_value)
 
 @pytest.mark.parametrize("context_value", [None])
 def test_type_alias_with_none_context_in_container(context_value: None):
-    container = make_container(TypeAliasWithContext(), context={ContextTest: context_value})
+    container = make_container(
+        TypeAliasWithContext(),
+        context={ContextTest: context_value},
+    )
     with pytest.raises(TypeError) as exp:
         container.get(Plugin)
 
     assert isinstance(exp.value, TypeError)
 
-@pytest.mark.parametrize("context_value", ["", " ", "test_value", "1243", "false"])
+@pytest.mark.parametrize(
+    "context_value",
+    ["", " ", "test_value", "1243", "false"],
+)
 def test_type_alias_with_context_in_container(context_value: str):
-    container = make_container(TypeAliasWithContext(), context={ContextTest: context_value})
+    container = make_container(
+        TypeAliasWithContext(),
+        context={ContextTest: context_value},
+    )
     assert container.get(Plugin) == Plugin(name=context_value)

@@ -60,10 +60,10 @@ class Container:
             for key, value in context.items():
                 resolved_key = unwrap_type_alias(key)
                 if not isinstance(key, DependencyKey):
-                    resolved_key = DependencyKey(  # noqa: PLW2901
+                    resolved_key = DependencyKey(
                         resolved_key,
                         DEFAULT_COMPONENT,
-                    )
+                    )  # noqa: PLW2901
                 self._context[resolved_key] = value
         self._cache = {**self._context}
         self.parent_container = parent_container

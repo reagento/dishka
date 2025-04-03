@@ -8,6 +8,7 @@ from dishka.dependency_source import (
 from dishka.entities.component import DEFAULT_COMPONENT
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
+from dishka.entities.type_alias_type import unwrap_type_alias
 
 
 def from_context(
@@ -16,13 +17,14 @@ def from_context(
         scope: BaseScope | None = None,
         override: bool = False,
 ) -> CompositeDependencySource:
+    resolved_provides = unwrap_type_alias(provides)
     composite = CompositeDependencySource(origin=context_stub)
     composite.dependency_sources.append(
         ContextVariable(
             scope=scope,
             override=override,
             provides=DependencyKey(
-                type_hint=provides,
+                type_hint=resolved_provides,
                 component=DEFAULT_COMPONENT,
             ),
         ),

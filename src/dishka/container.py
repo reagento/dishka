@@ -14,6 +14,7 @@ from dishka.entities.scope import BaseScope, Scope
 from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .dependency_source import Factory
+from .entities.type_alias_type import unwrap_type_alias
 from .entities.validation_settigs import DEFAULT_VALIDATION, ValidationSettings
 from .exceptions import (
     ChildScopeNotFoundError,
@@ -57,12 +58,13 @@ class Container:
         self._context = {CONTAINER_KEY: self}
         if context:
             for key, value in context.items():
+                resolved_key = unwrap_type_alias(key)
                 if not isinstance(key, DependencyKey):
-                    key = DependencyKey(  # noqa: PLW2901
-                        key,
+                    resolved_key = DependencyKey(  # noqa: PLW2901
+                        resolved_key,
                         DEFAULT_COMPONENT,
                     )
-                self._context[key] = value
+                self._context[resolved_key] = value
         self._cache = {**self._context}
         self.parent_container = parent_container
 
@@ -239,6 +241,13 @@ def make_container(
         start_scope: BaseScope | None = None,
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,
 ) -> Container:
+    resolved_context = None
+    if context is not None:
+        resolved_context = {
+            unwrap_type_alias(key): value
+            for key, value in context.items()
+        }
+
     registries = RegistryBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,
@@ -248,7 +257,7 @@ def make_container(
     ).build()
     container = Container(
         *registries,
-        context=context,
+        context=resolved_context,
         lock_factory=lock_factory,
     )
     if start_scope is None:
@@ -256,7 +265,7 @@ def make_container(
             container = Container(
                 *container.child_registries,
                 parent_container=container,
-                context=context,
+                context=resolved_context,
                 lock_factory=lock_factory,
                 close_parent=True,
             )
@@ -265,7 +274,7 @@ def make_container(
             container = Container(
                 *container.child_registries,
                 parent_container=container,
-                context=context,
+                context=resolved_context,
                 lock_factory=lock_factory,
                 close_parent=True,
             )

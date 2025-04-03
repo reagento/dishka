@@ -14,6 +14,7 @@ from dishka.entities.scope import BaseScope, Scope
 from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .dependency_source import Factory
+from .entities.type_alias_type import unwrap_type_alias
 from .entities.validation_settigs import DEFAULT_VALIDATION, ValidationSettings
 from .exceptions import (
     ChildScopeNotFoundError,
@@ -243,6 +244,12 @@ def make_async_container(
         start_scope: BaseScope | None = None,
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,
 ) -> AsyncContainer:
+    resolved_context = None
+    if context is not None:
+        resolved_context = {
+            unwrap_type_alias(key): value
+            for key, value in context.items()
+        }
     registries = RegistryBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,
@@ -252,7 +259,7 @@ def make_async_container(
     ).build()
     container = AsyncContainer(
         *registries,
-        context=context,
+        context=resolved_context,
         lock_factory=lock_factory,
     )
 
@@ -261,7 +268,7 @@ def make_async_container(
             container = AsyncContainer(
                 *container.child_registries,
                 parent_container=container,
-                context=context,
+                context=resolved_context,
                 lock_factory=lock_factory,
                 close_parent=True,
             )
@@ -270,7 +277,7 @@ def make_async_container(
             container = AsyncContainer(
                 *container.child_registries,
                 parent_container=container,
-                context=context,
+                context=resolved_context,
                 lock_factory=lock_factory,
                 close_parent=True,
             )

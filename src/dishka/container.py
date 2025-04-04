@@ -14,6 +14,7 @@ from dishka.entities.scope import BaseScope, Scope
 from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .dependency_source import Factory
+from .entities.type_alias_type import unwrap_type_alias
 from .entities.validation_settigs import DEFAULT_VALIDATION, ValidationSettings
 from .exceptions import (
     ChildScopeNotFoundError,
@@ -57,12 +58,15 @@ class Container:
         self._context = {CONTAINER_KEY: self}
         if context:
             for key, value in context.items():
-                if not isinstance(key, DependencyKey):
-                    key = DependencyKey(  # noqa: PLW2901
-                        key,
-                        DEFAULT_COMPONENT,
-                    )
-                self._context[key] = value
+                original_key = key
+                normalized_key = unwrap_type_alias(key)
+
+                original_key = self._get_dependency_key(original_key)
+                self._context[original_key] = value
+
+                normalized_key = self._get_dependency_key(normalized_key)
+                self._context[normalized_key] = value
+
         self._cache = {**self._context}
         self.parent_container = parent_container
 
@@ -174,13 +178,21 @@ class Container:
             return self._get_unlocked(key)
 
     def _get_unlocked(self, key: DependencyKey) -> Any:
-        if key in self._cache:
-            return self._cache[key]
-        compiled = self.registry.get_compiled(key)
+        normalized_type = DependencyKey(
+            unwrap_type_alias(key.type_hint),
+            key.component,
+        )
+
+        if normalized_type in self._cache:
+            return self._cache[normalized_type]
+
+        compiled = self.registry.get_compiled(normalized_type)
+
         if not compiled:
             if not self.parent_container:
-                raise NoFactoryError(key)
-            return self.parent_container._get(key)  # noqa: SLF001
+                raise NoFactoryError(normalized_type)
+            return self.parent_container._get(normalized_type)  # noqa: SLF001
+
         try:
             return compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:
@@ -211,6 +223,14 @@ class Container:
         if errors:
             raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
+    @staticmethod
+    def _get_dependency_key(key: Any) -> Any:
+        if not isinstance(key, DependencyKey):
+            return DependencyKey(
+                key,
+                DEFAULT_COMPONENT,
+            )
+        return key
 
 class ContextWrapper:
     __slots__ = ("container",)
@@ -239,6 +259,13 @@ def make_container(
         start_scope: BaseScope | None = None,
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,
 ) -> Container:
+    resolved_context = None
+    if context is not None:
+        resolved_context = {
+            unwrap_type_alias(key): value
+            for key, value in context.items()
+        }
+
     registries = RegistryBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,
@@ -248,7 +275,7 @@ def make_container(
     ).build()
     container = Container(
         *registries,
-        context=context,
+        context=resolved_context,
         lock_factory=lock_factory,
     )
     if start_scope is None:
@@ -256,7 +283,7 @@ def make_container(
             container = Container(
                 *container.child_registries,
                 parent_container=container,
-                context=context,
+                context=resolved_context,
                 lock_factory=lock_factory,
                 close_parent=True,
             )
@@ -265,7 +292,7 @@ def make_container(
             container = Container(
                 *container.child_registries,
                 parent_container=container,
-                context=context,
+                context=resolved_context,
                 lock_factory=lock_factory,
                 close_parent=True,
             )

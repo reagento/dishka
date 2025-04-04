@@ -14,6 +14,7 @@ from dishka.entities.scope import BaseScope, Scope
 from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .dependency_source import Factory
+from .entities.type_alias_type import unwrap_type_alias
 from .entities.validation_settigs import DEFAULT_VALIDATION, ValidationSettings
 from .exceptions import (
     ChildScopeNotFoundError,
@@ -175,13 +176,21 @@ class AsyncContainer:
             return await self._get_unlocked(key)
 
     async def _get_unlocked(self, key: DependencyKey) -> Any:
-        if key in self._cache:
-            return self._cache[key]
-        compiled = self.registry.get_compiled_async(key)
+        normalized_type = DependencyKey(
+            unwrap_type_alias(key.type_hint),
+            key.component,
+        )
+
+        if normalized_type in self._cache:
+            return self._cache[normalized_type]
+
+        compiled = self.registry.get_compiled_async(normalized_type)
+
         if not compiled:
             if not self.parent_container:
-                raise NoFactoryError(key)
-            return await self.parent_container._get(key)  # noqa: SLF001
+                raise NoFactoryError(normalized_type)
+            return await self.parent_container._get(normalized_type)  # noqa: SLF001
+
         try:
             return await compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:
@@ -189,7 +198,9 @@ class AsyncContainer:
             # return Factory. This happens because registry.get_compiled
             # uses the same method and returns None if the factory is not found
             # If None is returned, then go to the parent container
-            e.add_path(cast(Factory, self.registry.get_factory(key)))
+            e.add_path(
+                cast(Factory, self.registry.get_factory(normalized_type)),
+            )
             raise
 
     async def close(self, exception: BaseException | None = None) -> None:
@@ -243,6 +254,12 @@ def make_async_container(
         start_scope: BaseScope | None = None,
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,
 ) -> AsyncContainer:
+    resolved_context = None
+    if context is not None:
+        resolved_context = {
+            unwrap_type_alias(key): value
+            for key, value in context.items()
+        }
     registries = RegistryBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,
@@ -252,7 +269,7 @@ def make_async_container(
     ).build()
     container = AsyncContainer(
         *registries,
-        context=context,
+        context=resolved_context,
         lock_factory=lock_factory,
     )
 
@@ -261,7 +278,7 @@ def make_async_container(
             container = AsyncContainer(
                 *container.child_registries,
                 parent_container=container,
-                context=context,
+                context=resolved_context,
                 lock_factory=lock_factory,
                 close_parent=True,
             )
@@ -270,7 +287,7 @@ def make_async_container(
             container = AsyncContainer(
                 *container.child_registries,
                 parent_container=container,
-                context=context,
+                context=resolved_context,
                 lock_factory=lock_factory,
                 close_parent=True,
             )

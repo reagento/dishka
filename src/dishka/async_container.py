@@ -176,13 +176,21 @@ class AsyncContainer:
             return await self._get_unlocked(key)
 
     async def _get_unlocked(self, key: DependencyKey) -> Any:
-        if key in self._cache:
-            return self._cache[key]
-        compiled = self.registry.get_compiled_async(key)
+        normalized_type = DependencyKey(
+            unwrap_type_alias(key.type_hint),
+            key.component,
+        )
+
+        if normalized_type in self._cache:
+            return self._cache[normalized_type]
+
+        compiled = self.registry.get_compiled_async(normalized_type)
+
         if not compiled:
             if not self.parent_container:
-                raise NoFactoryError(key)
-            return await self.parent_container._get(key)  # noqa: SLF001
+                raise NoFactoryError(normalized_type)
+            return await self.parent_container._get(normalized_type)  # noqa: SLF001
+
         try:
             return await compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:
@@ -190,7 +198,9 @@ class AsyncContainer:
             # return Factory. This happens because registry.get_compiled
             # uses the same method and returns None if the factory is not found
             # If None is returned, then go to the parent container
-            e.add_path(cast(Factory, self.registry.get_factory(key)))
+            e.add_path(
+                cast(Factory, self.registry.get_factory(normalized_type)),
+            )
             raise
 
     async def close(self, exception: BaseException | None = None) -> None:

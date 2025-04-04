@@ -58,13 +58,15 @@ class Container:
         self._context = {CONTAINER_KEY: self}
         if context:
             for key, value in context.items():
-                resolved_key = unwrap_type_alias(key)
-                if not isinstance(key, DependencyKey):
-                    resolved_key = DependencyKey(
-                        resolved_key,
-                        DEFAULT_COMPONENT,
-                    )  # noqa: PLW2901
-                self._context[resolved_key] = value
+                original_key = key
+                normalized_key = unwrap_type_alias(key)
+
+                original_key = self._get_dependency_key(original_key)
+                self._context[original_key] = value
+
+                normalized_key = self._get_dependency_key(normalized_key)
+                self._context[normalized_key] = value
+
         self._cache = {**self._context}
         self.parent_container = parent_container
 
@@ -176,13 +178,21 @@ class Container:
             return self._get_unlocked(key)
 
     def _get_unlocked(self, key: DependencyKey) -> Any:
-        if key in self._cache:
-            return self._cache[key]
-        compiled = self.registry.get_compiled(key)
+        normalized_type = DependencyKey(
+            unwrap_type_alias(key.type_hint),
+            key.component,
+        )
+
+        if normalized_type in self._cache:
+            return self._cache[normalized_type]
+
+        compiled = self.registry.get_compiled(normalized_type)
+
         if not compiled:
             if not self.parent_container:
-                raise NoFactoryError(key)
-            return self.parent_container._get(key)  # noqa: SLF001
+                raise NoFactoryError(normalized_type)
+            return self.parent_container._get(normalized_type)  # noqa: SLF001
+
         try:
             return compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:
@@ -213,6 +223,14 @@ class Container:
         if errors:
             raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
+    @staticmethod
+    def _get_dependency_key(key: Any) -> Any:
+        if not isinstance(key, DependencyKey):
+            return DependencyKey(
+                key,
+                DEFAULT_COMPONENT,
+            )
+        return key
 
 class ContextWrapper:
     __slots__ = ("container",)

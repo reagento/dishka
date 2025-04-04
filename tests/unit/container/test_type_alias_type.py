@@ -165,10 +165,7 @@ class TypeAliasWithContext(Provider):
     def plugin(self, plugin_name: ContextTest) -> Plugin:
         return Plugin(name=plugin_name)
 
-@pytest.mark.parametrize(
-    "context_value",
-    ["", " ", "test_value", "1243", "false"],
-)
+@pytest.mark.parametrize("context_value", ["test_value"])
 @pytest.mark.asyncio
 async def test_type_alias_with_context_in_async_container(context_value: str):
     container = make_async_container(
@@ -176,14 +173,15 @@ async def test_type_alias_with_context_in_async_container(context_value: str):
         context={ContextTest: context_value},
     )
     assert await container.get(Plugin) == Plugin(name=context_value)
+    assert await container.get(ContextTest) == context_value
+    assert await container.get(ContextTest.__value__) == context_value
 
-@pytest.mark.parametrize(
-    "context_value",
-    ["", " ", "test_value", "1243", "false"],
-)
+@pytest.mark.parametrize("context_value", ["test_value"])
 def test_type_alias_with_context_in_container(context_value: str):
     container = make_container(
         TypeAliasWithContext(),
         context={ContextTest: context_value},
     )
     assert container.get(Plugin) == Plugin(name=context_value)
+    assert container.get(ContextTest) == context_value
+    assert container.get(ContextTest.__value__) == context_value

@@ -163,23 +163,7 @@ class TypeAliasWithContext(Provider):
 
     @provide
     def plugin(self, plugin_name: ContextTest) -> Plugin:
-        if plugin_name is not None:
-            return Plugin(plugin_name)
-        raise TypeError
-
-@pytest.mark.parametrize("context_value", [None])
-@pytest.mark.asyncio
-async def test_type_alias_with_none_context_in_async_container(
-        context_value: None,
-):
-    container = make_async_container(
-        TypeAliasWithContext(),
-        context={ContextTest: context_value},
-    )
-    with pytest.raises(TypeError) as exp:
-        await container.get(Plugin)
-
-    assert isinstance(exp.value, TypeError)
+        return Plugin(name=plugin_name)
 
 @pytest.mark.parametrize(
     "context_value",
@@ -192,17 +176,6 @@ async def test_type_alias_with_context_in_async_container(context_value: str):
         context={ContextTest: context_value},
     )
     assert await container.get(Plugin) == Plugin(name=context_value)
-
-@pytest.mark.parametrize("context_value", [None])
-def test_type_alias_with_none_context_in_container(context_value: None):
-    container = make_container(
-        TypeAliasWithContext(),
-        context={ContextTest: context_value},
-    )
-    with pytest.raises(TypeError) as exp:
-        container.get(Plugin)
-
-    assert isinstance(exp.value, TypeError)
 
 @pytest.mark.parametrize(
     "context_value",

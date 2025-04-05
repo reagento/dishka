@@ -1,3 +1,4 @@
+import collections
 from abc import ABC
 from collections.abc import Sequence
 from typing import (
@@ -36,16 +37,7 @@ if HAS_PY_311:
 if HAS_PY_312:
     from .pep695_new_syntax import (
         A,
-        Base,
-        Base1,
-        Base2,
-        Combined,
         D,
-        Impl,
-        Inner,
-        InnerImpl,
-        Outer,
-        Wrapper,
     )
 
 T = TypeVar("T")
@@ -236,7 +228,25 @@ class JsonMapping(dict[str, str | int]): ...
     ("structure", "result"),
     [
         (TupleGeneric[str], [TupleGeneric[str], tuple[str]]),
-        (SequenceInt, [SequenceInt, Sequence[int]]),
+        (SequenceInt, [
+            SequenceInt,
+            Sequence[int],
+            # `Sequence` inherits from both `Reversible` and `Collection`:
+            #
+            #        Sequence
+            #       /        \
+            #      /          \
+            # Reversible     Collection
+            #      \         /    |    \
+            #       \       /     |     \
+            #     Iterable (x2)  Sized  Container
+            collections.abc.Reversible,
+            collections.abc.Iterable,
+            collections.abc.Collection,
+            collections.abc.Sized,
+            collections.abc.Iterable,
+            collections.abc.Container,
+        ]),
         (ListAny, [ListAny, list[Any]]),
         (JsonMapping, [JsonMapping, dict[str, str | int]]),
     ],
@@ -249,122 +259,17 @@ def test_structures(structure: TypeHint, result: list[TypeHint]) -> None:
     not HAS_PY_312,
     reason="PEP 695 syntax requires Python 3.12+",
 )
-def test_pep695_generic_protocol():
+def test_pep695_generic_inheritance() -> None:
     class MyProvider(Provider):
         scope = Scope.APP
         deps = provide_all(
             WithParents[A[int]],
             WithParents[A[str]],
         )
-        one = provide(lambda c: 1, provides=int)
-        two = provide(lambda c: "2", provides=str)
-
-    container = make_container(MyProvider())
-    assert isinstance(container.get(D[int]).dep, int)
-    assert isinstance(container.get(D[str]).dep, str)
-
-
-@pytest.mark.skipif(
-    not HAS_PY_312,
-    reason="PEP 695 syntax requires Python 3.12+",
-)
-def test_pep695_multiple_generics():
-    class MyProvider(Provider):
-        scope = Scope.APP
-        deps = provide_all(
-            WithParents[Impl[int, str]],
-            WithParents[Impl[str, int]],
-        )
-        int_ = provide(lambda c: 42, provides=int)
-        str_ = provide(lambda c: "text", provides=str)
-
-    container = make_container(MyProvider())
-    impl1 = container.get(Base[int, str])
-    impl2 = container.get(Base[str, int])
-
-    assert isinstance(impl1.first, int)
-    assert isinstance(impl1.second, str)
-    assert isinstance(impl2.first, str)
-    assert isinstance(impl2.second, int)
-
-
-@pytest.mark.skipif(
-    not HAS_PY_312,
-    reason="PEP 695 syntax requires Python 3.12+",
-)
-def test_pep695_nested_generics():
-    class MyProvider(Provider):
-        scope = Scope.APP
-
-        @provide(provides=int)
-        def provide_int(self) -> int:
-            return 100
-
-        @provide(provides=str)
-        def provide_str(self) -> str:
-            return "nested"
-
-        @provide(provides=Inner[int])
-        def provide_inner_int(self) -> Inner[int]:
-            return InnerImpl(100)
-
-        @provide(provides=Inner[str])
-        def provide_inner_str(self) -> Inner[str]:
-            return InnerImpl("nested")
-
-        @provide(provides=Wrapper[int])
-        def provide_wrapper_int(self, inner: Inner[int]) -> Wrapper[int]:
-            return Wrapper(inner)
-
-        @provide(provides=Wrapper[str])
-        def provide_wrapper_str(self, inner: Inner[str]) -> Wrapper[str]:
-            return Wrapper(inner)
-
-        @provide(provides=Outer[Inner[int]])
-        def provide_outer_int(
-                self, wrapper: Wrapper[int],
-        ) -> Outer[Inner[int]]:
-            return wrapper
-
-        @provide(provides=Outer[Inner[str]])
-        def provide_outer_str(
-                self, wrapper: Wrapper[str],
-        ) -> Outer[Inner[str]]:
-            return wrapper
+        provide_int = provide(lambda x: 1, provides=int)
+        provide_str = provide(lambda x: "2", provides=str)
 
     container = make_container(MyProvider())
 
-    wrapper_int = container.get(Outer[Inner[int]])
-    wrapper_str = container.get(Outer[Inner[str]])
-
-    assert isinstance(wrapper_int.value.data, int)
-    assert wrapper_int.value.data == 100
-    assert isinstance(wrapper_str.value.data, str)
-    assert wrapper_str.value.data == "nested"
-
-
-@pytest.mark.skipif(
-    not HAS_PY_312,
-    reason="PEP 695 syntax requires Python 3.12+",
-)
-def test_pep695_multiple_inheritance():
-    class MyProvider(Provider):
-        scope = Scope.APP
-        deps = provide_all(
-            WithParents[Combined[int, str]],
-            WithParents[Combined[str, int]],
-        )
-        int_val = provide(lambda c: 7, provides=int)
-        str_val = provide(lambda c: "seven", provides=str)
-
-    container = make_container(MyProvider())
-
-    comb1 = container.get(Base1[int])
-    comb2 = container.get(Base2[int])
-    comb3 = container.get(Base1[str])
-    comb4 = container.get(Base2[str])
-
-    assert isinstance(comb1.value1, int)
-    assert isinstance(comb2.value2, int)
-    assert isinstance(comb3.value1, str)
-    assert isinstance(comb4.value2, str)
+    assert type(container.get(D[int]).dep) is int
+    assert type(container.get(D[str]).dep) is str

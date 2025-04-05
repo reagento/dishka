@@ -1,5 +1,7 @@
 from abc import ABC, ABCMeta
+from collections.abc import Iterable
 from enum import Enum
+from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Final,
@@ -7,18 +9,30 @@ from typing import (
     Protocol,
     TypeAlias,
     TypeVar,
-    get_args,
-    get_origin,
+    TypeVarTuple,
+    Unpack,
 )
 
 from dishka._adaptix.common import TypeHint
-from dishka._adaptix.feature_requirement import HAS_PY_311
-from dishka._adaptix.type_tools.basic_utils import is_parametrized
+from dishka._adaptix.feature_requirement import (
+    HAS_PY_311,
+    HAS_TV_TUPLE,
+    HAS_UNPACK,
+)
+from dishka._adaptix.type_tools import (  # type: ignore[attr-defined]
+    normalize_type,
+)
+from dishka._adaptix.type_tools.basic_utils import (
+    get_type_vars_of_parametrized,
+    is_generic,
+    is_parametrized,
+)
 from dishka._adaptix.type_tools.fundamentals import (
     get_generic_args,
     get_type_vars,
     strip_alias,
 )
+from dishka._adaptix.type_tools.implicit_params import fill_implicit_params
 from dishka.entities.provides_marker import ProvideMultiple
 
 __all__ = ["ParentsResolver", "WithParents"]
@@ -36,7 +50,8 @@ IGNORE_TYPES: Final = (
     Exception,
     BaseException,
 )
-TypeVarsMap: TypeAlias = dict[TypeHint, TypeHint]
+
+TypeArgsTuple: TypeAlias = tuple[TypeHint, ...]
 
 if HAS_PY_311:
 
@@ -93,103 +108,86 @@ class ParentsResolver:
     def get_parents(self, child_type: TypeHint) -> list[TypeHint]:
         if is_ignored_type(strip_alias(child_type)):
             raise StartingClassIgnoredError(child_type)
-        if is_parametrized(child_type) or has_orig_bases(child_type):
-            return self._get_parents_for_generic(child_type)
-        return self._get_parents_for_mro(child_type)
+        return list(self._resolve_parents(child_type))
 
-    def _get_parents_for_generic(
-        self,
-        child_type: TypeHint,
-    ) -> list[TypeHint]:
-        parents: list[TypeHint] = []
-        self._recursion_get_parents(
-            child_type=child_type,
-            parents=parents,
-            type_vars_map={},
-        )
-        return parents
+    def _resolve_parents(self, tp: TypeHint) -> Iterable[TypeHint]:
+        result = [tp]
+        for parent in self._fetch_parents(tp):
+            if not is_ignored_type(parent):
+                result.extend(self._resolve_parents(parent))
+        return result
 
-    def _recursion_get_parents(
-        self,
-        child_type: TypeHint,
-        parents: list[TypeHint],
-        type_vars_map: TypeVarsMap,
-    ) -> None:
-        origin_child_type = strip_alias(child_type)
-        parametrized = is_parametrized(child_type)
-        orig_bases = has_orig_bases(origin_child_type)
-
-        if not orig_bases and not parametrized:
-            parents.extend(
-                self._get_parents_for_mro(origin_child_type),
+    def _fetch_parents(self, tp: TypeHint) -> list[TypeHint]:
+        if is_parametrized(tp):
+            return self._get_parents_of_parametrized_generic(tp)
+        if is_generic(tp):
+            return self._get_parents_of_parametrized_generic(
+                fill_implicit_params(tp),
             )
-            return
+        return self._get_parents(tp)
 
-        new_type_vars_map = create_type_vars_map(child_type)
-        new_type_vars_map.update(type_vars_map)
-        parents.append(
-            self._create_type(
-                obj=child_type,
-                type_vars_map=new_type_vars_map,
-            ),
-        )
-        if not orig_bases:
-            return
-
-        bases = getattr(origin_child_type, "__orig_bases__", None)
-        if bases is None:
-            bases = getattr(origin_child_type, "__orig_bases__", None) or ()
-
-        for parent_type in bases:
-            origin_parent_type = strip_alias(parent_type)
-            if is_ignored_type(origin_parent_type):
-                continue
-
-            if (
-                hasattr(origin_child_type, "__type_params__") and
-                is_parametrized(parent_type)
-            ):
-                origin = get_origin(parent_type)
-                if origin is not None:
-                    args = get_args(parent_type)
-                    new_args = [
-                        new_type_vars_map.get(arg, arg) for arg in args
-                    ]
-                    parent_type = origin[tuple(new_args)]  # noqa: PLW2901
-
-            self._recursion_get_parents(
-                child_type=parent_type,
-                parents=parents,
-                type_vars_map=new_type_vars_map,
-            )
-
-    def _get_parents_for_mro(
-        self,
-        child_type: TypeHint,
+    def _get_parents_of_parametrized_generic(
+            self,
+            parametrized_generic: TypeHint,
     ) -> list[TypeHint]:
+        origin = strip_alias(parametrized_generic)
+        type_var_to_actual = self._get_type_var_to_actual(
+            get_type_vars(origin),
+            self._unpack_args(get_generic_args(parametrized_generic)),
+        )
         return [
-            parent_type for parent_type in child_type.mro()
-            if not is_ignored_type(strip_alias(parent_type))
+            self._parametrize_by_dict(type_var_to_actual, tp)
+            for tp in self._get_parents(origin)
         ]
 
-    def _create_type(
-        self,
-        obj: TypeHint,
-        type_vars_map: TypeVarsMap,
-    ) -> TypeHint:
-        origin_obj = strip_alias(obj)
-        type_vars = get_type_vars(origin_obj) or get_type_vars(obj)
-        if not type_vars:
-            return obj
+    def _unpack_args(self, args: TypeArgsTuple) -> TypeArgsTuple:
+        if HAS_UNPACK and any(strip_alias(arg) == Unpack for arg in args):
+            subscribed = tuple[args]  # type: ignore[valid-type]
+            return tuple(arg.source for arg in normalize_type(subscribed).args)
+        return args
 
-        generic_args = []
-        for type_var in type_vars:
-            arg = type_vars_map[type_var]
-            if isinstance(arg, list):
-                generic_args.extend(arg)
+    def _get_type_var_to_actual(
+            self,
+            type_vars: TypeArgsTuple,
+            args: TypeArgsTuple,
+    ) -> dict[TypeHint, TypeArgsTuple]:
+        result = {}
+        idx = 0
+        for tv in type_vars:
+            if HAS_TV_TUPLE and isinstance(tv, TypeVarTuple):
+                tuple_len = len(args) - len(type_vars) + 1
+                result[tv] = args[idx : idx + tuple_len]
+                idx += tuple_len
             else:
-                generic_args.append(arg)
-        return origin_obj[tuple(generic_args)]
+                result[tv] = (args[idx],)
+                idx += 1
+
+        return result
+
+    def _parametrize_by_dict(
+            self,
+            type_var_to_actual: dict[TypeHint, TypeArgsTuple],
+            tp: TypeHint,
+    ) -> TypeHint:
+        params = get_type_vars_of_parametrized(tp)
+        if not params:
+            return tp
+        return tp[
+            tuple(
+                chain.from_iterable(
+                    type_var_to_actual[type_var] for type_var in params
+                ),
+            )
+        ]
+
+    def _get_parents(self, tp: TypeHint) -> list[TypeHint]:
+        if hasattr(tp, "__orig_bases__"):
+            return [
+                parent
+                for parent in tp.__orig_bases__
+                if strip_alias(parent) not in (Generic, Protocol)
+            ]
+        return list(tp.__bases__)
 
 
 if TYPE_CHECKING:

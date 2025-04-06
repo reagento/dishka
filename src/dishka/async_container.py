@@ -58,12 +58,23 @@ class AsyncContainer:
         self._context = {CONTAINER_KEY: self}
         if context:
             for key, value in context.items():
-                if not isinstance(key, DependencyKey):
-                    key = DependencyKey(  # noqa: PLW2901
-                        key,
+                original_key = key
+                normalized_key = unwrap_type_alias(key)
+
+                if not isinstance(original_key, DependencyKey):
+                    original_key = DependencyKey(
+                        original_key,
                         DEFAULT_COMPONENT,
                     )
-                self._context[key] = value
+                self._context[original_key] = value
+
+                if not isinstance(normalized_key, DependencyKey):
+                    normalized_key = DependencyKey(
+                        normalized_key,
+                        DEFAULT_COMPONENT,
+                    )
+                self._context[normalized_key] = value
+
         self._cache = {**self._context}
         self.parent_container = parent_container
 
@@ -198,9 +209,7 @@ class AsyncContainer:
             # return Factory. This happens because registry.get_compiled
             # uses the same method and returns None if the factory is not found
             # If None is returned, then go to the parent container
-            e.add_path(
-                cast(Factory, self.registry.get_factory(normalized_type)),
-            )
+            e.add_path(cast(Factory, self.registry.get_factory(key)))
             raise
 
     async def close(self, exception: BaseException | None = None) -> None:
@@ -254,12 +263,6 @@ def make_async_container(
         start_scope: BaseScope | None = None,
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,
 ) -> AsyncContainer:
-    resolved_context = None
-    if context is not None:
-        resolved_context = {
-            unwrap_type_alias(key): value
-            for key, value in context.items()
-        }
     registries = RegistryBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,
@@ -269,7 +272,7 @@ def make_async_container(
     ).build()
     container = AsyncContainer(
         *registries,
-        context=resolved_context,
+        context=context,
         lock_factory=lock_factory,
     )
 
@@ -278,7 +281,7 @@ def make_async_container(
             container = AsyncContainer(
                 *container.child_registries,
                 parent_container=container,
-                context=resolved_context,
+                context=context,
                 lock_factory=lock_factory,
                 close_parent=True,
             )
@@ -287,7 +290,7 @@ def make_async_container(
             container = AsyncContainer(
                 *container.child_registries,
                 parent_container=container,
-                context=resolved_context,
+                context=context,
                 lock_factory=lock_factory,
                 close_parent=True,
             )

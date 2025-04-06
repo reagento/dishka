@@ -1,3 +1,4 @@
+import typing
 from abc import ABC, ABCMeta
 from collections.abc import Iterable
 from enum import Enum
@@ -9,8 +10,6 @@ from typing import (
     Protocol,
     TypeAlias,
     TypeVar,
-    TypeVarTuple,
-    Unpack,
 )
 
 from dishka._adaptix.common import TypeHint
@@ -141,7 +140,9 @@ class ParentsResolver:
         ]
 
     def _unpack_args(self, args: TypeArgsTuple) -> TypeArgsTuple:
-        if HAS_UNPACK and any(strip_alias(arg) == Unpack for arg in args):
+        if HAS_UNPACK and any(
+                strip_alias(arg) == typing.Unpack for arg in args  # type: ignore[attr-defined, unused-ignore]
+        ):
             subscribed = tuple[args]  # type: ignore[valid-type]
             return tuple(arg.source for arg in normalize_type(subscribed).args)
         return args
@@ -154,7 +155,7 @@ class ParentsResolver:
         result = {}
         idx = 0
         for tv in type_vars:
-            if HAS_TV_TUPLE and isinstance(tv, TypeVarTuple):
+            if HAS_TV_TUPLE and isinstance(tv, typing.TypeVarTuple):  # type: ignore[attr-defined, unused-ignore]
                 tuple_len = len(args) - len(type_vars) + 1
                 result[tv] = args[idx : idx + tuple_len]
                 idx += tuple_len

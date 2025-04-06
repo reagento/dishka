@@ -61,10 +61,18 @@ class Container:
                 original_key = key
                 normalized_key = unwrap_type_alias(key)
 
-                original_key = self._get_dependency_key(original_key)
+                if not isinstance(original_key, DependencyKey):
+                    original_key = DependencyKey(
+                        original_key,
+                        DEFAULT_COMPONENT,
+                    )
                 self._context[original_key] = value
 
-                normalized_key = self._get_dependency_key(normalized_key)
+                if not isinstance(normalized_key, DependencyKey):
+                    normalized_key = DependencyKey(
+                        normalized_key,
+                        DEFAULT_COMPONENT,
+                    )
                 self._context[normalized_key] = value
 
         self._cache = {**self._context}

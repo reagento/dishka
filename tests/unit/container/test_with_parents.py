@@ -36,8 +36,8 @@ if HAS_PY_311:
 
 if HAS_PY_312:
     from .pep695_new_syntax import (
-        A,
-        D,
+        Base,
+        ImplBase,
     )
 
 T = TypeVar("T")
@@ -263,13 +263,13 @@ def test_pep695_generic_inheritance() -> None:
     class MyProvider(Provider):
         scope = Scope.APP
         deps = provide_all(
-            WithParents[A[int]],
-            WithParents[A[str]],
+            WithParents[ImplBase[int]],
+            WithParents[ImplBase[str]],
         )
         provide_int = provide(lambda x: 1, provides=int)
         provide_str = provide(lambda x: "2", provides=str)
 
     container = make_container(MyProvider())
 
-    assert type(container.get(D[int]).dep) is int
-    assert type(container.get(D[str]).dep) is str
+    assert type(container.get(Base[int]).value) is int
+    assert type(container.get(Base[str]).value) is str

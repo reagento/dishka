@@ -19,7 +19,8 @@ from dishka.entities.key import (
     hint_to_dependency_key,
 )
 from dishka.provider.exceptions import (
-    InvalidSourceError, MissingHintsError,
+    InvalidSourceError,
+    MissingHintsError,
     MissingReturnHintError,
     NoScopeSetInContextError,
     NoScopeSetInProvideError,
@@ -29,7 +30,8 @@ from dishka.provider.exceptions import (
 from dishka.provider.make_factory import (
     make_factory,
     provide_all,
-    provide_all_on_instance, provide_on_instance,
+    provide_all_on_instance,
+    provide_on_instance,
 )
 from .sample_providers import (
     ClassA,
@@ -535,15 +537,15 @@ def test_not_a_factory():
         provide,
         provide_all,
         lambda source: provide_on_instance(source=source),
-        provide_all_on_instance
-    ]
+        provide_all_on_instance,
+    ],
 )
 def test_protocol_cannot_be_source_in_provide(provide_func):
+    class AProtocol(Protocol): ...
+
     with pytest.raises(
         InvalidSourceError,
-        match=".*cannot be used.*\n.*seems that this is a Protocol.*"
+        match=".*cannot be used.*\n.*seems that this is a Protocol.*",
     ):
-        class AProtocol(Protocol): ...
-
         class P(Provider):
             p = provide_func(AProtocol)

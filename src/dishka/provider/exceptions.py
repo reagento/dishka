@@ -5,7 +5,6 @@ from dishka._adaptix.type_tools import is_protocol
 from dishka.exception_base import DishkaError
 from dishka.text_rendering import get_name
 
-
 ProvideSource: TypeAlias = (
     Callable[..., Any]
     | classmethod  # type: ignore[type-arg]

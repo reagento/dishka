@@ -37,7 +37,8 @@ from typing import (
 from dishka._adaptix.type_tools.basic_utils import (  # type: ignore[attr-defined]
     get_type_vars,
     is_bare_generic,
-    is_protocol, strip_alias,
+    is_protocol,
+    strip_alias,
 )
 from dishka._adaptix.type_tools.fundamentals import (
     get_all_type_hints,
@@ -64,7 +65,8 @@ from dishka.entities.type_alias_type import (
 )
 from dishka.text_rendering import get_name
 from .exceptions import (
-    InvalidSourceError, MissingHintsError,
+    InvalidSourceError,
+    MissingHintsError,
     MissingReturnHintError,
     NotAFactoryError,
     UndefinedTypeAnalysisError,

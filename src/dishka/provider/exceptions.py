@@ -1,7 +1,7 @@
 from collections.abc import Callable, Sequence
 from typing import Any, TypeAlias
 
-from dishka._adaptix.type_tools import is_protocol
+from dishka._adaptix.type_tools.basic_utils import is_protocol
 from dishka.exception_base import DishkaError
 from dishka.text_rendering import get_name
 

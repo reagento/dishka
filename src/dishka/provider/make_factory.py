@@ -513,7 +513,7 @@ def _provide(
         recursive: bool = False,
         override: bool = False,
 ) -> CompositeDependencySource:
-    if is_protocol(source):
+    if source and is_protocol(source):
         raise InvalidSourceError(source)
     composite = ensure_composite(source)
     factory = make_factory(

@@ -37,7 +37,7 @@ from typing import (
 from dishka._adaptix.type_tools.basic_utils import (  # type: ignore[attr-defined]
     get_type_vars,
     is_bare_generic,
-    strip_alias,
+    is_protocol, strip_alias,
 )
 from dishka._adaptix.type_tools.fundamentals import (
     get_all_type_hints,
@@ -64,7 +64,7 @@ from dishka.entities.type_alias_type import (
 )
 from dishka.text_rendering import get_name
 from .exceptions import (
-    MissingHintsError,
+    InvalidSourceError, MissingHintsError,
     MissingReturnHintError,
     NotAFactoryError,
     UndefinedTypeAnalysisError,
@@ -511,6 +511,8 @@ def _provide(
         recursive: bool = False,
         override: bool = False,
 ) -> CompositeDependencySource:
+    if is_protocol(source):
+        raise InvalidSourceError(source)
     composite = ensure_composite(source)
     factory = make_factory(
         provides=provides, scope=scope,

@@ -1,8 +1,17 @@
 from collections.abc import Callable, Sequence
-from typing import Any
+from typing import Any, TypeAlias
 
+from dishka._adaptix.type_tools import is_protocol
 from dishka.exception_base import DishkaError
 from dishka.text_rendering import get_name
+
+
+ProvideSource: TypeAlias = (
+    Callable[..., Any]
+    | classmethod  # type: ignore[type-arg]
+    | staticmethod  # type: ignore[type-arg]
+    | type
+)
 
 
 class NotAFactoryError(TypeError, DishkaError):
@@ -141,3 +150,18 @@ class IndependentDecoratorError(ValueError, DishkaError):
             f"Decorator {name} does not depends on provided type.\n"
             f"Did you mean @provide instead of @decorate?"
         )
+
+
+class InvalidSourceError(TypeError, DishkaError):
+    def __init__(self, source: ProvideSource) -> None:
+        self.source = source
+
+    def __str__(self) -> str:
+        name = get_name(self.source, include_module=True)
+        msg = f"Class {name} cannot be used as a provider source."
+        if is_protocol(self.source):
+            msg += (
+                "\nTip: seems that this is a Protocol. "
+                "Please subclass it and provide the subclass."
+            )
+        return msg

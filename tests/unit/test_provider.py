@@ -19,14 +19,18 @@ from dishka.entities.key import (
     hint_to_dependency_key,
 )
 from dishka.provider.exceptions import (
-    MissingHintsError,
+    InvalidSourceError, MissingHintsError,
     MissingReturnHintError,
     NoScopeSetInContextError,
     NoScopeSetInProvideError,
     NotAFactoryError,
     UndefinedTypeAnalysisError,
 )
-from dishka.provider.make_factory import make_factory, provide_all
+from dishka.provider.make_factory import (
+    make_factory,
+    provide_all,
+    provide_all_on_instance, provide_on_instance,
+)
 from .sample_providers import (
     ClassA,
     async_func_a,
@@ -523,3 +527,23 @@ def test_factory_error_hints(source):
 def test_not_a_factory():
     with pytest.raises(NotAFactoryError):
         make_factory_by_source(source=None)
+
+
+@pytest.mark.parametrize(
+    "provide_func",
+    [
+        provide,
+        provide_all,
+        lambda source: provide_on_instance(source=source),
+        provide_all_on_instance
+    ]
+)
+def test_protocol_cannot_be_source_in_provide(provide_func):
+    with pytest.raises(
+        InvalidSourceError,
+        match=".*cannot be used.*\n.*seems that this is a Protocol.*"
+    ):
+        class AProtocol(Protocol): ...
+
+        class P(Provider):
+            p = provide_func(AProtocol)

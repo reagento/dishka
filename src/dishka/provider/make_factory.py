@@ -65,7 +65,6 @@ from dishka.entities.type_alias_type import (
 )
 from dishka.text_rendering import get_name
 from .exceptions import (
-    InvalidSourceError,
     MissingHintsError,
     MissingReturnHintError,
     NotAFactoryError,
@@ -447,6 +446,9 @@ def make_factory(
         is_in_class: bool,
         override: bool,
 ) -> Factory:
+    if source and is_protocol(source):
+        raise NotAFactoryError(source)
+
     if get_origin(source) is ProvideMultiple:
         if provides is None:
             provides = source
@@ -513,8 +515,6 @@ def _provide(
         recursive: bool = False,
         override: bool = False,
 ) -> CompositeDependencySource:
-    if source and is_protocol(source):
-        raise InvalidSourceError(source)
     composite = ensure_composite(source)
     factory = make_factory(
         provides=provides, scope=scope,

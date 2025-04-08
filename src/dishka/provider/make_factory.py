@@ -65,6 +65,7 @@ from dishka.entities.type_alias_type import (
 )
 from dishka.text_rendering import get_name
 from .exceptions import (
+    CannotUseProtocolError,
     MissingHintsError,
     MissingReturnHintError,
     NotAFactoryError,
@@ -447,7 +448,7 @@ def make_factory(
         override: bool,
 ) -> Factory:
     if source and is_protocol(source):
-        raise NotAFactoryError(source)
+        raise CannotUseProtocolError(source)
 
     if get_origin(source) is ProvideMultiple:
         if provides is None:
@@ -502,7 +503,7 @@ def make_factory(
             override=override,
         )
     else:
-        raise NotAFactoryError(type(source))
+        raise NotAFactoryError(source)
 
 
 def _provide(

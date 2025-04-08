@@ -1,7 +1,6 @@
 from collections.abc import Callable, Sequence
 from typing import Any, TypeAlias
 
-from dishka._adaptix.type_tools.basic_utils import is_protocol
 from dishka.exception_base import DishkaError
 from dishka.text_rendering import get_name
 
@@ -14,17 +13,20 @@ ProvideSource: TypeAlias = (
 
 
 class NotAFactoryError(TypeError, DishkaError):
-    def __init__(self, attempted_factory_type: type) -> None:
-        self.type = attempted_factory_type
+    def __init__(self, attempted_factory: Any) -> None:
+        self.attempted = attempted_factory
 
     def __str__(self) -> str:
-        msg = f"Cannot use {self.type} as a factory."
-        if is_protocol(self.type):
-            msg += (
-                "\nTip: seems that this is a Protocol. "
-                "Please subclass it and provide the subclass."
-            )
-        return msg
+        return f"Cannot use {self.attempted} as a factory."
+
+
+class CannotUseProtocolError(NotAFactoryError):
+    def __str__(self) -> str:
+        return (
+            f"Cannot use {self.attempted} as a factory.\n"
+            f"Tip: seems that this is a Protocol. "
+            "Please subclass it and provide the subclass."
+        )
 
 
 class UnsupportedGeneratorReturnTypeError(TypeError, DishkaError):

@@ -19,6 +19,7 @@ from dishka.entities.key import (
     hint_to_dependency_key,
 )
 from dishka.provider.exceptions import (
+    CannotUseProtocolError,
     MissingHintsError,
     MissingReturnHintError,
     NoScopeSetInContextError,
@@ -543,7 +544,7 @@ def test_protocol_cannot_be_source_in_provide(provide_func):
     class AProtocol(Protocol): ...
 
     with pytest.raises(
-        NotAFactoryError,
+        CannotUseProtocolError,
         match="Cannot use.*\n.*seems that this is a Protocol.*",
     ):
         class P(Provider):

@@ -1,15 +1,8 @@
 from collections.abc import Callable, Sequence
-from typing import Any, TypeAlias
+from typing import Any
 
 from dishka.exception_base import DishkaError
 from dishka.text_rendering import get_name
-
-ProvideSource: TypeAlias = (
-    Callable[..., Any]
-    | classmethod  # type: ignore[type-arg]
-    | staticmethod  # type: ignore[type-arg]
-    | type
-)
 
 
 class NotAFactoryError(TypeError, DishkaError):

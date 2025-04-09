@@ -10,7 +10,7 @@ class NotAFactoryError(TypeError, DishkaError):
         self.attempted = attempted_factory
 
     def __str__(self) -> str:
-        return f"Cannot use {self.attempted} as a factory."
+        return f"Cannot use {self.attempted!r} as a factory."
 
 
 class CannotUseProtocolError(NotAFactoryError):

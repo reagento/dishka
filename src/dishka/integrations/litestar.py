@@ -9,7 +9,7 @@ __all__ = [
 from collections.abc import Callable
 from functools import wraps
 from inspect import Parameter
-from typing import ParamSpec, TypeVar, get_type_hints
+from typing import ParamSpec, TypeVar, get_type_hints, override
 
 from litestar import Controller, Litestar, Request, Router, WebSocket
 from litestar.enums import ScopeType
@@ -126,6 +126,7 @@ def _resolve_value(
 class DishkaRouter(Router):
     __slots__ = ()
 
+    @override
     def register(self, value: ControllerRouterHandler) -> list[BaseRoute]:
         return super().register(_resolve_value(self, value))
 

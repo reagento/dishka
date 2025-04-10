@@ -1,5 +1,6 @@
 __all__ = [
     "FromDishka",
+    "TaskiqProvider",
     "inject",
     "setup_dishka",
 ]

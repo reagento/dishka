@@ -37,6 +37,7 @@ from typing import (
 from dishka._adaptix.type_tools.basic_utils import (  # type: ignore[attr-defined]
     get_type_vars,
     is_bare_generic,
+    is_protocol,
     strip_alias,
 )
 from dishka._adaptix.type_tools.fundamentals import (
@@ -64,6 +65,7 @@ from dishka.entities.type_alias_type import (
 )
 from dishka.text_rendering import get_name
 from .exceptions import (
+    CannotUseProtocolError,
     MissingHintsError,
     MissingReturnHintError,
     NotAFactoryError,
@@ -445,6 +447,9 @@ def make_factory(
         is_in_class: bool,
         override: bool,
 ) -> Factory:
+    if source and is_protocol(source):
+        raise CannotUseProtocolError(source)
+
     if get_origin(source) is ProvideMultiple:
         if provides is None:
             provides = source
@@ -498,7 +503,7 @@ def make_factory(
             override=override,
         )
     else:
-        raise NotAFactoryError(type(source))
+        raise NotAFactoryError(source)
 
 
 def _provide(

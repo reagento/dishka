@@ -14,6 +14,7 @@ from dishka.entities.scope import BaseScope, Scope
 from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .dependency_source import Factory
+from .entities.type_alias_type import unwrap_type_alias
 from .entities.validation_settigs import DEFAULT_VALIDATION, ValidationSettings
 from .exceptions import (
     ChildScopeNotFoundError,
@@ -57,12 +58,23 @@ class AsyncContainer:
         self._context = {CONTAINER_KEY: self}
         if context:
             for key, value in context.items():
-                if not isinstance(key, DependencyKey):
-                    key = DependencyKey(  # noqa: PLW2901
-                        key,
+                original_key = key
+                normalized_key = unwrap_type_alias(key)
+
+                if not isinstance(original_key, DependencyKey):
+                    original_key = DependencyKey(
+                        original_key,
                         DEFAULT_COMPONENT,
                     )
-                self._context[key] = value
+                self._context[original_key] = value
+
+                if not isinstance(normalized_key, DependencyKey):
+                    normalized_key = DependencyKey(
+                        normalized_key,
+                        DEFAULT_COMPONENT,
+                    )
+                self._context[normalized_key] = value
+
         self._cache = {**self._context}
         self.parent_container = parent_container
 
@@ -175,13 +187,21 @@ class AsyncContainer:
             return await self._get_unlocked(key)
 
     async def _get_unlocked(self, key: DependencyKey) -> Any:
-        if key in self._cache:
-            return self._cache[key]
-        compiled = self.registry.get_compiled_async(key)
+        normalized_type = DependencyKey(
+            unwrap_type_alias(key.type_hint),
+            key.component,
+        )
+
+        if normalized_type in self._cache:
+            return self._cache[normalized_type]
+
+        compiled = self.registry.get_compiled_async(normalized_type)
+
         if not compiled:
             if not self.parent_container:
-                raise NoFactoryError(key)
-            return await self.parent_container._get(key)  # noqa: SLF001
+                raise NoFactoryError(normalized_type)
+            return await self.parent_container._get(normalized_type)  # noqa: SLF001
+
         try:
             return await compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:

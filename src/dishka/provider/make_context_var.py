@@ -8,6 +8,7 @@ from dishka.dependency_source import (
 from dishka.entities.component import DEFAULT_COMPONENT
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
+from dishka.entities.type_alias_type import unwrap_type_alias
 
 
 def from_context(
@@ -22,7 +23,7 @@ def from_context(
             scope=scope,
             override=override,
             provides=DependencyKey(
-                type_hint=provides,
+                type_hint=unwrap_type_alias(provides),
                 component=DEFAULT_COMPONENT,
             ),
         ),

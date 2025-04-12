@@ -13,3 +13,4 @@ type IntegerWithComponent = Annotated[int, FromComponent("X")]
 type IterableInt = Iterable[Integer]
 type IntStr = Integer | String
 type BytesMemoryView = bytes | memoryview
+type StrNone = String | None

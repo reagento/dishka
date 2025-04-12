@@ -101,12 +101,14 @@ def test_type_alias_from_context():
     value = "value"
     container = make_container(MainProvider(), context={StrNone: value})
     assert container.get(StrNone) == value
+    assert container.get(StrNone.__value__) == value
 
 @pytest.mark.asyncio
 async def test_type_alias_from_context_async():
     value = "value"
     container = make_async_container(MainProvider(), context={StrNone: value})
     assert await container.get(StrNone) == value
+    assert await container.get(StrNone.__value__) == value
 
 
 class ComponentProvider(Provider):

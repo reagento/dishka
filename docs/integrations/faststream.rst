@@ -284,18 +284,18 @@ Testing FastStream with dishka
 
     @pytest.fixture
     async def app(broker: RabbitBroker, container: AsyncContainer) -> FastStream:
-        app = FastStream(test_broker)
+        app = FastStream(broker)
         faststream_integration.setup_dishka(container, app, auto_inject=True)
-        return FastStream(test_broker)
+        return FastStream(broker)
 
 
     @pytest.fixture
     async def client(app: FastStream) -> AsyncIterator[RabbitBroker]:
-        async with TestRabbitBroker(test_app.broker) as br, TestApp(test_app):
+        async with TestRabbitBroker(app.broker) as br, TestApp(app):
             yield br
 
 
     @pytest.mark.asyncio
     async def test_handler(client: RabbitBroker) -> None:
-        result = await test_client.request("hello", "test-queue")
+        result = await client.request("hello", "test-queue")
         assert await result.decode() == 42

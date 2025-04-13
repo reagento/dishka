@@ -1,6 +1,7 @@
 from typing import Any
 
 from dishka.dependency_source import (
+    Alias,
     CompositeDependencySource,
     ContextVariable,
     context_stub,
@@ -8,6 +9,10 @@ from dishka.dependency_source import (
 from dishka.entities.component import DEFAULT_COMPONENT
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
+from dishka.entities.type_alias_type import (
+    is_type_alias_type,
+    unwrap_type_alias,
+)
 
 
 def from_context(
@@ -27,4 +32,15 @@ def from_context(
             ),
         ),
     )
+
+    if is_type_alias_type(provides):
+        base_type = unwrap_type_alias(provides)
+        composite.dependency_sources.append(
+            Alias(
+                source=DependencyKey(provides, DEFAULT_COMPONENT),
+                provides=DependencyKey(base_type, DEFAULT_COMPONENT),
+                cache=True,
+                override=override,
+            ),
+        )
     return composite

@@ -6,10 +6,12 @@ from .name import get_name
 
 
 def render_suggestions_for_missing(
-        requested_for: FactoryData | None,
-        requested_key: DependencyKey,
-        suggest_other_scopes: Sequence[FactoryData],
-        suggest_other_components: Sequence[FactoryData],
+    requested_for: FactoryData | None,
+    requested_key: DependencyKey,
+    suggest_other_scopes: Sequence[FactoryData],
+    suggest_other_components: Sequence[FactoryData],
+    suggest_abstract_dependencies: Sequence[DependencyKey],
+    suggest_concrete_dependencies: Sequence[DependencyKey],
 ) -> str:
     suggestion = ""
     if suggest_other_scopes:
@@ -30,4 +32,29 @@ def render_suggestions_for_missing(
             for f in suggest_other_components
         )
         suggestion += f"\n * Try using {components_str}"
+
+    if suggest_abstract_dependencies:
+        abstract_names = ", ".join(
+            f"`{get_name(dependency.type_hint, include_module=False)}`"
+            for dependency in suggest_abstract_dependencies
+        )
+
+        suggestion += "\n * Found factories for more abstract dependencies: "
+        suggestion += abstract_names
+        suggestion += ". Probably solve the problem by using `AnyOf` "
+        suggestion += "or changing the requested dependency to a more abstract"
+
+    if suggest_concrete_dependencies:
+        concreate_names = ", ".join(
+            f"`{get_name(dependency.type_hint, include_module=False)}`"
+            for dependency in suggest_concrete_dependencies
+        )
+        deb_name = get_name(requested_key.type_hint, include_module=False)
+
+        suggestion += "\n * Found factories for more concrete dependencies: "
+        suggestion += concreate_names
+        suggestion += ". Probably solve the problem by using `WithParents` "
+        suggestion += "or changing `provides` to "
+        suggestion += f"`{deb_name}`"
+
     return suggestion

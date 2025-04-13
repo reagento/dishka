@@ -179,8 +179,31 @@ class Container:
         compiled = self.registry.get_compiled(key)
         if not compiled:
             if not self.parent_container:
-                raise NoFactoryError(key)
-            return self.parent_container._get(key)  # noqa: SLF001
+                abstract_dependencies = (
+                    self.registry.get_more_abstract_dependencies(key)
+                )
+                concrete_dependencies = (
+                    self.registry.get_more_concrete_dependencies(key)
+                )
+
+                raise NoFactoryError(
+                    key,
+                    suggest_abstract_dependencies=abstract_dependencies,
+                    suggest_concrete_dependencies=concrete_dependencies,
+                )
+            try:
+                return self.parent_container._get(key)  # noqa: SLF001
+            except NoFactoryError as ex:
+                abstract_dependencies = (
+                    self.registry.get_more_abstract_dependencies(key)
+                )
+                concrete_dependencies = (
+                    self.registry.get_more_concrete_dependencies(key)
+                )
+                ex.suggest_abstract_dependencies.extend(abstract_dependencies)
+                ex.suggest_concrete_dependencies.extend(concrete_dependencies)
+                raise
+
         try:
             return compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:

@@ -42,16 +42,24 @@ class InvalidGraphError(DishkaError):
 
 class NoFactoryError(DishkaError):
     def __init__(
-            self,
-            requested: DependencyKey,
-            path: Sequence[FactoryData] = (),
-            suggest_other_scopes: Sequence[FactoryData] = (),
-            suggest_other_components: Sequence[FactoryData] = (),
+        self,
+        requested: DependencyKey,
+        path: Sequence[FactoryData] = (),
+        suggest_other_scopes: Sequence[FactoryData] = (),
+        suggest_other_components: Sequence[FactoryData] = (),
+        suggest_abstract_dependencies: Sequence[DependencyKey] = (),
+        suggest_concrete_dependencies: Sequence[DependencyKey] = (),
     ) -> None:
         self.requested = requested
         self.path = list(path)
         self.suggest_other_scopes = suggest_other_scopes
         self.suggest_other_components = suggest_other_components
+        self.suggest_abstract_dependencies = list(
+            suggest_abstract_dependencies,
+        )
+        self.suggest_concrete_dependencies = list(
+            suggest_concrete_dependencies,
+        )
         self.scope: BaseScope | None = None
 
     def add_path(self, requested_by: FactoryData) -> None:
@@ -63,9 +71,11 @@ class NoFactoryError(DishkaError):
             requested_key=self.requested,
             suggest_other_scopes=self.suggest_other_scopes,
             suggest_other_components=self.suggest_other_components,
+            suggest_abstract_dependencies=self.suggest_abstract_dependencies,
+            suggest_concrete_dependencies=self.suggest_concrete_dependencies,
         )
         if suggestion:
-            suggestion = f"Hint:{suggestion}"
+            suggestion = f" Hint:{suggestion}"
         requested_name = get_name(
             self.requested.type_hint, include_module=False,
         )

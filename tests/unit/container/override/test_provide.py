@@ -77,3 +77,21 @@ def test_skip_cant_override() -> None:
         TestProvider(),
         validation_settings=ValidationSettings(nothing_overridden=False),
     )
+
+
+@pytest.mark.parametrize(
+    ("scope1", "scope2"),
+    [
+        (Scope.APP, Scope.REQUEST),
+        (Scope.REQUEST, Scope.APP),
+        (Scope.APP, Scope.APP),
+    ],
+)
+def test_override_different_scope(scope1: Scope, scope2: Scope) -> None:
+    p1 = Provider(scope1)
+    p1.provide(lambda: 1, provides=int)
+    p2 = Provider(scope2)
+    p2.provide(lambda: 2, provides=int)
+    container = make_container(p1, p2)
+    with container() as request_container:
+        assert request_container.get(int) == 2

@@ -12,7 +12,7 @@ from .dependency_source import (
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
-from .entities.scope import BaseScope, InvalidScopes, Scope
+from .entities.scope import BaseScope, InvalidScopes
 from .entities.validation_settigs import ValidationSettings
 from .exceptions import (
     AliasedFactoryNotFoundError,
@@ -206,7 +206,10 @@ class RegistryBuilder:
             )
 
         self.processed_factories[provides] = factory
-        registry = self.registries[cast(Scope, factory.scope)]
+        scope = cast(BaseScope, factory.scope)
+        if scope != self.dependency_scopes[provides]:
+            return  # factory is overridden with different scope
+        registry = self.registries[cast(BaseScope, factory.scope)]
         registry.add_factory(factory)
 
     def _process_alias(
@@ -425,6 +428,12 @@ class RegistryBuilder:
         self._collect_provided_scopes()
         self._collect_aliases()
         self._init_registries()
+
+        for provider in self.providers:
+            for factory in provider.factories:
+                self.dependency_scopes[
+                    factory.provides.with_component(provider.component)
+                ] = cast(BaseScope, factory.scope)
 
         for provider in self.providers:
             for factory in provider.factories:

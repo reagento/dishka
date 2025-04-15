@@ -18,7 +18,8 @@ except ImportError:
         ExceptionGroup,
     )
 
-_renderer = PathRenderer()
+_cycle_renderer = PathRenderer(cycle=True)
+_linear_renderer = PathRenderer(cycle=False)
 
 
 class ExitError(

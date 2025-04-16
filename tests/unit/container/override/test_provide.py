@@ -90,6 +90,11 @@ def test_skip_cant_override() -> None:
 def test_override_different_scope(scope1: Scope, scope2: Scope) -> None:
     p1 = Provider(scope1)
     p1.provide(lambda: 1, provides=int)
+
+    @p1.decorate
+    def decorate_int(a: int) -> int:
+        return -a
+
     p2 = Provider(scope2)
     p2.provide(lambda: 2, provides=int)
     container = make_container(p1, p2)

@@ -325,9 +325,10 @@ class RegistryBuilder:
             )
         scope = self.dependency_scopes[provides]
         registry = self.registries[scope]
-        # factory is expected to be as we already processed
-        # it according to dependency_scopes
-        old_factory = cast(Factory, registry.get_factory(provides))
+        old_factory = registry.get_factory(provides)
+        if old_factory is None:
+            # we know scope, but no factory -> it's overridden
+            return
         self._decorate_factory(
             decorator=decorator,
             registry=registry,

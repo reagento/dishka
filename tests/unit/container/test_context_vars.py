@@ -104,3 +104,28 @@ def test_decorate():
 
     with pytest.raises(InvalidGraphError):
         make_container(MyProvider(), context={int: 1})
+
+
+def test_automatic_context():
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        @provide
+        def ii(self, i: int) -> str:
+            return str(i)
+
+    c = make_container(MyProvider(), context={int: 1})
+    assert c.get(str) == "1"
+
+
+@pytest.mark.asyncio
+async def test_automatic_context_async():
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        @provide
+        def ii(self, i: int) -> str:
+            return str(i)
+
+    c = make_async_container(MyProvider(), context={int: 1})
+    assert await c.get(str) == "1"

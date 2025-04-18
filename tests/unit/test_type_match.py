@@ -1,4 +1,5 @@
-from typing import Generic, TypeVar
+import enum
+from typing import Generic, Literal, Protocol, TypeVar
 
 import pytest
 
@@ -28,6 +29,17 @@ class SubC(C): ...
 
 
 class D: ...
+
+
+class MyEnum(enum.StrEnum):
+    A = "a"
+
+
+T4 = TypeVar("T", bound=MyEnum)
+
+
+class B[T: MyEnum](Protocol):
+    dep: T
 
 
 TC = TypeVar("TC", bound=C)
@@ -62,6 +74,7 @@ TSubCCD = TypeVar("TSubCCD", "C", SubC, D)
             Mutiple[AGeneric[int], AGeneric[AGeneric[str]], T2],
             False,
         ),
+        (B[T4], B[Literal[MyEnum.A]], True),
     ],
 )
 def test_is_broader_or_same_type(*, first: T, second: T, match: bool):

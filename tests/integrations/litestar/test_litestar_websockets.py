@@ -73,7 +73,6 @@ async def test_app_dependency(view, ws_app_provider: WebSocketAppProvider):
     ws_app_provider.app_released.assert_called()
 
 
-
 @websocket_listener("/")
 @inject_websocket
 async def get_with_request(

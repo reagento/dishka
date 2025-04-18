@@ -35,7 +35,7 @@ class Registry:
     def add_factory(
             self,
             factory: Factory,
-            provides: DependencyKey| None = None,
+            provides: DependencyKey | None = None,
     ) -> None:
         if provides is None:
             provides = factory.provides
@@ -120,7 +120,7 @@ class Registry:
             hint = source_dependency.type_hint
             if isinstance(hint, TypeVar):
                 hint = params_replacement[hint]
-            elif get_origin(hint) and (type_vars:=get_type_vars(hint)):
+            elif get_origin(hint) and (type_vars := get_type_vars(hint)):
                 hint = hint[tuple(
                     params_replacement[param]
                     for param in type_vars
@@ -133,7 +133,7 @@ class Registry:
             hint = source_dependency.type_hint
             if isinstance(hint, TypeVar):
                 hint = params_replacement[hint]
-            elif get_origin(hint) and (type_vars:=get_type_vars(hint)):
+            elif get_origin(hint) and (type_vars := get_type_vars(hint)):
                 hint = hint[tuple(
                     params_replacement[param]
                     for param in type_vars

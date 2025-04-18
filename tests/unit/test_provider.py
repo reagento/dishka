@@ -17,9 +17,9 @@ from dishka import Provider, Scope, alias, decorate, make_container, provide
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import (
     hint_to_dependency_key,
-    hints_to_dependency_keys,
 )
 from dishka.provider.exceptions import (
+    CannotUseProtocolError,
     MissingHintsError,
     MissingReturnHintError,
     NoScopeSetInContextError,
@@ -27,7 +27,12 @@ from dishka.provider.exceptions import (
     NotAFactoryError,
     UndefinedTypeAnalysisError,
 )
-from dishka.provider.make_factory import make_factory, provide_all
+from dishka.provider.make_factory import (
+    make_factory,
+    provide_all,
+    provide_all_on_instance,
+    provide_on_instance,
+)
 from .sample_providers import (
     ClassA,
     async_func_a,
@@ -73,7 +78,10 @@ def test_parse_factory(source, provider_type, is_to_bound):
     factory = composite.dependency_sources[0]
 
     assert factory.provides == hint_to_dependency_key(ClassA)
-    assert factory.dependencies == hints_to_dependency_keys([Any, int])
+    assert factory.dependencies == [
+        hint_to_dependency_key(Any),
+        hint_to_dependency_key(int),
+    ]
     assert factory.is_to_bind == is_to_bound
     assert factory.scope == Scope.REQUEST
     assert factory.source == source
@@ -92,7 +100,6 @@ def test_provide_no_scope():
 
     with pytest.raises(NoScopeSetInProvideError):
         provider.provide(b, provides=B)
-
 
     with pytest.raises(NoScopeSetInContextError):
         provider.from_context(b)
@@ -130,7 +137,7 @@ def test_parse_factory_cls(source, provider_type, is_to_bound):
         override=False,
     )
     assert factory.provides == hint_to_dependency_key(ClassA)
-    assert factory.dependencies == hints_to_dependency_keys([int])
+    assert factory.dependencies == [hint_to_dependency_key(int)]
     assert factory.is_to_bind == is_to_bound
     assert factory.scope == Scope.REQUEST
     assert factory.source == source
@@ -242,7 +249,7 @@ def test_callable(cls):
     assert len(provider.factories) == 1
     factory = provider.factories[0]
     assert factory.provides == hint_to_dependency_key(str)
-    assert factory.dependencies == hints_to_dependency_keys([int])
+    assert factory.dependencies == [hint_to_dependency_key(int)]
 
 
 def test_provide_as_method():
@@ -253,13 +260,16 @@ def test_provide_as_method():
     assert len(foo.dependency_sources) == 1
     factory = foo.dependency_sources[0]
     assert factory.provides == hint_to_dependency_key(str)
-    assert factory.dependencies == hints_to_dependency_keys([int])
+    assert factory.dependencies == [hint_to_dependency_key(int)]
 
     foo = provider.provide(sync_func_a)
     assert len(foo.dependency_sources) == 1
     factory = foo.dependency_sources[0]
     assert factory.provides == hint_to_dependency_key(ClassA)
-    assert factory.dependencies == hints_to_dependency_keys([Any, int])
+    assert factory.dependencies == [
+        hint_to_dependency_key(Any),
+        hint_to_dependency_key(int),
+    ]
 
     foo = provider.alias(source=int, provides=str)
     assert len(foo.dependency_sources) == 1
@@ -348,7 +358,10 @@ def test_decorator():
     assert len(foo.dependency_sources) == 1
     factory = foo.dependency_sources[0]
     assert factory.provides == hint_to_dependency_key(ClassA)
-    expected_deps = hints_to_dependency_keys([ClassA, int])
+    expected_deps = [
+        hint_to_dependency_key(ClassA),
+        hint_to_dependency_key(int),
+    ]
     assert factory.factory.dependencies == expected_deps
 
 
@@ -440,7 +453,7 @@ def test_static_method():
 
             @provide(scope=Scope.APP)
             @staticmethod
-            def s(a:"S5"):  #noqa: F821
+            def s(a: "S5"):  # noqa: F821
                 yield
 
 
@@ -457,13 +470,14 @@ def test_no_hints():
             def c(self, a: int):
                 return 1
 
-    def c() -> "C4":  #noqa: F821
+    def c() -> "C4":  # noqa: F821
         return 1
 
     with pytest.raises(UndefinedTypeAnalysisError):
 
         class C3(Provider):
             cp = provide(source=c)
+
 
 def test_annotated_factory():
     assert make_factory_by_source(source=Annotated[A, "Annotated"])
@@ -475,7 +489,7 @@ def test_self():
         class P(Provider):
 
             @provide(scope=Scope.APP)
-            def a(celph) -> int:  #noqa: N805
+            def a(celph) -> int:  # noqa: N805
                 return 1
 
 
@@ -485,6 +499,7 @@ def foo_aiterable() -> AsyncIterable[NoneType]:
 
 def foo_aiterator() -> AsyncIterator[int]:
     yield 1
+
 
 def foo_agen() -> AsyncGenerator[None, None]:
     yield
@@ -496,6 +511,7 @@ async def foo_gen() -> Generator[int, None, None]:
 
 async def foo_iterator() -> Iterator[str]:
     yield ""
+
 
 async def foo_iterable() -> Iterable[float]:
     yield 0
@@ -513,3 +529,23 @@ def test_factory_error_hints(source):
 def test_not_a_factory():
     with pytest.raises(NotAFactoryError):
         make_factory_by_source(source=None)
+
+
+@pytest.mark.parametrize(
+    "provide_func",
+    [
+        provide,
+        provide_all,
+        lambda source: provide_on_instance(source=source),
+        provide_all_on_instance,
+    ],
+)
+def test_protocol_cannot_be_source_in_provide(provide_func):
+    class AProtocol(Protocol): ...
+
+    with pytest.raises(
+        CannotUseProtocolError,
+        match="Cannot use.*\n.*seems that this is a Protocol.*",
+    ):
+        class P(Provider):
+            p = provide_func(AProtocol)

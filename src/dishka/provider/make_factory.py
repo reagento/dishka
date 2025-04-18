@@ -8,6 +8,7 @@ from collections.abc import (
     Generator,
     Iterable,
     Iterator,
+    Mapping,
     Sequence,
 )
 from inspect import (
@@ -36,6 +37,7 @@ from typing import (
 from dishka._adaptix.type_tools.basic_utils import (  # type: ignore[attr-defined]
     get_type_vars,
     is_bare_generic,
+    is_protocol,
     strip_alias,
 )
 from dishka._adaptix.type_tools.fundamentals import (
@@ -54,12 +56,16 @@ from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import (
     dependency_key_to_hint,
     hint_to_dependency_key,
-    hints_to_dependency_keys,
 )
-from dishka.entities.provides_marker import ProvideMultiple
+from dishka.entities.provides_marker import AnyOf, ProvideMultiple
 from dishka.entities.scope import BaseScope
+from dishka.entities.type_alias_type import (
+    is_type_alias_type,
+    unwrap_type_alias,
+)
 from dishka.text_rendering import get_name
 from .exceptions import (
+    CannotUseProtocolError,
     MissingHintsError,
     MissingReturnHintError,
     NotAFactoryError,
@@ -96,6 +102,30 @@ def _get_init_members(tp: type) -> MembersStorage[str, None]:
     )
 
 
+
+def _get_kw_dependencies(
+    hints: Mapping[str, Any], params: Mapping[str, Parameter],
+) -> dict[str, Any]:
+    return {
+        name: hint_to_dependency_key(unwrap_type_alias(hints.get(name)))
+        for name, param in params.items()
+        if param.kind is Parameter.KEYWORD_ONLY
+    }
+
+
+def _get_dependencies(
+    hints: Mapping[str, Any], params: Mapping[str, Parameter],
+) -> list[Any]:
+    return [
+        hint_to_dependency_key(unwrap_type_alias(hints.get(name)))
+        for name, param in params.items()
+        if param.kind in (
+            Parameter.POSITIONAL_ONLY,
+            Parameter.POSITIONAL_OR_KEYWORD,
+        )
+    ]
+
+
 def _guess_factory_type(source: Any) -> FactoryType:
     if isasyncgenfunction(source):
         return FactoryType.ASYNC_GENERATOR
@@ -114,6 +144,7 @@ def _type_repr(hint: Any) -> str:
 
 
 def _async_generator_result(hint: Any) -> Any:
+    hint = unwrap_type_alias(hint)
     if get_origin(hint) is ProvideMultiple:
         return ProvideMultiple[tuple(  # type: ignore[misc]
             _async_generator_result(x) for x in get_args(hint)
@@ -144,6 +175,7 @@ def _async_generator_result(hint: Any) -> Any:
 
 
 def _generator_result(hint: Any) -> Any:
+    hint = unwrap_type_alias(hint)
     if get_origin(hint) is ProvideMultiple:
         return ProvideMultiple[tuple(  # type: ignore[misc]
             _generator_result(x) for x in get_args(hint)
@@ -173,15 +205,26 @@ def _generator_result(hint: Any) -> Any:
     raise UnsupportedGeneratorReturnTypeError(name, guess, args)
 
 
+def _alias_to_anyof(possible_dependency: Any) -> Any:
+    if not is_type_alias_type(possible_dependency):
+        return possible_dependency
+    options: tuple[Any, ...] = (possible_dependency, )
+    while is_type_alias_type(possible_dependency):
+        possible_dependency = possible_dependency.__value__
+        options = (possible_dependency, *options)
+    return AnyOf[options]
+
+
 def _clean_result_hint(
     factory_type: FactoryType,
     possible_dependency: Any,
 ) -> Any:
     if factory_type == FactoryType.ASYNC_GENERATOR:
-        return _async_generator_result(possible_dependency)
+        possible_dependency = _async_generator_result(possible_dependency)
     elif factory_type == FactoryType.GENERATOR:
-        return _generator_result(possible_dependency)
-    return possible_dependency
+        possible_dependency = _generator_result(possible_dependency)
+
+    return _alias_to_anyof(possible_dependency)
 
 
 def _params_without_hints(func: Any, *, skip_self: bool) -> Sequence[str]:
@@ -224,16 +267,10 @@ def _make_factory_by_class(
 
     hints.pop("return", _empty)
     params = signature(init).parameters
-    kw_dependency_keys = {
-        name: hint_to_dependency_key(hints.pop(name))
-        for name, param in params.items()
-        if param.kind is Parameter.KEYWORD_ONLY
-    }
-    dependencies = list(hints.values())
 
     return Factory(
-        dependencies=hints_to_dependency_keys(dependencies),
-        kw_dependencies=kw_dependency_keys,
+        dependencies=_get_dependencies(hints, params)[1:],
+        kw_dependencies=_get_kw_dependencies(hints, params),
         type_=FactoryType.FACTORY,
         source=source,
         scope=scope,
@@ -242,6 +279,7 @@ def _make_factory_by_class(
         cache=cache,
         override=override,
     )
+
 
 def _check_self_name(
         source: Callable[..., Any] | classmethod,  # type: ignore[type-arg]
@@ -260,11 +298,12 @@ def _check_self_name(
         stacklevel=6,
     )
 
+
 def _make_factory_by_function(
         *,
         provides: Any,
         scope: BaseScope | None,
-        source: Callable[..., Any] | classmethod, # type: ignore[type-arg]
+        source: Callable[..., Any] | classmethod,  # type: ignore[type-arg]
         cache: bool,
         is_in_class: bool,
         override: bool,
@@ -293,13 +332,6 @@ def _make_factory_by_function(
             _check_self_name(source, self)
     possible_dependency = hints.pop("return", _empty)
 
-    kw_dependency_keys = {
-        name: hint_to_dependency_key(hints.pop(name))
-        for name, param in params.items()
-        if param.kind is Parameter.KEYWORD_ONLY
-    }
-    dependencies = list(hints.values())
-
     if not provides:
         if possible_dependency is _empty:
             raise MissingReturnHintError(source)
@@ -309,8 +341,8 @@ def _make_factory_by_function(
             name = get_name(source, include_module=True)
             raise TypeError(f"Failed to analyze `{name}`. \n" + str(e)) from e
     return Factory(
-        dependencies=hints_to_dependency_keys(dependencies),
-        kw_dependencies=kw_dependency_keys,
+        dependencies=_get_dependencies(hints, params),
+        kw_dependencies=_get_kw_dependencies(hints, params),
         type_=factory_type,
         source=source,
         scope=scope,
@@ -337,15 +369,8 @@ def _make_factory_by_static_method(
     except NameError as e:
         raise UndefinedTypeAnalysisError(source, e.name) from e
 
-    possible_dependency = hints.pop("return", _empty)
-
     params = signature(source).parameters
-    kw_dependency_keys = {
-        name: hint_to_dependency_key(hints.pop(name))
-        for name, param in params.items()
-        if param.kind is Parameter.KEYWORD_ONLY
-    }
-    dependencies = list(hints.values())
+    possible_dependency = hints.pop("return", _empty)
 
     if not provides:
         if possible_dependency is _empty:
@@ -356,8 +381,8 @@ def _make_factory_by_static_method(
             name = get_name(source, include_module=True)
             raise TypeError(f"Failed to analyze `{name}`. \n" + str(e)) from e
     return Factory(
-        dependencies=hints_to_dependency_keys(dependencies),
-        kw_dependencies=kw_dependency_keys,
+        dependencies=_get_dependencies(hints, params),
+        kw_dependencies=_get_kw_dependencies(hints, params),
         type_=factory_type,
         source=source,
         scope=scope,
@@ -422,6 +447,9 @@ def make_factory(
         is_in_class: bool,
         override: bool,
 ) -> Factory:
+    if source and is_protocol(source):
+        raise CannotUseProtocolError(source)
+
     if get_origin(source) is ProvideMultiple:
         if provides is None:
             provides = source
@@ -475,7 +503,7 @@ def make_factory(
             override=override,
         )
     else:
-        raise NotAFactoryError(type(source))
+        raise NotAFactoryError(source)
 
 
 def _provide(

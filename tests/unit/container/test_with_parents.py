@@ -1,3 +1,4 @@
+import collections
 from abc import ABC
 from collections.abc import Sequence
 from typing import (
@@ -16,9 +17,11 @@ from dishka import (
     Provider,
     Scope,
     make_container,
+    provide,
+    provide_all,
 )
 from dishka._adaptix.common import TypeHint
-from dishka._adaptix.feature_requirement import HAS_PY_311
+from dishka._adaptix.feature_requirement import HAS_PY_311, HAS_PY_312
 from dishka.entities.with_parents import (
     ParentsResolver,
     WithParents,
@@ -30,6 +33,12 @@ if HAS_PY_311:
     from typing import TypeVarTuple, Unpack
 
     Ts = TypeVarTuple("TS")  # noqa: PLC0132
+
+if HAS_PY_312:
+    from .pep695_new_syntax import (
+        Base,
+        ImplBase,
+    )
 
 T = TypeVar("T")
 B = TypeVar("B")
@@ -112,6 +121,7 @@ def test_type_var_tuple() -> None:
         is container.get(A1[str, int, type])
     )
 
+
 if HAS_PY_311:
     class A1(Generic[T, Unpack[Ts]]): ...
     class A2(A1[str, int, type], int): ...
@@ -129,6 +139,7 @@ if HAS_PY_311:
     ]
 else:
     params = []
+
 
 @pytest.mark.parametrize(
     ("obj", "val1", "val2"),
@@ -152,6 +163,7 @@ def test_type_var_and_type_var_tuple(
         is container.get(val1)
         is container.get(val2)
     )
+
 
 def test_deep_inheritance() -> None:
     class A1(Generic[T], float): ...
@@ -211,14 +223,53 @@ class SequenceInt(Sequence[int]): ...
 class ListAny(list[Any]): ...
 class JsonMapping(dict[str, str | int]): ...
 
+
 @pytest.mark.parametrize(
     ("structure", "result"),
     [
         (TupleGeneric[str], [TupleGeneric[str], tuple[str]]),
-        (SequenceInt, [SequenceInt, Sequence[int]]),
+        (SequenceInt, [
+            SequenceInt,
+            Sequence[int],
+            # `Sequence` inherits from both `Reversible` and `Collection`:
+            #
+            #        Sequence
+            #       /        \
+            #      /          \
+            # Reversible     Collection
+            #      \         /    |    \
+            #       \       /     |     \
+            #     Iterable (x2)  Sized  Container
+            collections.abc.Reversible,
+            collections.abc.Iterable,
+            collections.abc.Collection,
+            collections.abc.Sized,
+            collections.abc.Iterable,
+            collections.abc.Container,
+        ]),
         (ListAny, [ListAny, list[Any]]),
         (JsonMapping, [JsonMapping, dict[str, str | int]]),
     ],
 )
 def test_structures(structure: TypeHint, result: list[TypeHint]) -> None:
     assert ParentsResolver().get_parents(structure) == result
+
+
+@pytest.mark.skipif(
+    not HAS_PY_312,
+    reason="PEP 695 syntax requires Python 3.12+",
+)
+def test_pep695_generic_inheritance() -> None:
+    class MyProvider(Provider):
+        scope = Scope.APP
+        deps = provide_all(
+            WithParents[ImplBase[int]],
+            WithParents[ImplBase[str]],
+        )
+        provide_int = provide(lambda x: 1, provides=int)
+        provide_str = provide(lambda x: "2", provides=str)
+
+    container = make_container(MyProvider())
+
+    assert type(container.get(Base[int]).value) is int
+    assert type(container.get(Base[str]).value) is str

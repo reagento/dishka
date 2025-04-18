@@ -6,7 +6,7 @@ from dishka.dependency_source import (
     ensure_composite,
 )
 from dishka.entities.component import Component
-from dishka.entities.key import DependencyKey
+from dishka.entities.key import hint_to_dependency_key
 from .unpack_provides import unpack_alias
 
 
@@ -27,11 +27,8 @@ def alias(
 
     composite = ensure_composite(source)
     alias_instance = Alias(
-        source=DependencyKey(
-            type_hint=source,
-            component=component,
-        ),
-        provides=DependencyKey(provides, None),
+        source=hint_to_dependency_key(source).with_component(component),
+        provides=hint_to_dependency_key(provides),
         cache=cache,
         override=override,
     )

@@ -77,4 +77,3 @@ def test_skip_cant_override() -> None:
         TestProvider(),
         validation_settings=ValidationSettings(nothing_overridden=False),
     )
-

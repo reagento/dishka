@@ -35,7 +35,7 @@ class MyEnum(enum.StrEnum):
     A = "a"
 
 
-T4 = TypeVar("T", bound=MyEnum)
+T4 = TypeVar("T4", bound=MyEnum)
 
 
 class B[T: MyEnum](Protocol):

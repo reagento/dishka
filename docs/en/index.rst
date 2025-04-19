@@ -1,6 +1,7 @@
+.. _en_index:
+
 dishka
 =============================================
-|flag-en| |flag-ru|
 
 Cute DI framework with scopes and agreeable API.
 
@@ -28,30 +29,33 @@ Key features:
 * **Speed**. The library is fast enough that performance is not a concern. In fact, it outperforms many
   alternatives.
 
-.. |flag-en| image:: _static/flags/en.png
-   :width: 60px
-   :height: 40px
-   :target: en/index.html
-   :alt: English
-
-.. |flag-ru| image:: _static/flags/ru.png
-   :width: 60px
-   :height: 40px
-   :target: ru/index.html
-   :alt: Русский
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
    :hidden:
+   :caption: Contents:
 
-   dishka (en) <en/index>
-   dishka (ru) <ru/index>
+   quickstart
+   di_intro
+   concepts
+   provider/index
+   container/index
+   integrations/index
+   alternatives
 
 .. toctree::
-    :hidden:
-    :caption: Project Links
+   :hidden:
+   :caption: Advanced usage:
 
-    GitHub <https://github.com/reagento/dishka>
-    PyPI <https://pypi.org/project/dishka>
-    Chat <https://t.me/reagento_ru>
+   advanced/components
+   advanced/context
+   advanced/generics
+   advanced/scopes
+   advanced/testing/index
+   advanced/plotter
+
+.. toctree::
+   :hidden:
+   :caption: For developers:
+
+   requirements/technical
+   contributing

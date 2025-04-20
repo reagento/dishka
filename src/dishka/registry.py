@@ -108,8 +108,7 @@ class Registry:
         self,
         dependency: DependencyKey,
     ) -> list[DependencyKey]:
-        abstract_dependencies = []
-
+        abstract_dependencies: list[DependencyKey] = []
         try:
             abstract_classes = dependency.type_hint.__bases__
         except AttributeError:
@@ -130,7 +129,7 @@ class Registry:
         self,
         dependency: DependencyKey,
     ) -> list[DependencyKey]:
-        concrete_dependencies = []
+        concrete_dependencies: list[DependencyKey] = []
 
         check_type_hint = dependency.type_hint
 

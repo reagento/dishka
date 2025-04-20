@@ -83,7 +83,7 @@ How to use
 
 
 FastStream - Litestar/FastAPI - dishka integration
-****************
+*********************************************************
 
 1. Running RabbitMQ
 
@@ -235,7 +235,7 @@ FastStream - Litestar/FastAPI - dishka integration
 
 
 Testing FastStream with dishka
-****************
+************************************
 
 1. Simple example
 

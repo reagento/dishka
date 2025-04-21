@@ -8,7 +8,7 @@ If you're exhausted from endlessly passing objects just to create other objects,
 more — you're not alone, and we have a solution.
 Not every project requires IoC container, but take a look at what we offer.
 
-Unlike other tools, Dishka focuses **only**
+Unlike other tools, ``dishka`` focuses **only**
 on **dependency injection** without trying to solve unrelated tasks.
 It keeps DI in place without cluttering your code with global variables and scattered specifiers.
 

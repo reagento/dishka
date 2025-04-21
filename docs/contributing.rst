@@ -55,7 +55,7 @@ Project contains several types of tests:
 
 * unit tests of library itself
 * integration with other libraries
-* tests of example app
+* tests of example app.
 
 All of them can be run using nox:
 

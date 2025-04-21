@@ -9,7 +9,7 @@ Working with context data consists of three parts:
 
 1. Declaration that object is received from context using :ref:`from-context`. You need to provide the type and scope.
 2. Usage of that object in providers.
-3. Passing actual values on scope entrance. It can be container creation for top level scope or container calls for nested ones. Use it in form ``context={Type: value,...}``
+3. Passing actual values on scope entrance. It can be container creation for top level scope or container calls for nested ones. Use it in form ``context={Type: value,...}``.
 
 .. code-block:: python
 

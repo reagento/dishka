@@ -115,7 +115,7 @@ Overview
 Why not dependency-injector?
 =======================================
 
-Though ``dependency-injector`` is quite popular project it not quite solving IoC-container tasks.
+Though ``dependency-injector`` is quite popular project it is not quite solving IoC-container tasks.
 
 * No auto-wiring for classes is supported. You have to bind factories to each other explicitly.
 * It does not cache created dependencies per-request. You have to implement it manually by using thread-locals or recreating container each time.

@@ -9,7 +9,7 @@ Problem definition
 As you know, container can be created from multiple providers, which are dynamically bound together. It allows you to reuse them or partially override in tests. It works well while you have different types across all provided objects. But what if there are some intersections. Let's talk about three situations:
 
 1. Only several types are used with different meaning within a monolithic app.
-2. Several parts of an application are developed them more or less independently, while they used within same processing context.
+2. Several parts of an application are developed them more or less independently, while they are used within same processing context.
 3. You have a modular application with multiple bounded contexts.
 
 **First situation** can appear when you have for-example multiple thread pools for different tasks or multiple database connections for different databases. While they have special meaning you distinguish them by creating new types

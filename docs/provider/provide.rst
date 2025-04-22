@@ -12,7 +12,7 @@ If it is used with class, it analyzes its ``__init__`` typehints to detect its d
 ``scope`` argument is required to define the lifetime of the created object.
 By default the result is cached within scope. You can disable it providing ``cache=False`` argument.
 
-* For simple case add method and mark it with ``@provide`` decorator.
+* For simple case add method and mark it with ``@provide`` decorator:
 
 .. code-block:: python
 
@@ -83,7 +83,7 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
     container = make_async_container(MyProvider())
     a = await container.get(A)
 
-* Tired of providing ``scope=`` for each dependency? Set it inside your ``Provider`` class and all factories with no scope will use it.
+* Tired of providing ``scope=`` for each dependency? Set it inside your ``Provider`` class and all factories with no scope will use it:
 
 .. code-block:: python
 
@@ -137,9 +137,9 @@ It works similar to :ref:`alias`.
     a is a # True
 
 
-WithParents generates only one factory and many aliases and is equivalent to ``AnyOf[AImpl, A]``. The following parents are ignored: ``type``, ``object``, ``Enum``, ``ABC``, ``ABCMeta``, ``Generic``, ``Protocol``, ``Exception``, ``BaseException``
+WithParents generates only one factory and many aliases and is equivalent to ``AnyOf[AImpl, A]``. The following parents are ignored: ``type``, ``object``, ``Enum``, ``ABC``, ``ABCMeta``, ``Generic``, ``Protocol``, ``Exception``, ``BaseException``.
 
-* Your object's dependencies (and their dependencies) can be simply created by calling their constructors. You do not need to register them manually. Use ``recursive=True`` to register them automatically
+* Your object's dependencies (and their dependencies) can be simply created by calling their constructors. You do not need to register them manually. Use ``recursive=True`` to register them automatically:
 
 .. code-block:: python
 
@@ -155,7 +155,7 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
         c = provide(C, scope=Scope.APP, recursive=True)
 
 
-* Do you want to override the factory? To do this, specify the parameter ``override=True``. This can be checked when passing proper ``validation_settings`` when creating container.
+* Do you want to override the factory? To do this, specify the parameter ``override=True``. This can be checked when passing proper ``validation_settings`` when creating container:
 
 .. code-block:: python
 
@@ -176,7 +176,7 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
     a = container.get(int)  # 2
 
 
-* You can use factory with Generic classes
+* You can use factory with Generic classes:
 
 .. code-block:: python
 

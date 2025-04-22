@@ -3,19 +3,19 @@
 FastStream
 ===========================================
 
-Though it is not required, you can use dishka-faststream integration. It features:
+Though it is not required, you can use *dishka-faststream* integration. It features:
 
-* automatic REQUEST scope management using middleware
+* automatic *REQUEST* scope management using middleware
 * passing ``StreamMessage`` and ``ContextRepo`` object as a context data to providers
-* automatic injection of dependencies into message handler
+* automatic injection of dependencies into message handler.
 
-You can use auto-injection for FastStream 0.5.0 and higher. For older version you need to specify ``@inject`` manually.
+You can use auto-injection for ``FastStream`` 0.5.0 and higher. For older version you need to specify ``@inject`` manually.
 
 .. note::
 
     If you are using **FastAPI plugin** of **FastStream** you need to use both dishka integrations, but you can share the same container.
 
-    * Call ``dishka.integrations.faststream.setup_dishka`` on faststream broker or router
+    * Call ``dishka.integrations.faststream.setup_dishka`` on faststream broker or router.
     * Call ``dishka.integrations.fastapi.setup_dishka`` on fastapi app.
 
 
@@ -35,7 +35,7 @@ How to use
     )
     from dishka import make_async_container, Provider, provide, Scope
 
-2. Create provider. You can use ``faststream.types.StreamMessage`` and ``faststream.ContextRepo`` as a factory parameter to access on REQUEST-scope
+2. Create provider. You can use ``faststream.types.StreamMessage`` and ``faststream.ContextRepo`` as a factory parameter to access on *REQUEST*-scope
 
 .. code-block:: python
 
@@ -68,14 +68,14 @@ How to use
         ...
 
 
-4. *(optional)* Use ``FastStreamProvider()`` when creating container if you are going to use  ``faststream.types.StreamMessage`` or ``faststream.ContextRepo``  in providers.
+4. *(optional)* Use ``FastStreamProvider()`` when creating container if you are going to use  ``faststream.types.StreamMessage`` or ``faststream.ContextRepo``  in providers
 
 .. code-block:: python
 
     container = make_async_container(YourProvider(), FastStreamProvider())
 
 
-5. Setup dishka integration.  ``auto_inject=True`` is required unless you explicitly use ``@inject`` decorator.
+5. Setup ``dishka`` integration.  ``auto_inject=True`` is required unless you explicitly use ``@inject`` decorator
 
 .. code-block:: python
 
@@ -85,7 +85,7 @@ How to use
 FastStream - Litestar/FastAPI - dishka integration
 *********************************************************
 
-1. Running RabbitMQ
+1. Running ``RabbitMQ``
 
 .. code-block:: shell
 
@@ -95,7 +95,7 @@ FastStream - Litestar/FastAPI - dishka integration
       -e RABBITMQ_DEFAULT_PASS=guest \
       rabbitmq:management
 
-2. Example of usage FastStream + Litestar
+2. Example of usage ``FastStream`` + ``Litestar``
 
 .. code-block:: python
 
@@ -162,7 +162,7 @@ FastStream - Litestar/FastAPI - dishka integration
     if __name__ == "__main__":
         uvicorn.run(create_app(), host="0.0.0.0", port=8000)
 
-3. Example of usage FastStream + FastAPI
+3. Example of usage ``FastStream`` + ``FastAPI``
 
 .. code-block:: python
 
@@ -237,7 +237,7 @@ FastStream - Litestar/FastAPI - dishka integration
 Testing FastStream with dishka
 ************************************
 
-1. Simple example
+Simple example:
 
 .. code-block:: python
 

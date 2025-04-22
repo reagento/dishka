@@ -3,11 +3,11 @@
 Starlette
 ===========================================
 
-Though it is not required, you can use dishka-starlette integration. It features:
+Though it is not required, you can use *dishka-starlette* integration. It features:
 
-* automatic REQUEST and SESSION scope management using middleware
+* automatic *REQUEST* and *SESSION* scope management using middleware
 * passing ``Request`` object as a context data to providers for both **Websockets** and **HTTP** requests
-* automatic injection of dependencies into handler function
+* automatic injection of dependencies into handler function.
 
 
 How to use
@@ -26,7 +26,7 @@ How to use
     )
     from dishka import make_async_container, Provider, provide, Scope
 
-2. Create provider. You can use ``starlette.requests.Request`` as a factory parameter to access on REQUEST-scope , and ``starlette.websockets.WebSocket`` on ``SESSION`` scope.
+2. Create provider. You can use ``starlette.requests.Request`` as a factory parameter to access on *REQUEST-scope*, and ``starlette.websockets.WebSocket`` on *SESSION*-scope
 
 .. code-block:: python
 
@@ -35,7 +35,7 @@ How to use
         def create_x(self, request: Request) -> X:
              ...
 
-3. Mark those of your handlers parameters which are to be injected with ``FromDishka[]`` and decorate them using ``@inject``.
+3. Mark those of your handlers parameters which are to be injected with ``FromDishka[]`` and decorate them using ``@inject``
 
 .. code-block:: python
 
@@ -48,14 +48,14 @@ How to use
         ...
 
 
-4. *(optional)* Use ``StarletteProvider()`` when creating container if you are going to use ``starlette.Request`` or ``starlette.WebSocket`` in providers.
+4. *(optional)* Use ``StarletteProvider()`` when creating container if you are going to use ``starlette.Request`` or ``starlette.WebSocket`` in providers
 
 .. code-block:: python
 
     container = make_async_container(YourProvider(), StarletteProvider())
 
 
-5. Setup dishka integration.
+5. Setup ``dishka`` integration.
 
 .. code-block:: python
 
@@ -68,8 +68,8 @@ Websockets
 .. include:: _websockets.rst
 
 In starlette your view function is called once per connection and then you retrieve messages in loop.
-So, ``inject`` decorator can be only used to retrieve SESSION-scoped objects.
-To achieve REQUEST-scope you can enter in manually:
+So, ``inject`` decorator can be only used to retrieve *SESSION*-scoped objects.
+To achieve *REQUEST*-scope you can enter in manually:
 
 .. code-block:: python
 

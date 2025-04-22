@@ -115,7 +115,7 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
 
 It works similar to :ref:`alias`.
 
-* Do you want to get dependencies not only by their classes, but also by parent classes? Use ``WithParents`` as a result hint:
+* Do you want to get dependencies by parent classes too? Use ``WithParents`` as a result hint:
 
 .. code-block:: python
 

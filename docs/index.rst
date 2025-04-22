@@ -23,7 +23,7 @@ Key features:
 * **Clean dependencies**. You don't need to add custom markers to dependency code just to make it visible to the
   library.
 * **Simple API**. Only a few objects are needed to start using the library.
-* **Framework integrations**. Popular frameworks are supported out of the box. You can simply extend it for you needs.
+* **Framework integrations**. Popular frameworks are supported out of the box. You can simply extend it for your needs.
 * **Speed**. The library is fast enough that performance is not a concern. In fact, it outperforms many
   alternatives.
 

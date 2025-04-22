@@ -7,7 +7,7 @@ provide
 
 Provider object has also a ``.provide`` method with the same logic.
 
-If it is used with class, it analyzes its ``__init__`` typehints to detect its dependencies. If it is used with method, it checks its parameters typehints and a result type. Last one describes what this method is used to create.
+If it is used with class, it analyzes its ``__init__`` typehints to detect its dependencies. If it is used with a method, it checks its parameters typehints and a result type. Last one describes what this method is used to create.
 
 ``scope`` argument is required to define the lifetime of the created object.
 By default the result is cached within scope. You can disable it providing ``cache=False`` argument.
@@ -23,7 +23,7 @@ By default the result is cached within scope. You can disable it providing ``cac
         def get_a(self) -> A:
             return A()
 
-* Want some finalization when exiting the scope? Make that method generator:
+* Want some finalization when exiting the scope? Make that method a generator:
 
 .. code-block:: python
 
@@ -50,7 +50,7 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
                 print("Some exception while process handling: ", exc)
             a.close()
 
-* Do not have any specific logic and just want to create class using its ``__init__``? Then add a provider attribute using ``provide`` as function passing that class:
+* Haven't got any specific logic and just want to create class using its ``__init__``? Then add a provider attribute using ``provide`` as function passing that class.
 
 .. code-block:: python
 
@@ -59,7 +59,7 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
     class MyProvider(Provider):
         a = provide(A, scope=Scope.REQUEST)
 
-* Want to create a child class instance when parent is requested? Add a ``source`` attribute to ``provide`` function with a parent class while passing child as a first parameter:
+* Want to create a child class instance when parent is requested? Add a ``source`` attribute to ``provide`` function with a parent class while passing child as a source
 
 .. code-block:: python
 
@@ -69,7 +69,7 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
         a = provide(source=AChild, scope=Scope.REQUEST, provides=A)
 
 
-* Want to go ``async``? Make provide methods asynchronous. Create async container. Use ``async with`` and await ``get`` calls:
+* Want to go ``async``? Make provide methods asynchronous, create async container and then use ``async with`` and await ``get`` calls:
 
 .. code-block:: python
 
@@ -115,7 +115,7 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
 
 It works similar to :ref:`alias`.
 
-* Do you want to get dependencies by parents? Use ``WithParents`` as a result hint:
+* Do you want to get dependencies by parent classes too? Use ``WithParents`` as a result hint:
 
 .. code-block:: python
 

@@ -1,7 +1,7 @@
 Provider
 ****************
 
-**Provider** is an object which members are used to construct dependencies. ``Provider`` contains different factories and other entities and then is used to create a ``Container``. You can have multiple providers in one application and combine them in different ways to make it more modular.
+**Provider** is an object whose members are used to construct dependencies. ``Provider`` contains different factories and other entities and then is used to create a ``Container``. You can have multiple providers in one application combining them in different ways to make it more modular.
 
 To configure provider you can either inherit and use decorators on your methods or just create an instance and use its methods.
 
@@ -52,7 +52,7 @@ Or using inheritance:
     container = make_container(MyProvider(scope=Scope.APP))
 
 
-Your class-based provider can have ``__init__`` method and methods access ``self`` as usual. It can be useful for passing configuration:
+Your class-based provider can have ``__init__`` method and methods accessing ``self`` as usual. It can be useful for passing configuration:
 
 .. code-block:: python
 

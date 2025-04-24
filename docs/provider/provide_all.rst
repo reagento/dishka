@@ -3,9 +3,9 @@
 provide_all
 ******************
 
-``provide_all`` is a helper function which can be used instead of repeating ``provide`` call with just class passed and same scope
+``provide_all`` is a helper function which can be used instead of repeating ``provide`` call with just class passed and same scope.
 
-These two providers are equal for the container
+These two providers are equal for the container:
 
 .. code-block:: python
 
@@ -32,7 +32,7 @@ It is also available as a method:
 
 You can combine different ``provide``, ``alias``, ``decorate``, ``from_context``, ``provide_all``, ``from_context`` and others with each other without thinking about the variable names for each of them.
 
-These two providers are equal for the container
+These two providers are equal for the container:
 
 .. code-block:: python
 

@@ -3,11 +3,11 @@
 taskiq
 ===========================================
 
-Though it is not required, you can use dishka-taskiq integration. It features:
+Though it is not required, you can use *dishka-taskiq* integration. It features:
 
-* automatic REQUEST scope management using middleware
+* automatic *REQUEST* scope management using middleware
 * passing ``TaskiqMessage`` object as a context data to providers
-* injection of dependencies into task handler function using decorator
+* injection of dependencies into task handler function using decorator.
 
 
 How to use
@@ -25,7 +25,7 @@ How to use
     )
     from dishka import make_async_container, Provider, provide, Scope
 
-2. Create provider. You can use ``taskiq.TaskiqMessage`` as a factory parameter to access on REQUEST-scope
+2. Create provider. You can use ``taskiq.TaskiqMessage`` as a factory parameter to access on *REQUEST*-scope
 
 .. code-block:: python
 
@@ -55,14 +55,14 @@ How to use
    The default value is ``False``, for backward compatibility with versions < 1.5. In future releases, the default value may be changed to ``True``.
 
 
-4. *(optional)* Use ``TaskiqProvider()`` when creating container if you are going to use ``taskiq.TaskiqMessage`` in providers.
+4. *(optional)* Use ``TaskiqProvider()`` when creating container if you are going to use ``taskiq.TaskiqMessage`` in providers
 
 .. code-block:: python
 
     container = make_async_container(YourProvider(), TaskiqProvider())
 
 
-6. Setup dishka integration.
+5. Setup ``dishka`` integration.
 
 .. code-block:: python
 

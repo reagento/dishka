@@ -3,11 +3,11 @@
 aiogram
 ===========================================
 
-Though it is not required, you can use dishka-aiogram integration. It features:
+Though it is not required, you can use *dishka-aiogram* integration. It features:
 
-* automatic REQUEST scope management using middleware
+* automatic *REQUEST* scope management using middleware
 * passing ``TelegramObject`` object and ``AiogramMiddlewareData`` dict as a context data to providers for telegram events (update object fields)
-* automatic injection of dependencies into handler function
+* automatic injection of dependencies into handler function.
 
 Only async handlers are supported.
 
@@ -26,7 +26,7 @@ How to use
     )
     from dishka import make_async_container, Provider, provide, Scope
 
-2. Create provider. You can use ``aiogram.types.TelegramObject`` and ``dishka.integrations.aiogram.AiogramMiddlewareData`` as a factory parameter to access on REQUEST-scope
+2. Create provider. You can use ``aiogram.types.TelegramObject`` and ``dishka.integrations.aiogram.AiogramMiddlewareData`` as a factory parameter to access on *REQUEST*-scope
 
 .. code-block:: python
 
@@ -66,14 +66,14 @@ How to use
     container = make_async_container(YourProvider(), AiogramProvider())
 
 
-6. Setup dishka integration. ``auto_inject=True`` is required unless you explicitly use ``@inject`` decorator
+5. Setup ``dishka`` integration. ``auto_inject=True`` is required unless you explicitly use ``@inject`` decorator
 
 .. code-block:: python
 
     setup_dishka(container=container, router=dp, auto_inject=True)
 
 
-7. *(optional)* Close container on dispatcher shutdown
+6. *(optional)* Close container on dispatcher shutdown
 
 .. code-block:: python
 

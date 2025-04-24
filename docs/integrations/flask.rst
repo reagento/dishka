@@ -3,11 +3,11 @@
 Flask
 ===========================================
 
-Though it is not required, you can use Dishka-Flask integration. It features:
+Though it is not required, you can use *dishka-flask* integration. It features:
 
-* automatic REQUEST scope management using middleware
+* automatic *REQUEST* scope management using middleware
 * passing ``Request`` object as a context data to providers for **HTTP** requests
-* automatic injection of dependencies into handler function
+* automatic injection of dependencies into handler function.
 
 
 How to use
@@ -26,7 +26,7 @@ How to use
     from dishka import make_container, Provider, provide, Scope
 
 2. Create provider. You can use ``flask.Request`` as a factory parameter to access HTTP or Websocket request.
-It is available on ``REQUEST`` scope.
+It is available on *REQUEST*-scope
 
 .. code-block:: python
 
@@ -57,13 +57,13 @@ It is available on ``REQUEST`` scope.
         ...
 
 
-4. *(optional)* Use ``FlaskProvider()`` when creating container if you are going to use ``flask.Request`` in providers.
+4. *(optional)* Use ``FlaskProvider()`` when creating container if you are going to use ``flask.Request`` in providers
 
 .. code-block:: python
 
     container = make_container(YourProvider(), FlaskProvider())
 
-5. Setup dishka integration. ``auto_inject=True`` is required unless you explicitly use ``@inject`` decorator. It is important here to call it after registering all views and blueprints.
+5. Setup ``dishka`` integration. ``auto_inject=True`` is required unless you explicitly use ``@inject`` decorator. It is important here to call it after registering all views and blueprints
 
 .. code-block:: python
 

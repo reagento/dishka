@@ -349,7 +349,7 @@ class RegistryBuilder:
             old_factory.provides.type_hint, decorated_component,
         )
         new_factory = decorator.as_factory(
-            scope=old_factory.scope,
+            scope=cast(BaseScope, old_factory.scope),  # all scopes validated
             new_dependency=old_factory.provides,
             cache=old_factory.cache,
             component=provides.component,
@@ -436,7 +436,8 @@ class RegistryBuilder:
             registries[scope] = registry
             has_fallback = False
         for key, factory in self.processed_factories.items():
-            registries[factory.scope].add_factory(factory, key)
+            scope = cast(BaseScope, factory.scope)
+            registries[scope].add_factory(factory, key)
         return tuple(registries.values())
 
 

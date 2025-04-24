@@ -127,7 +127,6 @@ class RegistryBuilder:
     ) -> None:
         self.scopes = scopes
         self.providers = providers
-        self.registries: dict[BaseScope, Registry] = {}
         self.dependency_scopes: dict[DependencyKey, BaseScope] = {}
         self.components: set[Component] = {DEFAULT_COMPONENT}
         self.alias_sources: dict[DependencyKey, Any] = {}
@@ -167,19 +166,6 @@ class RegistryBuilder:
                 self.alias_sources[provides] = alias_source
                 self.aliases[provides] = alias
 
-    def _init_registries(self) -> None:
-        has_fallback = True
-        for scope in self.scopes:
-            registry = Registry(scope, has_fallback=has_fallback)
-            context_var = ContextVariable(
-                provides=self.container_key,
-                scope=scope,
-                override=False,
-            )
-            for component in self.components:
-                registry.add_factory(context_var.as_factory(component))
-            self.registries[scope] = registry
-            has_fallback = False
 
     def _process_factory(
             self, provider: BaseProvider, factory: Factory,
@@ -206,11 +192,6 @@ class RegistryBuilder:
             )
 
         self.processed_factories[provides] = factory
-        scope = cast(BaseScope, factory.scope)
-        if scope != self.dependency_scopes[provides]:
-            return  # factory is overridden with different scope
-        registry = self.registries[cast(BaseScope, factory.scope)]
-        registry.add_factory(factory)
 
     def _process_alias(
             self, provider: BaseProvider, alias: Alias,
@@ -244,7 +225,6 @@ class RegistryBuilder:
                 ])
 
         scope = self.dependency_scopes[alias_source]
-        registry = self.registries[scope]
 
         factory = alias.as_factory(scope, component)
         if (
@@ -268,26 +248,23 @@ class RegistryBuilder:
 
         self.dependency_scopes[factory.provides] = scope
         self.processed_factories[factory.provides] = factory
-        registry.add_factory(factory)
 
     def _process_generic_decorator(
             self, provider: BaseProvider, decorator: Decorator,
     ) -> None:
         found = []
         provides = decorator.provides.with_component(provider.component)
-        for registry in self.registries.values():
-            for factory in registry.factories.values():
+        for factory in self.processed_factories.values():
                 if factory.provides.component != provides.component:
                     continue
                 if factory.type is FactoryType.CONTEXT:
                     continue
                 if decorator.match_type(factory.provides.type_hint):
-                    found.append((registry, factory))
+                    found.append(factory)
         if found:
-            for registry, factory in found:
+            for factory in found:
                 self._decorate_factory(
                     decorator=decorator,
-                    registry=registry,
                     old_factory=factory,
                 )
         else:
@@ -323,26 +300,19 @@ class RegistryBuilder:
                     component=provider.component,
                 )],
             )
-        scope = self.dependency_scopes[provides]
-        registry = self.registries[scope]
-        old_factory = registry.get_factory(provides)
-        if old_factory is None:
-            # we know scope, but no factory -> it's overridden
-            return
+        old_factory = self.processed_factories[provides]
         self._decorate_factory(
             decorator=decorator,
-            registry=registry,
             old_factory=old_factory,
         )
 
     def _is_alias_decorated(
         self,
         decorator: Decorator,
-        registry: Registry,
         alias: Factory,
     ) -> bool:
         dependency = alias.dependencies[0]
-        factory = registry.get_factory(dependency)
+        factory = self.processed_factories.get(dependency)
         if factory is None:
             raise AliasedFactoryNotFoundError(dependency, alias)
         return factory.source is decorator.factory.source
@@ -350,7 +320,6 @@ class RegistryBuilder:
     def _decorate_factory(
         self,
         decorator: Decorator,
-        registry: Registry,
         old_factory: Factory,
     ) -> None:
         provides = old_factory.provides
@@ -360,7 +329,7 @@ class RegistryBuilder:
             )
         if (
             old_factory.type is FactoryType.ALIAS
-                and self._is_alias_decorated(decorator, registry, old_factory)
+                and self._is_alias_decorated(decorator, old_factory)
         ):
             return
         depth = self.decorator_depth[provides]
@@ -380,14 +349,14 @@ class RegistryBuilder:
             old_factory.provides.type_hint, decorated_component,
         )
         new_factory = decorator.as_factory(
-            scope=registry.scope,
+            scope=old_factory.scope,
             new_dependency=old_factory.provides,
             cache=old_factory.cache,
             component=provides.component,
         )
         new_factory.provides = provides
-        registry.add_factory(old_factory)
-        registry.add_factory(new_factory)
+        self.processed_factories[old_factory.provides] = old_factory
+        self.processed_factories[new_factory.provides] = new_factory
 
     def _process_context_var(
             self, provider: BaseProvider, context_var: ContextVariable,
@@ -400,7 +369,6 @@ class RegistryBuilder:
                     "Define it explicitly in Provider or from_context"
                 ),
             )
-        registry = self.registries[context_var.scope]
         for component in self.components:
             factory = context_var.as_factory(component)
             if (
@@ -421,14 +389,12 @@ class RegistryBuilder:
                     factory,
                     self.processed_factories[factory.provides],
                 )
-            self.processed_factories[context_var.provides] = factory
-            registry.add_factory(factory)
+            self.processed_factories[factory.provides] = factory
 
     def build(self) -> tuple[Registry, ...]:
         self._collect_components()
         self._collect_provided_scopes()
         self._collect_aliases()
-        self._init_registries()
 
         for provider in self.providers:
             for factory in provider.factories:
@@ -449,19 +415,39 @@ class RegistryBuilder:
                 else:
                     self._process_normal_decorator(provider, decorator)
         self._post_process_generic_factories()
-        registries = list(self.registries.values())
+
+        registries = self._make_registries()
         if not self.skip_validation:
             GraphValidator(registries).validate()
-        return tuple(registries)
+        return registries
+
+    def _make_registries(self) -> tuple[Registry, ...]:
+        registries: dict[BaseScope, Registry] = {}
+        has_fallback = True
+        for scope in self.scopes:
+            registry = Registry(scope, has_fallback=has_fallback)
+            context_var = ContextVariable(
+                provides=self.container_key,
+                scope=scope,
+                override=False,
+            )
+            for component in self.components:
+                registry.add_factory(context_var.as_factory(component))
+            registries[scope] = registry
+            has_fallback = False
+        for key, factory in self.processed_factories.items():
+            print(key, factory.source)
+            registries[factory.scope].add_factory(factory, key)
+        return tuple(registries.values())
+
 
     def _post_process_generic_factories(self) -> None:
         found = [
-            (registry, factory)
-            for registry in self.registries.values()
-            for factory in registry.factories.values()
+            factory
+            for factory in self.processed_factories.values()
             if is_generic(factory.provides.type_hint)
         ]
-        for registry, factory in found:
+        for factory in found:
             origin = get_origin(factory.provides.type_hint)
             origin_key = DependencyKey(origin, factory.provides.component)
-            registry.add_factory(factory, origin_key)
+            self.processed_factories[origin_key] = factory

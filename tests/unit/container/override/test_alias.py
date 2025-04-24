@@ -122,7 +122,7 @@ def test_override_alias_to_provide_different_scope(scope1: Scope, scope2: Scope)
 )
 def test_override_source_to_different_scope(scope1: Scope, scope2: Scope) -> None:
     p1 = Provider(scope1)
-    p1.provide(lambda: True, provides=bool)
+    p1.provide(lambda: False, provides=bool)
     p1.alias(bool, provides=int)
 
     @p1.decorate
@@ -130,7 +130,7 @@ def test_override_source_to_different_scope(scope1: Scope, scope2: Scope) -> Non
         return -a
 
     p2 = Provider(scope2)
-    p2.provide(lambda: False, provides=bool)
+    p2.provide(lambda: True, provides=bool)
     container = make_container(p1, p2)
     with container() as request_container:
         assert request_container.get(int) == -1

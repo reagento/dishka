@@ -117,7 +117,7 @@ def test_override_context_to_provide(scope1: Scope, scope2: Scope) -> None:
     p1.from_context(provides=int)
 
     p2 = Provider(scope2)
-    p1.provide(lambda: 2, provides=int)
+    p2.provide(lambda: 2, provides=int)
     container = make_container(p1, p2)
     with container() as request_container:
         assert request_container.get(int) == 2

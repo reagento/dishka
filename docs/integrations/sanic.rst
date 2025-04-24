@@ -3,11 +3,11 @@
 Sanic
 ===========================================
 
-Though it is not required, you can use dishka-sanic integration. It features:
+Though it is not required, you can use *dishka-sanic* integration. It features:
 
-* automatic REQUEST scope management using middleware
+* automatic *REQUEST* scope management using middleware
 * passing ``Request`` object as a context data to providers for **HTTP** requests
-* automatic injection of dependencies into handler function
+* automatic injection of dependencies into handler function.
 
 
 How to use
@@ -25,7 +25,7 @@ How to use
     )
     from dishka import make_async_container, Provider, provide, Scope
 
-2. Create provider. You can use ``sanic.Request`` as a factory parameter to access on REQUEST-scope
+2. Create provider. You can use ``sanic.Request`` as a factory parameter to access on *REQUEST*-scope
 
 .. code-block:: python
 
@@ -57,14 +57,14 @@ How to use
         ...
 
 
-4. *(optional)* Use ``SanicProvider()`` when creating container if you are going to use ``sanic.Request`` in providers.
+4. *(optional)* Use ``SanicProvider()`` when creating container if you are going to use ``sanic.Request`` in providers
 
 .. code-block:: python
 
     container = make_async_container(YourProvider(), SanicProvider())
 
 
-6. Setup dishka integration. ``auto_inject=True`` is required unless you explicitly use ``@inject`` decorator
+5. Setup ``dishka`` integration. ``auto_inject=True`` is required unless you explicitly use ``@inject`` decorator
 
 .. code-block:: python
 

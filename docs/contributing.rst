@@ -55,7 +55,7 @@ Project contains several types of tests:
 
 * unit tests of library itself
 * integration with other libraries
-* tests of example app
+* tests of example app.
 
 All of them can be run using nox:
 
@@ -100,5 +100,12 @@ Open file ``docs-build/html/index.html`` in your browser
 Submitting changes
 ============================
 
-We welcome new ideas and PRs but may request additional discussion if it affects internal structure or API.
+We welcome new contributors, but we want to keep the library design as simple as possible, so new approaches may require some discussion. Here are some requirements:
+
+1. Compatibility matters. If proposed changes introduce new parameters, they should not be required. Changes in behavior can be introduced under a toggle.
+2. Bugfixes are always welcome.
+3. New features should be discussed beforehand. They should not exceed the scope of the IoC container and should fit into the overall API design.
+4. New integrations are never accepted into the library. You are free to publish them as a separate project.
+5. New translations are accepted if we have at least three (3) maintainers who are eager to support them and can translate all documentation changes in a short period.
+
 When submitting new pull request, ensure that you have run all tests and linters.

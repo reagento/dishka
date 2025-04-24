@@ -75,7 +75,7 @@ async def test_2components():
 
 
 @pytest.mark.asyncio
-async def test_2components_factory():
+async def test_2components_factory_auto_context():
     class MyProvider(Provider):
         scope = Scope.APP
         component = "XXX"
@@ -89,7 +89,7 @@ async def test_2components_factory():
             return a
 
     container = make_async_container(MyProvider(), context={int: 1})
-    assert await container.get(float, component="XXX") == 100
+    assert await container.get(float, component="XXX") == 1
 
 
 def test_decorate():

@@ -96,7 +96,9 @@ def test_skip_cant_override() -> None:
         (Scope.APP, Scope.APP),
     ],
 )
-def test_override_alias_to_provide_different_scope(scope1: Scope, scope2: Scope) -> None:
+def test_override_alias_to_provide_different_scope(
+        scope1: Scope, scope2: Scope,
+) -> None:
     p1 = Provider(scope1)
     p1.provide(lambda: True, provides=bool)
     p1.alias(bool, provides=int)
@@ -120,7 +122,9 @@ def test_override_alias_to_provide_different_scope(scope1: Scope, scope2: Scope)
         (Scope.APP, Scope.APP),
     ],
 )
-def test_override_source_to_different_scope(scope1: Scope, scope2: Scope) -> None:
+def test_override_source_to_different_scope(
+        scope1: Scope, scope2: Scope,
+) -> None:
     p1 = Provider(scope1)
     p1.provide(lambda: False, provides=bool)
     p1.alias(bool, provides=int)

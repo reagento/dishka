@@ -436,7 +436,6 @@ class RegistryBuilder:
             registries[scope] = registry
             has_fallback = False
         for key, factory in self.processed_factories.items():
-            print(key, factory.source)
             registries[factory.scope].add_factory(factory, key)
         return tuple(registries.values())
 

@@ -166,6 +166,24 @@ class RegistryBuilder:
                 self.alias_sources[provides] = alias_source
                 self.aliases[provides] = alias
 
+    def _make_registries(self) -> tuple[Registry, ...]:
+        registries: dict[BaseScope, Registry] = {}
+        has_fallback = True
+        for scope in self.scopes:
+            registry = Registry(scope, has_fallback=has_fallback)
+            context_var = ContextVariable(
+                provides=self.container_key,
+                scope=scope,
+                override=False,
+            )
+            for component in self.components:
+                registry.add_factory(context_var.as_factory(component))
+            registries[scope] = registry
+            has_fallback = False
+        for key, factory in self.processed_factories.items():
+            scope = cast(BaseScope, factory.scope)
+            registries[scope].add_factory(factory, key)
+        return tuple(registries.values())
 
     def _process_factory(
             self, provider: BaseProvider, factory: Factory,
@@ -420,26 +438,6 @@ class RegistryBuilder:
         if not self.skip_validation:
             GraphValidator(registries).validate()
         return registries
-
-    def _make_registries(self) -> tuple[Registry, ...]:
-        registries: dict[BaseScope, Registry] = {}
-        has_fallback = True
-        for scope in self.scopes:
-            registry = Registry(scope, has_fallback=has_fallback)
-            context_var = ContextVariable(
-                provides=self.container_key,
-                scope=scope,
-                override=False,
-            )
-            for component in self.components:
-                registry.add_factory(context_var.as_factory(component))
-            registries[scope] = registry
-            has_fallback = False
-        for key, factory in self.processed_factories.items():
-            scope = cast(BaseScope, factory.scope)
-            registries[scope].add_factory(factory, key)
-        return tuple(registries.values())
-
 
     def _post_process_generic_factories(self) -> None:
         found = [

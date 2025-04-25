@@ -11,7 +11,7 @@ Working with context data consists of three parts:
     * For the context passed to ``make_container`` and ``make_async_container`` functions it is done automatically in default component.
     * Context is shared across all providers. You do not need to specify it in each provider.
     * For the frameworks integrations you can use predefined providers instead of defining context data manually
-    * To access context from additional components you need to use ``from_context`` is each of them
+    * To access context from additional components you need to use ``from_context`` is each of them in addition to default component.
 2. Usage of that object in providers.
 3. Passing actual values on scope entrance. It can be container creation for top level scope or container calls for nested ones. Use it in form ``context={Type: value,...}``.
 
@@ -43,4 +43,4 @@ Working with context data consists of three parts:
 
 .. note::
 
-    If you are using *multiple components*, you need to specify ``from_context`` in them separately though the context is shared. Context data is always stored in default component, so, other components may not use it and have factories instead.
+    If you are using *multiple components*, you need to specify ``from_context`` in them separately though the context is share.

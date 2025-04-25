@@ -8,9 +8,10 @@ The difference from normal factories is that they are not created inside some ``
 Working with context data consists of three parts:
 
 1. Declaration that object is received from context using :ref:`from-context`. You need to provide the type and scope.
-    * For the context passed to ``make_container`` functions it is done automatically.
-    * Context is shared across all components and providers. You do not need to specify it in each provider or component.
+    * For the context passed to ``make_container`` and ``make_async_container`` functions it is done automatically in default component.
+    * Context is shared across all providers. You do not need to specify it in each provider.
     * For the frameworks integrations you can use predefined providers instead of defining context data manually
+    * To access context from additional components you need to use ``from_context`` is each of them
 2. Usage of that object in providers.
 3. Passing actual values on scope entrance. It can be container creation for top level scope or container calls for nested ones. Use it in form ``context={Type: value,...}``.
 

@@ -387,27 +387,26 @@ class RegistryBuilder:
                     "Define it explicitly in Provider or from_context"
                 ),
             )
-        for component in self.components:
-            factory = context_var.as_factory(component)
-            if (
-                self.validation_settings.nothing_overridden
-                and not self.skip_validation
-                and factory.override
-                and factory.provides not in self.processed_factories
-            ):
-                raise NothingOverriddenError(factory)
+        factory = context_var.as_factory(provider.component)
+        if (
+            self.validation_settings.nothing_overridden
+            and not self.skip_validation
+            and factory.override
+            and factory.provides not in self.processed_factories
+        ):
+            raise NothingOverriddenError(factory)
 
-            if (
-                self.validation_settings.implicit_override
-                and not self.skip_validation
-                and not factory.override
-                and factory.provides in self.processed_factories
-            ):
-                raise ImplicitOverrideDetectedError(
-                    factory,
-                    self.processed_factories[factory.provides],
-                )
-            self.processed_factories[factory.provides] = factory
+        if (
+            self.validation_settings.implicit_override
+            and not self.skip_validation
+            and not factory.override
+            and factory.provides in self.processed_factories
+        ):
+            raise ImplicitOverrideDetectedError(
+                factory,
+                self.processed_factories[factory.provides],
+            )
+        self.processed_factories[factory.provides] = factory
 
     def build(self) -> tuple[Registry, ...]:
         self._collect_components()

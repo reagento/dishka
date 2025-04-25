@@ -104,3 +104,8 @@ def test_decorate():
 
     with pytest.raises(InvalidGraphError):
         make_container(MyProvider(), context={int: 1})
+
+    p2 = Provider(Scope.APP)
+    p2.provide(lambda: 2, provides=int)
+    with pytest.raises(InvalidGraphError):
+        make_container(MyProvider(), p2)

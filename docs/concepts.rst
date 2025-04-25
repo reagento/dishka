@@ -3,14 +3,14 @@
 Key concepts
 *****************
 
-Dishka is a DI-framework and it is designed to create complex objects following dependency injection principle.
+``dishka`` is a DI-framework and it is designed to create complex objects following dependency injection principle.
 Let's start with some terms.
 
 Dependency
 ==================
 
 **Dependency** is what you need for some parts of your code to work.
-If your *database gateway* needs *database connection* to execute SQL queries, then the connection is a dependency for a gateway.
+If your *database gateway* needs *database connection* to execute `SQL` queries, then the connection is a dependency for a gateway.
 If your business logic class requires *database gateway* or some *api client* then *api client* and *database gateway* are dependencies for a business logic.
 Here, the ``Client`` is a dependency, while ``Service`` is a dependant.
 
@@ -40,13 +40,13 @@ Standard scopes are (with some skipped):
     ``APP`` |rarr| ``REQUEST`` |rarr| ``ACTION`` |rarr| ``STEP``
 
 You decide when to enter and exit each scope, but this is done one by one.
-If you enter the ``APP`` scope, then the next step deeper is to enter the ``REQUEST`` scope.
+If you enter the *APP*-scope, then the next step deeper is to enter the *REQUEST*-scope.
 
 .. note::
-    ``APP`` scope can be used for lazy initialization of singletons, while ``REQUEST`` scope is good for processing events like HTTP requests or messenger updates. It is unlikely that you will need other scopes
+    *APP*-scope can be used for lazy initialization of singletons, while *REQUEST*-scope is good for processing events like HTTP requests or messenger updates. It is unlikely that you will need other scopes
 
 
-In Dishka dependencies are lazy — they are created when you first request them.
+In ``dishka`` dependencies are lazy — they are created when you first request them.
 If the same dependency is requested multiple times within a single scope, then the same instance is returned (you can disable it for each dependency separately).
 A created dependency is kept until you exit the scope.
 And at that moment, it is not just dropped away, but the corresponding finalization steps are done.
@@ -57,7 +57,7 @@ So, if you have ``Config`` with scope of *APP* and ``Connection`` with scope of 
 you cannot have *APP*-scoped object which requires a connection,
 but you can have *REQUEST*-scoped object which requires a ``Connection`` or a ``Config`` (or even both).
 
-For a web application, enter ``APP`` scope on startup and ``REQUEST`` scope for each HTTP request.
+For a web application, enter *APP*-scope on startup and *REQUEST*-scope for each HTTP request.
 
 You can create a custom scope by defining your own ``Scope`` class if the standard scope flow doesn't fit your needs.
 
@@ -88,7 +88,7 @@ According to the scope order, container can be used to get dependencies from its
 Async container works in the same manner, but you should use async context manager and await the result of ``.get``.
 
 Some containers are concurrently safe, others are not: this is configured when you call a context manager.
-For web applications, it is good to have APP-scoped container thread/task-safe, but REQUEST-scoped containers do not require it, and this is the default behavior.
+For web applications, it is good to have *APP*-scoped container thread/task-safe, but *REQUEST*-scoped containers do not require it, and this is the default behavior.
 
 
 :ref:`Read more about container API<container>`

@@ -9,7 +9,7 @@ from dishka.text_rendering import get_name
 
 
 class PathRenderer:
-    def __init__(self, cycle: bool):
+    def __init__(self, *, cycle: bool):
         self.cycle = cycle
 
     def _arrow_cycle(self, index: int, length: int) -> str:
@@ -18,8 +18,6 @@ class PathRenderer:
         elif index == 0:
             return "╭─▷─╮ "
         elif index + 1 < length:
-            # if index % 2:
-            #     return "│   │ "
             return "│   ▼ "
         else:
             return "╰─◁─╯ "
@@ -30,43 +28,20 @@ class PathRenderer:
         else:
             return "╰─▷ "
 
-    def _arrow(self, index: int, length: int):
+    def _arrow(self, index: int, length: int) -> str:
         if self.cycle:
             return self._arrow_cycle(index, length)
         return self._arrow_line(index, length)
 
-    def _right_arrow(self, index: int, length: int):
-        if self.cycle:
-            return ""
-        #return ""
-        if index + 1 < length:
-            return "  │"
-        return "◁─╯"
-
-    def _switch_arrow(self, index: int, length: int):
+    def _switch_arrow(self, index: int, length: int) -> str:
         if self.cycle:
             if index> 0:
-                # return "│   │ "
                 return "│   │ "
             return "      "
-        #return "│"
-        if index==0:
-            return "├───"
-        return "├───"
+        return "│   "
 
-    def _switch_right_arrow(self, index: int, length: int):
-        if self.cycle:
-            return ""
-        #return ""
-        if index==0:
-            return "──┤"
-        return "──┤"
-
-    def _switch_filler(self):
-        if self.cycle:
-            return " "
-        #return " "
-        return "─"
+    def _switch_filler(self) -> str:
+        return " "
 
     def _key(self, key: DependencyKey) -> str:
         return get_name(key.type_hint, include_module=True)
@@ -83,9 +58,7 @@ class PathRenderer:
     def _switch(
             self, scope: BaseScope | None, component: Component | None,
     ) -> str:
-        # if self.cycle:
-        return f"◈ component={component!r}, {scope} ◈"
-        return f"[ component={component!r}, {scope} ]"
+        return f"◈ {scope}, component={component!r} ◈"
 
     def render(
             self,
@@ -93,14 +66,12 @@ class PathRenderer:
             last: DependencyKey | None = None,
     ) -> str:
         row_count = len(path) + bool(last)
-        # each row is: num, arrow, col1, col2, arrow, dest{scope, component}
         rows = [
             Row(
                 row_num,
                 self._arrow(row_num, row_count),
                 [self._key(factory.provides), self._source(factory)],
-                self._right_arrow(row_num, row_count),
-                (factory.scope, factory.provides.component)
+                (factory.scope, factory.provides.component),
             )
             for row_num, factory in enumerate(path)
         ]
@@ -110,13 +81,12 @@ class PathRenderer:
                     row_count - 1,
                     self._arrow(row_count-1, row_count),
                     [self._key(last), "???"],
-                    self._right_arrow(row_count-1, row_count),
                     (rows[-1].dest[0], last.component),
-                )
+                ),
             )
         prev_dest: tuple[BaseScope | None, Component | None] = (None, "")
         space_left = "   "
-        space_columns = "   "
+        space_between = "   "
         res = ""
 
         columns_count = len(rows[0].columns)
@@ -124,34 +94,28 @@ class PathRenderer:
             max(len(row.columns[col_num]) for row in rows)
             for col_num in range(columns_count)
         ]
-        total_width = (
-            len(space_left) +
-            len(rows[0].border_left) +  # left borders are equal length
+        switch_len = (
             sum(columns_width) +
-            len(space_columns) * (columns_count - 1) +
-            len(rows[0].border_right) # right borders are equal length
+            len(space_between) * (columns_count - 1)
         )
-        switch_len = sum(columns_width) + len(space_columns) * (columns_count - 1)
         for row in rows:
             if row.dest != prev_dest:
                 res += (
                     space_left +
                     self._switch_arrow(row.num, row_count) +
                     self._switch(*row.dest).center(
-                        switch_len, self._switch_filler()
+                        switch_len, self._switch_filler(),
                     ) +
-                    self._switch_right_arrow(row.num, row_count) +
                     "\n"
                 )
                 prev_dest = row.dest
             res += (
                 space_left +
                 row.border_left +
-                space_columns.join(
+                space_between.join(
                     c.ljust(cw)
-                    for c, cw in zip(row.columns, columns_width)
+                    for c, cw in zip(row.columns, columns_width, strict=False)
                 ) +
-                row.border_right +
                 "\n"
             )
         return res
@@ -161,5 +125,4 @@ class Row(NamedTuple):
     num: int
     border_left: str
     columns: Sequence[str]
-    border_right: str
     dest: tuple[BaseScope | None, Component | None]

@@ -22,7 +22,7 @@ from .exceptions import (
     NoFactoryError,
     NoNonSkippedScopesError,
 )
-from .provider import BaseProvider
+from .provider import BaseProvider, make_root_context_provider
 from .registry import Registry
 from .registry_builder import RegistryBuilder
 
@@ -239,10 +239,11 @@ def make_container(
         start_scope: BaseScope | None = None,
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,
 ) -> Container:
+    context_provider = make_root_context_provider(context, scopes)
     registries = RegistryBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,
-        providers=providers,
+        providers=(*providers, context_provider),
         skip_validation=skip_validation,
         validation_settings=validation_settings,
     ).build()

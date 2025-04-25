@@ -59,7 +59,7 @@ How to use
     app = Litestar(route_handlers=[r])
 
 
-1. *(optional)* Use ``LitestarProvider()`` when creating container if you are going to use ``litestar.Request`` in providers.
+4. *(optional)* Use ``LitestarProvider()`` when creating container if you are going to use ``litestar.Request`` in providers.
 
 .. code-block:: python
 

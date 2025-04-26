@@ -62,4 +62,4 @@ Such decorator function can also have additional parameters.
 
 The limitation is that you cannot use ``decorate`` in the same provider as you declare factory or alias for dependency. But you won't need it because you can update the factory code.
 
-The idea of ``decorate`` is to postprocess dependencies provided by some external source, when you combine multiple ``Provider`` objects into one container
+The idea of ``decorate`` is to postprocess dependencies provided by some external source, when you combine multiple ``Provider`` objects into one container.

@@ -4,11 +4,11 @@ Celery
 ============================
 
 
-Though it is not required, you can use dishka-celery integration. It features:
+Though it is not required, you can use *dishka-celery* integration. It features:
 
-* automatic REQUEST scope management using signals
+* automatic *REQUEST* scope management using signals
 * injection of dependencies into task handler function using decorator
-* automatic injection of dependencies into task handler function
+* automatic injection of dependencies into task handler function.
 
 
 How to use
@@ -27,8 +27,9 @@ How to use
     from dishka import make_container, Provider, provide, Scope
 
 
-2.  Create provider and container as usual
-3. (optional) Set task class to your celery app to enable automatic injection for all task handlers
+2. Create provider and container as usual
+
+3. *(optional)* Set task class to your celery app to enable automatic injection for all task handlers
 
 .. code-block:: python
 
@@ -54,7 +55,7 @@ or for one task handler
     ):
         ...
 
-5. (optional) Decorate them using ``@inject`` if you are not using ``DishkaTask``.
+5. *(optional)* Decorate them using ``@inject`` if you are not using ``DishkaTask``.
 
 .. code-block:: python
 
@@ -65,7 +66,7 @@ or for one task handler
     ):
         ...
 
-6. (optional) Setup signal to close container when worker process shutdown 
+6. *(optional)* Setup signal to close container when worker process shutdown
 
 .. code-block:: python
 
@@ -78,7 +79,7 @@ or for one task handler
         container: Container = current_app.conf["dishka_container"]
         container.close()
 
-7. Setup dishka integration
+7. Setup ``dishka`` integration
 
 .. code-block:: python
 

@@ -7,12 +7,12 @@ provide
 
 Provider object has also a ``.provide`` method with the same logic.
 
-If it is used with class, it analyzes its ``__init__`` typehints to detect its dependencies. If it is used with method, it checks its parameters typehints and a result type. Last one describes what this method is used to create.
+If it is used with class, it analyzes its ``__init__`` typehints to detect its dependencies. If it is used with a method, it checks its parameters typehints and a result type. Last one describes what this method is used to create.
 
 ``scope`` argument is required to define the lifetime of the created object.
 By default the result is cached within scope. You can disable it providing ``cache=False`` argument.
 
-* For simple case add method and mark it with ``@provide`` decorator.
+* For simple case add method and mark it with ``@provide`` decorator:
 
 .. code-block:: python
 
@@ -23,7 +23,7 @@ By default the result is cached within scope. You can disable it providing ``cac
         def get_service(self) -> Service:
             return Service()
 
-* Want some finalization when exiting the scope? Make that method generator:
+* Want some finalization when exiting the scope? Make that method a generator:
 
 .. code-block:: python
 
@@ -51,7 +51,7 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
                 print("Some exception while process handling: ", exc)
             conn.close()  # finally
 
-* Do not have any specific logic and just want to create class using its ``__init__``? Then add a provider attribute using ``provide`` as function passing that class.
+* Haven't got any specific logic and just want to create class using its ``__init__``? Then add a provider attribute using ``provide`` as function passing that class.
 
 .. code-block:: python
 
@@ -60,7 +60,7 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
     class MyProvider(Provider):
         service = provide(Service, scope=Scope.REQUEST)
 
-* Want to create a child class instance when parent is requested? Add a ``source`` attribute to ``provide`` function with a parent class while passing child as a first parameter
+* Want to create a child class instance when parent is requested? Add a ``source`` attribute to ``provide`` function with a parent class while passing child as a source
 
 .. code-block:: python
 
@@ -73,7 +73,7 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
         a = provide(source=UserGatewayImpl, scope=Scope.REQUEST, provides=UserGateway)
 
 
-* Want to go ``async``? Make provide methods asynchronous. Create async container. Use ``async with`` and await ``get`` calls:
+* Want to go ``async``? Make provide methods asynchronous, create async container and then use ``async with`` and await ``get`` calls:
 
 .. code-block:: python
 
@@ -87,7 +87,7 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
     container = make_async_container(MyProvider())
     conn = await container.get(Connection)
 
-* Tired of providing ``scope=`` for each dependency? Set it inside your ``Provider`` class and all factories with no scope will use it.
+* Tired of providing ``scope=`` for each dependency? Set it inside your ``Provider`` class and all factories with no scope will use it:
 
 .. code-block:: python
 
@@ -119,7 +119,7 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
 
 It works similar to :ref:`alias`.
 
-* Do you want to get dependencies by parents? Use ``WithParents`` as a result hint:
+* Do you want to get dependencies by parent classes too? Use ``WithParents`` as a result hint:
 
 .. code-block:: python
 
@@ -141,9 +141,9 @@ It works similar to :ref:`alias`.
     reader is impl and writer is impl  # True
 
 
-WithParents generates only one factory and many aliases and is equivalent to ``AnyOf[AImpl, A]``. The following parents are ignored: ``type``, ``object``, ``Enum``, ``ABC``, ``ABCMeta``, ``Generic``, ``Protocol``, ``Exception``, ``BaseException``
+WithParents generates only one factory and many aliases and is equivalent to ``AnyOf[AImpl, A]``. The following parents are ignored: ``type``, ``object``, ``Enum``, ``ABC``, ``ABCMeta``, ``Generic``, ``Protocol``, ``Exception``, ``BaseException``.
 
-* Your object's dependencies (and their dependencies) can be simply created by calling their constructors. You do not need to register them manually. Use ``recursive=True`` to register them automatically
+* Your object's dependencies (and their dependencies) can be simply created by calling their constructors. You do not need to register them manually. Use ``recursive=True`` to register them automatically:
 
 .. code-block:: python
 
@@ -165,7 +165,7 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
         )
 
 
-* Do you want to override the factory? To do this, specify the parameter ``override=True``. This can be checked when passing proper ``validation_settings`` when creating container.
+* Do you want to override the factory? To do this, specify the parameter ``override=True``. This can be checked when passing proper ``validation_settings`` when creating container:
 
 .. code-block:: python
 
@@ -187,7 +187,7 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
     gateway = container.get(UserGateway)  # UserGatewayMock
 
 
-* You can use factory with Generic classes
+* You can use factory with Generic classes:
 
 .. code-block:: python
 

@@ -20,7 +20,7 @@ Provider object has also a ``.alias`` method with the same logic.
 
 Additionally, alias has own setting for caching: it caches by default regardless if source is cached. You can disable it providing ``cache=False`` argument.
 
-* Do you want to override the alias? To do this, specify the parameter ``override=True``. This can be checked when passing proper ``validation_settings`` when creating container.
+Do you want to override the alias? To do this, specify the parameter ``override=True``. This can be checked when passing proper ``validation_settings`` when creating container.
 
 .. code-block:: python
 

@@ -13,9 +13,8 @@ across all provided objects. But what if there are some intersections.
 Let's talk about three situations:
 
 1. Only several types are used with different meaning within a monolithic app.
-2. Several parts of an application are developed them more or less independently,
-   while they used within same processing context
-3. You have a modular application with multiple bounded contexts
+2. Several parts of an application are developed them more or less independently, while they are used within same processing context.
+3. You have a modular application with multiple bounded contexts.
 
 **First situation** can appear when you have for-example multiple thread pools
 for different tasks or multiple database connections for different databases.
@@ -28,7 +27,7 @@ While they have special meaning you distinguish them by creating new types
     MainDbConnection = NewType("MainDbConnection", Connection)
 
 Once you have different types dishka can now understand which one is used
-in each place
+in each place.
 
 In the **third situation** you actually have mini-applications inside
 a bigger one with their own scopes and event lifecycle. So just create multiple
@@ -178,5 +177,5 @@ when declaring a dependency by ``FromComponent`` type annotation.
 .. note::
     In frameworks integrations ``FromDishka[T]`` is used to get an object
 from default component. To use other component you can use the same syntax
-with annotated ``Annotated[T, FromComponent("X")]``
+with annotated ``Annotated[T, FromComponent("X")]``.
 

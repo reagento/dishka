@@ -4,7 +4,7 @@ Click
 =================================
 
 
-Though it is not required, you can use dishka-click integration. It features automatic injection to command handlers
+Though it is not required, you can use *dishka-click* integration. It features automatic injection to command handlers.
 In contrast with other integrations there is no scope management.
 
 
@@ -18,7 +18,7 @@ How to use
 
     from dishka.integrations.click import setup_dishka, inject
 
-2. Create container in group handler and setup it to click context. Pass ``auto_inject=True`` unless you want to use ``@inject`` decorator explicitly.
+2. Create container in group handler and setup it to click context. Pass ``auto_inject=True`` unless you want to use ``@inject`` decorator explicitly
 
 .. code-block:: python
 

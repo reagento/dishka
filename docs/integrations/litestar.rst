@@ -3,11 +3,11 @@
 Litestar
 ===========================================
 
-Though it is not required, you can use dishka-litestar integration. It features:
+Though it is not required, you can use *dishka-litestar* integration. It features:
 
-* automatic REQUEST scope management using middleware
+* automatic *REQUEST* scope management using middleware
 * passing ``Request`` object as a context data to providers for **HTTP** requests
-* injection of dependencies into handler function using decorator
+* injection of dependencies into handler function using decorator.
 
 
 How to use
@@ -25,7 +25,7 @@ How to use
     )
     from dishka import make_async_container, Provider, provide, Scope
 
-2. Create provider. You can use ``litestar.Request`` as a factory parameter to access on REQUEST-scope
+2. Create provider. You can use ``litestar.Request`` as a factory parameter to access on *REQUEST*-scope
 
 .. code-block:: python
 
@@ -47,7 +47,7 @@ How to use
         ...
 
 
-4. *(optional)* Use ``LitestarProvider()`` when creating container if you are going to use ``litestar.Request`` in providers.
+4. *(optional)* Use ``LitestarProvider()`` when creating container if you are going to use ``litestar.Request`` in providers
 
 .. code-block:: python
 
@@ -66,7 +66,7 @@ How to use
     app = Litestar([endpoint], lifespan=[lifespan])
 
 
-6. Setup dishka integration.
+6. Setup ``dishka`` integration.
 
 .. code-block:: python
 
@@ -81,8 +81,8 @@ Websockets
 In litestar, your view function is called once per event,
 and there is no way to determine if it is an http or websocket handler.
 Therefore, you should use the special ``inject_websocket`` decorator for websocket handlers.
-Also decorator can be only used to retrieve SESSION-scoped objects.
-To achieve REQUEST-scope you can enter in manually:
+Also decorator can be only used to retrieve *SESSION*-scoped objects.
+To achieve *REQUEST*-scope you can enter in manually:
 
 .. code-block:: python
 

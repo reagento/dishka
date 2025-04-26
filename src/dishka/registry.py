@@ -104,11 +104,11 @@ class Registry:
             self.factories[dependency] = factory
             return factory
 
-    def get_more_abstract_dependencies(
+    def get_more_abstract_factories(
         self,
         dependency: DependencyKey,
-    ) -> list[DependencyKey]:
-        abstract_dependencies: list[DependencyKey] = []
+    ) -> list[Factory]:
+        abstract_dependencies: list[Factory] = []
         try:
             abstract_classes = dependency.type_hint.__bases__
         except AttributeError:
@@ -120,21 +120,22 @@ class Registry:
                 dependency.component,
             )
 
-            if abstract_dependency in self.factories:
-                abstract_dependencies.append(abstract_dependency)
+            factory = self.factories.get(abstract_dependency)
+            if factory is not None:
+                abstract_dependencies.append(factory)
 
         return abstract_dependencies
 
-    def get_more_concrete_dependencies(
+    def get_more_concrete_factories(
         self,
         dependency: DependencyKey,
-    ) -> list[DependencyKey]:
-        concrete_dependencies: list[DependencyKey] = []
+    ) -> list[Factory]:
+        concrete_factories: list[Factory] = []
 
         check_type_hint = dependency.type_hint
 
         if check_type_hint in IGNORE_TYPES:
-            return concrete_dependencies
+            return concrete_factories
 
         subclasses = type.__subclasses__(check_type_hint)
         for subclass in subclasses:
@@ -142,10 +143,11 @@ class Registry:
                 subclass,
                 dependency.component,
             )
-            if concrete_dependency in self.factories:
-                concrete_dependencies.append(concrete_dependency)
+            factory = self.factories.get(concrete_dependency)
+            if factory is not None:
+                concrete_factories.append(factory)
 
-        return concrete_dependencies
+        return concrete_factories
 
     def _get_type_var_factory(self, dependency: DependencyKey) -> Factory:
         args = get_args(dependency.type_hint)

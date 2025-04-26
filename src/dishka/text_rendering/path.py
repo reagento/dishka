@@ -1,10 +1,10 @@
 from collections.abc import Sequence
 
 from dishka.entities.component import Component
-from dishka.entities.factory_type import FactoryData, FactoryType
+from dishka.entities.factory_type import FactoryData
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
-from dishka.text_rendering import get_name
+from dishka.text_rendering.name import get_key_name, get_source_name
 
 
 class PathRenderer:
@@ -24,18 +24,6 @@ class PathRenderer:
         else:
             return " →"
 
-    def _key(self, key: DependencyKey) -> str:
-        return get_name(key.type_hint, include_module=True)
-
-    def _source(self, factory: FactoryData) -> str:
-        source = factory.source
-        if source == factory.provides.type_hint:
-            return ""
-        if factory.type is FactoryType.ALIAS:
-            return "alias"
-
-        return get_name(source, include_module=False)
-
     def _switch(
             self, scope: BaseScope | None, component: Component | None,
     ) -> str:
@@ -51,9 +39,9 @@ class PathRenderer:
         else:
             _arrow = self._arrow_line
 
-        width = max(len(self._key(x.provides)) for x in path)
+        width = max(len(get_key_name(x.provides)) for x in path)
         if last:
-            width = max(width, len(self._key(last)))
+            width = max(width, len(get_key_name(last)))
         width += 2  # add spacing between columns
 
         dest: tuple[BaseScope | None, Component | None] = (None, "")
@@ -69,9 +57,9 @@ class PathRenderer:
 
             res += (
                     "   " + arrow + " " +
-                    self._key(factory.provides).ljust(width) +
+                    get_key_name(factory.provides).ljust(width) +
                     " " +
-                    self._source(factory) +
+                    get_source_name(factory) +
                     "\n"
             )
         if last:
@@ -81,7 +69,7 @@ class PathRenderer:
                 res += "   " + " " * len(arrow) + " " + self._switch(*new_dest)
             res += (
                     "   " + arrow + " " +
-                    self._key(last).ljust(width) +
+                    get_key_name(last).ljust(width) +
                     " ???\n"
             )
         return res

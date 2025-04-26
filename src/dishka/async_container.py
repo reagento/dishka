@@ -181,27 +181,27 @@ class AsyncContainer:
         if not compiled:
             if not self.parent_container:
                 abstract_dependencies = (
-                    self.registry.get_more_abstract_dependencies(key)
+                    self.registry.get_more_abstract_factories(key)
                 )
                 concrete_dependencies = (
-                    self.registry.get_more_concrete_dependencies(key)
+                    self.registry.get_more_concrete_factories(key)
                 )
                 raise NoFactoryError(
                     key,
-                    suggest_abstract_dependencies=abstract_dependencies,
-                    suggest_concrete_dependencies=concrete_dependencies,
+                    suggest_abstract_factories=abstract_dependencies,
+                    suggest_concrete_factories=concrete_dependencies,
                 )
             try:
                 return await self.parent_container._get(key)  # noqa: SLF001
             except NoFactoryError as ex:
                 abstract_dependencies = (
-                    self.registry.get_more_abstract_dependencies(key)
+                    self.registry.get_more_abstract_factories(key)
                 )
                 concrete_dependencies = (
-                    self.registry.get_more_concrete_dependencies(key)
+                    self.registry.get_more_concrete_factories(key)
                 )
-                ex.suggest_abstract_dependencies.extend(abstract_dependencies)
-                ex.suggest_concrete_dependencies.extend(concrete_dependencies)
+                ex.suggest_abstract_factories.extend(abstract_dependencies)
+                ex.suggest_concrete_factories.extend(concrete_dependencies)
                 raise
 
         try:

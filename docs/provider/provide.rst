@@ -147,16 +147,22 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
 
 .. code-block:: python
 
-    class A: ...
+    @dataclass
+    class APISettings:
+        api_key: str
+        rate_limit: int
 
-    class B:
-        def __init__(self, a: A): ...
-
-    class C:
-        def __init__(self, b: B): ...
+    class ExternalAPIClient(Protocol): ...
+    class ExternalAPIClientImpl(UserGateway):
+        def __init__(self, settings: APISettings): ...
 
     class MyProvider(Provider):
-        c = provide(C, scope=Scope.APP, recursive=True)
+        c = provide(
+            ExternalAPIClientImpl,
+            provides=ExternalAPIClient,
+            scope=Scope.REQUEST,
+            recursive=True
+        )
 
 
 * Do you want to override the factory? To do this, specify the parameter ``override=True``. This can be checked when passing proper ``validation_settings`` when creating container.
@@ -165,19 +171,20 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
 
     from dishka import provide, Provider, Scope, make_container
 
+    class UserGateway(Protocol): ...
+    class UserGatewayImpl(UserGateway): ...
+    class UserGatewayMock(UserGateway): ...
+
     class MyProvider(Provider):
         scope = Scope.APP
 
-        @provide
-        def get_int(self) -> int:
-            return 1
-
-        @provide(override=True)
-        def get_int2(self) -> int:
-            return 2
+        user_gateway = provide(UserGatewayImpl, provides=UserGateway)
+        user_gateway_mock = provide(
+            UserGatewayMock, provides=UserGateway, override=True
+        )
 
     container = make_container(MyProvider())
-    a = container.get(int)  # 2
+    gateway = container.get(UserGateway)  # UserGatewayMock
 
 
 * You can use factory with Generic classes

@@ -93,7 +93,7 @@ Dependencies have scope and there are three places to set it (from highest to lo
 .. code-block:: python
 
     class MyProvider(Provider):
-        scope=Scope.APP
+        scope = Scope.APP
 
 .. raw:: html
 

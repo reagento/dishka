@@ -11,12 +11,12 @@ Provider object has also a ``.alias`` method with the same logic.
 
     from dishka import alias, provide, Provider, Scope
 
-    class MyProvider(Provider):
-        @provide(scope=Scope.REQUEST)
-        def get_a(self) -> A:
-            return A()
+    class UserGateway(Protocol): ...
+    class UserGatewayImpl(UserGateway): ...
 
-        a_proto = alias(source=A, provides=AProtocol)
+    class MyProvider(Provider):
+        user_gateway = provide(UserGatewayImpl, scope=Scope.REQUEST)
+        user_gateway_proto = alias(source=UserGatewayImpl, provides=UserGateway)
 
 Additionally, alias has own setting for caching: it caches by default regardless if source is cached. You can disable it providing ``cache=False`` argument.
 
@@ -26,13 +26,20 @@ Additionally, alias has own setting for caching: it caches by default regardless
 
     from dishka import provide, Provider, Scope, alias, make_container
 
-    class MyProvider(Provider):
-        scope=Scope.APP
-        get_int = provide(int)
-        get_float = provide(float)
+    class UserGateway(Protocol): ...
+    class UserGatewayImpl(UserGateway): ...
+    class UserGatewayMock(UserGateway): ...
 
-        a_alias = alias(int, provides=complex)
-        a_alias_override = alias(float, provides=complex, override=True)
+    class MyProvider(Provider):
+        scope = Scope.REQUEST
+
+        user_gateway = provide(UserGatewayImpl)
+        user_gateway_mock = provide(UserGatewayMock)
+
+        user_gateway_proto = alias(UserGatewayImpl, provides=UserGateway)
+        user_gateway_override = alias(
+            UserGatewayMock, provides=UserGateway, override=True
+        )
 
     container = make_container(MyProvider())
-    a = container.get(complex)  # 0.0
+    gateway = container.get(UserGateway)  # UserGatewayMock

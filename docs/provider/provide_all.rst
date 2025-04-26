@@ -14,13 +14,16 @@ These two providers are equal for the container
     class OneByOne(Provider):
         scope = Scope.APP
 
-        a = provide(ClassA)
-        b = provide(ClassB)
+        register_user = provide(RegisterUserInteractor)
+        update_pfp = provide(UpdateProfilePicInteractor)
 
     class AllAtOnce(Provider):
         scope = Scope.APP
 
-        ab = provide_all(ClassA, ClassB)
+        ab = provide_all(
+            RegisterUserInteractor,
+            UpdateProfilePicInteractor
+        )
 
 
 It is also available as a method:
@@ -28,7 +31,11 @@ It is also available as a method:
 .. code-block:: python
 
     provider = Provider(scope=Scope.APP)
-    provider.provide_all(ClassA, ClassB)
+    provider.provide_all(
+        RegisterUserInteractor,
+        UpdateProfilePicInteractor
+    )
+
 
 You can combine different ``provide``, ``alias``, ``decorate``, ``from_context``, ``provide_all``, ``from_context`` and others with each other without thinking about the variable names for each of them.
 
@@ -41,19 +48,19 @@ These two providers are equal for the container
     class OneByOne(Provider):
         scope = Scope.APP
 
-        data = from_context(Data)
-        a = provide(A, provides=AProtocol)
-        b = provide(B, providesAProtocol)
-        b_alias = alias(source=C, provides=B)
-        c_decorate = decorate(CDecorator, provides=C)
+        config = from_context(Config)
+        user_gateway = provide(UserGatewayImpl, provides=UserGateway)
+        post_gateway = provide(PostGatewayImpl, provides=PostGateway)
+        post_reader = alias(source=PostGatewayImpl, provides=PostReader)
+        decorator = decorate(SomeDecorator, provides=SomeClass)
 
     class AllAtOnce(Provider):
         scope = Scope.APP
 
         provides = (
-            provide(A, provides=AProtocol)
-            + provide(B, provides=AProtocol)
-            + alias(source=C, provides=B)
-            + decorate(CDecorator, provides=C)
-            + from_context(Data)
+            provide(UserGatewayImpl, provides=UserGateway)
+            + provide(PostGatewayImpl, provides=PostGateway)
+            + alias(source=PostGatewayImpl, provides=PostReader)
+            + decorate(SomeDecorator, provides=SomeClass)
+            + from_context(Config)
         )

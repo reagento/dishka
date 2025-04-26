@@ -137,7 +137,11 @@ class Registry:
         if check_type_hint in IGNORE_TYPES:
             return concrete_factories
 
-        subclasses = type.__subclasses__(check_type_hint)
+        try:
+            subclasses: list[Any] = check_type_hint.__subclasses__()
+        except AttributeError:
+            subclasses = []
+
         for subclass in subclasses:
             concrete_dependency = DependencyKey(
                 subclass,

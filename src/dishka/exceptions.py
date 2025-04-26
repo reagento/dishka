@@ -18,7 +18,8 @@ except ImportError:
         ExceptionGroup,
     )
 
-_renderer = PathRenderer()
+_cycle_renderer = PathRenderer(cycle=True)
+_linear_renderer = PathRenderer(cycle=False)
 
 
 class ExitError(
@@ -87,7 +88,7 @@ class NoFactoryError(DishkaError):
             return (
                 f"Cannot find factory for {requested_repr}. "
                 f"It is missing or has invalid scope.\n"
-            ) + _renderer.render(self.path, self.requested) + suggestion
+            ) + _linear_renderer.render(self.path, self.requested) + suggestion
         else:
             requested_repr = (
                 f"({requested_name}, "
@@ -169,7 +170,7 @@ class CycleDependenciesError(InvalidGraphError):
             hint = " Did you mean @decorate instead of @provide?"
         else:
             hint = ""
-        details = _renderer.render(self.path)
+        details = _cycle_renderer.render(self.path)
         return f"Cycle dependencies detected.{hint}\n{details}"
 
 

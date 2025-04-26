@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import NamedTuple
 
 from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryData
@@ -8,68 +9,108 @@ from dishka.text_rendering.name import get_key_name, get_source_name
 
 
 class PathRenderer:
+    def __init__(self, *, cycle: bool):
+        self.cycle = cycle
+
     def _arrow_cycle(self, index: int, length: int) -> str:
         if length == 1:
-            return "⥁"
+            return "⥁ "
         elif index == 0:
-            return " → → "
+            return "╭─▷─╮ "
         elif index + 1 < length:
-            return "↑   ↓"
+            return "│   ▼ "
         else:
-            return " ← ← "
+            return "╰─◁─╯ "
 
     def _arrow_line(self, index: int, length: int) -> str:
         if index + 1 < length:
-            return "↓ "
+            return "▼   "
         else:
-            return " →"
+            return "╰─▷ "
+
+    def _arrow(self, index: int, length: int) -> str:
+        if self.cycle:
+            return self._arrow_cycle(index, length)
+        return self._arrow_line(index, length)
+
+    def _switch_arrow(self, index: int, length: int) -> str:
+        if self.cycle:
+            if index> 0:
+                return "│   │ "
+            return "      "
+        return "│   "
+
+    def _switch_filler(self) -> str:
+        return " "
 
     def _switch(
             self, scope: BaseScope | None, component: Component | None,
     ) -> str:
-        return f"~~~ component={component!r}, {scope} ~~~\n"
+        return f"◈ {scope}, component={component!r} ◈"
 
     def render(
             self,
             path: Sequence[FactoryData],
             last: DependencyKey | None = None,
     ) -> str:
-        if last is None:
-            _arrow = self._arrow_cycle
-        else:
-            _arrow = self._arrow_line
-
-        width = max(len(get_key_name(x.provides)) for x in path)
-        if last:
-            width = max(width, len(get_key_name(last)))
-        width += 2  # add spacing between columns
-
-        dest: tuple[BaseScope | None, Component | None] = (None, "")
-        length = len(path) + bool(last)
-
-        res = ""
-        for i, factory in enumerate(path):
-            arrow = _arrow(i, length)
-            new_dest = (factory.scope, factory.provides.component)
-            if new_dest != dest:
-                res += "   " + " " * len(arrow) + " " + self._switch(*new_dest)
-                dest = new_dest
-
-            res += (
-                    "   " + arrow + " " +
-                    get_key_name(factory.provides).ljust(width) +
-                    " " +
-                    get_source_name(factory) +
-                    "\n"
+        row_count = len(path) + bool(last)
+        rows = [
+            Row(
+                row_num,
+                self._arrow(row_num, row_count),
+                [get_key_name(factory.provides), get_source_name(factory)],
+                (factory.scope, factory.provides.component),
             )
+            for row_num, factory in enumerate(path)
+        ]
         if last:
-            new_dest = (dest[0], last.component)
-            arrow = _arrow(length + 1, length)
-            if new_dest != dest:
-                res += "   " + " " * len(arrow) + " " + self._switch(*new_dest)
+            rows.append(
+                Row(
+                    row_count - 1,
+                    self._arrow(row_count-1, row_count),
+                    [get_key_name(last), "???"],
+                    (rows[-1].dest[0], last.component),
+                ),
+            )
+        prev_dest: tuple[BaseScope | None, Component | None] = (None, "")
+        space_left = "   "
+        space_between = "   "
+        res = ""
+
+        columns_count = len(rows[0].columns)
+        columns_width = [
+            max(len(row.columns[col_num]) for row in rows)
+            for col_num in range(columns_count)
+        ]
+        switch_len = (
+            sum(columns_width) +
+            len(space_between) * (columns_count - 1)
+        )
+        for row in rows:
+            if row.dest != prev_dest:
+                res += (
+                    space_left +
+                    self._switch_arrow(row.num, row_count) +
+                    self._switch(*row.dest).center(
+                        switch_len, self._switch_filler(),
+                    ) +
+                    "\n"
+                )
+                prev_dest = row.dest
             res += (
-                    "   " + arrow + " " +
-                    get_key_name(last).ljust(width) +
-                    " ???\n"
+                space_left +
+                row.border_left +
+                space_between.join(
+                    c.ljust(cw)
+                    for c, cw in zip(row.columns, columns_width, strict=False)
+                ) +
+                "\n"
             )
         return res
+
+
+class Row(NamedTuple):
+    num: int
+    border_left: str
+    columns: Sequence[str]
+    dest: tuple[BaseScope | None, Component | None]

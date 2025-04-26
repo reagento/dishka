@@ -8,7 +8,7 @@ For other cases which require calling functions located on application boundarie
 There are many options to make providers with mock objects. If you are using ``pytest`` then you can
 
 * use fixtures to configure mocks and then pass those objects to a provider
-* create mocks in a provider and retrieve them in pytest fixtures from a container
+* create mocks in a provider and retrieve them in pytest fixtures from a container.
 
 The main limitation here is that a container itself cannot be adjusted after creation. You can configure providers whenever you want before you make a container. Once it is created dependency graph is build and validated, and all you can do is to provide context data when entering a scope.
 
@@ -16,7 +16,7 @@ The main limitation here is that a container itself cannot be adjusted after cre
 Example
 ===================
 
-Imagine, you have a service built with FastAPI:
+Imagine, you have a service built with ``FastAPI``:
 
 .. literalinclude:: ./app_before.py
 

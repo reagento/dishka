@@ -84,14 +84,14 @@ See also the real `integration examples <https://github.com/reagento/dishka/tree
 Common approach
 =====================
 
-For several frameworks library contains helper functions so you don't need to control scopes yourself, but just annotate handler/view functions and change application startup code
+For several frameworks library contains helper functions so you don't need to control scopes yourself, but just annotate handler/view functions and change application startup code.
 
-To use framework integration you mainly need to do 3 things:
+To use framework integration you mainly need to do 4 things:
 
 * call ``setup_dishka`` on your container and framework entity
 * add ``FromDishka[YourClass]`` on you framework handlers (or view-functions)
 * decorate your handlers with ``@inject`` before registering them in framework. Some integrations do not required it, see their details
-* add additional provider to the container to access framework specific objects from your provider
+* add additional provider to the container to access framework specific objects from your provider.
 
 .. note::
    ``FromDishka[T]`` is basically a synonym for ``Annotated[T, FromComponent()]`` and is used to get an object from default component. To use other component you can use the same syntax with annotated ``Annotated[T, FromComponent("X")]``.
@@ -99,13 +99,13 @@ To use framework integration you mainly need to do 3 things:
    For more details on components see :ref:`components`
 
 For such integrations library enters scope for each generated event. So, if you have standard scope, than handler dependencies will be retrieved as for ``Scope.REQUEST``.
-For streaming protocols and websockets you will be also to have ``SESSION``-scoped objects with a lifespan of the whole stream.
+For streaming protocols and websockets you will be also to have *SESSION*-scoped objects with a lifespan of the whole stream.
 
-Additionally, you may need to call ``container.close()`` in the end of your application lifecycle if you want to finalize APP-scoped dependencies
+Additionally, you may need to call ``container.close()`` in the end of your application lifecycle if you want to finalize *APP*-scoped dependencies.
 
 Some frameworks have their own specific, check corresponding page.
 
-For FastAPI it will look like:
+For ``FastAPI`` it will look like:
 
 .. code-block:: python
 

@@ -7,6 +7,7 @@ from dishka import (
     AnyOf,
     Provider,
     Scope,
+    from_context,
     make_async_container,
     make_container,
     provide,
@@ -25,6 +26,7 @@ from .type_alias_type_provider import (
     IntStr,
     IterableInt,
     ListFloat,
+    StrNone,
     WrappedInteger,
     WrappedIntegerDep,
 )
@@ -32,6 +34,8 @@ from .type_alias_type_provider import (
 
 class MainProvider(Provider):
     scope = Scope.APP
+
+    str_none = from_context(StrNone)
 
     @provide
     def get_iterable_int(self) -> IterableInt:
@@ -91,6 +95,20 @@ def test_type_alias(hint: Any, value: Any):
 async def test_type_alias_async(hint: Any, value: Any):
     container = make_async_container(MainProvider())
     assert await container.get(hint) == value
+
+
+def test_type_alias_from_context():
+    value = "value"
+    container = make_container(MainProvider(), context={StrNone: value})
+    assert container.get(StrNone) == value
+    assert container.get(StrNone.__value__) == value
+
+@pytest.mark.asyncio
+async def test_type_alias_from_context_async():
+    value = "value"
+    container = make_async_container(MainProvider(), context={StrNone: value})
+    assert await container.get(StrNone) == value
+    assert await container.get(StrNone.__value__) == value
 
 
 class ComponentProvider(Provider):

@@ -3,11 +3,11 @@
 aiohttp
 ===========================================
 
-Though it is not required, you can use dishka-aiohttp integration. It features:
+Though it is not required, you can use *dishka-aiohttp* integration. It features:
 
-* automatic REQUEST and SESSION scope management using middleware
+* automatic *REQUEST* and *SESSION* scope management using middleware
 * passing ``Request`` object as a context data to providers for both **Websockets** and **HTTP** requests
-* automatic injection of dependencies into handler function
+* automatic injection of dependencies into handler function.
 
 
 How to use
@@ -27,7 +27,7 @@ How to use
     from dishka import make_async_container, Provider, provide, Scope
 
 2. Create provider. You can use ``aiohttp.web.Request`` as a factory parameter to access HTTP or Websocket request.
-It is available on ``SESSION`` and ``REQUEST`` scopes.
+It is available on *SESSION* and *REQUEST* scopes.
 
 .. code-block:: python
 
@@ -64,7 +64,7 @@ It is available on ``SESSION`` and ``REQUEST`` scopes.
 
     container = make_async_container(YourProvider(), AiohttpProvider())
 
-5. Setup dishka integration. ``auto_inject=True`` is required unless you explicitly use ``@inject`` decorator
+5. Setup ``dishka`` integration. ``auto_inject=True`` is required unless you explicitly use ``@inject`` decorator
 
 .. code-block:: python
 
@@ -86,8 +86,8 @@ Websockets
 .. include:: _websockets.rst
 
 In aiohttp your view function is called once per connection and then you retrieve messages in loop.
-So, ``inject`` decorator can be only used to retrieve SESSION-scoped objects.
-To achieve REQUEST-scope you can enter in manually:
+So, ``inject`` decorator can be only used to retrieve *SESSION*-scoped objects.
+To achieve *REQUEST*-scope you can enter in manually:
 
 .. code-block:: python
 

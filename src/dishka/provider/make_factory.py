@@ -458,7 +458,9 @@ def make_factory(
     if is_bare_generic(source):
         source = source[get_type_vars(source)]  # type: ignore[index]
 
-    if isclass(source) or get_origin(source):
+    source_origin = get_origin(source)
+
+    if isclass(source) or isclass(source_origin):
         return _make_factory_by_class(
             provides=provides,
             scope=scope,
@@ -494,7 +496,7 @@ def make_factory(
             cache=cache,
             override=override,
         )
-    elif callable(source):
+    elif callable(source) and not source_origin:
         return _make_factory_by_other_callable(
             provides=provides,
             scope=scope,

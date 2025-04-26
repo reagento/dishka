@@ -9,7 +9,17 @@ from collections.abc import (
 from functools import partial
 from random import random
 from types import NoneType
-from typing import Annotated, Any, Protocol
+from typing import (
+    Annotated,
+    Any,
+    ClassVar,
+    Final,
+    Literal,
+    Optional,
+    Protocol,
+    Union,
+    Unpack,
+)
 
 import pytest
 
@@ -549,3 +559,19 @@ def test_protocol_cannot_be_source_in_provide(provide_func):
     ):
         class P(Provider):
             p = provide_func(AProtocol)
+
+
+@pytest.mark.parametrize(
+    "type_hint",
+    [
+        Union[str, int],
+        Final[str],
+        ClassVar[str],
+        Optional[str],
+        Unpack[tuple[str]],
+        Literal["5"],
+    ],
+)
+def test_generic_alias_not_a_factory(type_hint):
+    with pytest.raises(NotAFactoryError):
+        make_factory_by_source(source=type_hint)

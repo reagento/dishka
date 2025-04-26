@@ -564,10 +564,10 @@ def test_protocol_cannot_be_source_in_provide(provide_func):
 @pytest.mark.parametrize(
     "type_hint",
     [
-        Union[str, int],
+        Union[str, int],  # noqa: UP007
         Final[str],
         ClassVar[str],
-        Optional[str],
+        Optional[str],  # noqa: UP007
         Unpack[tuple[str]],
         Literal["5"],
     ],

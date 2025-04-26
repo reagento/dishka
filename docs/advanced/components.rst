@@ -69,7 +69,42 @@ in multiple components using ``.to_component(name)``.
     container = make_container(provider0, provider1, provider2, provider3)
 
 Components are **isolated**: provider cannot implicitly request an object
-from another component. In the following code ``MainProvider.foo`` requests
+from another component:
+
+.. code-block:: python
+
+    class DBConnection(Protocol): ...
+    class UserDBConnection(DBConnection): ...
+    class CommentDBConnection(DBConnection): ...
+    # we might use different databases for users and comments,
+    # although the interface for communication will remain common
+
+    class UserGateway:
+        def __init__(self, db: DBConnection): ...
+        # we need to distinguish this DBConnection ...
+
+    class CommentGateway:
+        def __init__(self, db: DBConnection): ...
+        # ... from this DBConnection
+
+    class UserProvider(Provider):
+        component = "user"
+        scope = Scope.REQUEST
+        db_connection = provide(UserDBConnection, provides=DBConnection)
+        gateway = provide(UserGateway)
+
+    class CommentProvider(Provider):
+        component = "comment"
+        scope = Scope.REQUEST
+        db_connection = provide(CommentDBConnection, provides=DBConnection)
+        gateway = provide(CommentGateway)
+
+    container = make_container(UserProvider(), CommentProvider())
+    container.get(DBConnection, component="user")  # UserDBConnection
+    container.get(DBConnection, component="comment")  # CommentDBConnection
+
+
+In the following code ``MainProvider.foo`` requests
 integer value which is only provided in separate component. In the code below
 there is an error in dependency graph, so we will disable validation to show
 runtime behavior:
@@ -83,7 +118,7 @@ runtime behavior:
 
         @provide(scope=Scope.APP)
         def foo(self, a: int) -> float:
-            return a/10
+            return a / 10
 
 
     class AdditionalProvider(Provider):
@@ -107,6 +142,7 @@ the same component as its dependant, unless it is declared explicitly.
 Components can **link to each other**: each provider can add a component name
 when declaring a dependency by ``FromComponent`` type annotation.
 
+
 .. code-block:: python
 
     from typing import Annotated
@@ -116,7 +152,7 @@ when declaring a dependency by ``FromComponent`` type annotation.
 
         @provide(scope=Scope.APP)
         def foo(self, a: Annotated[int, FromComponent("X")]) -> float:
-            return a/10
+            return a / 10
 
 
     class AdditionalProvider(Provider):
@@ -141,3 +177,4 @@ when declaring a dependency by ``FromComponent`` type annotation.
     In frameworks integrations ``FromDishka[T]`` is used to get an object
 from default component. To use other component you can use the same syntax
 with annotated ``Annotated[T, FromComponent("X")]``
+

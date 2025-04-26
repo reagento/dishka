@@ -73,6 +73,8 @@ from another component:
 
 .. code-block:: python
 
+    from dishka import Provider, Scope, make_container, provide
+
     class DBConnection(Protocol): ...
     class UserDBConnection(DBConnection): ...
     class CommentDBConnection(DBConnection): ...
@@ -89,13 +91,13 @@ from another component:
 
     class UserProvider(Provider):
         component = "user"
-        scope = Scope.REQUEST
+        scope = Scope.APP  # should be REQUEST, but set to APP for the sake of simplicity
         db_connection = provide(UserDBConnection, provides=DBConnection)
         gateway = provide(UserGateway)
 
     class CommentProvider(Provider):
         component = "comment"
-        scope = Scope.REQUEST
+        scope = Scope.APP  # should be REQUEST, but set to APP for the sake of simplicity
         db_connection = provide(CommentDBConnection, provides=DBConnection)
         gateway = provide(CommentGateway)
 

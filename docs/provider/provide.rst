@@ -123,21 +123,21 @@ It works similar to :ref:`alias`.
 
 .. code-block:: python
 
-    from dishka import WithParents, provide, Provider, Scope
+    from dishka import WithParents, provide, Provider, Scope, make_container
 
     class UserReader(Protocol): ...
     class UserWriter(Protocol): ...
     class UserGatewayImpl(UserReader, UserWriter): ...
 
     class MyProvider(Provider):
-        @provide(scope=Scope.REQUEST)
+        @provide(scope=Scope.APP)  # should be REQUEST, but set to APP for the sake of simplicity
         def get_user_gateway(self) -> WithParents[UserGatewayImpl]:
             return UserGatewayImpl()
 
-    container = make_async_container(MyProvider())
-    reader = await container.get(UserReader)
-    writer = await container.get(UserWriter)
-    impl = await container.get(UserGatewayImpl)
+    container = make_container(MyProvider())
+    reader = container.get(UserReader)
+    writer = container.get(UserWriter)
+    impl = container.get(UserGatewayImpl)
     reader is impl and writer is impl  # True
 
 

@@ -31,7 +31,7 @@ Additionally, alias has own setting for caching: it caches by default regardless
     class UserGatewayMock(UserGateway): ...
 
     class MyProvider(Provider):
-        scope = Scope.REQUEST
+        scope = Scope.APP  # should be REQUEST, but set to APP for the sake of simplicity
 
         user_gateway = provide(UserGatewayImpl)
         user_gateway_mock = provide(UserGatewayMock)

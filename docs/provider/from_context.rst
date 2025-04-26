@@ -30,17 +30,18 @@ You can put some data manually when entering scope and rely on it in your provid
 .. code-block:: python
 
     from dishka import provide, from_context, Provider, Scope, make_container
+
+    class Config: ...
+
     class MyProvider(Provider):
         scope = Scope.APP
 
         @provide
         def get_default_config(self) -> Config:
-            logging.warning("No config specified, using default one")
             return Config()
 
         config_override = from_context(provides=Config, override=True)
 
-    config: Config = load_config()
-    container = make_container(MyProvider(), context={Config: config})
+    container = make_container(MyProvider(), context={Config: Config()})
     di_config = container.get(Config)
     config is di_config  # True

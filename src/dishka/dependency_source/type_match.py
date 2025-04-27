@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from typing import (
     Any,
     ForwardRef,
@@ -63,11 +63,10 @@ class _TypeMatcher:
             raise UnsupportedGenericBoundsError(t1)
         if not isinstance(t2, TypeVar):
             origin2 = get_origin(t2)
-            if (
-                origin2 == Literal
-                and self._is_literal_same_types(t2, bound1)
-            ):
-                return True
+            if origin2 == Literal:
+                if self._is_literal_same_types(t2, [bound1]):
+                    return True
+                return False
             if origin2:
                 t2 = origin2
             return issubclass(t2, bound1)
@@ -79,6 +78,11 @@ class _TypeMatcher:
     def _is_constraint_broader(self, t1: TypeVar, t2: Any) -> bool:
         constraints1 = eval_maybe_forward_many(t1.__constraints__, t1)
         if not isinstance(t2, TypeVar):
+            origin2 = get_origin(t2)
+            if origin2 == Literal:
+                if self._is_literal_same_types(t2, constraints1):
+                    return True
+                return False
             return t2 in constraints1
         if t2.__constraints__:
             constraints2 = eval_maybe_forward_many(t2.__constraints__, t2)
@@ -98,8 +102,16 @@ class _TypeMatcher:
             return self._is_constraint_broader(t1, t2)
         return False
 
-    def _is_literal_same_types(self, t_literal: Any, t: Any) -> bool:
-        return all(isinstance(arg, t) for arg in get_args(t_literal))
+    def _is_literal_same_types(
+        self, t_literal: Any, types_to_check: Iterable[Any],
+    ) -> bool:
+        literal_args = get_args(t_literal)
+        if len(literal_args) > 1 or len(literal_args) == 0:
+            return False
+        return any(
+            isinstance(literal_args[0], type_to_check)
+            for type_to_check in types_to_check
+        )
 
     def is_broader_or_same_type(self, t1: Any, t2: Any) -> bool:
         if t1 == t2:

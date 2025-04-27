@@ -1,5 +1,4 @@
-import enum
-from typing import Generic, Literal, Protocol, TypeVar
+from typing import Generic, Literal, TypeVar
 
 import pytest
 
@@ -8,6 +7,8 @@ from dishka.dependency_source.decorator import is_broader_or_same_type
 T = TypeVar("T")
 T2 = TypeVar("T2")
 T3 = TypeVar("T3")
+T4 = TypeVar("T4", bound=str)
+T5 = TypeVar("T5", int, str)
 
 
 class AGeneric(Generic[T]): ...
@@ -31,15 +32,10 @@ class SubC(C): ...
 class D: ...
 
 
-class MyEnum(enum.StrEnum):
-    A = "a"
+class CGeneric(Generic[T4]): ...
 
 
-T4 = TypeVar("T4", bound=MyEnum)
-
-
-class B[T: MyEnum](Protocol):
-    dep: T
+class DGeneric(Generic[T5]): ...
 
 
 TC = TypeVar("TC", bound=C)
@@ -74,7 +70,12 @@ TSubCCD = TypeVar("TSubCCD", "C", SubC, D)
             Mutiple[AGeneric[int], AGeneric[AGeneric[str]], T2],
             False,
         ),
-        (B[T4], B[Literal[MyEnum.A]], True),
+        (CGeneric[T4], CGeneric[Literal["a"]], True),
+        (CGeneric[T4], CGeneric[Literal[1]], False),
+        (DGeneric[T5], DGeneric[Literal[1]], True),
+        (DGeneric[T5], DGeneric[Literal["a"]], True),
+        (DGeneric[T5], DGeneric[Literal[True]], True),
+        (DGeneric[T5], DGeneric[Literal["a", 1]], False),
     ],
 )
 def test_is_broader_or_same_type(*, first: T, second: T, match: bool):

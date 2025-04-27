@@ -1,7 +1,7 @@
 Quickstart
 ********************
 
-1. **Install Dishka.**
+1. **Install dishka**
 
 .. code-block:: shell
 
@@ -14,7 +14,7 @@ Quickstart
    :language: python
    :lines: 6-21
 
-3. **Create** ``Provider`` instance and specify how to provide dependencies.
+3. **Create** ``Provider`` instance and specify how to provide dependencies
 
 Providers are used only to set up factories providing your objects.
 
@@ -32,26 +32,26 @@ To provide a releasable connection, you might need some custom code:
    :language: python
    :lines: 33-41
 
-4. **Create main** ``Container`` instance, passing providers, and enter ``APP`` scope.
+4. **Create main** ``Container`` instance, passing providers, and enter *APP*-scope
 
 .. literalinclude:: ./quickstart_example.py
    :language: python
    :lines: 44-47
 
 5. **Access dependencies using container.** Container holds a cache of dependencies and is used to retrieve them.
-   You can use ``.get`` method to access ``APP``-scoped dependencies:
+   You can use ``.get`` method to access *APP*-scoped dependencies:
 
 .. literalinclude:: ./quickstart_example.py
    :language: python
    :lines: 49-50
 
-6. **Enter and exit** ``REQUEST`` **scope repeatedly using a context manager**:
+6. **Enter and exit** ``REQUEST`` **scope repeatedly using a context manager**
 
 .. literalinclude:: ./quickstart_example.py
    :language: python
    :lines: 52-60
 
-7. **Close container** when done:
+7. **Close container** when done
 
 .. literalinclude:: ./quickstart_example.py
    :language: python

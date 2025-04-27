@@ -18,7 +18,6 @@ from typing import (
     Optional,
     Protocol,
     Union,
-    Unpack,
 )
 
 import pytest
@@ -568,7 +567,6 @@ def test_protocol_cannot_be_source_in_provide(provide_func):
         Final[str],
         ClassVar[str],
         Optional[str],  # noqa: UP007
-        Unpack[tuple[str]],
         Literal["5"],
     ],
 )

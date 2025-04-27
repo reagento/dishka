@@ -540,6 +540,9 @@ def test_not_a_factory():
         make_factory_by_source(source=None)
 
 
+class AProtocol(Protocol): ...
+
+
 @pytest.mark.parametrize(
     "provide_func",
     [
@@ -549,15 +552,21 @@ def test_not_a_factory():
         provide_all_on_instance,
     ],
 )
-def test_protocol_cannot_be_source_in_provide(provide_func):
-    class AProtocol(Protocol): ...
+@pytest.mark.parametrize(
+    "proto",
+    [
+        AProtocol,
+        Annotated[AProtocol, "metadata"],
+    ],
+)
+def test_protocol_cannot_be_source_in_provide(provide_func, proto):
 
     with pytest.raises(
         CannotUseProtocolError,
         match="Cannot use.*\n.*seems that this is a Protocol.*",
     ):
         class P(Provider):
-            p = provide_func(AProtocol)
+            p = provide_func(proto)
 
 
 @pytest.mark.parametrize(

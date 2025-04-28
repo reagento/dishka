@@ -2,7 +2,9 @@ from collections.abc import Iterable
 from typing import NewType
 from unittest.mock import Mock
 
-from dishka import Provider, Scope, provide
+from dishka import Provider, Scope, from_context, provide
+
+ContextDep = NewType("ContextDep", str)
 
 AppDep = NewType("AppDep", str)
 APP_DEP_VALUE = "APP"
@@ -17,6 +19,8 @@ AppMock = NewType("AppMock", Mock)
 
 
 class AppProvider(Provider):
+    context = from_context(provides=ContextDep, scope=Scope.REQUEST)
+
     def __init__(self) -> None:
         super().__init__()
         self.app_released = Mock()

@@ -35,12 +35,19 @@ from dishka.container import Container
 from dishka.entities.component import DEFAULT_COMPONENT
 from dishka.entities.depends_marker import FromDishka
 from dishka.entities.key import DependencyKey, _FromComponent
-from dishka.integrations.exceptions import InvalidInjectedFuncTypeError
+from dishka.integrations.exceptions import (
+    InvalidInjectedFuncProvideContextError,
+    InvalidInjectedFuncTypeError,
+)
 
 T = TypeVar("T")
 P = ParamSpec("P")
 DependencyParser: TypeAlias = Callable[[Parameter, Any], DependencyKey | None]
 ContainerGetter: TypeAlias = Callable[[tuple[Any, ...], dict[str, Any]], T]
+ProvideContext: TypeAlias = Callable[
+    [tuple[Any, ...], dict[str, Any]],
+    dict[Any, Any],
+]
 DependsClass: TypeAlias = cast(
     type | Sequence[type],
     FromDishka | _FromComponent,
@@ -52,6 +59,7 @@ def _get_auto_injected_async_gen_scoped(
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, AsyncIterator[T]],
+    provide_context: ProvideContext | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
     async def auto_injected_generator(
         *args: P.args,
@@ -60,8 +68,11 @@ def _get_auto_injected_async_gen_scoped(
         for param in additional_params:
             kwargs.pop(param.name)
 
+        additional_context = (
+            {} if provide_context is None else provide_context(args, kwargs)
+        )
         container = container_getter(args, kwargs)
-        async with container() as container:
+        async with container(additional_context) as container:
             solved = {
                 name: await container.get(
                     dep.type_hint,
@@ -107,12 +118,17 @@ def _get_auto_injected_async_func_scoped(
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Awaitable[T]],
+    provide_context: ProvideContext | None = None,
 ) -> Callable[P, Awaitable[T]]:
     async def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         container = container_getter(args, kwargs)
         for param in additional_params:
             kwargs.pop(param.name)
-        async with container() as container:
+
+        additional_context = (
+            {} if provide_context is None else provide_context(args, kwargs)
+        )
+        async with container(additional_context) as container:
             solved = {
                 name: await container.get(
                     dep.type_hint,
@@ -152,6 +168,7 @@ def _get_auto_injected_sync_gen_scoped(
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Iterator[T]],
+    provide_context: ProvideContext | None = None,
 ) -> Callable[P, Iterator[T]]:
     def auto_injected_generator(
         *args: P.args,
@@ -160,8 +177,11 @@ def _get_auto_injected_sync_gen_scoped(
         for param in additional_params:
             kwargs.pop(param.name)
 
+        additional_context = (
+            {} if provide_context is None else provide_context(args, kwargs)
+        )
         container = container_getter(args, kwargs)
-        with container() as container:
+        with container(additional_context) as container:
             solved = {
                 name: container.get(dep.type_hint, component=dep.component)
                 for name, dep in dependencies.items()
@@ -198,13 +218,17 @@ def _get_auto_injected_sync_func_scoped(
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, T],
+    provide_context: ProvideContext | None = None,
 ) -> Callable[P, T]:
     def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         for param in additional_params:
             kwargs.pop(param.name)
 
+        additional_context = (
+            {} if provide_context is None else provide_context(args, kwargs)
+        )
         container = container_getter(args, kwargs)
-        with container() as container:
+        with container(additional_context) as container:
             solved = {
                 name: container.get(dep.type_hint, component=dep.component)
                 for name, dep in dependencies.items()
@@ -239,6 +263,7 @@ def _get_auto_injected_sync_container_async_gen_scoped(
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Iterator[T]],
+    provide_context: ProvideContext | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
     async def auto_injected_generator(
         *args: P.args,
@@ -247,8 +272,11 @@ def _get_auto_injected_sync_container_async_gen_scoped(
         for param in additional_params:
             kwargs.pop(param.name)
 
+        additional_context = (
+            {} if provide_context is None else provide_context(args, kwargs)
+        )
         container = container_getter(args, kwargs)
-        with container() as container:
+        with container(additional_context) as container:
             solved = {
                 name: container.get(dep.type_hint, component=dep.component)
                 for name, dep in dependencies.items()
@@ -287,13 +315,17 @@ def _get_auto_injected_sync_container_async_func_scoped(
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, T],
+    provide_context: ProvideContext | None = None,
 ) -> Callable[P, T]:
     async def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         for param in additional_params:
             kwargs.pop(param.name)
 
+        additional_context = (
+            {} if provide_context is None else provide_context(args, kwargs)
+        )
         container = container_getter(args, kwargs)
-        with container() as container:
+        with container(additional_context) as container:
             solved = {
                 name: container.get(dep.type_hint, component=dep.component)
                 for name, dep in dependencies.items()
@@ -449,6 +481,7 @@ def wrap_injection(
     additional_params: Sequence[Parameter] = (),
     parse_dependency: DependencyParser = default_parse_dependency,
     manage_scope: bool = False,
+    provide_context: ProvideContext | None = None,
 ) -> Callable[P, T]: ...
 
 
@@ -462,6 +495,7 @@ def wrap_injection(
     additional_params: Sequence[Parameter] = (),
     parse_dependency: DependencyParser = default_parse_dependency,
     manage_scope: bool = False,
+    provide_context: ProvideContext | None = None,
 ) -> Callable[P, T]: ...
 
 
@@ -474,6 +508,7 @@ def wrap_injection(
     additional_params: Sequence[Parameter] = (),
     parse_dependency: DependencyParser = default_parse_dependency,
     manage_scope: bool = False,
+    provide_context: ProvideContext | None = None,
 ) -> Callable[P, T]:
     hints = get_type_hints(func, include_extras=True)
     func_signature = signature(func)
@@ -539,12 +574,18 @@ def wrap_injection(
     )
     get_auto_injected_func = _GET_AUTO_INJECTED_FUNC_DICT[injected_func_type]
 
-    auto_injected_func = get_auto_injected_func(
-        func=func,
-        dependencies=dependencies,
-        additional_params=additional_params,
-        container_getter=container_getter,
-    )
+    kwargs = {
+        "func": func,
+        "dependencies": dependencies,
+        "additional_params": additional_params,
+        "container_getter": container_getter,
+    }
+    if provide_context is not None:
+        if not manage_scope:
+            raise InvalidInjectedFuncProvideContextError
+        kwargs["provide_context"] = provide_context
+
+    auto_injected_func = get_auto_injected_func(**kwargs)
 
     auto_injected_func.__dishka_orig_func__ = func
     auto_injected_func.__dishka_injected__ = True  # type: ignore[attr-defined]

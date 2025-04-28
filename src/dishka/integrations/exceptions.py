@@ -6,3 +6,9 @@ class InvalidInjectedFuncTypeError(DishkaError):
         return (
             "An async container cannot be used in a synchronous context."
         )
+
+class InvalidInjectedFuncProvideContextError(DishkaError):
+    def __str__(self) -> str:
+        return (
+            "provide_context is not supported without manage_scope=True."
+        )

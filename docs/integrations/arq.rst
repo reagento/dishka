@@ -3,7 +3,7 @@
 arq
 ================
 
-Though it is not required, you can use *dishka-taskiq* integration. It features:
+Though it is not required, you can use *dishka-arq* integration. It features:
 
 * automatic *REQUEST* scope management using middleware
 * injection of dependencies into task handler function using decorator.

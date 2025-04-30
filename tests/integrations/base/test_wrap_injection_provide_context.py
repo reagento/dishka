@@ -54,6 +54,9 @@ def test_sync_provide_context(func: Callable, container: Container) -> None:
         result = wrapped_func()
         assert result == "context"
 
+
+@pytest.mark.parametrize("func", [sync_func, sync_gen])
+def test_invalid_provide_context(func: Callable, container: Container) -> None:
     with pytest.raises(InvalidInjectedFuncProvideContextError):
         wrap_injection(
             func=func,
@@ -85,6 +88,13 @@ async def test_async_provide_context(
         result = await wrapped_func()
         assert result == "context"
 
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("func", [async_func, async_gen])
+async def test_invalid_async_provide_context(
+    func: Callable,
+    async_container: AsyncContainer,
+) -> None:
     with pytest.raises(InvalidInjectedFuncProvideContextError):
         wrap_injection(
             func=func,

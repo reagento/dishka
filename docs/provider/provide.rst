@@ -66,11 +66,11 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
 
     from dishka import provide, Provider, Scope
 
-    class UserGateway(Protocol): ...
-    class UserGatewayImpl(UserGateway): ...
+    class UserDAO(Protocol): ...
+    class UserDAOImpl(UserDAO): ...
 
     class MyProvider(Provider):
-        a = provide(source=UserGatewayImpl, scope=Scope.REQUEST, provides=UserGateway)
+        user_dao = provide(source=UserDAOImpl, scope=Scope.REQUEST, provides=UserDAO)
 
 
 * Want to go ``async``? Make provide methods asynchronous, create async container and then use ``async with`` and await ``get`` calls:
@@ -101,8 +101,8 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
           return create_uuid_generator()
 
        @provide(scope=Scope.REQUEST)  # has own scope
-       def get_user_gateway(self) -> UserGateway:
-          return UserGatewayImpl()
+       def get_user_dao(self) -> UserDAO:
+          return UserDAOImpl()
 
 * Having multiple interfaces which can be created as a same class? Use ``AnyOf`` as a result hint:
 
@@ -114,8 +114,8 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
         scope = Scope.APP
 
         @provide
-        def get_user_gateway(self) -> AnyOf[UserGateway, UserGatewayImpl]:
-            return UserGatewayImpl()
+        def get_user_dao(self) -> AnyOf[UserDAO, UserDAOImpl]:
+            return UserDAOImpl()
 
 It works similar to :ref:`alias`.
 
@@ -127,17 +127,17 @@ It works similar to :ref:`alias`.
 
     class UserReader(Protocol): ...
     class UserWriter(Protocol): ...
-    class UserGatewayImpl(UserReader, UserWriter): ...
+    class UserDAOImpl(UserReader, UserWriter): ...
 
     class MyProvider(Provider):
         @provide(scope=Scope.APP)  # should be REQUEST, but set to APP for the sake of simplicity
-        def get_user_gateway(self) -> WithParents[UserGatewayImpl]:
-            return UserGatewayImpl()
+        def get_user_dao(self) -> WithParents[UserDAOImpl]:
+            return UserDAOImpl()
 
     container = make_container(MyProvider())
     reader = container.get(UserReader)
     writer = container.get(UserWriter)
-    impl = container.get(UserGatewayImpl)
+    impl = container.get(UserDAOImpl)
     reader is impl and writer is impl  # True
 
 
@@ -153,11 +153,11 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
         rate_limit: int
 
     class ExternalAPIClient(Protocol): ...
-    class ExternalAPIClientImpl(UserGateway):
+    class ExternalAPIClientImpl(UserDAO):
         def __init__(self, settings: APISettings): ...
 
     class MyProvider(Provider):
-        c = provide(
+        external_api_client = provide(
             ExternalAPIClientImpl,
             provides=ExternalAPIClient,
             scope=Scope.REQUEST,
@@ -171,20 +171,20 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
 
     from dishka import provide, Provider, Scope, make_container
 
-    class UserGateway(Protocol): ...
-    class UserGatewayImpl(UserGateway): ...
-    class UserGatewayMock(UserGateway): ...
+    class UserDAO(Protocol): ...
+    class UserDAOImpl(UserDAO): ...
+    class UserDAOMock(UserDAO): ...
 
     class MyProvider(Provider):
         scope = Scope.APP
 
-        user_gateway = provide(UserGatewayImpl, provides=UserGateway)
-        user_gateway_mock = provide(
-            UserGatewayMock, provides=UserGateway, override=True
+        user_dao = provide(UserDAOImpl, provides=UserDAO)
+        user_dao_mock = provide(
+            UserDAOMock, provides=UserDAO, override=True
         )
 
     container = make_container(MyProvider())
-    gateway = container.get(UserGateway)  # UserGatewayMock
+    dao = container.get(UserDAO)  # UserDAOMock
 
 
 * You can use factory with Generic classes:

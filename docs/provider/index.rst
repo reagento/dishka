@@ -5,14 +5,14 @@ Provider
 
 To configure provider you can either inherit and use decorators on your methods or just create an instance and use its methods.
 
-For example, imagine you have two classes: connection which is retrieved from external library and a gateway which requires such a connection.
+For example, imagine you have two classes: connection which is retrieved from external library and a dao which requires such a connection.
 
 .. code-block:: python
 
     class Connection:
         pass
 
-    class Gateway:
+    class DAO:
         def __init__(self, conn: Connection):
             pass
 
@@ -29,7 +29,7 @@ You can configure ``Provider`` with code like this:
 
     provider = Provider(scope=Scope.APP)
     provider.provide(get_connection)
-    provider.provide(Gateway)
+    provider.provide(DAO)
 
     container = make_container(provider)
 
@@ -47,7 +47,7 @@ Or using inheritance:
             yield conn
             conn.close()
 
-        gateway = provide(Gateway)
+        dao = provide(DAO)
 
     container = make_container(MyProvider(scope=Scope.APP))
 
@@ -67,7 +67,7 @@ Your class-based provider can have ``__init__`` method and methods accessing ``s
             yield conn
             conn.close()
 
-        gateway = provide(Gateway)
+        dao = provide(DAO)
 
     provider = MyProvider(uri=os.getenv("DB_URI"), scope=Scope.APP)
     container = make_container(provider)
@@ -80,7 +80,7 @@ Dependencies have scope and there are three places to set it (from highest to lo
 .. code-block:: python
 
     class MyProvider(Provider):
-        gateway = provide(Gateway, scope=Scope.APP)
+        dao = provide(DAO, scope=Scope.APP)
 
 * When instantiating provider:
 

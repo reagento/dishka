@@ -49,18 +49,18 @@ These two providers are equal for the container:
         scope = Scope.APP
 
         config = from_context(Config)
-        user_gateway = provide(UserGatewayImpl, provides=UserGateway)
-        post_gateway = provide(PostGatewayImpl, provides=PostGateway)
-        post_reader = alias(source=PostGatewayImpl, provides=PostReader)
+        user_dao = provide(UserDAOImpl, provides=UserDAO)
+        post_dao = provide(PostDAOImpl, provides=PostDAO)
+        post_reader = alias(source=PostDAOImpl, provides=PostReader)
         decorator = decorate(SomeDecorator, provides=SomeClass)
 
     class AllAtOnce(Provider):
         scope = Scope.APP
 
         provides = (
-            provide(UserGatewayImpl, provides=UserGateway)
-            + provide(PostGatewayImpl, provides=PostGateway)
-            + alias(source=PostGatewayImpl, provides=PostReader)
+            provide(UserDAOImpl, provides=UserDAO)
+            + provide(PostDAOImpl, provides=PostDAO)
+            + alias(source=PostDAOImpl, provides=PostReader)
             + decorate(SomeDecorator, provides=SomeClass)
             + from_context(Config)
         )

@@ -11,12 +11,12 @@ Provider object has also a ``.alias`` method with the same logic.
 
     from dishka import alias, provide, Provider, Scope
 
-    class UserGateway(Protocol): ...
-    class UserGatewayImpl(UserGateway): ...
+    class UserDAO(Protocol): ...
+    class UserDAOImpl(UserDAO): ...
 
     class MyProvider(Provider):
-        user_gateway = provide(UserGatewayImpl, scope=Scope.REQUEST)
-        user_gateway_proto = alias(source=UserGatewayImpl, provides=UserGateway)
+        user_dao = provide(UserDAOImpl, scope=Scope.REQUEST)
+        user_dao_proto = alias(source=UserDAOImpl, provides=UserDAO)
 
 Additionally, alias has own setting for caching: it caches by default regardless if source is cached. You can disable it providing ``cache=False`` argument.
 
@@ -26,20 +26,20 @@ Do you want to override the alias? To do this, specify the parameter ``override=
 
     from dishka import provide, Provider, Scope, alias, make_container
 
-    class UserGateway(Protocol): ...
-    class UserGatewayImpl(UserGateway): ...
-    class UserGatewayMock(UserGateway): ...
+    class UserDAO(Protocol): ...
+    class UserDAOImpl(UserDAO): ...
+    class UserDAOMock(UserDAO): ...
 
     class MyProvider(Provider):
         scope = Scope.APP  # should be REQUEST, but set to APP for the sake of simplicity
 
-        user_gateway = provide(UserGatewayImpl)
-        user_gateway_mock = provide(UserGatewayMock)
+        user_dao = provide(UserDAOImpl)
+        user_dao_mock = provide(UserDAOMock)
 
-        user_gateway_proto = alias(UserGatewayImpl, provides=UserGateway)
-        user_gateway_override = alias(
-            UserGatewayMock, provides=UserGateway, override=True
+        user_dao_proto = alias(UserDAOImpl, provides=UserDAO)
+        user_dao_override = alias(
+            UserDAOMock, provides=UserDAO, override=True
         )
 
     container = make_container(MyProvider())
-    gateway = container.get(UserGateway)  # UserGatewayMock
+    dao = container.get(UserDAO)  # UserDAOMock

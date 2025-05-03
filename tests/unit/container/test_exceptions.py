@@ -6,6 +6,7 @@ import pytest
 
 from dishka import (
     DEFAULT_COMPONENT,
+    Container,
     DependencyKey,
     FromComponent,
     Provider,
@@ -257,4 +258,52 @@ def test_invalid_scope():
     assert e.value.suggest_other_components[0].scope == Scope.APP
     assert e.value.suggest_other_components[0].provides == DependencyKey(
         object, "x",
+    )
+
+
+class Abstract:
+    ...
+
+
+class Provided(Abstract):
+    ...
+
+
+class Concrete(Provided):
+    ...
+
+
+def make_container_with_provided() -> Container:
+    provider = Provider()
+    provider.provide(Provided, scope=Scope.APP)
+    return make_container(provider)
+
+
+def test_abstract_factory_provided() -> None:
+    container = make_container_with_provided()
+
+    with pytest.raises(NoFactoryError) as e:
+        container.get(Concrete)
+
+    abstract_suggestions = e.value.suggest_abstract_factories
+
+    assert str(e.value)
+    assert len(abstract_suggestions) == 1
+    assert abstract_suggestions[0].provides == DependencyKey(
+        Provided, DEFAULT_COMPONENT,
+    )
+
+
+def test_more_concrete_factory_provided() -> None:
+    container = make_container_with_provided()
+
+    with pytest.raises(NoFactoryError) as e:
+        container.get(Abstract)
+
+    concrete_suggestions = e.value.suggest_concrete_factories
+
+    assert str(e.value)
+    assert len(concrete_suggestions) == 1
+    assert concrete_suggestions[0].provides == DependencyKey(
+        Provided, DEFAULT_COMPONENT,
     )

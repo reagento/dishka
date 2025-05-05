@@ -9,7 +9,16 @@ from collections.abc import (
 from functools import partial
 from random import random
 from types import NoneType
-from typing import Annotated, Any, Protocol
+from typing import (
+    Annotated,
+    Any,
+    ClassVar,
+    Final,
+    Literal,
+    Optional,
+    Protocol,
+    Union,
+)
 
 import pytest
 
@@ -531,6 +540,9 @@ def test_not_a_factory():
         make_factory_by_source(source=None)
 
 
+class AProtocol(Protocol): ...
+
+
 @pytest.mark.parametrize(
     "provide_func",
     [
@@ -540,12 +552,33 @@ def test_not_a_factory():
         provide_all_on_instance,
     ],
 )
-def test_protocol_cannot_be_source_in_provide(provide_func):
-    class AProtocol(Protocol): ...
+@pytest.mark.parametrize(
+    "proto",
+    [
+        AProtocol,
+        Annotated[AProtocol, "metadata"],
+    ],
+)
+def test_protocol_cannot_be_source_in_provide(provide_func, proto):
 
     with pytest.raises(
         CannotUseProtocolError,
         match="Cannot use.*\n.*seems that this is a Protocol.*",
     ):
         class P(Provider):
-            p = provide_func(AProtocol)
+            p = provide_func(proto)
+
+
+@pytest.mark.parametrize(
+    "type_hint",
+    [
+        Union[str, int],  # noqa: UP007
+        Final[str],
+        ClassVar[str],
+        Optional[str],  # noqa: UP007
+        Literal["5"],
+    ],
+)
+def test_generic_alias_not_a_factory(type_hint):
+    with pytest.raises(NotAFactoryError):
+        make_factory_by_source(source=type_hint)

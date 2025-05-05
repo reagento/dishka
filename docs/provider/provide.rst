@@ -20,8 +20,8 @@ By default the result is cached within scope. You can disable it providing ``cac
 
     class MyProvider(Provider):
         @provide(scope=Scope.REQUEST)
-        def get_a(self) -> A:
-            return A()
+        def get_service(self) -> Service:
+            return Service()
 
 * Want some finalization when exiting the scope? Make that method a generator:
 
@@ -31,24 +31,25 @@ By default the result is cached within scope. You can disable it providing ``cac
 
     class MyProvider(Provider):
         @provide(scope=Scope.REQUEST)
-        def get_a(self) -> Iterable[A]:
-            a = A()
-            yield a
-            a.close()
+        def get_db_session(self) -> Iterable[Session]:
+            session = create_session()
+            yield session
+            session.close()
 
 Also, if an error occurs during process handling (inside the ``with`` block), it will be sent to the generator:
 
 .. code-block:: python
 
-    class MyProvider(Provider):
+  class MyProvider(Provider):
         @provide(scope=Scope.REQUEST)
-        def get_a(self) -> Iterable[A]:
-            a = A()
-            exc = yield a
+        def get_connection(self) -> Iterable[Connection]:
+            conn = create_connection()
+            exc = yield conn
             # exc will be None if an exception has not occurred
             if exc:
+                conn.rollback()
                 print("Some exception while process handling: ", exc)
-            a.close()
+            conn.close()  # finally
 
 * Haven't got any specific logic and just want to create class using its ``__init__``? Then add a provider attribute using ``provide`` as function passing that class.
 
@@ -57,7 +58,7 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
     from dishka import provide, Provider, Scope
 
     class MyProvider(Provider):
-        a = provide(A, scope=Scope.REQUEST)
+        service = provide(Service, scope=Scope.REQUEST)
 
 * Want to create a child class instance when parent is requested? Add a ``source`` attribute to ``provide`` function with a parent class while passing child as a source
 
@@ -65,8 +66,11 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
 
     from dishka import provide, Provider, Scope
 
+    class UserDAO(Protocol): ...
+    class UserDAOImpl(UserDAO): ...
+
     class MyProvider(Provider):
-        a = provide(source=AChild, scope=Scope.REQUEST, provides=A)
+        user_dao = provide(source=UserDAOImpl, scope=Scope.REQUEST, provides=UserDAO)
 
 
 * Want to go ``async``? Make provide methods asynchronous, create async container and then use ``async with`` and await ``get`` calls:
@@ -77,11 +81,11 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
 
     class MyProvider(Provider):
        @provide(scope=Scope.APP)
-       async def get_a(self) -> A:
-          return A()
+       async def get_connection(self) -> Connection:
+          return await create_connection()
 
     container = make_async_container(MyProvider())
-    a = await container.get(A)
+    conn = await container.get(Connection)
 
 * Tired of providing ``scope=`` for each dependency? Set it inside your ``Provider`` class and all factories with no scope will use it:
 
@@ -90,15 +94,15 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
     from dishka import provide, Provider, Scope
 
     class MyProvider(Provider):
-       scope=Scope.APP
+       scope = Scope.APP
 
        @provide  # uses provider scope
-       async def get_a(self) -> A:
-          return A()
+       def get_id_generator(self) -> IDGenerator:
+          return create_uuid_generator()
 
        @provide(scope=Scope.REQUEST)  # has own scope
-       async def get_b(self) -> B:
-          return B()
+       def get_user_dao(self) -> UserDAO:
+          return UserDAOImpl()
 
 * Having multiple interfaces which can be created as a same class? Use ``AnyOf`` as a result hint:
 
@@ -107,11 +111,11 @@ Also, if an error occurs during process handling (inside the ``with`` block), it
     from dishka import AnyOf, provide, Provider, Scope
 
     class MyProvider(Provider):
-        scope=Scope.APP
+        scope = Scope.APP
 
         @provide
-        def p(self) -> AnyOf[A, AProtocol]:
-            return A()
+        def get_user_dao(self) -> AnyOf[UserDAO, UserDAOImpl]:
+            return UserDAOImpl()
 
 It works similar to :ref:`alias`.
 
@@ -119,22 +123,22 @@ It works similar to :ref:`alias`.
 
 .. code-block:: python
 
-    from dishka import WithParents, provide, Provider, Scope
+    from dishka import WithParents, provide, Provider, Scope, make_container
 
-    class A(Protocol): ...
-    class AImpl(A): ...
+    class UserReader(Protocol): ...
+    class UserWriter(Protocol): ...
+    class UserDAOImpl(UserReader, UserWriter): ...
 
     class MyProvider(Provider):
-        scope=Scope.APP
+        @provide(scope=Scope.APP)  # should be REQUEST, but set to APP for the sake of simplicity
+        def get_user_dao(self) -> WithParents[UserDAOImpl]:
+            return UserDAOImpl()
 
-        @provide
-        def a(self) -> WithParents[AImpl]:
-            return A()
-
-    container = make_async_container(MyProvider())
-    a = await container.get(A)
-    a = await container.get(AImpl)
-    a is a # True
+    container = make_container(MyProvider())
+    reader = container.get(UserReader)
+    writer = container.get(UserWriter)
+    impl = container.get(UserDAOImpl)
+    reader is impl and writer is impl  # True
 
 
 WithParents generates only one factory and many aliases and is equivalent to ``AnyOf[AImpl, A]``. The following parents are ignored: ``type``, ``object``, ``Enum``, ``ABC``, ``ABCMeta``, ``Generic``, ``Protocol``, ``Exception``, ``BaseException``.
@@ -143,16 +147,22 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
 
 .. code-block:: python
 
-    class A: ...
+    @dataclass
+    class APISettings:
+        api_key: str
+        rate_limit: int
 
-    class B:
-        def __init__(self, a: A): ...
-
-    class C:
-        def __init__(self, b: B): ...
+    class ExternalAPIClient(Protocol): ...
+    class ExternalAPIClientImpl(UserDAO):
+        def __init__(self, settings: APISettings): ...
 
     class MyProvider(Provider):
-        c = provide(C, scope=Scope.APP, recursive=True)
+        external_api_client = provide(
+            ExternalAPIClientImpl,
+            provides=ExternalAPIClient,
+            scope=Scope.REQUEST,
+            recursive=True
+        )
 
 
 * Do you want to override the factory? To do this, specify the parameter ``override=True``. This can be checked when passing proper ``validation_settings`` when creating container:
@@ -161,19 +171,20 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
 
     from dishka import provide, Provider, Scope, make_container
 
+    class UserDAO(Protocol): ...
+    class UserDAOImpl(UserDAO): ...
+    class UserDAOMock(UserDAO): ...
+
     class MyProvider(Provider):
-        scope=Scope.APP
+        scope = Scope.APP
 
-        @provide
-        def get_int(self) -> int:
-            return 1
-
-        @provide(override=True)
-        def get_int2(self) -> int:
-            return 2
+        user_dao = provide(UserDAOImpl, provides=UserDAO)
+        user_dao_mock = provide(
+            UserDAOMock, provides=UserDAO, override=True
+        )
 
     container = make_container(MyProvider())
-    a = container.get(int)  # 2
+    dao = container.get(UserDAO)  # UserDAOMock
 
 
 * You can use factory with Generic classes:

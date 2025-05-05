@@ -2,7 +2,7 @@ name: Post coverage comment
 
 on:
   workflow_run:  # zizmor: ignore[dangerous-triggers]
-    workflows: ["Run linters and tests"]
+    workflows: ["CI"]
     types:
       - completed
 

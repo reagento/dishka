@@ -3,5 +3,6 @@ exclude_lines =
     pragma: not covered
     @overload
 [run]
+relative_files = true
 omit =
     src/dishka/_adaptix/**

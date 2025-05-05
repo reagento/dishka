@@ -157,7 +157,7 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
         def __init__(self, settings: APISettings): ...
 
     class MyProvider(Provider):
-        c = provide(
+        external_api_client = provide(
             ExternalAPIClientImpl,
             provides=ExternalAPIClient,
             scope=Scope.REQUEST,

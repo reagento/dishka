@@ -20,7 +20,7 @@ These two providers are equal for the container:
     class AllAtOnce(Provider):
         scope = Scope.APP
 
-        ab = provide_all(
+        interactors = provide_all(
             RegisterUserInteractor,
             UpdateProfilePicInteractor
         )

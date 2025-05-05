@@ -29,19 +29,24 @@ Do you want to override factory with ``from_context``? To do this, specify the p
 
 .. code-block:: python
 
-    from dishka import provide, from_context, Provider, Scope, make_container
+    from dishka import from_context, Provider, Scope, make_container, provide
 
     class Config: ...
 
-    class MyProvider(Provider):
+    class MainProvider(Provider):
         scope = Scope.APP
+        config = provide(Config)
 
-        @provide
-        def get_default_config(self) -> Config:
-            return Config()
-
+    class TestProvider(Provider):
+        scope = Scope.APP
         config_override = from_context(provides=Config, override=True)
 
-    container = make_container(MyProvider(), context={Config: Config()})
-    di_config = container.get(Config)
-    config is di_config  # True
+    prod_container = make_container(MainProvider())
+
+    test_config = Config()
+    test_container = make_container(
+        MainProvider(),
+        TestProvider(),
+        context={Config: test_config}
+    )
+    assert test_container.get(Config) is test_config  # True

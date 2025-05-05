@@ -80,11 +80,11 @@ from another component:
     # we might use different databases for users and comments,
     # although the interface for communication will remain common
 
-    class UserGateway:
+    class UserDAO:
         def __init__(self, db: DBConnection): ...
         # we need to distinguish this DBConnection ...
 
-    class CommentGateway:
+    class CommentDAO:
         def __init__(self, db: DBConnection): ...
         # ... from this DBConnection
 
@@ -92,13 +92,13 @@ from another component:
         component = "user"
         scope = Scope.APP  # should be REQUEST, but set to APP for the sake of simplicity
         db_connection = provide(UserDBConnection, provides=DBConnection)
-        gateway = provide(UserGateway)
+        dao = provide(UserDAO)
 
     class CommentProvider(Provider):
         component = "comment"
         scope = Scope.APP  # should be REQUEST, but set to APP for the sake of simplicity
         db_connection = provide(CommentDBConnection, provides=DBConnection)
-        gateway = provide(CommentGateway)
+        dao = provide(CommentDAO)
 
     container = make_container(UserProvider(), CommentProvider())
     container.get(DBConnection, component="user")  # UserDBConnection

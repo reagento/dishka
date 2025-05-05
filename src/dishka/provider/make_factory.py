@@ -252,8 +252,6 @@ def _make_factory_by_class(
     if not provides:
         provides = source
 
-    if get_origin(source) is Annotated:
-        source = get_args(source)[0]
     init = strip_alias(source).__init__
     if missing_hints := _params_without_hints(init, skip_self=True):
         raise MissingHintsError(source, missing_hints, append_init=True)
@@ -438,6 +436,23 @@ def _make_factory_by_other_callable(
     )
 
 
+def _extract_source(
+    provides: Any,
+    source: ProvideSource,
+) -> tuple[Any, ProvideSource]:
+    if get_origin(source) is Annotated:
+        source = get_args(source)[0]
+
+    if get_origin(source) is ProvideMultiple:
+        if provides is None:
+            provides = source
+        source = get_args(source)[0]
+
+    if is_bare_generic(source):
+        source = source[get_type_vars(source)]  # type: ignore[index]
+    return provides, source
+
+
 def make_factory(
         *,
         provides: Any,
@@ -447,18 +462,14 @@ def make_factory(
         is_in_class: bool,
         override: bool,
 ) -> Factory:
+    provides, source = _extract_source(provides, source)
+
     if source and is_protocol(source):
         raise CannotUseProtocolError(source)
 
-    if get_origin(source) is ProvideMultiple:
-        if provides is None:
-            provides = source
-        source = get_args(source)[0]
+    source_origin = get_origin(source)
 
-    if is_bare_generic(source):
-        source = source[get_type_vars(source)]  # type: ignore[index]
-
-    if isclass(source) or get_origin(source):
+    if isclass(source) or isclass(source_origin):
         return _make_factory_by_class(
             provides=provides,
             scope=scope,
@@ -494,7 +505,7 @@ def make_factory(
             cache=cache,
             override=override,
         )
-    elif callable(source):
+    elif callable(source) and not source_origin:
         return _make_factory_by_other_callable(
             provides=provides,
             scope=scope,

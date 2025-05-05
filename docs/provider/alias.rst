@@ -11,12 +11,12 @@ Provider object has also a ``.alias`` method with the same logic.
 
     from dishka import alias, provide, Provider, Scope
 
-    class MyProvider(Provider):
-        @provide(scope=Scope.REQUEST)
-        def get_a(self) -> A:
-            return A()
+    class UserDAO(Protocol): ...
+    class UserDAOImpl(UserDAO): ...
 
-        a_proto = alias(source=A, provides=AProtocol)
+    class MyProvider(Provider):
+        user_dao = provide(UserDAOImpl, scope=Scope.REQUEST)
+        user_dao_proto = alias(source=UserDAOImpl, provides=UserDAO)
 
 Additionally, alias has own setting for caching: it caches by default regardless if source is cached. You can disable it providing ``cache=False`` argument.
 
@@ -26,13 +26,20 @@ Do you want to override the alias? To do this, specify the parameter ``override=
 
     from dishka import provide, Provider, Scope, alias, make_container
 
-    class MyProvider(Provider):
-        scope=Scope.APP
-        get_int = provide(int)
-        get_float = provide(float)
+    class UserDAO(Protocol): ...
+    class UserDAOImpl(UserDAO): ...
+    class UserDAOMock(UserDAO): ...
 
-        a_alias = alias(int, provides=complex)
-        a_alias_override = alias(float, provides=complex, override=True)
+    class MyProvider(Provider):
+        scope = Scope.APP  # should be REQUEST, but set to APP for the sake of simplicity
+
+        user_dao = provide(UserDAOImpl)
+        user_dao_mock = provide(UserDAOMock)
+
+        user_dao_proto = alias(UserDAOImpl, provides=UserDAO)
+        user_dao_override = alias(
+            UserDAOMock, provides=UserDAO, override=True
+        )
 
     container = make_container(MyProvider())
-    a = container.get(complex)  # 0.0
+    dao = container.get(UserDAO)  # UserDAOMock

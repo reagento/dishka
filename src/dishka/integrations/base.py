@@ -91,7 +91,11 @@ def _get_auto_injected_async_gen(
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, AsyncIterator[T]],
+    provide_context: ProvideContext | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
+    if provide_context is not None:
+        raise InvalidInjectedFuncProvideContextError
+
     async def auto_injected_generator(
         *args: P.args,
         **kwargs: P.kwargs,
@@ -146,7 +150,11 @@ def _get_auto_injected_async_func(
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Awaitable[T]],
+    provide_context: ProvideContext | None = None,
 ) -> Callable[P, Awaitable[T]]:
+    if provide_context is not None:
+        raise InvalidInjectedFuncProvideContextError
+
     async def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         container = container_getter(args, kwargs)
         for param in additional_params:
@@ -196,7 +204,11 @@ def _get_auto_injected_sync_gen(
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Iterator[T]],
+    provide_context: ProvideContext | None = None,
 ) -> Callable[P, Iterator[T]]:
+    if provide_context is not None:
+        raise InvalidInjectedFuncProvideContextError
+
     def auto_injected_generator(
         *args: P.args,
         **kwargs: P.kwargs,
@@ -243,7 +255,11 @@ def _get_auto_injected_sync_func(
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, T],
+    provide_context: ProvideContext | None = None,
 ) -> Callable[P, T]:
+    if provide_context is not None:
+        raise InvalidInjectedFuncProvideContextError
+
     def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         container = container_getter(args, kwargs)
         for param in additional_params:
@@ -292,7 +308,11 @@ def _get_auto_injected_sync_container_async_gen(
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Iterator[T]],
+    provide_context: ProvideContext | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
+    if provide_context is not None:
+        raise InvalidInjectedFuncProvideContextError
+
     async def auto_injected_generator(
         *args: P.args,
         **kwargs: P.kwargs,
@@ -340,7 +360,11 @@ def _get_auto_injected_sync_container_async_func(
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, T],
+    provide_context: ProvideContext | None = None,
 ) -> Callable[P, T]:
+    if provide_context is not None:
+        raise InvalidInjectedFuncProvideContextError
+
     async def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         container = container_getter(args, kwargs)
         for param in additional_params:
@@ -574,18 +598,13 @@ def wrap_injection(
     )
     get_auto_injected_func = _GET_AUTO_INJECTED_FUNC_DICT[injected_func_type]
 
-    kwargs = {
-        "func": func,
-        "dependencies": dependencies,
-        "additional_params": additional_params,
-        "container_getter": container_getter,
-    }
-    if provide_context is not None:
-        if not manage_scope:
-            raise InvalidInjectedFuncProvideContextError
-        kwargs["provide_context"] = provide_context
-
-    auto_injected_func = get_auto_injected_func(**kwargs)
+    auto_injected_func = get_auto_injected_func(
+        func=func,
+        provide_context=provide_context,
+        dependencies=dependencies,
+        additional_params=additional_params,
+        container_getter=container_getter,
+    )
 
     auto_injected_func.__dishka_orig_func__ = func
     auto_injected_func.__dishka_injected__ = True  # type: ignore[attr-defined]

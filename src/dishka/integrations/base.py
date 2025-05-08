@@ -36,7 +36,7 @@ from dishka.entities.component import DEFAULT_COMPONENT
 from dishka.entities.depends_marker import FromDishka
 from dishka.entities.key import DependencyKey, _FromComponent
 from dishka.integrations.exceptions import (
-    InvalidInjectedFuncProvideContextError,
+    ImproperProvideContextUsageError,
     InvalidInjectedFuncTypeError,
 )
 
@@ -94,7 +94,7 @@ def _get_auto_injected_async_gen(
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
     if provide_context is not None:
-        raise InvalidInjectedFuncProvideContextError
+        raise ImproperProvideContextUsageError
 
     async def auto_injected_generator(
         *args: P.args,
@@ -153,7 +153,7 @@ def _get_auto_injected_async_func(
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, Awaitable[T]]:
     if provide_context is not None:
-        raise InvalidInjectedFuncProvideContextError
+        raise ImproperProvideContextUsageError
 
     async def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         container = container_getter(args, kwargs)
@@ -207,7 +207,7 @@ def _get_auto_injected_sync_gen(
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, Iterator[T]]:
     if provide_context is not None:
-        raise InvalidInjectedFuncProvideContextError
+        raise ImproperProvideContextUsageError
 
     def auto_injected_generator(
         *args: P.args,
@@ -258,7 +258,7 @@ def _get_auto_injected_sync_func(
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, T]:
     if provide_context is not None:
-        raise InvalidInjectedFuncProvideContextError
+        raise ImproperProvideContextUsageError
 
     def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         container = container_getter(args, kwargs)
@@ -311,7 +311,7 @@ def _get_auto_injected_sync_container_async_gen(
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
     if provide_context is not None:
-        raise InvalidInjectedFuncProvideContextError
+        raise ImproperProvideContextUsageError
 
     async def auto_injected_generator(
         *args: P.args,
@@ -363,7 +363,7 @@ def _get_auto_injected_sync_container_async_func(
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, T]:
     if provide_context is not None:
-        raise InvalidInjectedFuncProvideContextError
+        raise ImproperProvideContextUsageError
 
     async def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         container = container_getter(args, kwargs)

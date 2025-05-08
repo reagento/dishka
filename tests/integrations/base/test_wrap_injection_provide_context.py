@@ -7,9 +7,7 @@ from dishka.async_container import AsyncContainer
 from dishka.container import Container
 from dishka.entities.depends_marker import FromDishka
 from dishka.integrations.base import wrap_injection
-from dishka.integrations.exceptions import (
-    InvalidInjectedFuncProvideContextError,
-)
+from dishka.integrations.exceptions import ImproperProvideContextUsageError
 from tests.integrations.common import ContextDep
 
 
@@ -57,7 +55,7 @@ def test_sync_provide_context(func: Callable, container: Container) -> None:
 
 @pytest.mark.parametrize("func", [sync_func, sync_gen])
 def test_invalid_provide_context(func: Callable, container: Container) -> None:
-    with pytest.raises(InvalidInjectedFuncProvideContextError):
+    with pytest.raises(ImproperProvideContextUsageError):
         wrap_injection(
             func=func,
             container_getter=lambda *_: container,
@@ -95,7 +93,7 @@ async def test_invalid_async_provide_context(
     func: Callable,
     async_container: AsyncContainer,
 ) -> None:
-    with pytest.raises(InvalidInjectedFuncProvideContextError):
+    with pytest.raises(ImproperProvideContextUsageError):
         wrap_injection(
             func=func,
             container_getter=lambda *_: async_container,

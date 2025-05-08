@@ -13,7 +13,8 @@ The main points are:
    Alternatively, you can use the ``wrap_injection`` function with ``manage_scope=True`` to automate entering and exiting the request scope without relying on middleware. When enabled, ``manage_scope`` ensures that the container passed to ``wrap_injection`` enters and exits the next scope.
 
    When you use ``manage_scope=True``, you can pass ``provide_context`` function that allows to populate the container context with passed arguments. This is useful when you want to pass the function scoped arguments to other dependencies without relying on middleware.
-   ... code-block:: python
+
+   .. code-block:: python
 
        from dishka import wrap_injection, Provider, provide
 

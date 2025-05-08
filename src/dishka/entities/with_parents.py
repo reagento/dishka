@@ -193,7 +193,7 @@ class ParentsResolver:
 
 if TYPE_CHECKING:
     T = TypeVar("T")
-    WithParents: TypeAlias = T | T  # noqa: PYI016
+    WithParents: TypeAlias = T  # noqa: PYI016
 else:
     class WithParents:
         def __class_getitem__(cls, item: TypeHint) -> TypeHint:

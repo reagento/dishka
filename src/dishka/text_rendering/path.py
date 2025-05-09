@@ -16,17 +16,17 @@ class PathRenderer:
         if length == 1:
             return "⥁ "
         elif index == 0:
-            return "╭─▷─╮ "
+            return "╭─>─╮ "
         elif index + 1 < length:
             return "│   ▼ "
         else:
-            return "╰─◁─╯ "
+            return "╰─<─╯ "
 
     def _arrow_line(self, index: int, length: int) -> str:
         if index + 1 < length:
             return "▼   "
         else:
-            return "╰─▷ "
+            return "╰─> "
 
     def _arrow(self, index: int, length: int) -> str:
         if self.cycle:

@@ -37,6 +37,7 @@ Key features:
    provider/index
    container/index
    integrations/index
+   errors
    alternatives
 
 .. toctree::

@@ -28,6 +28,7 @@ class AppProvider(Provider):
         self.app_released = Mock()
         self.request_released = Mock()
         self.websocket_released = Mock()
+        self.db_session_released = Mock()
         self.mock = Mock()
         self.app_mock = AppMock(Mock())
 
@@ -49,6 +50,7 @@ class AppProvider(Provider):
     @provide(scope=Scope.REQUEST)
     def user(self, context: FromDishka[ContextDep]) -> Iterable[UserDep]:
         yield f"user_id.from_context({context})"
+        self.db_session_released()
 
     @provide(scope=Scope.REQUEST)
     def get_mock(self) -> Mock:

@@ -3,8 +3,10 @@ from typing import NewType
 from unittest.mock import Mock
 
 from dishka import Provider, Scope, from_context, provide
+from dishka.entities.depends_marker import FromDishka
 
 ContextDep = NewType("ContextDep", str)
+UserDep = NewType("UserDep", str)
 
 AppDep = NewType("AppDep", str)
 APP_DEP_VALUE = "APP"
@@ -43,6 +45,10 @@ class AppProvider(Provider):
     def websocket(self) -> Iterable[WebSocketDep]:
         yield WS_DEP_VALUE
         self.websocket_released()
+
+    @provide(scope=Scope.REQUEST)
+    def user(self, context: FromDishka[ContextDep]) -> Iterable[UserDep]:
+        yield f"user_id.from_context({context})"
 
     @provide(scope=Scope.REQUEST)
     def get_mock(self) -> Mock:

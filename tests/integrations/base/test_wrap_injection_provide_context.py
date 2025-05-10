@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator, Callable, Iterable, Iterator
 from inspect import isasyncgenfunction, isgeneratorfunction
+from typing import Any, cast
 
 import pytest
 
@@ -8,31 +9,61 @@ from dishka.container import Container
 from dishka.entities.depends_marker import FromDishka
 from dishka.integrations.base import wrap_injection
 from dishka.integrations.exceptions import ImproperProvideContextUsageError
-from tests.integrations.common import ContextDep
+from tests.integrations.common import ContextDep, UserDep
+
+context = ContextDep("context")
+user = UserDep(f"user_id.from_context({context})")
 
 
-def sync_func(context: FromDishka[ContextDep]) -> str:
-    return context
+def generate_str(
+    user: UserDep,
+    context: ContextDep,
+    prefix: int | None = None,
+) -> str:
+    s = f"{user}, context={context}"
+    if prefix is not None:
+        s = f"{prefix}. {s}"
+    return s
+
+
+def sync_func(
+    context: ContextDep,
+    user: FromDishka[UserDep],
+) -> str:
+    return generate_str(user, context)
 
 
 def sync_gen(
+    context: ContextDep,
     data: Iterable[int],
-    context: FromDishka[ContextDep],
+    user: FromDishka[UserDep],
 ) -> Iterator[str]:
     for i in data:
-        yield f"{i}. {context}"
+        yield generate_str(user, context, i)
 
 
-async def async_func(context: FromDishka[ContextDep]) -> str:
-    return context
+async def async_func(
+    context: ContextDep,
+    user: FromDishka[UserDep],
+) -> str:
+    return generate_str(user, context)
 
 
 async def async_gen(
+    context: ContextDep,
     data: Iterable[int],
-    context: FromDishka[ContextDep],
+    user: FromDishka[UserDep],
 ) -> AsyncIterator[str]:
     for i in data:
-        yield f"{i}. {context}"
+        yield generate_str(user, context, i)
+
+
+def provide_context(
+    args: tuple[Any, ...],
+    _: dict[str, Any],
+) -> dict[Any, Any]:
+    context = cast(ContextDep, args[0])
+    return {ContextDep: context}
 
 
 @pytest.mark.parametrize("func", [sync_func, sync_gen])
@@ -42,15 +73,15 @@ def test_sync_provide_context(func: Callable, container: Container) -> None:
         container_getter=lambda *_: container,
         is_async=False,
         manage_scope=True,
-        provide_context=lambda *_: {ContextDep: "context"},
+        provide_context=provide_context,
     )
 
     if isgeneratorfunction(func):
-        result = list(wrapped_func([1, 2]))
-        assert result == ["1. context", "2. context"]
+        result = list(wrapped_func(context, [1, 2]))
+        assert result == [generate_str(user, context, i) for i in [1, 2]]
     else:
-        result = wrapped_func()
-        assert result == "context"
+        result = wrapped_func(context)
+        assert result == generate_str(user, context)
 
 
 @pytest.mark.parametrize("func", [sync_func, sync_gen])
@@ -61,7 +92,7 @@ def test_invalid_provide_context(func: Callable, container: Container) -> None:
             container_getter=lambda *_: container,
             is_async=False,
             manage_scope=False,
-            provide_context=lambda *_: {ContextDep: "context"},
+            provide_context=provide_context,
         )
 
 
@@ -76,15 +107,15 @@ async def test_async_provide_context(
         container_getter=lambda *_: async_container,
         is_async=True,
         manage_scope=True,
-        provide_context=lambda *_: {ContextDep: "context"},
+        provide_context=provide_context,
     )
 
     if isasyncgenfunction(func):
-        result = [item async for item in wrapped_func([1, 2])]
-        assert result == ["1. context", "2. context"]
+        result = [item async for item in wrapped_func(context, [1, 2])]
+        assert result == [generate_str(user, context, i) for i in [1, 2]]
     else:
-        result = await wrapped_func()
-        assert result == "context"
+        result = await wrapped_func(context)
+        assert result == generate_str(user, context)
 
 
 @pytest.mark.asyncio
@@ -99,5 +130,5 @@ async def test_invalid_async_provide_context(
             container_getter=lambda *_: async_container,
             is_async=True,
             manage_scope=False,
-            provide_context=lambda *_: {ContextDep: "context"},
+            provide_context=provide_context,
         )

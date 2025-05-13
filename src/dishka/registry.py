@@ -1,5 +1,7 @@
+from abc import ABC, ABCMeta
 from collections.abc import Callable
-from typing import Any, TypeVar, get_args, get_origin
+from enum import Enum
+from typing import Any, Final, Generic, Protocol, TypeVar, get_args, get_origin
 
 from ._adaptix.type_tools.fundamentals import get_type_vars
 from .container_objects import CompiledFactory
@@ -14,6 +16,18 @@ from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope
 from .factory_compiler import compile_factory
+
+IGNORE_TYPES: Final = (
+    type,
+    object,
+    Enum,
+    ABC,
+    ABCMeta,
+    Generic,
+    Protocol,
+    Exception,
+    BaseException,
+)
 
 
 class Registry:
@@ -89,6 +103,55 @@ class Registry:
             factory = self._specialize_generic(factory, dependency)
             self.factories[dependency] = factory
             return factory
+
+    def get_more_abstract_factories(
+        self,
+        dependency: DependencyKey,
+    ) -> list[Factory]:
+        abstract_dependencies: list[Factory] = []
+        try:
+            abstract_classes = dependency.type_hint.__bases__
+        except AttributeError:
+            abstract_classes = ()
+
+        for abstract_class in abstract_classes:
+            abstract_dependency = DependencyKey(
+                abstract_class,
+                dependency.component,
+            )
+
+            factory = self.factories.get(abstract_dependency)
+            if factory is not None:
+                abstract_dependencies.append(factory)
+
+        return abstract_dependencies
+
+    def get_more_concrete_factories(
+        self,
+        dependency: DependencyKey,
+    ) -> list[Factory]:
+        concrete_factories: list[Factory] = []
+
+        check_type_hint = dependency.type_hint
+
+        if check_type_hint in IGNORE_TYPES:
+            return concrete_factories
+
+        try:
+            subclasses: list[Any] = check_type_hint.__subclasses__()
+        except AttributeError:
+            subclasses = []
+
+        for subclass in subclasses:
+            concrete_dependency = DependencyKey(
+                subclass,
+                dependency.component,
+            )
+            factory = self.factories.get(concrete_dependency)
+            if factory is not None:
+                concrete_factories.append(factory)
+
+        return concrete_factories
 
     def _get_type_var_factory(self, dependency: DependencyKey) -> Factory:
         args = get_args(dependency.type_hint)

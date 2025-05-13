@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from unittest.mock import Mock
 
 import pytest
+from asgi_lifespan import LifespanManager
 from litestar import Litestar, websocket_listener
 from litestar.handlers import WebsocketListener
 from litestar.testing import TestClient
@@ -12,7 +13,7 @@ from dishka.integrations.litestar import (
     DishkaRouter,
     FromDishka,
     inject_websocket,
-    setup_dishka, DishkaPlugin,
+    setup_dishka,
 )
 from ..common import (
     APP_DEP_VALUE,
@@ -26,21 +27,14 @@ from ..common import (
 
 
 @asynccontextmanager
-async def dishka_app_via_setup(view, provider) -> AsyncGenerator[TestClient, None]:
+async def dishka_app(view, provider) -> AsyncGenerator[TestClient, None]:
     app = Litestar([view], debug=True)
     container = make_async_container(provider)
     setup_dishka(container, app)
-    with TestClient(app) as client:
-        yield client
+    async with LifespanManager(app):
+        yield TestClient(app)
     await container.close()
 
-@asynccontextmanager
-async def dishka_app_via_plugin(view, provider) -> AsyncGenerator[TestClient, None]:
-    container = make_async_container(provider)
-    app = Litestar([view], debug=True, plugins=[DishkaPlugin(container=container)])
-    with TestClient(app) as client:
-        yield client
-    await container.close()
 
 @asynccontextmanager
 async def dishka_auto_app(view, provider) -> AsyncGenerator[TestClient, None]:

@@ -178,12 +178,8 @@ class DishkaMiddleware(ASGIMiddleware):
             self, scope: Scope, receive: Receive,
             send: Send, next_app: ASGIApp,
     ) -> None:
-        if scope.get("type") not in (ScopeType.HTTP, ScopeType.WEBSOCKET):
-            await next_app(scope, receive, send)
-            return
-
         if scope.get("type") == ScopeType.HTTP:
-            request: Request = Request(scope)
+            request: Request = Request(scope=scope, receive=receive, send=send)
             r_context = {Request: request}
             di_scope = DIScope.REQUEST
             async with request.app.state.dishka_container(
@@ -194,7 +190,8 @@ class DishkaMiddleware(ASGIMiddleware):
                 await next_app(scope, receive, send)
 
         elif scope.get("type") == ScopeType.WEBSOCKET:
-            websocket: WebSocket = WebSocket(scope)
+            websocket: WebSocket = WebSocket(scope=scope, receive=receive,
+                                             send=send)
             w_context = {WebSocket: websocket}
             di_scope = DIScope.SESSION
             async with websocket.app.state.dishka_container(

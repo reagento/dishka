@@ -10,6 +10,7 @@ from litestar.testing import TestClient
 
 from dishka import make_async_container
 from dishka.integrations.litestar import (
+    DishkaPlugin,
     DishkaRouter,
     FromDishka,
     inject,
@@ -39,6 +40,20 @@ async def dishka_app(
         yield TestClient(app)
     await container.close()
 
+@asynccontextmanager
+async def dishka_plugin_app(
+        view,
+        provider,
+        request_class: type[Request] = Request,
+) -> TestClient:
+    container = make_async_container(provider)
+    app = litestar.Litestar(request_class=request_class,
+                            plugins=[DishkaPlugin(container)])
+    app.register(get("/")(inject(view)))
+    app.register(websocket_listener("/ws")(websocket_handler))
+    async with LifespanManager(app):
+        yield TestClient(app)
+    await container.close()
 
 @asynccontextmanager
 async def dishka_auto_app(
@@ -90,6 +105,8 @@ def get_with_request(request_class: type[Request]):
         (HTMXRequest, dishka_app),
         (Request, dishka_auto_app),
         (HTMXRequest, dishka_auto_app),
+        (Request, dishka_plugin_app),
+        (HTMXRequest, dishka_plugin_app),
     ],
 )
 @pytest.mark.asyncio
@@ -116,6 +133,8 @@ async def test_app_dependency(
         (HTMXRequest, dishka_app),
         (Request, dishka_auto_app),
         (HTMXRequest, dishka_auto_app),
+        (Request, dishka_plugin_app),
+        (HTMXRequest, dishka_plugin_app),
     ],
 )
 @pytest.mark.asyncio
@@ -141,6 +160,8 @@ async def test_request_dependency(
         (HTMXRequest, dishka_app),
         (Request, dishka_auto_app),
         (HTMXRequest, dishka_auto_app),
+        (Request, dishka_plugin_app),
+        (HTMXRequest, dishka_plugin_app),
     ],
 )
 @pytest.mark.asyncio

@@ -102,5 +102,7 @@ There are multiple reasons for this error. If possible, dishka tries to predict 
   You should either use ``FromComponent`` to call another component directly or
   create object separately for appropriate component using ``provide`` annotation
 
-* **
+* **Dependency is parent class while provided child class (or vice versa)**
+  Use ``provives=`` argument to mark that source and provided types are different.
+  Use ``WithParents[X]`` to provide an object as its type with parent classes
 

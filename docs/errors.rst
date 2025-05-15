@@ -106,3 +106,65 @@ There are multiple reasons for this error. If possible, dishka tries to predict 
   Use ``provives=`` argument to mark that source and provided types are different.
   Use ``WithParents[X]`` to provide an object as its type with parent classes
 
+
+CannotUseProtocolError: Cannot use ... as a factory
+-------------------------------------------------------
+
+.. code-block::
+
+    dishka.provider.exceptions.CannotUseProtocolError: Cannot use <class '__main__.SomeProtocol'> as a factory.
+    Tip: seems that this is a Protocol. Please subclass it and provide the subclass.
+
+This error means that you used some protocol class as a source argument of ``provide`` function.
+Protocols cannot be instantiated.
+Check that you have an implementation for that protocol, and use it.
+You can try using the form ``provide(YourImpl, provides=YourProtocol)``
+
+
+NotAFactoryError: Cannot use ... as a factory.
+-------------------------------------------------------
+
+.. code-block::
+
+    dishka.provider.exceptions.NotAFactoryError: Cannot use typing.Union[int, str] as a factory.
+
+
+Check what are you passing to ``provide`` function. Probably that object cannot be instantiated directly.
+
+Note, that you can provide some type by creating an instance of another one using the form ``provide(YourClass, provides=SomeTypeHint)``
+
+
+ImplicitOverrideDetectedError: Detected multiple factories for ...
+-------------------------------------------------------------------------
+
+.. code-block::
+
+    dishka.exceptions.ImplicitOverrideDetectedError: Detected multiple factories for (<class '__main__.A'>, component='') while `override` flag is not set.
+    Hint:
+    * Try specifying `override=True` for SecondProvider.get_a
+    * Try removing factory FirstProvider.get_a or SecondProvider.get_a
+
+This error can be seen only if you enabled ``implicit_override=True`` in validation settings.
+That means that you have 2 factories for the same type without specifying that second one should override.
+
+* **You meant to have one of factories**. Just remove the second
+
+* **You want to override dependency for tests or other purposes**. Specify ``override=True`` when creating second factory.
+
+Error text will contain details on both option with names of providers.
+
+
+NothingOverriddenError: Overriding factory found for ..., but there is nothing to override.
+---------------------------------------------------------------------------------------------------
+
+.. code-block::
+
+    dishka.exceptions.NothingOverriddenError: Overriding factory found for (<class '__main__.A'>, component=''), but there is nothing to override.
+    Hint:
+    * Try removing override=True from FirstProvider.get_a
+    * Check the order of providers
+
+This error can be seen only if you enabled ``nothing_overridden=True`` in validation settings.
+That means you set ``override=True`` but there is no second factory to be overriden or the order of providers is incorrect.
+
+Check, that you have specified all expected providers in correct order or remove the flag.

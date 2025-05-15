@@ -13,11 +13,8 @@ from dishka.exceptions import (
 
 def test_no_override() -> None:
     class TestProvider(Provider):
-        scope = Scope.APP
-        provides = (
-            from_context(int)
-            + from_context(int)
-        )
+        app_int = from_context(int, scope=Scope.APP)
+        request_int = from_context(int, scope=Scope.REQUEST)
 
     with pytest.raises(ImplicitOverrideDetectedError) as e:
         make_container(

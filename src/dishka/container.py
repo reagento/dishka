@@ -262,7 +262,7 @@ def make_container(
         start_scope: BaseScope | None = None,
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,
 ) -> Container:
-    context_provider = make_root_context_provider(context, scopes)
+    context_provider = make_root_context_provider(providers, context, scopes)
     registries = RegistryBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,

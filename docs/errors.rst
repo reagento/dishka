@@ -21,7 +21,7 @@ setting ``validation_settings``. E.g, this will enable all currently possible va
 
 Some of the exceptions can be raised during container creation,
 some can be also raised later when some object is requested.
-Here are some cases and their possible reasons
+Here are some cases and their possible reasons.
 
 Possible errors
 ********************************
@@ -57,7 +57,7 @@ CycleDependenciesError: Cycle dependencies detected.
 
 
 This error means that one of the objects cannot be created because some of
-its dependencies depends on itself.
+its dependencies depend on itself.
 You can see the whole path in the error message with types and provider methods.
 
 Possible actions:
@@ -118,7 +118,7 @@ CannotUseProtocolError: Cannot use ... as a factory
 This error means that you used some protocol class as a source argument of ``provide`` function.
 Protocols cannot be instantiated.
 Check that you have an implementation for that protocol, and use it.
-You can try using the form ``provide(YourImpl, provides=YourProtocol)``
+You can try using the form ``provide(YourImpl, provides=YourProtocol)``.
 
 
 NotAFactoryError: Cannot use ... as a factory.
@@ -131,7 +131,7 @@ NotAFactoryError: Cannot use ... as a factory.
 
 Check what are you passing to ``provide`` function. Probably that object cannot be instantiated directly.
 
-Note, that you can provide some type by creating an instance of another one using the form ``provide(YourClass, provides=SomeTypeHint)``
+Note, that you can provide some type by creating an instance of another one using the form ``provide(YourClass, provides=SomeTypeHint)``.
 
 
 ImplicitOverrideDetectedError: Detected multiple factories for ...
@@ -145,9 +145,9 @@ ImplicitOverrideDetectedError: Detected multiple factories for ...
     * Try removing factory FirstProvider.get_a or SecondProvider.get_a
 
 This error can be seen only if you enabled ``implicit_override=True`` in validation settings.
-That means that you have 2 factories for the same type without specifying that second one should override.
+It means that you have 2 factories for the same type without specifying that the second one should replace the first one.
 
-* **You meant to have one of factories**. Just remove the second
+* **You meant to have one of factories**. Just remove the second one.
 
 * **You want to override dependency for tests or other purposes**. Specify ``override=True`` when creating second factory.
 
@@ -165,6 +165,21 @@ NothingOverriddenError: Overriding factory found for ..., but there is nothing t
     * Check the order of providers
 
 This error can be seen only if you enabled ``nothing_overridden=True`` in validation settings.
-That means you set ``override=True`` but there is no second factory to be overriden or the order of providers is incorrect.
+That means you set ``override=True``, but there is no second factory to be overriden or the order of providers is incorrect.
 
 Check, that you have specified all expected providers in correct order or remove the flag.
+
+
+IndependentDecoratorError: Decorator ... does not depends on provided type.
+---------------------------------------------------------------------------------------------------
+
+.. code-block::
+
+    dishka.provider.exceptions.IndependentDecoratorError: Decorator __main__.FirstProvider.get_a does not depends on provided type.
+    Did you mean @provide instead of @decorate?
+
+Using ``decorate`` is a special case if you need to apply decorator patter or do modifications with an object created in another provider.
+Is requests an object of some type (additional dependencies are allowed) and returns the same type.
+
+If you are not going to use an object received from another factory, probably you meant to use simple ``provide`` instead?
+

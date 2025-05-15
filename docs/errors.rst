@@ -1,6 +1,9 @@
 Errors handling and validation
 ==========================================
 
+Configuration
+********************************
+
 Dishka tries to prevent most of errors so it checks dependency graph during container creation.
 You can disable this behavior passing ``skip_validation=True`` to
 ``make_container``/``make_async_container`` functions or switch several options

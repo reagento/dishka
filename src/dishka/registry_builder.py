@@ -420,10 +420,16 @@ class RegistryBuilder:
             and not factory.override
             and factory.provides in self.processed_factories
         ):
-            raise ImplicitOverrideDetectedError(
-                factory,
-                self.processed_factories[factory.provides],
-            )
+            old_factory = self.processed_factories[factory.provides]
+            # it's Ok to override context->context with the same params
+            if (
+                old_factory.type is not FactoryType.CONTEXT or
+                old_factory.scope != context_var.scope
+            ):
+                raise ImplicitOverrideDetectedError(
+                    factory,
+                    self.processed_factories[factory.provides],
+                )
         self.processed_factories[factory.provides] = factory
 
     def build(self) -> tuple[Registry, ...]:

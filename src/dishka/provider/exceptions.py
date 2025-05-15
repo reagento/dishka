@@ -147,6 +147,6 @@ class IndependentDecoratorError(ValueError, DishkaError):
     def __str__(self) -> str:
         name = get_name(self.source, include_module=True)
         return (
-            f"Decorator {name} does not depends on provided type.\n"
+            f"Decorator {name} does not depend on provided type.\n"
             f"Did you mean @provide instead of @decorate?"
         )

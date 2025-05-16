@@ -1,6 +1,4 @@
 __all__ = [
-    "DishkaMiddleware",
-    "DishkaPlugin",
     "FromDishka",
     "LitestarProvider",
     "inject",
@@ -23,8 +21,6 @@ from litestar.handlers import (
 )
 from litestar.handlers.websocket_handlers import WebsocketListenerRouteHandler
 from litestar.handlers.websocket_handlers._utils import ListenerHandler
-from litestar.middleware import ASGIMiddleware
-from litestar.plugins import InitPlugin
 from litestar.routes import BaseRoute
 from litestar.types import (
     ASGIApp,
@@ -33,6 +29,12 @@ from litestar.types import (
     Scope,
     Send,
 )
+
+try:
+    from litestar.plugins import InitPlugin
+    HAS_PLUGINS = True
+except ImportError:
+    HAS_PLUGINS = False
 
 from dishka import AsyncContainer, FromDishka, Provider, from_context
 from dishka import Scope as DIScope
@@ -171,42 +173,14 @@ def setup_dishka(container: AsyncContainer, app: Litestar) -> None:
     )
     app.state.dishka_container = container
 
+if HAS_PLUGINS:
+    __all__ += ["DishkaPlugin"]
 
-class DishkaMiddleware(ASGIMiddleware):
-    scopes = (ScopeType.HTTP, ScopeType.WEBSOCKET)
-    async def handle(
-            self, scope: Scope, receive: Receive,
-            send: Send, next_app: ASGIApp,
-    ) -> None:
-        if scope.get("type") == ScopeType.HTTP:
-            request: Request = Request(scope=scope, receive=receive, send=send)
-            r_context = {Request: request}
-            di_scope = DIScope.REQUEST
-            async with request.app.state.dishka_container(
-                    r_context,
-                    scope=di_scope,
-            ) as request_container:
-                request.state.dishka_container = request_container
-                await next_app(scope, receive, send)
+    class DishkaPlugin(InitPlugin):
+        def __init__(self, container: AsyncContainer):
+            self.container = container
 
-        elif scope.get("type") == ScopeType.WEBSOCKET:
-            websocket: WebSocket = WebSocket(scope=scope, receive=receive,
-                                             send=send)
-            w_context = {WebSocket: websocket}
-            di_scope = DIScope.SESSION
-            async with websocket.app.state.dishka_container(
-                    w_context,
-                    scope=di_scope,
-            ) as request_container:
-                websocket.state.dishka_container = request_container
-                await next_app(scope, receive, send)
-
-
-class DishkaPlugin(InitPlugin):
-    def __init__(self, container: AsyncContainer):
-        self.container = container
-
-    def on_app_init(self, app_config: AppConfig) -> AppConfig:
-        app_config.state.dishka_container = self.container
-        app_config.middleware.append(DishkaMiddleware())
-        return app_config
+        def on_app_init(self, app_config: AppConfig) -> AppConfig:
+            app_config.state.dishka_container = self.container
+            app_config.middleware.append(make_add_request_container_middleware)
+            return app_config

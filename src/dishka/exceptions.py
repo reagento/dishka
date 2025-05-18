@@ -18,7 +18,8 @@ except ImportError:
         ExceptionGroup,
     )
 
-_renderer = PathRenderer()
+_cycle_renderer = PathRenderer(cycle=True)
+_linear_renderer = PathRenderer(cycle=False)
 
 
 class ExitError(
@@ -42,16 +43,24 @@ class InvalidGraphError(DishkaError):
 
 class NoFactoryError(DishkaError):
     def __init__(
-            self,
-            requested: DependencyKey,
-            path: Sequence[FactoryData] = (),
-            suggest_other_scopes: Sequence[FactoryData] = (),
-            suggest_other_components: Sequence[FactoryData] = (),
+        self,
+        requested: DependencyKey,
+        path: Sequence[FactoryData] = (),
+        suggest_other_scopes: Sequence[FactoryData] = (),
+        suggest_other_components: Sequence[FactoryData] = (),
+        suggest_abstract_factories: Sequence[FactoryData] = (),
+        suggest_concrete_factories: Sequence[FactoryData] = (),
     ) -> None:
         self.requested = requested
         self.path = list(path)
         self.suggest_other_scopes = suggest_other_scopes
         self.suggest_other_components = suggest_other_components
+        self.suggest_abstract_factories = list(
+            suggest_abstract_factories,
+        )
+        self.suggest_concrete_factories = list(
+            suggest_concrete_factories,
+        )
         self.scope: BaseScope | None = None
 
     def add_path(self, requested_by: FactoryData) -> None:
@@ -63,9 +72,11 @@ class NoFactoryError(DishkaError):
             requested_key=self.requested,
             suggest_other_scopes=self.suggest_other_scopes,
             suggest_other_components=self.suggest_other_components,
+            suggest_abstract_factories=self.suggest_abstract_factories,
+            suggest_concrete_factories=self.suggest_concrete_factories,
         )
         if suggestion:
-            suggestion = f"Hint:{suggestion}"
+            suggestion = f" Hint:{suggestion}"
         requested_name = get_name(
             self.requested.type_hint, include_module=False,
         )
@@ -77,7 +88,7 @@ class NoFactoryError(DishkaError):
             return (
                 f"Cannot find factory for {requested_repr}. "
                 f"It is missing or has invalid scope.\n"
-            ) + _renderer.render(self.path, self.requested) + suggestion
+            ) + _linear_renderer.render(self.path, self.requested) + suggestion
         else:
             requested_repr = (
                 f"({requested_name}, "
@@ -159,7 +170,7 @@ class CycleDependenciesError(InvalidGraphError):
             hint = " Did you mean @decorate instead of @provide?"
         else:
             hint = ""
-        details = _renderer.render(self.path)
+        details = _cycle_renderer.render(self.path)
         return f"Cycle dependencies detected.{hint}\n{details}"
 
 

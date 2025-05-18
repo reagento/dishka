@@ -1,18 +1,18 @@
 Provider
 ****************
 
-**Provider** is an object which members are used to construct dependencies. ``Provider`` contains different factories and other entities and then is used to create a ``Container``. You can have multiple providers in one application and combine them in different ways to make it more modular.
+**Provider** is an object whose members are used to construct dependencies. ``Provider`` contains different factories and other entities and then is used to create a ``Container``. You can have multiple providers in one application combining them in different ways to make it more modular.
 
 To configure provider you can either inherit and use decorators on your methods or just create an instance and use its methods.
 
-For example, imagine you have two classes: connection which is retrieved from external library and a gateway which requires such a connection.
+For example, imagine you have two classes: connection which is retrieved from external library and a dao which requires such a connection.
 
 .. code-block:: python
 
     class Connection:
         pass
 
-    class Gateway:
+    class DAO:
         def __init__(self, conn: Connection):
             pass
 
@@ -29,7 +29,7 @@ You can configure ``Provider`` with code like this:
 
     provider = Provider(scope=Scope.APP)
     provider.provide(get_connection)
-    provider.provide(Gateway)
+    provider.provide(DAO)
 
     container = make_container(provider)
 
@@ -47,12 +47,12 @@ Or using inheritance:
             yield conn
             conn.close()
 
-        gateway = provide(Gateway)
+        dao = provide(DAO)
 
     container = make_container(MyProvider(scope=Scope.APP))
 
 
-Your class-based provider can have ``__init__`` method and methods access ``self`` as usual. It can be useful for passing configuration:
+Your class-based provider can have ``__init__`` method and methods accessing ``self`` as usual. It can be useful for passing configuration:
 
 .. code-block:: python
 
@@ -67,7 +67,7 @@ Your class-based provider can have ``__init__`` method and methods access ``self
             yield conn
             conn.close()
 
-        gateway = provide(Gateway)
+        dao = provide(DAO)
 
     provider = MyProvider(uri=os.getenv("DB_URI"), scope=Scope.APP)
     container = make_container(provider)
@@ -75,12 +75,12 @@ Your class-based provider can have ``__init__`` method and methods access ``self
 
 Dependencies have scope and there are three places to set it (from highest to lowest priority):
 
-* When registering single factory passing to ``provide`` method
+* When registering single factory passing to ``provide`` method:
 
 .. code-block:: python
 
     class MyProvider(Provider):
-        gateway = provide(Gateway, scope=Scope.APP)
+        dao = provide(DAO, scope=Scope.APP)
 
 * When instantiating provider:
 
@@ -93,7 +93,7 @@ Dependencies have scope and there are three places to set it (from highest to lo
 .. code-block:: python
 
     class MyProvider(Provider):
-        scope=Scope.APP
+        scope = Scope.APP
 
 .. raw:: html
 

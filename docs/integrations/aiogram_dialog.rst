@@ -4,7 +4,7 @@ aiogram-dialog
 ===========================================
 
 
-Though it is not required, you can use dishka-aiogram_dialog integration. It allows you to inject object into aiogram-dialog handlers
+Though it is not required, you can use *dishka-aiogram_dialog* integration. It allows you to inject object into ``aiogram-dialog`` handlers.
 
 
 How to use
@@ -19,7 +19,7 @@ How to use
     from dishka.integrations.aiogram_dialog import inject
 
 
-3. Mark those of your aiogram-dialog handlers and getters parameters which are to be injected with ``FromDishka[]`` decorate them using imported ``@inject`` decorator.
+3. Mark those of your ``aiogram-dialog`` handlers and getters parameters which are to be injected with ``FromDishka[]`` decorate them using imported ``@inject`` decorator.
 
 ..  code-block:: python
 

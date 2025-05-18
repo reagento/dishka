@@ -58,7 +58,7 @@ INTEGRATIONS = [
     IntegrationEnv("grpcio", "1641", constraint_3_13),
     IntegrationEnv("grpcio", "1680"),
     IntegrationEnv("grpcio", "latest"),
-    IntegrationEnv("litestar", "230"),
+    IntegrationEnv("litestar", "232"),
     IntegrationEnv("litestar", "latest"),
     IntegrationEnv("sanic", "23121"),
     IntegrationEnv("sanic", "latest"),

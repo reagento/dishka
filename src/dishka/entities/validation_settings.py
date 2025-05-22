@@ -7,7 +7,7 @@ class ValidationSettings:
     nothing_overridden: bool = False
     # check if factory is overridden when set override=False
     implicit_override: bool = False
-    #  check if decorator was not applied to any factory
+    # check if decorator was not applied to any factory
     nothing_decorated: bool = True
 
 

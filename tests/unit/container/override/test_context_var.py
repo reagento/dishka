@@ -1,7 +1,7 @@
 import pytest
 
 from dishka import Provider, Scope, from_context, make_container
-from dishka.entities.validation_settigs import (
+from dishka.entities.validation_settings import (
     STRICT_VALIDATION,
     ValidationSettings,
 )

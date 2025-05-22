@@ -1,10 +1,9 @@
 import asyncio
-from collections.abc import Iterable
+from collections.abc import AsyncIterable
 from dataclasses import dataclass
-from typing import Protocol, AsyncIterable
+from typing import Protocol
 
-from dishka import Provider, Scope, alias, provide, \
-    make_async_container
+from dishka import Provider, Scope, alias, make_async_container, provide
 
 
 @dataclass
@@ -70,5 +69,5 @@ async def main():
     await container.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

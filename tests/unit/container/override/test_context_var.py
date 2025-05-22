@@ -1,9 +1,12 @@
 import pytest
 
-from dishka import Provider, Scope, from_context, make_container
-from dishka.entities.validation_settings import (
+from dishka import (
     STRICT_VALIDATION,
+    Provider,
+    Scope,
     ValidationSettings,
+    from_context,
+    make_container,
 )
 from dishka.exceptions import (
     ImplicitOverrideDetectedError,

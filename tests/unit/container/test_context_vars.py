@@ -2,6 +2,7 @@ import pytest
 
 from dishka import (
     DEFAULT_COMPONENT,
+    STRICT_VALIDATION,
     DependencyKey,
     Provider,
     Scope,
@@ -134,3 +135,17 @@ async def test_automatic_context_async():
 
     c = make_async_container(MyProvider(), context={int: 1})
     assert await c.get(str) == "1"
+
+
+def test_automatic_context_override():
+    class MyProvider(Provider):
+        scope = Scope.APP
+        x = from_context(int)
+
+    c = make_container(
+        MyProvider(),
+        context={int: 1},
+        validation_settings=STRICT_VALIDATION,
+    )
+    assert c.get(int) == 1
+

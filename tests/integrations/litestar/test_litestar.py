@@ -10,6 +10,7 @@ from litestar.testing import TestClient
 
 from dishka import make_async_container
 from dishka.integrations.litestar import (
+    DishkaRouter,
     FromDishka,
     inject,
     setup_dishka,
@@ -25,9 +26,9 @@ from ..common import (
 
 @asynccontextmanager
 async def dishka_app(
-        view,
-        provider,
-        request_class: type[Request] = Request,
+    view,
+    provider,
+    request_class: type[Request] = Request,
 ) -> TestClient:
     app = litestar.Litestar(request_class=request_class)
     app.register(get("/")(inject(view)))
@@ -35,7 +36,24 @@ async def dishka_app(
     container = make_async_container(provider)
     setup_dishka(container, app)
     async with LifespanManager(app):
-        yield litestar.testing.TestClient(app)
+        yield TestClient(app)
+    await container.close()
+
+
+@asynccontextmanager
+async def dishka_auto_app(
+    view,
+    provider,
+    request_class: type[Request] = Request,
+) -> TestClient:
+    router = DishkaRouter("", route_handlers=[])
+    router.register(get("/")(view))
+    router.register(websocket_listener("/ws")(websocket_handler))
+    app = litestar.Litestar([router], request_class=request_class)
+    container = make_async_container(provider)
+    setup_dishka(container, app)
+    async with LifespanManager(app):
+        yield TestClient(app)
     await container.close()
 
 
@@ -45,9 +63,9 @@ async def websocket_handler(data: str):
 
 def get_with_app(request_class: type[Request]):
     async def handler(
-            request: request_class,
-            a: FromDishka[AppDep],
-            mock: FromDishka[Mock],
+        request: request_class,
+        a: FromDishka[AppDep],
+        mock: FromDishka[Mock],
     ) -> None:
         mock(a)
 
@@ -56,45 +74,85 @@ def get_with_app(request_class: type[Request]):
 
 def get_with_request(request_class: type[Request]):
     async def handler(
-            request: request_class,
-            a: FromDishka[RequestDep],
-            mock: FromDishka[Mock],
+        request: request_class,
+        a: FromDishka[RequestDep],
+        mock: FromDishka[Mock],
     ) -> None:
         mock(a)
 
     return handler
 
 
-@pytest.mark.parametrize("request_class", [Request, HTMXRequest])
+@pytest.mark.parametrize(
+    ("request_class", "app_factory"),
+    [
+        (Request, dishka_app),
+        (HTMXRequest, dishka_app),
+        (Request, dishka_auto_app),
+        (HTMXRequest, dishka_auto_app),
+    ],
+)
 @pytest.mark.asyncio
-async def test_app_dependency(request_class, app_provider: AppProvider):
-    async with dishka_app(get_with_app(request_class), app_provider) as client:
+async def test_app_dependency(
+    request_class,
+    app_factory,
+    app_provider: AppProvider,
+):
+    async with app_factory(
+        get_with_app(request_class),
+        app_provider,
+        request_class,
+    ) as client:
         client.get("/")
         app_provider.mock.assert_called_with(APP_DEP_VALUE)
         app_provider.app_released.assert_not_called()
     app_provider.app_released.assert_called()
 
 
-@pytest.mark.parametrize("request_class", [Request, HTMXRequest])
+@pytest.mark.parametrize(
+    ("request_class", "app_factory"),
+    [
+        (Request, dishka_app),
+        (HTMXRequest, dishka_app),
+        (Request, dishka_auto_app),
+        (HTMXRequest, dishka_auto_app),
+    ],
+)
 @pytest.mark.asyncio
-async def test_request_dependency(request_class, app_provider: AppProvider):
-    async with dishka_app(
-            get_with_request(request_class),
-            app_provider,
-            request_class,
+async def test_request_dependency(
+    request_class,
+    app_factory,
+    app_provider: AppProvider,
+):
+    async with app_factory(
+        get_with_request(request_class),
+        app_provider,
+        request_class,
     ) as client:
         client.get("/")
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
 
 
-@pytest.mark.parametrize("request_class", [Request, HTMXRequest])
+@pytest.mark.parametrize(
+    ("request_class", "app_factory"),
+    [
+        (Request, dishka_app),
+        (HTMXRequest, dishka_app),
+        (Request, dishka_auto_app),
+        (HTMXRequest, dishka_auto_app),
+    ],
+)
 @pytest.mark.asyncio
-async def test_request_dependency2(request_class, app_provider: AppProvider):
-    async with dishka_app(
-            get_with_request(request_class),
-            app_provider,
-            request_class,
+async def test_request_dependency2(
+    request_class,
+    app_factory,
+    app_provider: AppProvider,
+):
+    async with app_factory(
+        get_with_request(request_class),
+        app_provider,
+        request_class,
     ) as client:
         client.get("/")
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
@@ -109,9 +167,20 @@ async def test_request_dependency2(request_class, app_provider: AppProvider):
 @pytest.mark.asyncio
 async def test_request_middleware(app_provider: AppProvider):
     async with dishka_app(
-            get_with_request(Request),
-            app_provider,
-            Request,
+        get_with_request(Request),
+        app_provider,
+        Request,
+    ) as client:
+        with client.websocket_connect("/ws") as websocket:
+            websocket.send("test")
+
+
+@pytest.mark.asyncio
+async def test_auto_request_middleware(app_provider: AppProvider):
+    async with dishka_auto_app(
+        get_with_request(Request),
+        app_provider,
+        Request,
     ) as client:
         with client.websocket_connect("/ws") as websocket:
             websocket.send("test")

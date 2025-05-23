@@ -37,21 +37,36 @@ class GraphValidator:
         self.valid_keys: dict[DependencyKey, bool] = {}
 
     def _validate_key(
-            self, key: DependencyKey, registry_index: int,
+        self,
+        key: DependencyKey,
+        registry_index: int,
     ) -> None:
         if key in self.valid_keys:
             return
         if key in self.path:
             keys = list(self.path)
-            factories = list(self.path.values())[keys.index(key):]
+            factories = list(self.path.values())[keys.index(key) :]
             raise CycleDependenciesError(factories)
+
+        suggest_abstract_factories = []
+        suggest_concrete_factories = []
         for index in range(registry_index + 1):
             registry = self.registries[index]
             factory = registry.get_factory(key)
             if factory:
                 self._validate_factory(factory, registry_index)
                 return
-        raise NoFactoryError(requested=key)
+
+            abstract_factories = registry.get_more_abstract_factories(key)
+            concrete_factories = registry.get_more_concrete_factories(key)
+            suggest_abstract_factories.extend(abstract_factories)
+            suggest_concrete_factories.extend(concrete_factories)
+
+        raise NoFactoryError(
+            requested=key,
+            suggest_abstract_factories=suggest_abstract_factories,
+            suggest_concrete_factories=suggest_concrete_factories,
+        )
 
     def _validate_factory(
             self, factory: Factory, registry_index: int,
@@ -88,9 +103,12 @@ class GraphValidator:
                     self._validate_factory(factory, registry_index)
                 except NoFactoryError as e:
                     raise GraphMissingFactoryError(
-                        e.requested, e.path,
+                        e.requested,
+                        e.path,
                         self._find_other_scope(e.requested),
                         self._find_other_component(e.requested),
+                        e.suggest_abstract_factories,
+                        e.suggest_concrete_factories,
                     ) from None
                 except CycleDependenciesError as e:
                     raise e from None
@@ -402,10 +420,16 @@ class RegistryBuilder:
             and not factory.override
             and factory.provides in self.processed_factories
         ):
-            raise ImplicitOverrideDetectedError(
-                factory,
-                self.processed_factories[factory.provides],
-            )
+            old_factory = self.processed_factories[factory.provides]
+            # it's Ok to override context->context with the same params
+            if (
+                old_factory.type is not FactoryType.CONTEXT or
+                old_factory.scope != context_var.scope
+            ):
+                raise ImplicitOverrideDetectedError(
+                    factory,
+                    self.processed_factories[factory.provides],
+                )
         self.processed_factories[factory.provides] = factory
 
     def build(self) -> tuple[Registry, ...]:

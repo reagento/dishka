@@ -1,0 +1,24 @@
+name: Post coverage comment
+
+on:
+  workflow_run:  # zizmor: ignore[dangerous-triggers]
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+  test:
+    name: Run tests & display coverage
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success'
+    permissions:
+      pull-requests: write
+      actions: read
+    steps:
+      # DO NOT run actions/checkout here, for security reasons
+      # For details, refer to https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      - name: Post comment
+        uses: py-cov-action/python-coverage-comment-action@fb02115d6115e7b3325dc3295fe1dcfb1919248a
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_PR_RUN_ID: ${{ github.event.workflow_run.id }}

@@ -179,8 +179,31 @@ class Container:
         compiled = self.registry.get_compiled(key)
         if not compiled:
             if not self.parent_container:
-                raise NoFactoryError(key)
-            return self.parent_container._get(key)  # noqa: SLF001
+                abstract_dependencies = (
+                    self.registry.get_more_abstract_factories(key)
+                )
+                concrete_dependencies = (
+                    self.registry.get_more_concrete_factories(key)
+                )
+
+                raise NoFactoryError(
+                    key,
+                    suggest_abstract_factories=abstract_dependencies,
+                    suggest_concrete_factories=concrete_dependencies,
+                )
+            try:
+                return self.parent_container._get(key)  # noqa: SLF001
+            except NoFactoryError as ex:
+                abstract_dependencies = (
+                    self.registry.get_more_abstract_factories(key)
+                )
+                concrete_dependencies = (
+                    self.registry.get_more_concrete_factories(key)
+                )
+                ex.suggest_abstract_factories.extend(abstract_dependencies)
+                ex.suggest_concrete_factories.extend(concrete_dependencies)
+                raise
+
         try:
             return compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:
@@ -239,7 +262,7 @@ def make_container(
         start_scope: BaseScope | None = None,
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,
 ) -> Container:
-    context_provider = make_root_context_provider(context, scopes)
+    context_provider = make_root_context_provider(providers, context, scopes)
     registries = RegistryBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,

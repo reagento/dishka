@@ -39,12 +39,24 @@ How to use
 
 .. code-block:: python
 
-    @router.get('/')
+    get('/')
     @inject
     async def endpoint(
         request: str, gateway: FromDishka[Gateway],
     ) -> Response:
         ...
+
+3a. *(optional)* Set route class to each of your litestar routers to enable automatic injection (it works for HTTP and Websockets)
+
+.. code-block:: python
+
+    get('/')
+    async def endpoint(
+        request: str, gateway: FromDishka[Gateway],
+    ) -> Response:
+        ...
+    r = DishkaRouter('', route_handlers=[endpoint])
+    app = Litestar(route_handlers=[r])
 
 
 4. *(optional)* Use ``LitestarProvider()`` when creating container if you are going to use ``litestar.Request`` in providers

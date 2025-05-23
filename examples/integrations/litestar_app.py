@@ -1,13 +1,13 @@
 import logging
 from abc import abstractmethod
-from typing import Annotated, Protocol
+from typing import Protocol
 
 import uvicorn
 from litestar import Controller, Litestar, get
 
-from dishka import Provider, Scope, provide, make_async_container
+from dishka import Provider, Scope, make_async_container, provide
 from dishka.integrations.base import FromDishka
-from dishka.integrations.litestar import inject, LitestarProvider, setup_dishka
+from dishka.integrations.litestar import LitestarProvider, inject, setup_dishka
 
 
 # app core

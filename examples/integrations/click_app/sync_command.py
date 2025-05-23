@@ -3,7 +3,7 @@ from typing import Protocol
 
 import click
 
-from dishka import make_container, Provider, Scope, provide, FromDishka
+from dishka import FromDishka, Provider, Scope, make_container, provide
 from dishka.integrations.click import setup_dishka
 
 

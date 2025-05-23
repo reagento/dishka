@@ -6,11 +6,11 @@ from typing import Protocol
 import click
 
 from dishka import (
-    make_container,
+    FromDishka,
     Provider,
     Scope,
+    make_container,
     provide,
-    FromDishka,
 )
 from dishka.integrations.click import setup_dishka
 

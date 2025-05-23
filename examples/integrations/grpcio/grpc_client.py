@@ -1,5 +1,4 @@
 import grpc
-
 from grpcio.pb2.service_pb2 import RequestMessage
 from grpcio.pb2.service_pb2_grpc import ExampleServiceStub
 

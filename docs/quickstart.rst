@@ -57,7 +57,12 @@ To provide a releasable connection, you might need some custom code:
    :language: python
    :lines: 62
 
-8. **Integrate with your framework.** If you are using a supported framework, add decorators and middleware for it.
+8. Full code
+
+.. literalinclude:: ./quickstart_example_full.py
+   :language: python
+
+9. **Integrate with your framework.** If you are using a supported framework, add decorators and middleware for it.
    For more details, see :ref:`integrations`
 
 .. code-block:: python

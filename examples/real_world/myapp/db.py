@@ -1,6 +1,6 @@
 import logging
 
-from .use_cases import ProductGateway, Committer, User, UserGateway, Product
+from .use_cases import Committer, Product, ProductGateway, User, UserGateway
 
 logger = logging.getLogger(__name__)
 

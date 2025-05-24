@@ -2,6 +2,7 @@ from aiogram import Router
 from aiogram.types import Message
 
 from dishka.integrations.aiogram import FromDishka, inject
+
 from .use_cases import AddProductsInteractor
 
 router = Router()

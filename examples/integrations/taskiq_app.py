@@ -4,7 +4,7 @@ import random
 from taskiq import AsyncTaskiqTask, InMemoryBroker
 
 from dishka import FromDishka, Provider, Scope, make_async_container
-from dishka.integrations.taskiq import inject, setup_dishka, TaskiqProvider
+from dishka.integrations.taskiq import TaskiqProvider, inject, setup_dishka
 
 provider = Provider(scope=Scope.REQUEST)
 provider.provide(lambda: random.random(), provides=float)  # noqa: S311

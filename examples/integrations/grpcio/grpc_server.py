@@ -3,19 +3,21 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 
 from grpc import ServicerContext, server as make_server
-
-from dishka import Container
-from dishka.container import make_container
-from dishka.integrations.grpcio import (
-    inject, FromDishka, GrpcioProvider, DishkaInterceptor,
-)
-
 from grpcio.di import service_provider
-from grpcio.services.uuid_service import UUIDService
 from grpcio.pb2.service_pb2 import RequestMessage, ResponseMessage
 from grpcio.pb2.service_pb2_grpc import (
     ExampleServiceServicer,
     add_ExampleServiceServicer_to_server,
+)
+from grpcio.services.uuid_service import UUIDService
+
+from dishka import Container
+from dishka.container import make_container
+from dishka.integrations.grpcio import (
+    DishkaInterceptor,
+    FromDishka,
+    GrpcioProvider,
+    inject,
 )
 
 

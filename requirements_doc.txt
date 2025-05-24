@@ -2,3 +2,4 @@ sphinx==8.1.*
 sphinx_copybutton==0.5.*
 sphinx-autodocgen==1.3
 furo==2024.8.*
+sphinx-design==0.6.1

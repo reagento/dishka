@@ -13,7 +13,7 @@ from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope, InvalidScopes
-from .entities.validation_settigs import ValidationSettings
+from .entities.validation_settings import ValidationSettings
 from .exceptions import (
     AliasedFactoryNotFoundError,
     CycleDependenciesError,

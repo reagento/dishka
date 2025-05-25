@@ -40,7 +40,8 @@ class ContainerMiddleware:
         g.dishka_container = g.dishka_container_wrapper.__enter__()
 
     def exit_request(self, *_args: Any, **_kwargs: Any) -> None:
-        g.dishka_container.close()
+        if hasattr(g, "dishka_container"):
+            g.dishka_container.close()
 
 
 def _inject_routes(scaffold: Scaffold) -> None:

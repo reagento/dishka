@@ -40,7 +40,8 @@ class ContainerMiddleware:
         g.dishka_container = g.dishka_container_wrapper.__enter__()
 
     def exit_request(self, *_args: Any, **_kwargs: Any) -> None:
-        if hasattr(g, "dishka_container"):
+        dishka_container = getattr(g, "dishka_container", None)
+        if dishka_container is not None:
             g.dishka_container.close()
 
 

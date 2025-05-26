@@ -126,10 +126,10 @@ Auto-injection is not available for websockets.
 Using with sync Container
 **********************************
 
-If you are using sync ``Container``, created using ``make_container`` function, you should change severla things:
+If you are using sync ``Container``, created using ``make_container`` function, you should change several things:
 
 * use ``inject_sync`` instead of ``inject`` function
-* use ``DishkaSyncRoute`` instead if ``DishkaRoute`` if you are using autoinjection
+* use ``DishkaSyncRoute`` instead of ``DishkaRoute`` if you are using autoinjection
 * use ``Container`` in websocket handler instead of ``AsyncContainer`` and normal ``with`` instead of ``async with``.
 
 

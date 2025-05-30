@@ -47,7 +47,7 @@ def test_not_found():
     provider.from_context(provides=int, scope=Scope.APP)
     container = make_container(provider)
     with pytest.raises(NoContextValueError):
-        assert container.get(int) == 1
+        container.get(int)
 
 
 @pytest.mark.asyncio
@@ -56,7 +56,7 @@ async def test_not_found_async():
     provider.from_context(provides=int, scope=Scope.APP)
     container = make_async_container(provider)
     with pytest.raises(NoContextValueError):
-        assert await container.get(int) == 1
+        await container.get(int)
 
 
 @pytest.mark.asyncio

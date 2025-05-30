@@ -224,11 +224,15 @@ def test_provide_type_non_generic():
 
 
 T2 = TypeVar("T2")
+
+
 class Multi(Generic[T, T2]):
     pass
 
+
 def func_with_at2(b: type[T2]) -> Multi[int, A[T2]]:
     return b
+
 
 def func_with_t2(b: type[T2]) -> Multi[int, T2]:
     return b

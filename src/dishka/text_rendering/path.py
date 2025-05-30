@@ -35,7 +35,7 @@ class PathRenderer:
 
     def _switch_arrow(self, index: int, length: int) -> str:
         if self.cycle:
-            if index> 0:
+            if index > 0:
                 return "│   │ "
             return "      "
         return "│   "

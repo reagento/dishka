@@ -71,6 +71,7 @@ class MainProvider(Provider):
     ) -> AnyOf[bytes, memoryview]:
         return value + b"1"
 
+
 HINT_VALUES = [
     (int, 1),
     (float, 1),
@@ -102,6 +103,7 @@ def test_type_alias_from_context():
     container = make_container(MainProvider(), context={StrNone: value})
     assert container.get(StrNone) == value
     assert container.get(StrNone.__value__) == value
+
 
 @pytest.mark.asyncio
 async def test_type_alias_from_context_async():

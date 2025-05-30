@@ -148,4 +148,3 @@ def test_automatic_context_override():
         validation_settings=STRICT_VALIDATION,
     )
     assert c.get(int) == 1
-

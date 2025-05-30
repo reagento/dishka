@@ -145,6 +145,7 @@ async def test_grpc_unary_stream(
     app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
     app_provider.request_released.assert_called_once()
 
+
 @pytest.mark.asyncio
 async def test_grpc_unary_stream_gen(
         client: myservices.MyServiceStub, app_provider: AppProvider,

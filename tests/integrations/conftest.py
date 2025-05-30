@@ -13,6 +13,7 @@ def app_provider() -> AppProvider:
 def ws_app_provider() -> WebSocketAppProvider:
     return WebSocketAppProvider()
 
+
 @pytest.fixture
 def async_container(app_provider: AppProvider) -> AppProvider:
     return make_async_container(app_provider)

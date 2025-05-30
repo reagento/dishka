@@ -291,12 +291,12 @@ class RegistryBuilder:
         found = []
         provides = decorator.provides.with_component(provider.component)
         for factory in self.processed_factories.values():
-                if factory.provides.component != provides.component:
-                    continue
-                if factory.type is FactoryType.CONTEXT:
-                    continue
-                if decorator.match_type(factory.provides.type_hint):
-                    found.append(factory)
+            if factory.provides.component != provides.component:
+                continue
+            if factory.type is FactoryType.CONTEXT:
+                continue
+            if decorator.match_type(factory.provides.type_hint):
+                found.append(factory)
         if found:
             for factory in found:
                 self._decorate_factory(

@@ -54,7 +54,9 @@ def test_is_type_var_tuple() -> None:
 
 def test_simple_inheritance() -> None:
     class A1: ...
+
     class A2(A1): ...
+
     class A3(A2): ...
 
     provider = Provider(scope=Scope.APP)
@@ -90,6 +92,7 @@ def test_ignore_parent_type(obj: Any, value: Any, component: Any) -> None:
 
 def test_type_var() -> None:
     class A1(Protocol[T]): ...
+
     class A2(A1[str]): ...
 
     provider = Provider(scope=Scope.APP)
@@ -109,6 +112,7 @@ def test_type_var() -> None:
 )
 def test_type_var_tuple() -> None:
     class A1(Generic[Unpack[Ts]]): ...
+
     class A2(A1[str, int, type]): ...
 
     provider = Provider(scope=Scope.APP)
@@ -167,13 +171,17 @@ def test_type_var_and_type_var_tuple(
 
 def test_deep_inheritance() -> None:
     class A1(Generic[T], float): ...
+
     class A2(A1[T], Generic[T]): ...
 
     class B1: ...
+
     class B2(B1): ...
+
     class B3(B2): ...
 
     class C1(Generic[T], B3): ...
+
     class D1(A2[int], C1[str]): ...
 
     provider = Provider(scope=Scope.APP)
@@ -195,6 +203,7 @@ def test_deep_inheritance() -> None:
 
 def test_get_parents_by_generic_alias() -> None:
     class A1(Generic[T], float): ...
+
     class A2(A1[T], Generic[T]): ...
 
     provider = Provider(scope=Scope.APP)
@@ -219,8 +228,14 @@ def test_ignoring_parent() -> None:
 
 
 class TupleGeneric(tuple[T], Generic[T]): ...  # noqa: SLOT001
+
+
 class SequenceInt(Sequence[int]): ...
+
+
 class ListAny(list[Any]): ...
+
+
 class JsonMapping(dict[str, str | int]): ...
 
 

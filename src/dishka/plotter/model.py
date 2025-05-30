@@ -8,6 +8,7 @@ class GroupType(Enum):
     SCOPE = "SCOPE"
     COMPONENT = "COMPONENT"
 
+
 class NodeType(Enum):
     CONTEXT = "Context"
     FACTORY = "Factory"

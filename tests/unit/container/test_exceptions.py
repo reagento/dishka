@@ -244,6 +244,7 @@ class InvalidScopeProvider(Provider):
     def get_obj_x(self) -> Annotated[object, FromComponent("x")]:
         return 2
 
+
 def test_invalid_scope():
     with pytest.raises(NoFactoryError) as e:
         make_container(InvalidScopeProvider())

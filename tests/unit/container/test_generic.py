@@ -165,7 +165,7 @@ def test_generic_validation_fail():
     provider.provide(EventEmitterImpl, provides=EventEmitter)
     provider.provide(factory_invalid)
     with pytest.raises(GraphMissingFactoryError):
-        assert make_container(provider)
+        make_container(provider)
 
 
 def type_var_factory(type_: type[T]) -> EventEmitter[T]:

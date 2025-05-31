@@ -6,6 +6,7 @@ import pytest
 from asgi_lifespan import LifespanManager
 from litestar import Request, get, websocket_listener
 from litestar.contrib.htmx.request import HTMXRequest
+from litestar.router import Router
 from litestar.testing import TestClient
 
 from dishka import make_async_container
@@ -32,7 +33,9 @@ async def dishka_app(
 ) -> TestClient:
     app = litestar.Litestar(request_class=request_class)
     app.register(get("/")(inject(view)))
+    app.register(Router("/child", route_handlers=[get("")(inject(view))]))
     app.register(websocket_listener("/ws")(websocket_handler))
+
     container = make_async_container(provider)
     setup_dishka(container, app)
     async with LifespanManager(app):
@@ -48,7 +51,9 @@ async def dishka_auto_app(
 ) -> TestClient:
     router = DishkaRouter("", route_handlers=[])
     router.register(get("/")(view))
+    router.register(Router("/child", route_handlers=[get("")(view)]))
     router.register(websocket_listener("/ws")(websocket_handler))
+
     app = litestar.Litestar([router], request_class=request_class)
     container = make_async_container(provider)
     setup_dishka(container, app)
@@ -119,6 +124,32 @@ async def test_app_dependency(
     ],
 )
 @pytest.mark.asyncio
+async def test_app_dependency_child(
+    request_class,
+    app_factory,
+    app_provider: AppProvider,
+):
+    async with app_factory(
+        get_with_app(request_class),
+        app_provider,
+        request_class,
+    ) as client:
+        client.get("/child")
+        app_provider.mock.assert_called_with(APP_DEP_VALUE)
+        app_provider.app_released.assert_not_called()
+    app_provider.app_released.assert_called()
+
+
+@pytest.mark.parametrize(
+    ("request_class", "app_factory"),
+    [
+        (Request, dishka_app),
+        (HTMXRequest, dishka_app),
+        (Request, dishka_auto_app),
+        (HTMXRequest, dishka_auto_app),
+    ],
+)
+@pytest.mark.asyncio
 async def test_request_dependency(
     request_class,
     app_factory,
@@ -130,6 +161,31 @@ async def test_request_dependency(
         request_class,
     ) as client:
         client.get("/")
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    ("request_class", "app_factory"),
+    [
+        (Request, dishka_app),
+        (HTMXRequest, dishka_app),
+        (Request, dishka_auto_app),
+        (HTMXRequest, dishka_auto_app),
+    ],
+)
+@pytest.mark.asyncio
+async def test_request_dependency_child(
+    request_class,
+    app_factory,
+    app_provider: AppProvider,
+):
+    async with app_factory(
+        get_with_request(request_class),
+        app_provider,
+        request_class,
+    ) as client:
+        client.get("/child")
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
 
@@ -160,6 +216,36 @@ async def test_request_dependency2(
         app_provider.request_released.assert_called_once()
         app_provider.request_released.reset_mock()
         client.get("/")
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    ("request_class", "app_factory"),
+    [
+        (Request, dishka_app),
+        (HTMXRequest, dishka_app),
+        (Request, dishka_auto_app),
+        (HTMXRequest, dishka_auto_app),
+    ],
+)
+@pytest.mark.asyncio
+async def test_request_dependency2_child(
+    request_class,
+    app_factory,
+    app_provider: AppProvider,
+):
+    async with app_factory(
+        get_with_request(request_class),
+        app_provider,
+        request_class,
+    ) as client:
+        client.get("/child")
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.mock.reset_mock()
+        app_provider.request_released.assert_called_once()
+        app_provider.request_released.reset_mock()
+        client.get("/child")
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
 

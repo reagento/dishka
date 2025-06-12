@@ -1,6 +1,6 @@
 from collections.abc import Callable, Generator, Iterable
 from contextlib import AbstractContextManager, contextmanager
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 from unittest.mock import Mock
 
 import pytest
@@ -19,7 +19,7 @@ from ..common import (
     RequestDep,
 )
 
-type AppFactory = Callable[
+AppFactory: TypeAlias = Callable[
     ...,
     AbstractContextManager[Flask],
 ]

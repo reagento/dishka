@@ -14,7 +14,10 @@ from dishka.entities.scope import BaseScope, Scope
 from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .dependency_source import Factory
-from .entities.validation_settigs import DEFAULT_VALIDATION, ValidationSettings
+from .entities.validation_settings import (
+    DEFAULT_VALIDATION,
+    ValidationSettings,
+)
 from .exceptions import (
     ChildScopeNotFoundError,
     ExitError,

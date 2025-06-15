@@ -8,8 +8,8 @@ __all__ = [
 
 from collections.abc import Callable
 from functools import wraps
-from inspect import Parameter
-from typing import ParamSpec, TypeVar, get_type_hints
+from inspect import Parameter, signature
+from typing import Any, ParamSpec, TypeVar
 
 from litestar import Controller, Litestar, Request, Router, WebSocket
 from litestar.enums import ScopeType
@@ -31,7 +31,7 @@ from litestar.types import (
 
 from dishka import AsyncContainer, FromDishka, Provider, from_context
 from dishka import Scope as DIScope
-from dishka.integrations.base import wrap_injection
+from dishka.integrations.base import default_parse_dependency, wrap_injection
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -46,11 +46,18 @@ def inject_websocket(func: Callable[P, T]):
 
 
 def _inject_wrapper(
-        func: Callable[P, T],
-        param_name: str,
-        param_annotation: type[Request | WebSocket],
+    func: Callable[P, T],
+    param_name: str,
+    param_annotation: type[Request | WebSocket],
 ):
-    hints = get_type_hints(func)
+    hints = func.__annotations__
+    for name, param in signature(func).parameters.items():
+        hint = hints.get(name, Any)
+        dep = default_parse_dependency(param, hint)
+        if dep is not None:
+            break
+    else:
+        return func
 
     request_param = next(
         (name for name in hints if name == param_name),
@@ -60,11 +67,13 @@ def _inject_wrapper(
     if request_param:
         additional_params = []
     else:
-        additional_params = [Parameter(
-            name=param_name,
-            annotation=param_annotation,
-            kind=Parameter.KEYWORD_ONLY,
-        )]
+        additional_params = [
+            Parameter(
+                name=param_name,
+                annotation=param_annotation,
+                kind=Parameter.KEYWORD_ONLY,
+            ),
+        ]
 
     return wrap_injection(
         func=func,
@@ -107,6 +116,9 @@ def _resolve_value(
     value: ControllerRouterHandler,
 ) -> ControllerRouterHandler:
     if isinstance(value, Router):
+        for sub_route in value.routes:
+            for handler in sub_route.route_handlers:
+                _resolve_value(router, handler)
         return value
 
     if isinstance(value, BaseRouteHandler):
@@ -152,7 +164,8 @@ def make_add_request_container_middleware(app: ASGIApp) -> ASGIApp:
             di_scope = DIScope.SESSION
 
         async with request.app.state.dishka_container(
-            context, scope=di_scope,
+            context,
+            scope=di_scope,
         ) as request_container:
             request.state.dishka_container = request_container
             await app(scope, receive, send)

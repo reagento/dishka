@@ -115,7 +115,7 @@ def is_generic_class(cls: type) -> bool:
         cls in BUILTIN_ORIGIN_TO_TYPEVARS
         or (
             issubclass(cls, Generic)  # type: ignore[arg-type]
-            and bool(cls.__parameters__)  # type: ignore[attr-defined]
+            and bool(cls.__parameters__)  # type: ignore[attr-defined, unused-ignore]
         )
     )
 

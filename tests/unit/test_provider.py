@@ -1,3 +1,4 @@
+import math
 from collections.abc import (
     AsyncGenerator,
     AsyncIterable,
@@ -398,7 +399,7 @@ def test_provide_all_as_provider_method():
     assert hundred == 100
 
     fifty = container.get(float)
-    assert fifty == 50.0
+    assert math.isclose(fifty, 50.0, abs_tol=1e-9)
 
 
 def test_provide_all_in_class():
@@ -419,7 +420,7 @@ def test_provide_all_in_class():
     assert hundred == 100
 
     fifty = container.get(float)
-    assert fifty == 50.0
+    assert math.isclose(fifty, 50.0, abs_tol=1e-9)
 
 
 make_factory_by_source = partial(

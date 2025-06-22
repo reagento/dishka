@@ -54,6 +54,34 @@ DependsClass: TypeAlias = cast(
 )
 
 
+async def _maybe_inject_async(
+    container: AsyncContainer,
+    dependencies: dict[str, DependencyKey],
+    func: Callable[P, T],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> T:
+    solved = {
+        name: await container.get(dep.type_hint, component=dep.component)
+        for name, dep in dependencies.items()
+    }
+    return func(*args, **kwargs, **solved)
+
+
+def _maybe_inject_sync(
+    container: Container,
+    dependencies: dict[str, DependencyKey],
+    func: Callable[P, T],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> T:
+    solved = {
+        name: container.get(dep.type_hint, component=dep.component)
+        for name, dep in dependencies.items()
+    }
+    return func(*args, **kwargs, **solved)
+
+
 def _get_auto_injected_async_gen_scoped(
     container_getter: ContainerGetter[AsyncContainer],
     additional_params: Sequence[Parameter],
@@ -73,14 +101,10 @@ def _get_auto_injected_async_gen_scoped(
         )
         container = container_getter(args, kwargs)
         async with container(additional_context) as container:
-            solved = {
-                name: await container.get(
-                    dep.type_hint,
-                    component=dep.component,
-                )
-                for name, dep in dependencies.items()
-            }
-            async for message in func(*args, **kwargs, **solved):
+            async_gen = await _maybe_inject_async(
+                container, dependencies, func, *args, **kwargs
+            )
+            async for message in async_gen:
                 yield message
 
     return auto_injected_generator
@@ -104,14 +128,10 @@ def _get_auto_injected_async_gen(
             kwargs.pop(param.name)
 
         container = container_getter(args, kwargs)
-        solved = {
-            name: await container.get(
-                dep.type_hint,
-                component=dep.component,
-            )
-            for name, dep in dependencies.items()
-        }
-        async for message in func(*args, **kwargs, **solved):
+        async_gen = await _maybe_inject_async(
+            container, dependencies, func, *args, **kwargs
+        )
+        async for message in async_gen:
             yield message
 
     return auto_injected_generator
@@ -133,14 +153,10 @@ def _get_auto_injected_async_func_scoped(
             {} if provide_context is None else provide_context(args, kwargs)
         )
         async with container(additional_context) as container:
-            solved = {
-                name: await container.get(
-                    dep.type_hint,
-                    component=dep.component,
-                )
-                for name, dep in dependencies.items()
-            }
-            return await func(*args, **kwargs, **solved)
+            coro = await _maybe_inject_async(
+                container, dependencies, func, *args, **kwargs
+            )
+            return await coro
 
     return auto_injected_func
 
@@ -159,14 +175,11 @@ def _get_auto_injected_async_func(
         container = container_getter(args, kwargs)
         for param in additional_params:
             kwargs.pop(param.name)
-        solved = {
-            name: await container.get(
-                dep.type_hint,
-                component=dep.component,
-            )
-            for name, dep in dependencies.items()
-        }
-        return await func(*args, **kwargs, **solved)
+
+        coro = await _maybe_inject_async(
+            container, dependencies, func, *args, **kwargs
+        )
+        return await coro
 
     return auto_injected_func
 
@@ -190,11 +203,10 @@ def _get_auto_injected_sync_gen_scoped(
         )
         container = container_getter(args, kwargs)
         with container(additional_context) as container:
-            solved = {
-                name: container.get(dep.type_hint, component=dep.component)
-                for name, dep in dependencies.items()
-            }
-            yield from func(*args, **kwargs, **solved)
+            sync_gen = _maybe_inject_sync(
+                container, dependencies, func, *args, **kwargs
+            )
+            yield from sync_gen
 
     return auto_injected_generator
 
@@ -216,11 +228,11 @@ def _get_auto_injected_sync_gen(
         container = container_getter(args, kwargs)
         for param in additional_params:
             kwargs.pop(param.name)
-        solved = {
-            name: container.get(dep.type_hint, component=dep.component)
-            for name, dep in dependencies.items()
-        }
-        yield from func(*args, **kwargs, **solved)
+
+        sync_gen = _maybe_inject_sync(
+            container, dependencies, func, *args, **kwargs
+        )
+        yield from sync_gen
 
     return auto_injected_generator
 
@@ -241,11 +253,9 @@ def _get_auto_injected_sync_func_scoped(
         )
         container = container_getter(args, kwargs)
         with container(additional_context) as container:
-            solved = {
-                name: container.get(dep.type_hint, component=dep.component)
-                for name, dep in dependencies.items()
-            }
-            return func(*args, **kwargs, **solved)
+            return _maybe_inject_sync(
+                container, dependencies, func, *args, **kwargs
+            )
 
     return auto_injected_func
 
@@ -265,11 +275,9 @@ def _get_auto_injected_sync_func(
         for param in additional_params:
             kwargs.pop(param.name)
 
-        solved = {
-            name: container.get(dep.type_hint, component=dep.component)
-            for name, dep in dependencies.items()
-        }
-        return func(*args, **kwargs, **solved)
+        return _maybe_inject_sync(
+            container, dependencies, func, *args, **kwargs
+        )
 
     return auto_injected_func
 
@@ -293,11 +301,10 @@ def _get_auto_injected_sync_container_async_gen_scoped(
         )
         container = container_getter(args, kwargs)
         with container(additional_context) as container:
-            solved = {
-                name: container.get(dep.type_hint, component=dep.component)
-                for name, dep in dependencies.items()
-            }
-            async for message in func(*args, **kwargs, **solved):
+            async_gen = _maybe_inject_sync(
+                container, dependencies, func, *args, **kwargs
+            )
+            async for message in async_gen:
                 yield message
 
     return auto_injected_generator
@@ -320,11 +327,11 @@ def _get_auto_injected_sync_container_async_gen(
         container = container_getter(args, kwargs)
         for param in additional_params:
             kwargs.pop(param.name)
-        solved = {
-            name: container.get(dep.type_hint, component=dep.component)
-            for name, dep in dependencies.items()
-        }
-        async for message in func(*args, **kwargs, **solved):
+
+        async_gen = _maybe_inject_sync(
+            container, dependencies, func, *args, **kwargs
+        )
+        async for message in async_gen:
             yield message
 
     return auto_injected_generator
@@ -346,11 +353,9 @@ def _get_auto_injected_sync_container_async_func_scoped(
         )
         container = container_getter(args, kwargs)
         with container(additional_context) as container:
-            solved = {
-                name: container.get(dep.type_hint, component=dep.component)
-                for name, dep in dependencies.items()
-            }
-            return await func(*args, **kwargs, **solved)
+            return await _maybe_inject_sync(
+                container, dependencies, func, *args, **kwargs
+            )
 
     return auto_injected_func
 
@@ -370,11 +375,9 @@ def _get_auto_injected_sync_container_async_func(
         for param in additional_params:
             kwargs.pop(param.name)
 
-        solved = {
-            name: container.get(dep.type_hint, component=dep.component)
-            for name, dep in dependencies.items()
-        }
-        return await func(*args, **kwargs, **solved)
+        return await _maybe_inject_sync(
+            container, dependencies, func, *args, **kwargs
+        )
 
     return auto_injected_func
 

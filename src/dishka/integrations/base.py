@@ -278,7 +278,7 @@ def _get_auto_injected_sync_container_async_gen_scoped(
     container_getter: ContainerGetter[Container],
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
-    func: Callable[P, Iterator[T]],
+    func: Callable[P, AsyncIterator[T]],
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
     async def auto_injected_generator(
@@ -307,7 +307,7 @@ def _get_auto_injected_sync_container_async_gen(
     container_getter: ContainerGetter[Container],
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
-    func: Callable[P, Iterator[T]],
+    func: Callable[P, AsyncIterator[T]],
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
     if provide_context is not None:
@@ -334,9 +334,9 @@ def _get_auto_injected_sync_container_async_func_scoped(
     container_getter: ContainerGetter[Container],
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
-    func: Callable[P, T],
+    func: Callable[P, Awaitable[T]],
     provide_context: ProvideContext | None = None,
-) -> Callable[P, T]:
+) -> Callable[P, Awaitable[T]]:
     async def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         for param in additional_params:
             kwargs.pop(param.name)
@@ -359,9 +359,9 @@ def _get_auto_injected_sync_container_async_func(
     container_getter: ContainerGetter[Container],
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
-    func: Callable[P, T],
+    func: Callable[P, Awaitable[T]],
     provide_context: ProvideContext | None = None,
-) -> Callable[P, T]:
+) -> Callable[P, Awaitable[T]]:
     if provide_context is not None:
         raise ImproperProvideContextUsageError
 
@@ -464,7 +464,7 @@ _GET_AUTO_INJECTED_FUNC_DICT = {
 }
 
 
-def get_func_type(func: Callable) -> FunctionType:
+def get_func_type(func: Callable[P, T]) -> FunctionType:
     if isasyncgenfunction(func):
         return FunctionType.ASYNC_GENERATOR
     elif isgeneratorfunction(func):
@@ -573,23 +573,10 @@ def wrap_injection(
         for param in new_params
     ]
 
-    auto_injected_func: Callable[P, T | Awaitable[T]]
     if additional_params:
         new_params = _add_params(new_params, additional_params)
         for param in additional_params:
             new_annotations[param.name] = param.annotation
-
-    if is_async:
-        func = cast(Callable[P, Awaitable[T]], func)
-        container_getter = cast(
-            ContainerGetter[AsyncContainer],
-            container_getter,
-        )
-    else:
-        container_getter = cast(
-            ContainerGetter[Container],
-            container_getter,
-        )
 
     injected_func_type = InjectedFuncType(
         is_async_container=is_async,
@@ -598,7 +585,7 @@ def wrap_injection(
     )
     get_auto_injected_func = _GET_AUTO_INJECTED_FUNC_DICT[injected_func_type]
 
-    auto_injected_func = get_auto_injected_func(
+    auto_injected_func = get_auto_injected_func(  # type: ignore[operator]
         func=func,
         provide_context=provide_context,
         dependencies=dependencies,
@@ -607,13 +594,13 @@ def wrap_injection(
     )
 
     auto_injected_func.__dishka_orig_func__ = func
-    auto_injected_func.__dishka_injected__ = True  # type: ignore[attr-defined]
+    auto_injected_func.__dishka_injected__ = True
     auto_injected_func.__name__ = func.__name__
     auto_injected_func.__qualname__ = func.__qualname__
     auto_injected_func.__doc__ = func.__doc__
     auto_injected_func.__module__ = func.__module__
     auto_injected_func.__annotations__ = new_annotations
-    auto_injected_func.__signature__ = Signature(  # type: ignore[attr-defined]
+    auto_injected_func.__signature__ = Signature(
         parameters=new_params,
         return_annotation=func_signature.return_annotation,
     )
@@ -627,7 +614,7 @@ def is_dishka_injected(func: Callable[..., Any]) -> bool:
 def _add_params(
     params: Sequence[Parameter],
     additional_params: Sequence[Parameter],
-):
+) -> list[Parameter]:
     params_kind_dict: dict[_ParameterKind, list[Parameter]] = {}
 
     for param in params:

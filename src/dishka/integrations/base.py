@@ -77,7 +77,7 @@ def _iter_dependencies_to_inject(
                 yield name, dep
         else:
             raise NotImplementedError(
-                f"Unsupported parameter kind: {param.kind}"
+                f"Unsupported parameter kind: {param.kind}",
             )
 
 
@@ -92,7 +92,7 @@ async def _maybe_inject_async(
     resolved_deps = {
         name: await container.get(dep.type_hint, component=dep.component)
         for name, dep in _iter_dependencies_to_inject(
-            dependencies, params, *args, **kwargs
+            dependencies, params, *args, **kwargs,
         )
     }
     return func(*args, **kwargs, **resolved_deps)
@@ -109,7 +109,7 @@ def _maybe_inject_sync(
     resolved_deps = {
         name: container.get(dep.type_hint, component=dep.component)
         for name, dep in _iter_dependencies_to_inject(
-            dependencies, params, *args, **kwargs
+            dependencies, params, *args, **kwargs,
         )
     }
     return func(*args, **kwargs, **resolved_deps)
@@ -136,7 +136,7 @@ def _get_auto_injected_async_gen_scoped(
         container = container_getter(args, kwargs)
         async with container(additional_context) as container:
             async_gen = await _maybe_inject_async(
-                container, dependencies, params, func, *args, **kwargs
+                container, dependencies, params, func, *args, **kwargs,
             )
             async for message in async_gen:
                 yield message
@@ -164,7 +164,7 @@ def _get_auto_injected_async_gen(
 
         container = container_getter(args, kwargs)
         async_gen = await _maybe_inject_async(
-            container, dependencies, params, func, *args, **kwargs
+            container, dependencies, params, func, *args, **kwargs,
         )
         async for message in async_gen:
             yield message
@@ -190,7 +190,7 @@ def _get_auto_injected_async_func_scoped(
         )
         async with container(additional_context) as container:
             coro = await _maybe_inject_async(
-                container, dependencies, params, func, *args, **kwargs
+                container, dependencies, params, func, *args, **kwargs,
             )
             return await coro
 
@@ -214,7 +214,7 @@ def _get_auto_injected_async_func(
             kwargs.pop(param.name)
 
         coro = await _maybe_inject_async(
-            container, dependencies, params, func, *args, **kwargs
+            container, dependencies, params, func, *args, **kwargs,
         )
         return await coro
 
@@ -242,7 +242,7 @@ def _get_auto_injected_sync_gen_scoped(
         container = container_getter(args, kwargs)
         with container(additional_context) as container:
             sync_gen = _maybe_inject_sync(
-                container, dependencies, params, func, *args, **kwargs
+                container, dependencies, params, func, *args, **kwargs,
             )
             yield from sync_gen
 
@@ -269,7 +269,7 @@ def _get_auto_injected_sync_gen(
             kwargs.pop(param.name)
 
         sync_gen = _maybe_inject_sync(
-            container, dependencies, params, func, *args, **kwargs
+            container, dependencies, params, func, *args, **kwargs,
         )
         yield from sync_gen
 
@@ -294,7 +294,7 @@ def _get_auto_injected_sync_func_scoped(
         container = container_getter(args, kwargs)
         with container(additional_context) as container:
             return _maybe_inject_sync(
-                container, dependencies, params, func, *args, **kwargs
+                container, dependencies, params, func, *args, **kwargs,
             )
 
     return auto_injected_func
@@ -317,7 +317,7 @@ def _get_auto_injected_sync_func(
             kwargs.pop(param.name)
 
         return _maybe_inject_sync(
-            container, dependencies, params, func, *args, **kwargs
+            container, dependencies, params, func, *args, **kwargs,
         )
 
     return auto_injected_func
@@ -344,7 +344,7 @@ def _get_auto_injected_sync_container_async_gen_scoped(
         container = container_getter(args, kwargs)
         with container(additional_context) as container:
             async_gen = _maybe_inject_sync(
-                container, dependencies, params, func, *args, **kwargs
+                container, dependencies, params, func, *args, **kwargs,
             )
             async for message in async_gen:
                 yield message
@@ -372,7 +372,7 @@ def _get_auto_injected_sync_container_async_gen(
             kwargs.pop(param.name)
 
         async_gen = _maybe_inject_sync(
-            container, dependencies, params, func, *args, **kwargs
+            container, dependencies, params, func, *args, **kwargs,
         )
         async for message in async_gen:
             yield message
@@ -398,7 +398,7 @@ def _get_auto_injected_sync_container_async_func_scoped(
         container = container_getter(args, kwargs)
         with container(additional_context) as container:
             return await _maybe_inject_sync(
-                container, dependencies, params, func, *args, **kwargs
+                container, dependencies, params, func, *args, **kwargs,
             )
 
     return auto_injected_func
@@ -421,7 +421,7 @@ def _get_auto_injected_sync_container_async_func(
             kwargs.pop(param.name)
 
         return await _maybe_inject_sync(
-            container, dependencies, params, func, *args, **kwargs
+            container, dependencies, params, func, *args, **kwargs,
         )
 
     return auto_injected_func

@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import (
     AsyncIterator,
     Awaitable,
@@ -84,33 +85,46 @@ def _iter_dependencies_to_inject(
 async def _maybe_inject_async(
     container: AsyncContainer,
     dependencies: dict[str, DependencyKey],
-    params: Sequence[Parameter],
+    params: Sequence[Parameter] | None,
     func: Callable[P, T],
     *args: P.args,
     **kwargs: P.kwargs,
 ) -> T:
-    resolved_deps = {
-        name: await container.get(dep.type_hint, component=dep.component)
-        for name, dep in _iter_dependencies_to_inject(
+    if params is None:
+        named_deps = list(dependencies.items())
+    else:
+        named_deps = list(_iter_dependencies_to_inject(
             dependencies, params, *args, **kwargs,
+        ))
+
+    resolved_deps: dict[str, Any] = {}
+    if named_deps:
+        names, deps = zip(*named_deps, strict=True)
+        coros = (container.get(dep.type_hint, component=dep.component)
+                 for dep in deps)
+        resolved_deps.update(
+            zip(names, await asyncio.gather(*coros), strict=True),
         )
-    }
     return func(*args, **kwargs, **resolved_deps)
 
 
 def _maybe_inject_sync(
     container: Container,
     dependencies: dict[str, DependencyKey],
-    params: Sequence[Parameter],
+    params: Sequence[Parameter] | None,
     func: Callable[P, T],
     *args: P.args,
     **kwargs: P.kwargs,
 ) -> T:
-    resolved_deps = {
-        name: container.get(dep.type_hint, component=dep.component)
-        for name, dep in _iter_dependencies_to_inject(
+    if params is None:
+        named_deps = iter(dependencies.items())
+    else:
+        named_deps = _iter_dependencies_to_inject(
             dependencies, params, *args, **kwargs,
         )
+    resolved_deps = {
+        name: container.get(dep.type_hint, component=dep.component)
+        for name, dep in named_deps
     }
     return func(*args, **kwargs, **resolved_deps)
 
@@ -146,7 +160,7 @@ def _get_auto_injected_async_gen_scoped(
 
 def _get_auto_injected_async_gen(
     container_getter: ContainerGetter[AsyncContainer],
-    params: Sequence[Parameter],
+    params: Sequence[Parameter] | None,
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, AsyncIterator[T]],
@@ -174,7 +188,7 @@ def _get_auto_injected_async_gen(
 
 def _get_auto_injected_async_func_scoped(
     container_getter: ContainerGetter[AsyncContainer],
-    params: Sequence[Parameter],
+    params: Sequence[Parameter] | None,
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Awaitable[T]],
@@ -199,7 +213,7 @@ def _get_auto_injected_async_func_scoped(
 
 def _get_auto_injected_async_func(
     container_getter: ContainerGetter[AsyncContainer],
-    params: Sequence[Parameter],
+    params: Sequence[Parameter] | None,
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Awaitable[T]],
@@ -223,7 +237,7 @@ def _get_auto_injected_async_func(
 
 def _get_auto_injected_sync_gen_scoped(
     container_getter: ContainerGetter[Container],
-    params: Sequence[Parameter],
+    params: Sequence[Parameter] | None,
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Iterator[T]],
@@ -251,7 +265,7 @@ def _get_auto_injected_sync_gen_scoped(
 
 def _get_auto_injected_sync_gen(
     container_getter: ContainerGetter[Container],
-    params: Sequence[Parameter],
+    params: Sequence[Parameter] | None,
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Iterator[T]],
@@ -278,7 +292,7 @@ def _get_auto_injected_sync_gen(
 
 def _get_auto_injected_sync_func_scoped(
     container_getter: ContainerGetter[Container],
-    params: Sequence[Parameter],
+    params: Sequence[Parameter] | None,
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, T],
@@ -302,7 +316,7 @@ def _get_auto_injected_sync_func_scoped(
 
 def _get_auto_injected_sync_func(
     container_getter: ContainerGetter[Container],
-    params: Sequence[Parameter],
+    params: Sequence[Parameter] | None,
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, T],
@@ -325,7 +339,7 @@ def _get_auto_injected_sync_func(
 
 def _get_auto_injected_sync_container_async_gen_scoped(
     container_getter: ContainerGetter[Container],
-    params: Sequence[Parameter],
+    params: Sequence[Parameter] | None,
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, AsyncIterator[T]],
@@ -354,7 +368,7 @@ def _get_auto_injected_sync_container_async_gen_scoped(
 
 def _get_auto_injected_sync_container_async_gen(
     container_getter: ContainerGetter[Container],
-    params: Sequence[Parameter],
+    params: Sequence[Parameter] | None,
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, AsyncIterator[T]],
@@ -382,7 +396,7 @@ def _get_auto_injected_sync_container_async_gen(
 
 def _get_auto_injected_sync_container_async_func_scoped(
     container_getter: ContainerGetter[Container],
-    params: Sequence[Parameter],
+    params: Sequence[Parameter] | None,
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Awaitable[T]],
@@ -406,7 +420,7 @@ def _get_auto_injected_sync_container_async_func_scoped(
 
 def _get_auto_injected_sync_container_async_func(
     container_getter: ContainerGetter[Container],
-    params: Sequence[Parameter],
+    params: Sequence[Parameter] | None,
     additional_params: Sequence[Parameter],
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Awaitable[T]],
@@ -632,7 +646,7 @@ def wrap_injection(
         func=func,
         provide_context=provide_context,
         dependencies=dependencies,
-        params=new_params,
+        params=new_params if not remove_depends else None,
         additional_params=additional_params,
         container_getter=container_getter,
     )

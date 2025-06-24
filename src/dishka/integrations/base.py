@@ -1,4 +1,3 @@
-import asyncio
 from collections.abc import (
     AsyncIterator,
     Awaitable,
@@ -91,20 +90,16 @@ async def _maybe_inject_async(
     **kwargs: P.kwargs,
 ) -> T:
     if params is None:
-        named_deps = list(dependencies.items())
+        named_deps = iter(dependencies.items())
     else:
-        named_deps = list(_iter_dependencies_to_inject(
+        named_deps = iter(_iter_dependencies_to_inject(
             dependencies, params, *args, **kwargs,
         ))
 
-    resolved_deps: dict[str, Any] = {}
-    if named_deps:
-        names, deps = zip(*named_deps, strict=True)
-        coros = (container.get(dep.type_hint, component=dep.component)
-                 for dep in deps)
-        resolved_deps.update(
-            zip(names, await asyncio.gather(*coros), strict=True),
-        )
+    resolved_deps = {
+        name: await container.get(dep.type_hint, component=dep.component)
+        for name, dep in named_deps
+    }
     return func(*args, **kwargs, **resolved_deps)
 
 

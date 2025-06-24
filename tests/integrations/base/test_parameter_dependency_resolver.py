@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import pytest
 
 from dishka import FromDishka
-from dishka.integrations.base import _iter_dependencies_to_inject
+from dishka.integrations.base import ParameterDependencyResolver
 from tests.integrations.common import AppMock
 
 Dep1 = FromDishka[Mock]
@@ -38,10 +38,10 @@ def var_args_kwargs(i: int, *d1: Dep1, j: int = 0, **d2: Dep2): ...
 def get_injected_names_factory(func):
     params = list(signature(func).parameters.values())
     deps = {"d1": Mock(), "d2": AppMock(Mock())}
+    resolver = ParameterDependencyResolver(params, deps)
 
     def get_injected_names(*args, **kw):
-        named_deps = _iter_dependencies_to_inject(deps, params, *args, **kw)
-        return [name for name, _ in named_deps]
+        return [name for name, _ in resolver(*args, **kw)]
 
     return get_injected_names
 
@@ -84,9 +84,8 @@ def test_pass_dependencies_by_position(func):
 
 
 @pytest.mark.parametrize(
-    "func", [pos_only, pos_only_d1, var_args, var_kwargs, var_args_kwargs]
+    "func", [pos_only, pos_only_d1, var_args, var_kwargs, var_args_kwargs],
 )
 def test_not_implemented_parameter_kinds(func):
-    get_injected_names = get_injected_names_factory(func)
     with pytest.raises(NotImplementedError):
-        get_injected_names(1, Mock(), d2=Mock())
+        get_injected_names_factory(func)

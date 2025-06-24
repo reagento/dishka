@@ -23,7 +23,8 @@ def raises_multiple_values(obj):
 async def raises_multiple_values_async(obj):
     with pytest.raises(TypeError, match="multiple values for"):  # noqa: PT012
         if isasyncgen(obj):
-            [x async for x in obj]
+            async for _ in obj:
+                pass
         elif iscoroutine(obj):
             await obj
         else:
@@ -185,9 +186,11 @@ async def test_async_gen(async_container, remove_depends, app_provider):
         is_async=async_container,
     )
 
-    [item async for item in wrapped_func([1])]
+    async for _ in wrapped_func([1]):
+        pass
     app_provider.app_mock.assert_called_with(1, 0)
-    [item async for item in wrapped_func([2], j=3)]
+    async for _ in wrapped_func([2], j=3):
+        pass
     app_provider.app_mock.assert_called_with(2, 3)
 
     app_provider.app_mock.reset_mock()
@@ -199,14 +202,19 @@ async def test_async_gen(async_container, remove_depends, app_provider):
         await raises_multiple_values_async(wrapped_func([4], new_dep, j=9))
         await raises_multiple_values_async(wrapped_func([5], dep=new_dep, j=9))
     else:
-        [item async for item in wrapped_func([1], new_dep)]
+        async for _ in wrapped_func([1], new_dep):
+            pass
         new_dep.assert_called_with(1, 0)
-        [item async for item in wrapped_func([2], dep=new_dep)]
+        async for _ in wrapped_func([2], dep=new_dep):
+            pass
         new_dep.assert_called_with(2, 0)
-        [item async for item in wrapped_func([3], new_dep, 9)]
+        async for _ in wrapped_func([3], new_dep, 9):
+            pass
         new_dep.assert_called_with(3, 9)
-        [item async for item in wrapped_func([4], new_dep, j=9)]
+        async for _ in wrapped_func([4], new_dep, j=9):
+            pass
         new_dep.assert_called_with(4, 9)
-        [item async for item in wrapped_func([5], dep=new_dep, j=9)]
+        async for _ in wrapped_func([5], dep=new_dep, j=9):
+            pass
         new_dep.assert_called_with(5, 9)
     app_provider.app_mock.assert_not_called()

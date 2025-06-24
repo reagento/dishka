@@ -61,79 +61,45 @@ class ParameterDependencyResolver:
         params: Sequence[Parameter],
         dependencies: dict[str, DependencyKey],
     ):
+        self._selected_named_deps: list[tuple[str, DependencyKey]] = []
         self._named_deps_predicates = []
         named_params = {param.name: param for param in params}
         named_idxs = {param.name: i for i, param in enumerate(params)}
         for name, dep in dependencies.items():
             match named_params[name].kind:
                 case Parameter.POSITIONAL_OR_KEYWORD:
-                    pred = partial(self._has_pos_or_kw, named_idxs[name], name)
+                    pred = partial(_has_pos_or_kw, named_idxs[name], name)
                 case Parameter.KEYWORD_ONLY:
-                    pred = partial(self._has_kw_only, name)
+                    pred = partial(_has_kw_only, name)
                 case kind:
                     raise NotImplementedError(
                         f"Unsupported parameter kind: {kind}",
                     )
             self._named_deps_predicates.append((name, dep, pred))
 
-    def __call__(
-        self, *args: Any, **kwargs: Any,
-    ) -> Iterator[tuple[str, DependencyKey]]:
-        for name, dep, has_param in self._named_deps_predicates:
-            if not has_param(*args, **kwargs):
-                yield name, dep
+    def bind(self, *args: Any, **kwargs: Any) -> None:
+        self._selected_named_deps = [
+            (name, dep)
+            for name, dep, has_param in self._named_deps_predicates
+            if not has_param(*args, **kwargs)
+        ]
 
-    @staticmethod
-    def _has_pos_or_kw(i: int, name: str, *args: Any, **kwargs: Any) -> bool:
-        return i < len(args) or name in kwargs
-
-    @staticmethod
-    def _has_kw_only(name: str, *args: Any, **kwargs: Any) -> bool:
-        return name in kwargs
+    def items(self) -> Iterator[tuple[str, DependencyKey]]:
+        return iter(self._selected_named_deps)
 
 
-class DependencyResolver:
-    def __init__(self, dependencies: dict[str, DependencyKey]):
-        self._named_deps = list(dependencies.items())
-
-    def __call__(
-        self, *args: Any, **kwargs: Any,
-    ) -> Iterator[tuple[str, DependencyKey]]:
-        return iter(self._named_deps)
+def _has_pos_or_kw(i: int, name: str, *args: Any, **kwargs: Any) -> bool:
+    return i < len(args) or name in kwargs
 
 
-async def _maybe_inject_async(
-    container: AsyncContainer,
-    resolver: DependencyResolver | ParameterDependencyResolver,
-    func: Callable[P, T],
-    *args: P.args,
-    **kwargs: P.kwargs,
-) -> T:
-    resolved_deps = {
-        name: await container.get(dep.type_hint, component=dep.component)
-        for name, dep in resolver(*args, **kwargs)
-    }
-    return func(*args, **kwargs, **resolved_deps)
-
-
-def _maybe_inject_sync(
-    container: Container,
-    resolver: DependencyResolver | ParameterDependencyResolver,
-    func: Callable[P, T],
-    *args: P.args,
-    **kwargs: P.kwargs,
-) -> T:
-    resolved_deps = {
-        name: container.get(dep.type_hint, component=dep.component)
-        for name, dep in resolver(*args, **kwargs)
-    }
-    return func(*args, **kwargs, **resolved_deps)
+def _has_kw_only(name: str, *args: Any, **kwargs: Any) -> bool:
+    return name in kwargs
 
 
 def _get_auto_injected_async_gen_scoped(
     container_getter: ContainerGetter[AsyncContainer],
     additional_params: Sequence[Parameter],
-    resolver: DependencyResolver | ParameterDependencyResolver,
+    dependencies: dict[str, DependencyKey] | ParameterDependencyResolver,
     func: Callable[P, AsyncIterator[T]],
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
@@ -149,10 +115,16 @@ def _get_auto_injected_async_gen_scoped(
         )
         container = container_getter(args, kwargs)
         async with container(additional_context) as container:
-            async_gen = await _maybe_inject_async(
-                container, resolver, func, *args, **kwargs,
-            )
-            async for message in async_gen:
+            if isinstance(dependencies, ParameterDependencyResolver):
+                dependencies.bind(*args, **kwargs)
+            solved = {
+                name: await container.get(
+                    dep.type_hint,
+                    component=dep.component,
+                )
+                for name, dep in dependencies.items()
+            }
+            async for message in func(*args, **kwargs, **solved):
                 yield message
 
     return auto_injected_generator
@@ -161,7 +133,7 @@ def _get_auto_injected_async_gen_scoped(
 def _get_auto_injected_async_gen(
     container_getter: ContainerGetter[AsyncContainer],
     additional_params: Sequence[Parameter],
-    resolver: DependencyResolver | ParameterDependencyResolver,
+    dependencies: dict[str, DependencyKey] | ParameterDependencyResolver,
     func: Callable[P, AsyncIterator[T]],
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
@@ -176,10 +148,16 @@ def _get_auto_injected_async_gen(
             kwargs.pop(param.name)
 
         container = container_getter(args, kwargs)
-        async_gen = await _maybe_inject_async(
-            container, resolver, func, *args, **kwargs,
-        )
-        async for message in async_gen:
+        if isinstance(dependencies, ParameterDependencyResolver):
+            dependencies.bind(*args, **kwargs)
+        solved = {
+            name: await container.get(
+                dep.type_hint,
+                component=dep.component,
+            )
+            for name, dep in dependencies.items()
+        }
+        async for message in func(*args, **kwargs, **solved):
             yield message
 
     return auto_injected_generator
@@ -188,7 +166,7 @@ def _get_auto_injected_async_gen(
 def _get_auto_injected_async_func_scoped(
     container_getter: ContainerGetter[AsyncContainer],
     additional_params: Sequence[Parameter],
-    resolver: DependencyResolver | ParameterDependencyResolver,
+    dependencies: dict[str, DependencyKey] | ParameterDependencyResolver,
     func: Callable[P, Awaitable[T]],
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, Awaitable[T]]:
@@ -201,10 +179,16 @@ def _get_auto_injected_async_func_scoped(
             {} if provide_context is None else provide_context(args, kwargs)
         )
         async with container(additional_context) as container:
-            coro = await _maybe_inject_async(
-                container, resolver, func, *args, **kwargs,
-            )
-            return await coro
+            if isinstance(dependencies, ParameterDependencyResolver):
+                dependencies.bind(*args, **kwargs)
+            solved = {
+                name: await container.get(
+                    dep.type_hint,
+                    component=dep.component,
+                )
+                for name, dep in dependencies.items()
+            }
+            return await func(*args, **kwargs, **solved)
 
     return auto_injected_func
 
@@ -212,7 +196,7 @@ def _get_auto_injected_async_func_scoped(
 def _get_auto_injected_async_func(
     container_getter: ContainerGetter[AsyncContainer],
     additional_params: Sequence[Parameter],
-    resolver: DependencyResolver | ParameterDependencyResolver,
+    dependencies: dict[str, DependencyKey] | ParameterDependencyResolver,
     func: Callable[P, Awaitable[T]],
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, Awaitable[T]]:
@@ -223,11 +207,16 @@ def _get_auto_injected_async_func(
         container = container_getter(args, kwargs)
         for param in additional_params:
             kwargs.pop(param.name)
-
-        coro = await _maybe_inject_async(
-            container, resolver, func, *args, **kwargs,
-        )
-        return await coro
+        if isinstance(dependencies, ParameterDependencyResolver):
+            dependencies.bind(*args, **kwargs)
+        solved = {
+            name: await container.get(
+                dep.type_hint,
+                component=dep.component,
+            )
+            for name, dep in dependencies.items()
+        }
+        return await func(*args, **kwargs, **solved)
 
     return auto_injected_func
 
@@ -235,7 +224,7 @@ def _get_auto_injected_async_func(
 def _get_auto_injected_sync_gen_scoped(
     container_getter: ContainerGetter[Container],
     additional_params: Sequence[Parameter],
-    resolver: DependencyResolver | ParameterDependencyResolver,
+    dependencies: dict[str, DependencyKey] | ParameterDependencyResolver,
     func: Callable[P, Iterator[T]],
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, Iterator[T]]:
@@ -251,10 +240,13 @@ def _get_auto_injected_sync_gen_scoped(
         )
         container = container_getter(args, kwargs)
         with container(additional_context) as container:
-            sync_gen = _maybe_inject_sync(
-                container, resolver, func, *args, **kwargs,
-            )
-            yield from sync_gen
+            if isinstance(dependencies, ParameterDependencyResolver):
+                dependencies.bind(*args, **kwargs)
+            solved = {
+                name: container.get(dep.type_hint, component=dep.component)
+                for name, dep in dependencies.items()
+            }
+            yield from func(*args, **kwargs, **solved)
 
     return auto_injected_generator
 
@@ -262,7 +254,7 @@ def _get_auto_injected_sync_gen_scoped(
 def _get_auto_injected_sync_gen(
     container_getter: ContainerGetter[Container],
     additional_params: Sequence[Parameter],
-    resolver: DependencyResolver | ParameterDependencyResolver,
+    dependencies: dict[str, DependencyKey] | ParameterDependencyResolver,
     func: Callable[P, Iterator[T]],
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, Iterator[T]]:
@@ -277,10 +269,13 @@ def _get_auto_injected_sync_gen(
         for param in additional_params:
             kwargs.pop(param.name)
 
-        sync_gen = _maybe_inject_sync(
-            container, resolver, func, *args, **kwargs,
-        )
-        yield from sync_gen
+        if isinstance(dependencies, ParameterDependencyResolver):
+            dependencies.bind(*args, **kwargs)
+        solved = {
+            name: container.get(dep.type_hint, component=dep.component)
+            for name, dep in dependencies.items()
+        }
+        yield from func(*args, **kwargs, **solved)
 
     return auto_injected_generator
 
@@ -288,7 +283,7 @@ def _get_auto_injected_sync_gen(
 def _get_auto_injected_sync_func_scoped(
     container_getter: ContainerGetter[Container],
     additional_params: Sequence[Parameter],
-    resolver: DependencyResolver | ParameterDependencyResolver,
+    dependencies: dict[str, DependencyKey] | ParameterDependencyResolver,
     func: Callable[P, T],
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, T]:
@@ -301,9 +296,13 @@ def _get_auto_injected_sync_func_scoped(
         )
         container = container_getter(args, kwargs)
         with container(additional_context) as container:
-            return _maybe_inject_sync(
-                container, resolver, func, *args, **kwargs,
-            )
+            if isinstance(dependencies, ParameterDependencyResolver):
+                dependencies.bind(*args, **kwargs)
+            solved = {
+                name: container.get(dep.type_hint, component=dep.component)
+                for name, dep in dependencies.items()
+            }
+            return func(*args, **kwargs, **solved)
 
     return auto_injected_func
 
@@ -311,7 +310,7 @@ def _get_auto_injected_sync_func_scoped(
 def _get_auto_injected_sync_func(
     container_getter: ContainerGetter[Container],
     additional_params: Sequence[Parameter],
-    resolver: DependencyResolver | ParameterDependencyResolver,
+    dependencies: dict[str, DependencyKey] | ParameterDependencyResolver,
     func: Callable[P, T],
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, T]:
@@ -323,9 +322,13 @@ def _get_auto_injected_sync_func(
         for param in additional_params:
             kwargs.pop(param.name)
 
-        return _maybe_inject_sync(
-            container, resolver, func, *args, **kwargs,
-        )
+        if isinstance(dependencies, ParameterDependencyResolver):
+            dependencies.bind(*args, **kwargs)
+        solved = {
+            name: container.get(dep.type_hint, component=dep.component)
+            for name, dep in dependencies.items()
+        }
+        return func(*args, **kwargs, **solved)
 
     return auto_injected_func
 
@@ -333,7 +336,7 @@ def _get_auto_injected_sync_func(
 def _get_auto_injected_sync_container_async_gen_scoped(
     container_getter: ContainerGetter[Container],
     additional_params: Sequence[Parameter],
-    resolver: DependencyResolver | ParameterDependencyResolver,
+    dependencies: dict[str, DependencyKey] | ParameterDependencyResolver,
     func: Callable[P, AsyncIterator[T]],
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
@@ -349,10 +352,13 @@ def _get_auto_injected_sync_container_async_gen_scoped(
         )
         container = container_getter(args, kwargs)
         with container(additional_context) as container:
-            async_gen = _maybe_inject_sync(
-                container, resolver, func, *args, **kwargs,
-            )
-            async for message in async_gen:
+            if isinstance(dependencies, ParameterDependencyResolver):
+                dependencies.bind(*args, **kwargs)
+            solved = {
+                name: container.get(dep.type_hint, component=dep.component)
+                for name, dep in dependencies.items()
+            }
+            async for message in func(*args, **kwargs, **solved):
                 yield message
 
     return auto_injected_generator
@@ -361,7 +367,7 @@ def _get_auto_injected_sync_container_async_gen_scoped(
 def _get_auto_injected_sync_container_async_gen(
     container_getter: ContainerGetter[Container],
     additional_params: Sequence[Parameter],
-    resolver: DependencyResolver | ParameterDependencyResolver,
+    dependencies: dict[str, DependencyKey] | ParameterDependencyResolver,
     func: Callable[P, AsyncIterator[T]],
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
@@ -376,10 +382,13 @@ def _get_auto_injected_sync_container_async_gen(
         for param in additional_params:
             kwargs.pop(param.name)
 
-        async_gen = _maybe_inject_sync(
-            container, resolver, func, *args, **kwargs,
-        )
-        async for message in async_gen:
+        if isinstance(dependencies, ParameterDependencyResolver):
+            dependencies.bind(*args, **kwargs)
+        solved = {
+            name: container.get(dep.type_hint, component=dep.component)
+            for name, dep in dependencies.items()
+        }
+        async for message in func(*args, **kwargs, **solved):
             yield message
 
     return auto_injected_generator
@@ -388,7 +397,7 @@ def _get_auto_injected_sync_container_async_gen(
 def _get_auto_injected_sync_container_async_func_scoped(
     container_getter: ContainerGetter[Container],
     additional_params: Sequence[Parameter],
-    resolver: DependencyResolver | ParameterDependencyResolver,
+    dependencies: dict[str, DependencyKey] | ParameterDependencyResolver,
     func: Callable[P, Awaitable[T]],
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, Awaitable[T]]:
@@ -401,9 +410,13 @@ def _get_auto_injected_sync_container_async_func_scoped(
         )
         container = container_getter(args, kwargs)
         with container(additional_context) as container:
-            return await _maybe_inject_sync(
-                container, resolver, func, *args, **kwargs,
-            )
+            if isinstance(dependencies, ParameterDependencyResolver):
+                dependencies.bind(*args, **kwargs)
+            solved = {
+                name: container.get(dep.type_hint, component=dep.component)
+                for name, dep in dependencies.items()
+            }
+            return await func(*args, **kwargs, **solved)
 
     return auto_injected_func
 
@@ -411,7 +424,7 @@ def _get_auto_injected_sync_container_async_func_scoped(
 def _get_auto_injected_sync_container_async_func(
     container_getter: ContainerGetter[Container],
     additional_params: Sequence[Parameter],
-    resolver: DependencyResolver | ParameterDependencyResolver,
+    dependencies: dict[str, DependencyKey] | ParameterDependencyResolver,
     func: Callable[P, Awaitable[T]],
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, Awaitable[T]]:
@@ -423,9 +436,13 @@ def _get_auto_injected_sync_container_async_func(
         for param in additional_params:
             kwargs.pop(param.name)
 
-        return await _maybe_inject_sync(
-            container, resolver, func, *args, **kwargs,
-        )
+        if isinstance(dependencies, ParameterDependencyResolver):
+            dependencies.bind(*args, **kwargs)
+        solved = {
+            name: container.get(dep.type_hint, component=dep.component)
+            for name, dep in dependencies.items()
+        }
+        return await func(*args, **kwargs, **solved)
 
     return auto_injected_func
 
@@ -634,8 +651,8 @@ def wrap_injection(
     auto_injected_func = get_auto_injected_func(  # type: ignore[operator]
         func=func,
         provide_context=provide_context,
-        resolver=(
-            DependencyResolver(dependencies)
+        dependencies=(
+            dependencies
             if remove_depends
             else ParameterDependencyResolver(new_params, dependencies)
         ),

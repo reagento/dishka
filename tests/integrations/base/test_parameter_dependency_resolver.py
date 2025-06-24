@@ -41,7 +41,8 @@ def get_injected_names_factory(func):
     resolver = ParameterDependencyResolver(params, deps)
 
     def get_injected_names(*args, **kw):
-        return [name for name, _ in resolver(*args, **kw)]
+        resolver.bind(*args, **kw)
+        return [name for name, _ in resolver.items()]
 
     return get_injected_names
 

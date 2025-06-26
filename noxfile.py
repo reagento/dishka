@@ -49,7 +49,6 @@ INTEGRATIONS = [
     IntegrationEnv("fastapi", "0096"),
     IntegrationEnv("fastapi", "0109"),
     IntegrationEnv("fastapi", "latest"),
-    IntegrationEnv("faststream", "047", constraint_3_13),
     IntegrationEnv("faststream", "050", constraint_3_13),
     IntegrationEnv("faststream", "0529"),
     IntegrationEnv("faststream", "latest"),

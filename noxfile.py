@@ -7,7 +7,6 @@ import nox
 nox.options.default_venv_backend = "uv"
 nox.options.reuse_existing_virtualenvs = True
 
-CMD = ("pytest", "--cov=dishka", "--cov-append", "--cov-report=term-missing", "-v")
 INSTALL_CMD = ("pytest", "pytest-cov", "-e", ".")
 
 
@@ -59,7 +58,7 @@ INTEGRATIONS = [
     IntegrationEnv("grpcio", "1641", constraint_3_13),
     IntegrationEnv("grpcio", "1680"),
     IntegrationEnv("grpcio", "latest"),
-    IntegrationEnv("litestar", "230"),
+    IntegrationEnv("litestar", "232"),
     IntegrationEnv("litestar", "latest"),
     IntegrationEnv("sanic", "23121"),
     IntegrationEnv("sanic", "latest"),
@@ -79,8 +78,9 @@ def integrations_base(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,
         "-r", "requirements/test.txt",
+        silent=False,
     )
-    session.run(*CMD, "tests/integrations/base")
+    session.run("pytest", "tests/integrations/base")
 
 
 for env in INTEGRATIONS:
@@ -92,8 +92,8 @@ for env in INTEGRATIONS:
         if env.constraint and not env.constraint.condition():
             session.skip(env.constraint.reason)
 
-        session.install(*INSTALL_CMD, "-r", env.get_req())
-        session.run(*CMD, env.get_tests())
+        session.install(*INSTALL_CMD, "-r", env.get_req(), silent=False)
+        session.run("pytest", env.get_tests())
 
 
 @nox.session(tags=["ci"])
@@ -101,8 +101,9 @@ def unit(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,
         "-r", "requirements/test.txt",
+        silent=False,
     )
-    session.run(*CMD, "tests/unit")
+    session.run("pytest", "tests/unit")
 
 
 @nox.session(tags=["ci"])
@@ -110,5 +111,6 @@ def real_world(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,
         "-r", "examples/real_world/requirements_test.txt",
+        silent=False,
     )
-    session.run(*CMD, "examples/real_world/tests/")
+    session.run("pytest", "examples/real_world/tests/")

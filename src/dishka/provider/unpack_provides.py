@@ -7,7 +7,7 @@ from dishka.dependency_source import (
     DependencySource,
     Factory,
 )
-from dishka.entities.key import DependencyKey
+from dishka.entities.key import hint_to_dependency_key
 from dishka.entities.provides_marker import ProvideMultiple
 
 
@@ -19,8 +19,12 @@ def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
 
     res: list[DependencySource] = [
         Alias(
-            provides=DependencyKey(provides_other, factory.provides.component),
-            source=DependencyKey(provides_first, factory.provides.component),
+            provides=hint_to_dependency_key(
+                provides_other,
+            ).with_component(factory.provides.component),
+            source=hint_to_dependency_key(
+                provides_first,
+            ).with_component(factory.provides.component),
             cache=factory.cache,
             override=factory.override,
         )
@@ -36,10 +40,9 @@ def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
             is_to_bind=factory.is_to_bind,
             cache=factory.cache,
             override=factory.override,
-            provides=DependencyKey(
+            provides=hint_to_dependency_key(
                 provides_first,
-                factory.provides.component,
-            ),
+            ).with_component(factory.provides.component),
         ),
     )
     return res
@@ -52,7 +55,9 @@ def unpack_decorator(decorator: Decorator) -> Sequence[DependencySource]:
     return [
         Decorator(
             factory=decorator.factory,
-            provides=DependencyKey(provides, decorator.provides.component),
+            provides=hint_to_dependency_key(
+                provides,
+            ).with_component(decorator.provides.component),
         )
         for provides in get_args(decorator.provides.type_hint)
     ]
@@ -64,7 +69,9 @@ def unpack_alias(alias: Alias) -> Sequence[DependencySource]:
 
     return [
         Alias(
-            provides=DependencyKey(provides, alias.provides.component),
+            provides=hint_to_dependency_key(
+                provides,
+            ).with_component(alias.provides.component),
             source=alias.source,
             cache=alias.cache,
             override=alias.override,

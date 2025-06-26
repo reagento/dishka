@@ -47,17 +47,17 @@ def test_simple():
 
 def test_with_hint():
     class MyProvider(Provider):
-        a = provide(A, scope=Scope.APP, provides=A|None)
+        a = provide(A, scope=Scope.APP, provides=A | None)
 
     class DProvider(Provider):
         @decorate
-        def a(self, a: A|None) -> A|None:
+        def a(self, a: A | None) -> A | None:
             if a is None:
                 return None
             return ADecorator(a)
 
     container = make_container(MyProvider(), DProvider())
-    a = container.get(A|None)
+    a = container.get(A | None)
     assert isinstance(a, ADecorator)
     assert isinstance(a.a, A)
 
@@ -77,8 +77,8 @@ def test_decorator():
     assert isinstance(a.a, A)
 
 
-def kwarg_decorator(x: int, *, a: A) -> A:
-    return ADecorator(a)
+def kwarg_decorator(x: int, *, source: A) -> A:
+    return ADecorator(source)
 
 
 def test_kwargs():

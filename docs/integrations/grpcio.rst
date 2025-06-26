@@ -5,11 +5,11 @@
 gRPC
 ============================
 
-Though it is not required, you can use dishka-grpcio integration. It features:
+Though it is not required, you can use *dishka-grpcio* integration. It features:
 
-* automatic REQUEST and SESSION scope management using interceptors
+* automatic *REQUEST* and *SESSION* scope management using interceptors
 * passing ``Message`` and ``ServicerContext`` objects as a context data to providers for both **unary** and **stream** requests
-* injection of dependencies into handler functions using decorators
+* injection of dependencies into handler functions using decorators.
 
 Both grpc and grpc.aio services are supported.
 
@@ -24,8 +24,8 @@ How to use
         inject, DishkaInterceptor, GrpcioProvider,
     )
 
-2. Create provider. You can use ``grpc.ServicerContext`` as a factory parameter to access request context in ``SESSION`` or ``REQUEST`` scopes.
-Use ``google.protobuf.message.Message`` to access certain message in ``REQUEST`` scope.
+2. Create provider. You can use ``grpc.ServicerContext`` as a factory parameter to access request context in *SESSION* or *REQUEST* scopes.
+Use ``google.protobuf.message.Message`` to access certain message in *REQUEST*-scope
 
 .. code-block:: python
 
@@ -54,7 +54,7 @@ Use ``google.protobuf.message.Message`` to access certain message in ``REQUEST``
 
     container = make_container(YourProvider(), GrpcioProvider())
 
-4. Setup dishka interceptors when creating a server. Use ``DishkaInterceptor`` for sync services and ``DishkaAioInterceptor``
+5. Setup ``dishka`` interceptors when creating a server. Use ``DishkaInterceptor`` for sync services and ``DishkaAioInterceptor``
 
 .. code-block:: python
 
@@ -76,4 +76,4 @@ we operate only 2 scopes: ``APP`` and ``REQUEST``.
 
     ``APP`` |rarr| ``SESSION`` |rarr| ``REQUEST``
 
-So, the difference is that if you can share dependencies across all messages within the same stream by declaring them on ``SESSION`` scope. The rest of the logic is the same.
+So, the difference is that if you can share dependencies across all messages within the same stream by declaring them on *SESSION*-scope. The rest of the logic is the same.

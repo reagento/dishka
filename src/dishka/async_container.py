@@ -14,7 +14,10 @@ from dishka.entities.scope import BaseScope, Scope
 from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .dependency_source import Factory
-from .entities.validation_settigs import DEFAULT_VALIDATION, ValidationSettings
+from .entities.validation_settings import (
+    DEFAULT_VALIDATION,
+    ValidationSettings,
+)
 from .exceptions import (
     ChildScopeNotFoundError,
     ExitError,
@@ -22,7 +25,7 @@ from .exceptions import (
     NoFactoryError,
     NoNonSkippedScopesError,
 )
-from .provider import BaseProvider
+from .provider import BaseProvider, make_root_context_provider
 from .registry import Registry
 from .registry_builder import RegistryBuilder
 
@@ -158,6 +161,17 @@ class AsyncContainer:
     ) -> Any:
         lock = self.lock
         key = DependencyKey(dependency_type, component)
+        try:
+            if not lock:
+                return await self._get_unlocked(key)
+            async with lock:
+                return await self._get_unlocked(key)
+        except NoFactoryError as e:
+            e.scope = self.scope
+            raise
+
+    async def _get(self, key: DependencyKey) -> Any:
+        lock = self.lock
         if not lock:
             return await self._get_unlocked(key)
         async with lock:
@@ -169,10 +183,30 @@ class AsyncContainer:
         compiled = self.registry.get_compiled_async(key)
         if not compiled:
             if not self.parent_container:
-                raise NoFactoryError(key)
-            return await self.parent_container.get(
-                key.type_hint, key.component,
-            )
+                abstract_dependencies = (
+                    self.registry.get_more_abstract_factories(key)
+                )
+                concrete_dependencies = (
+                    self.registry.get_more_concrete_factories(key)
+                )
+                raise NoFactoryError(
+                    key,
+                    suggest_abstract_factories=abstract_dependencies,
+                    suggest_concrete_factories=concrete_dependencies,
+                )
+            try:
+                return await self.parent_container._get(key)  # noqa: SLF001
+            except NoFactoryError as ex:
+                abstract_dependencies = (
+                    self.registry.get_more_abstract_factories(key)
+                )
+                concrete_dependencies = (
+                    self.registry.get_more_concrete_factories(key)
+                )
+                ex.suggest_abstract_factories.extend(abstract_dependencies)
+                ex.suggest_concrete_factories.extend(concrete_dependencies)
+                raise
+
         try:
             return await compiled(self._get_unlocked, self._exits, self._cache)
         except NoFactoryError as e:
@@ -188,7 +222,7 @@ class AsyncContainer:
         for exit_generator in self._exits[::-1]:
             try:
                 if exit_generator.type is FactoryType.ASYNC_GENERATOR:
-                    await exit_generator.callable.asend(exception) # type: ignore[attr-defined]
+                    await exit_generator.callable.asend(exception)  # type: ignore[attr-defined]
                 elif exit_generator.type is FactoryType.GENERATOR:
                     exit_generator.callable.send(exception)  # type: ignore[attr-defined]
             except StopIteration:  # noqa: PERF203
@@ -234,10 +268,11 @@ def make_async_container(
         start_scope: BaseScope | None = None,
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,
 ) -> AsyncContainer:
+    context_provider = make_root_context_provider(providers, context, scopes)
     registries = RegistryBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,
-        providers=providers,
+        providers=(*providers, context_provider),
         skip_validation=skip_validation,
         validation_settings=validation_settings,
     ).build()

@@ -6,7 +6,7 @@ What is Dependency Injection?
 
 Dependency injection is a simple idea which says that if some object requires another object for its work it should receive it from outside instead of creating or requesting that object itself.
 
-Imagine you have a business logic which uses some remote API client
+Imagine you have a business logic which uses some remote API client.
 
 .. code-block:: python
 
@@ -29,7 +29,7 @@ Here, the ``client`` is a **dependency**. Imagine that you have many methods wor
 I hope by this moment you've started suspecting that there is a problem. To solve it let's create our **dependency** somewhere outside of this method and **inject** it.
 There are three ways to do it:
 
-1. **Parameter injection**. We can pass client to a method as a parameter.
+1. **Parameter injection**. We can pass client to a method as a parameter
 
 .. code-block:: python
 
@@ -75,11 +75,11 @@ It works well unless you have many methods and they can call each other. Also we
 
 Additionally I need to name anti-patterns, which should be avoided as they cannot solve all the problems which are eliminated by DI, though they can solve part of them:
 
-* *Global variable*. Though it allows us to reuse a dependency and configure it outside of our business logic we are limited to one instance forever. Also, we do not control when it is created and finalized: some code can try to use it before it is properly configured
+* *Global variable*. Though it allows us to reuse a dependency and configure it outside of our business logic we are limited to one instance forever. Also, we do not control when it is created and finalized: some code can try to use it before it is properly configured.
 
 * *Singleton*. It's mostly a variant of global variable. It can add laziness, but other characteristics are the same.
 
-* *Monkey patch*. Or `mock.patch()` as an example. It allows to replace behavior in tests but it also relies on details how the class is imported and used instead of its interface. That makes tests more fragile and requires more work to support them
+* *Monkey patch*. Or `mock.patch()` as an example. It allows to replace behavior in tests but it also relies on details how the class is imported and used instead of its interface. That makes tests more fragile and requires more work to support them.
 
 When to inject dependencies?
 ===================================
@@ -159,16 +159,16 @@ What is IoC-container?
 
 IoC-container is a special object (or a framework providing such an object) which provides required objects following dependency injection rules and manages their lifetime. DI-framework is another name for such frameworks.
 
-Common mistake is to treat IoC-container as a single way to inject dependencies. It has nothing common with reality. Dependency injection can be done just by passing one object to another, but in complex application it is not so easy to do. As it was shown above you might want to create a separate object to encapsulate all DI-related logic. ``Container`` in previous example is an example of hand-written primitive IoC-container.
+Common mistake is to treat IoC-container as the only possible way to inject dependencies. It is not required to be so. Dependency injection can be done just by passing one object to another, but in complex application it is not so easy to do. As it was shown above you might want to create a separate object to encapsulate all DI-related logic. ``Container`` in previous example is an example of hand-written primitive IoC-container.
 
 Bigger is your application, more complex factories you need, more necessary is to automate creation of a container. You do not need to use IoC-container to test one small part of application, but it can be essential for launching it in whole. Fortunately, there are frameworks for it. But again, beware of spreading container-related details around your application code with an exception on scope boundaries.
 
 So, talking about IoC-container we can write-down these ideas:
 
-* IoC-container is not necessary for dependency injection
-* It is a useful helper for bigger applications
-* It should be safe to use it in concurrent application
-* It should follow the rules you provide for your dependencies (single or multiple instances, multiple lifetime scopes, etc.)
+* IoC-container is not necessary for dependency injection.
+* It is a useful helper for bigger applications.
+* It should be safe to use it in concurrent application.
+* It should follow the rules you provide for your dependencies (single or multiple instances, multiple lifetime scopes, etc.).
 
 More about possible requirements you can read in :ref:`technical-requirements`.
 

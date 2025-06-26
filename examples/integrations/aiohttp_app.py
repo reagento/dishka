@@ -1,4 +1,4 @@
-from typing import Annotated, Protocol
+from typing import Protocol
 
 from aiohttp.web import run_app
 from aiohttp.web_app import Application

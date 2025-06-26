@@ -82,6 +82,7 @@ async def test_request_dependency(app_provider: AppProvider):
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
 
+
 async def get_compat(
         a: FromDishka[RequestDep],
         mock: FromDishka[Mock],
@@ -127,6 +128,21 @@ async def get_with_depends(
 @pytest.mark.asyncio
 async def test_fastapi_depends(app_provider: AppProvider):
     async with dishka_app(get_with_depends, app_provider) as client:
+        client.get("/")
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()
+
+
+def get_sync(
+        a: FromDishka[RequestDep],
+        mock: FromDishka[Mock],
+) -> None:
+    mock(a)
+
+
+@pytest.mark.asyncio
+async def test_sync(app_provider: AppProvider):
+    async with dishka_app(get_sync, app_provider) as client:
         client.get("/")
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()

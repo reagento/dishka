@@ -36,9 +36,9 @@ the [detailed comparison](https://dishka.readthedocs.io/en/latest/alternatives.h
 * **Modular providers**. Instead of creating many separate functions or one large class, you can split factories
   into smaller classes for easier reuse.
 * **Clean dependencies**. You don't need to add custom markers to dependency code just to make it visible to the
-  library. Customization is managed by library providers, so only scope boundaries interact with the library API.
-* **Simple API**. Only a few objects are needed to start using the library. Integration with your framework is
-  straightforward, with examples provided.
+  library.
+* **Simple API**. Only a few objects are needed to start using the library.
+* **Framework integrations**. Popular frameworks are supported out of the box. You can simply extend it for your needs.
 * **Speed**. The library is fast enough that performance is not a concern. In fact, it outperforms many
   alternatives.
 
@@ -143,7 +143,69 @@ with container() as request_container:
 container.close()
 ```
 
-8. **Integrate with your framework.** If you are using a supported framework, add decorators and middleware for it.
+8. Full code:
+
+```python
+import sqlite3
+from collections.abc import Iterable
+from sqlite3 import Connection
+from typing import Protocol
+
+from dishka import Provider, Scope, make_container, provide
+
+
+class DAO(Protocol): ...
+
+
+class Service:
+    def __init__(self, dao: DAO): ...
+
+
+class DAOImpl(DAO):
+    def __init__(self, connection: Connection): ...
+
+
+class SomeClient: ...
+
+
+service_provider = Provider(scope=Scope.REQUEST)
+service_provider.provide(Service)
+service_provider.provide(DAOImpl, provides=DAO)
+service_provider.provide(
+    SomeClient,
+    scope=Scope.APP,
+)  # override provider scope
+
+
+class ConnectionProvider(Provider):
+    @provide(scope=Scope.REQUEST)
+    def new_connection(self) -> Iterable[Connection]:
+        conn = sqlite3.connect(":memory:")
+        yield conn
+        conn.close()
+
+
+container = make_container(service_provider, ConnectionProvider())
+
+client = container.get(
+    SomeClient,
+)  # `SomeClient` has Scope.APP, so it is accessible here
+client = container.get(SomeClient)  # same instance of `SomeClient`
+
+# subcontainer to access shorter-living objects
+with container() as request_container:
+    service = request_container.get(Service)
+    service = request_container.get(Service)  # same service instance
+# since we exited the context manager, the connection is now closed
+
+# new subcontainer to have a new lifespan for request processing
+with container() as request_container:
+    service = request_container.get(Service)  # new service instance
+
+container.close()
+```
+
+9. **Integrate with your framework.** If you are using a supported framework, add decorators and middleware for it.
    For more details, see [integrations doc.](https://dishka.readthedocs.io/en/latest/integrations/index.html)
 
 ```python

@@ -1,5 +1,6 @@
 __all__ = [
     "FromDishka",
+    "TaskiqProvider",
     "inject",
     "setup_dishka",
 ]
@@ -113,7 +114,6 @@ def _inject_wrapper(
         wrapper.__module__ = wrap_injection.__module__
 
     return wrapper
-
 
 
 def setup_dishka(

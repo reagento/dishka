@@ -48,10 +48,3 @@ def hint_to_dependency_key(hint: Any) -> DependencyKey:
     if from_component is None:
         return DependencyKey(args[0], None)
     return DependencyKey(args[0], from_component.component)
-
-
-def hints_to_dependency_keys(hints: list[Any]) -> list[DependencyKey]:
-    return [
-        hint_to_dependency_key(type_hint)
-        for type_hint in hints
-    ]

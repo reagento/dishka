@@ -165,7 +165,7 @@ def test_generic_validation_fail():
     provider.provide(EventEmitterImpl, provides=EventEmitter)
     provider.provide(factory_invalid)
     with pytest.raises(GraphMissingFactoryError):
-        assert make_container(provider)
+        make_container(provider)
 
 
 def type_var_factory(type_: type[T]) -> EventEmitter[T]:
@@ -209,7 +209,6 @@ def test_passing_type_var_decorator():
     assert container.get(int) == (int, 1, A(42, y=42))
 
 
-
 def func_with_type(param: type[T], param2: type[int]) -> A[T]:
     return param, param2
 
@@ -225,11 +224,15 @@ def test_provide_type_non_generic():
 
 
 T2 = TypeVar("T2")
+
+
 class Multi(Generic[T, T2]):
     pass
 
+
 def func_with_at2(b: type[T2]) -> Multi[int, A[T2]]:
     return b
+
 
 def func_with_t2(b: type[T2]) -> Multi[int, T2]:
     return b

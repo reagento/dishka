@@ -3,10 +3,10 @@
 arq
 ================
 
-Though it is not required, you can use dishka-taskiq integration. It features:
+Though it is not required, you can use *dishka-arq* integration. It features:
 
-* automatic REQUEST scope management using middleware
-* injection of dependencies into task handler function using decorator
+* automatic *REQUEST* scope management using middleware
+* injection of dependencies into task handler function using decorator.
 
 
 How to use
@@ -35,7 +35,7 @@ How to use
     ):
         ...
 
-4. Setup dishka integration on your Worker class or directly on WorkerSettings
+4. Setup ``dishka`` integration on your ``Worker`` class or directly on ``WorkerSettings``
 
 .. code-block:: python
 

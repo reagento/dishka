@@ -1,5 +1,3 @@
-from typing import Annotated
-
 from fastapi import APIRouter
 
 from dishka.integrations.fastapi import (

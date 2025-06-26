@@ -1,4 +1,4 @@
-from typing import Iterable
+from collections.abc import Iterable
 
 from dishka import (
     Provider,
@@ -6,12 +6,13 @@ from dishka import (
     alias,
     provide,
 )
+
 from .api_client import FakeWarehouseClient
 from .db import FakeCommitter, FakeProductGateway, FakeUserGateway
 from .use_cases import (
     AddProductsInteractor,
-    ProductGateway,
     Committer,
+    ProductGateway,
     UserGateway,
     WarehouseClient,
 )

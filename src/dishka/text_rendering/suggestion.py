@@ -1,15 +1,17 @@
 from collections.abc import Sequence
 
-from dishka.dependency_source import Factory
+from dishka.entities.factory_type import FactoryData
 from dishka.entities.key import DependencyKey
-from .name import get_name
+from .name import get_key_name, get_name, get_source_name
 
 
 def render_suggestions_for_missing(
-        requested_for: Factory | None,
-        requested_key: DependencyKey,
-        suggest_other_scopes: Sequence[Factory],
-        suggest_other_components: Sequence[Factory],
+    requested_for: FactoryData | None,
+    requested_key: DependencyKey,
+    suggest_other_scopes: Sequence[FactoryData],
+    suggest_other_components: Sequence[FactoryData],
+    suggest_abstract_factories: Sequence[FactoryData],
+    suggest_concrete_factories: Sequence[FactoryData],
 ) -> str:
     suggestion = ""
     if suggest_other_scopes:
@@ -30,4 +32,39 @@ def render_suggestions_for_missing(
             for f in suggest_other_components
         )
         suggestion += f"\n * Try using {components_str}"
+
+    if suggest_abstract_factories:
+        abstract_names = ""
+        for factory in suggest_abstract_factories:
+            source_name = get_source_name(factory)
+            provides_name = get_key_name(factory.provides)
+            abstract_names += "(" + provides_name
+            if source_name:
+                abstract_names += ", " + source_name
+            abstract_names += ");"
+
+        suggestion += "\n * Try use `AnyOf` "
+        suggestion += "or changing the requested dependency to a more abstract"
+        suggestion += ". Found factories for more abstract dependencies: "
+        suggestion += abstract_names
+
+    if suggest_concrete_factories:
+        concreate_names = ""
+        for factory in suggest_concrete_factories:
+            source_name = get_source_name(factory)
+            provides_name = get_key_name(factory.provides)
+            concreate_names += "(" + provides_name
+            if source_name:
+                concreate_names += ", " + source_name
+            concreate_names += ");"
+
+        deb_name = get_name(requested_key.type_hint, include_module=True)
+
+        suggestion += "\n * Try use `WithParents` "
+        suggestion += "or changing `provides` to "
+        suggestion += f"`{deb_name}`"
+
+        suggestion += ". Found factories for more concrete dependencies: "
+        suggestion += concreate_names
+
     return suggestion

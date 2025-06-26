@@ -6,11 +6,20 @@ from dishka.text_rendering import get_name
 
 
 class NotAFactoryError(TypeError, DishkaError):
-    def __init__(self, attempted_factory_type: type) -> None:
-        self.type = attempted_factory_type
+    def __init__(self, attempted_factory: Any) -> None:
+        self.attempted = attempted_factory
 
     def __str__(self) -> str:
-        return f"Cannot use {self.type} as a factory"
+        return f"Cannot use {self.attempted!r} as a factory."
+
+
+class CannotUseProtocolError(NotAFactoryError):
+    def __str__(self) -> str:
+        return (
+            f"Cannot use {self.attempted} as a factory.\n"
+            f"Tip: seems that this is a Protocol. "
+            "Please subclass it and provide the subclass."
+        )
 
 
 class UnsupportedGeneratorReturnTypeError(TypeError, DishkaError):
@@ -138,6 +147,6 @@ class IndependentDecoratorError(ValueError, DishkaError):
     def __str__(self) -> str:
         name = get_name(self.source, include_module=True)
         return (
-            f"Decorator {name} does not depends on provided type.\n"
+            f"Decorator {name} does not depend on provided type.\n"
             f"Did you mean @provide instead of @decorate?"
         )

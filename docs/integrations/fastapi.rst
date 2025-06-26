@@ -3,15 +3,21 @@
 FastAPI
 ===========================================
 
-Though it is not required, you can use dishka-fastapi integration. It features:
+Though it is not required, you can use *dishka-fastapi* integration. It features:
 
-* automatic REQUEST and SESSION scope management using middleware
+* automatic *REQUEST* and *SESSION* scope management using middleware
 * passing ``Request`` object as a context data to providers for both **Websockets** and **HTTP** requests
-* automatic injection of dependencies into handler function
+* automatic injection of dependencies into handler function.
 
 
 How to use
 ****************
+
+.. note::
+    We suppose that you are using ``AsyncContainer`` with ``FastAPI``.
+    If it is not right and you are using sync ``Container``, the overall approach is the same,
+    but there are few corrections, see :ref:`below<fastapi_sync>`.
+
 
 1. Import
 
@@ -26,7 +32,7 @@ How to use
     )
     from dishka import make_async_container, Provider, provide, Scope
 
-2. Create provider. You can use ``fastapi.Request`` as a factory parameter to access on REQUEST-scope , and ``fastapi.WebSocket`` on ``SESSION`` scope.
+2. Create provider. You can use ``fastapi.Request`` as a factory parameter to access on *REQUEST*-scope, and ``fastapi.WebSocket`` on *SESSION*-scope
 
 .. code-block:: python
 
@@ -35,7 +41,7 @@ How to use
         def create_x(self, request: Request) -> X:
              ...
 
-3. *(optional)* Set route class to each of your fastapi routers to enable automatic injection (it works only for HTTP, not for websockets).
+2a. *(optional)* Set route class to each of your fastapi routers to enable automatic injection (it works only for HTTP, not for websockets)
 
 .. code-block:: python
 
@@ -51,7 +57,7 @@ How to use
     ) -> Response:
         ...
 
-3a. *(optional)* decorate them using ``@inject`` if you are not using DishkaRoute or use websockets.
+3a. *(optional)* decorate them using ``@inject`` if you are not using ``DishkaRoute`` or use websockets
 
 .. code-block:: python
 
@@ -63,7 +69,7 @@ How to use
         ...
 
 
-4. *(optional)* Use ``FastapiProvider()`` when creating container if you are going to use ``fastapi.Request`` or ``fastapi.WebSocket`` in providers.
+4. *(optional)* Use ``FastapiProvider()`` when creating container if you are going to use ``fastapi.Request`` or ``fastapi.WebSocket`` in providers
 
 .. code-block:: python
 
@@ -81,7 +87,7 @@ How to use
 
     app = FastAPI(lifespan=lifespan)
 
-5. Setup dishka integration.
+6. Setup ``dishka`` integration.
 
 .. code-block:: python
 
@@ -93,9 +99,9 @@ Websockets
 
 .. include:: _websockets.rst
 
-In fastapi your view function is called once per connection and then you retrieve messages in loop.
-So, ``inject`` decorator can be only used to retrieve SESSION-scoped objects.
-To achieve REQUEST-scope you can enter in manually:
+In ``FastAPI`` your view function is called once per connection and then you retrieve messages in loop.
+So, ``inject`` decorator can be only used to retrieve *SESSION*-scoped objects.
+To achieve *REQUEST*-scope you can enter in manually:
 
 .. code-block:: python
 
@@ -112,3 +118,49 @@ To achieve REQUEST-scope you can enter in manually:
             async with container() as request_container:
                 b = await request_container.get(B)  # object with Scope.REQUEST
 
+
+Auto-injection is not available for websockets.
+
+.. _fastapi_sync:
+
+Using with sync Container
+**********************************
+
+If you are using sync ``Container``, created using ``make_container`` function, you should change several things:
+
+* use ``inject_sync`` instead of ``inject`` function
+* use ``DishkaSyncRoute`` instead of ``DishkaRoute`` if you are using autoinjection
+* use ``Container`` in websocket handler instead of ``AsyncContainer`` and normal ``with`` instead of ``async with``.
+
+
+..  code-block:: python
+
+    from dishka.integrations.fastapi import (
+        FromDishka,
+        FastapiProvider,
+        inject_sync,
+        setup_dishka,
+    )
+    from dishka import make_container, Provider, provide, Scope
+
+
+    router = APIRouter()
+
+
+    @router.get('/')
+    @inject_sync
+    def endpoint(
+        gateway: FromDishka[Gateway],
+    ) -> ResponseModel:
+        ...
+
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        yield
+        app.state.dishka_container.close()
+
+    app = FastAPI(lifespan=lifespan)
+    app.include_router(router)
+    container = make_container(YourProvider(), FastapiProvider())
+    setup_dishka(container=container, app=app)

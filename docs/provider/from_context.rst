@@ -25,19 +25,28 @@ You can put some data manually when entering scope and rely on it in your provid
         pass
 
 
-* Do you want to override factory with ``from_context``? To do this, specify the parameter ``override=True``. This can be checked when passing proper ``validation_settings`` when creating container.
+Do you want to override factory with ``from_context``? To do this, specify the parameter ``override=True``. This can be checked when passing proper ``validation_settings`` when creating container.
 
 .. code-block:: python
 
-    from dishka import provide, from_context, Provider, Scope, make_container
-    class MyProvider(Provider):
-        scope=Scope.APP
+    from dishka import from_context, Provider, Scope, make_container, provide
 
-        @provide
-        def get_int(self) -> int:
-            return 1
+    class Config: ...
 
-        a_override = from_context(provides=int, override=True)
+    class MainProvider(Provider):
+        scope = Scope.APP
+        config = provide(Config)
 
-    container = make_container(MyProvider(), context={int: 2})
-    a = container.get(int)  # 2
+    class TestProvider(Provider):
+        scope = Scope.APP
+        config_override = from_context(provides=Config, override=True)
+
+    prod_container = make_container(MainProvider())
+
+    test_config = Config()
+    test_container = make_container(
+        MainProvider(),
+        TestProvider(),
+        context={Config: test_config}
+    )
+    assert test_container.get(Config) is test_config  # True

@@ -38,7 +38,7 @@ Application: TypeAlias = FastStream | AsgiFastStream  # type: ignore[no-redef,mi
 
 try:
     # import works only if fastapi is installed
-    from faststream._internal.fastapi import StreamRouter, Context
+    from faststream._internal.fastapi import Context, StreamRouter
 
 except ImportError:
     from faststream import Context
@@ -72,7 +72,8 @@ def setup_dishka(
     """
     if (app and broker) or (not app and not broker):
         raise ValueError(  # noqa: TRY003
-            "You must provide either app or broker to setup dishka integration.",
+            "You must provide either app or broker "
+            "to setup dishka integration.",
         )
 
     if finalize_container:
@@ -94,9 +95,9 @@ def setup_dishka(
     broker.insert_middleware(DishkaMiddleware(container))
 
     if auto_inject:
-        broker.config.fd_config.call_decorators = (  # noqa: SLF001
+        broker.config.fd_config.call_decorators = (
             inject,
-            *broker.config.fd_config.call_decorators,  # noqa: SLF001
+            *broker.config.fd_config.call_decorators,
         )
 
 
@@ -137,7 +138,6 @@ class _DishkaMiddleware(BaseMiddleware):
                 )
 
 
-
 T = TypeVar("T")
 P = ParamSpec("P")
 
@@ -154,17 +154,16 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
         func=func,
         is_async=True,
         additional_params=additional_params,
-        container_getter=lambda _, kwargs: kwargs[param_name].get_local("dishka"),
+        container_getter=lambda _, p: p[param_name].get_local("dishka"),
     )
 
 
 def _find_context_param(func: Callable[P, T]) -> str | None:
     hints = get_type_hints(func)
-    context_hint = next(
+    return next(
         (name for name, hint in hints.items() if hint is ContextRepo),
         None,
     )
-    return context_hint
 
 
 DISHKA_CONTEXT_PARAM = Parameter(

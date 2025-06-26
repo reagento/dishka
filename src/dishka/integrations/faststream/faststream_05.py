@@ -33,11 +33,6 @@ class FastStreamProvider(Provider):
     message = from_context(StreamMessage, scope=Scope.REQUEST)
 
 
-FASTSTREAM_04 = FASTSTREAM_VERSION.startswith("0.4")
-FASTSTREAM_05 = FASTSTREAM_VERSION.startswith("0.5")
-FASTSTREAM_LATES = not FASTSTREAM_04 and not FASTSTREAM_05
-
-
 if FASTSTREAM_VERSION < "0.5.16":
     warnings.warn(
         "FastStream < 0.5.16 is deprecated and integration will be removed"

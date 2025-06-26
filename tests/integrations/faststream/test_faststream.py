@@ -9,7 +9,6 @@ from faststream.nats import NatsBroker, TestNatsBroker
 
 from dishka import make_async_container
 from dishka.integrations.faststream import (
-    FASTSTREAM_04,
     FromDishka,
     inject,
     setup_dishka,
@@ -78,10 +77,6 @@ async def test_request_dependency(app_provider: AppProvider) -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(
-    FASTSTREAM_04,
-    reason="Requires FastStream 0.5.0+",
-)
 async def test_autoinject_before_subscriber(app_provider: AppProvider) -> None:
     broker = NatsBroker()
     app = FastStream(broker)
@@ -101,10 +96,6 @@ async def test_autoinject_before_subscriber(app_provider: AppProvider) -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(
-    FASTSTREAM_04,
-    reason="Requires FastStream 0.5.0+",
-)
 async def test_autoinject_after_subscriber(app_provider: AppProvider) -> None:
     broker = NatsBroker()
     app = FastStream(broker)
@@ -124,10 +115,6 @@ async def test_autoinject_after_subscriber(app_provider: AppProvider) -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(
-    FASTSTREAM_04,
-    reason="Requires FastStream 0.5.0+",
-)
 async def test_faststream_with_broker(app_provider: AppProvider) -> None:
     broker = NatsBroker()
     broker.subscriber("test")(get_with_request)

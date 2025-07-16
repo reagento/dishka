@@ -9,7 +9,7 @@ import warnings
 from collections.abc import Callable, Generator
 from functools import partial
 from inspect import Parameter
-from typing import Annotated, Any, Final, TypeVar
+from typing import Annotated, Any, Final, TypeVar, overload
 
 from taskiq import (
     AsyncBroker,
@@ -71,6 +71,18 @@ def _get_container(
     context: Annotated[Context, TaskiqDepends()],
 ) -> Generator[AsyncContainer, None, None]:
     yield context.message.labels[CONTAINER_NAME]
+
+
+@overload
+def inject(
+    func: _F, *, patch_module: bool = False,
+) -> _F: ...
+
+
+@overload
+def inject(
+    func: None = ..., *, patch_module: bool = False,
+) -> Callable[[_F], _F]: ...
 
 
 def inject(

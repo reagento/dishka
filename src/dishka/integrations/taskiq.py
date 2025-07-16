@@ -9,7 +9,7 @@ import warnings
 from collections.abc import Callable, Generator
 from functools import partial
 from inspect import Parameter
-from typing import Annotated, Any, Final
+from typing import Annotated, Any, Final, TypeVar
 
 from taskiq import (
     AsyncBroker,
@@ -24,6 +24,9 @@ from dishka import AsyncContainer, FromDishka, Provider, Scope, from_context
 from dishka.integrations.base import wrap_injection
 
 CONTAINER_NAME: Final = "dishka_container"
+
+
+_F = TypeVar("_F", bound=Callable[..., Any])
 
 
 class TaskiqProvider(Provider):
@@ -71,10 +74,10 @@ def _get_container(
 
 
 def inject(
-    func: Callable[..., Any] | None = None,
+    func: _F | None = None,
     *,
     patch_module: bool = False,
-) -> Callable[..., Any]:
+) -> _F | Callable[[_F], _F]:
     if func is None:
         return partial(_inject_wrapper, patch_module=patch_module)
 

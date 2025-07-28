@@ -82,6 +82,7 @@ async def test_request_dependency(app_provider: AppProvider):
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
 
+
 def get_compat(
         a: FromDishka[RequestDep],
         mock: FromDishka[Mock],

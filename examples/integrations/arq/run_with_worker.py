@@ -1,9 +1,10 @@
 import asyncio
 import logging
-from typing import Protocol, Annotated, Any
+from typing import Any, Protocol
 
 from arq.worker import create_worker
-from dishka import Provider, Scope, provide, make_async_container, FromDishka
+
+from dishka import FromDishka, Provider, Scope, make_async_container, provide
 from dishka.integrations.arq import inject, setup_dishka
 
 logger = logging.getLogger(__name__)

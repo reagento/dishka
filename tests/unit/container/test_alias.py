@@ -1,3 +1,4 @@
+import math
 from collections.abc import AsyncIterable, Iterable
 from unittest.mock import Mock
 
@@ -71,16 +72,16 @@ def test_implicit_no_source():
     provider = Provider(scope=Scope.APP)
     provider.provide_all(AnyOf[float, str])
     container = make_container(provider)
-    assert container.get(float) == 0.0
-    assert container.get(str) == 0.0
+    assert math.isclose(container.get(float), 0.0, abs_tol=1e-9)
+    assert math.isclose(container.get(str), 0.0, abs_tol=1e-9)
 
 
 def test_implicit_all():
     provider = Provider(scope=Scope.APP)
     provider.provide_all(AnyOf[float, str])
     container = make_container(provider)
-    assert container.get(float) == 0.0
-    assert container.get(str) == 0.0
+    assert math.isclose(container.get(float), 0.0, abs_tol=1e-9)
+    assert math.isclose(container.get(str), 0.0, abs_tol=1e-9)
 
 
 def test_implicit_generator():

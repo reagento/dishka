@@ -167,6 +167,33 @@ when declaring a dependency by ``FromComponent`` type annotation.
     container.get(float)  # returns 0.1
 
 
+You can use ``Annotated[T, FromComponent(...)]`` in factory return type to provide this factory
+in specified component, instead of marking ``component = "component_name"`` in provider itself:
+
+.. code-block:: python
+    from typing import Annotated
+    from dishka import FromComponent, make_container, Provider, provide, Scope
+
+    class MainProvider(Provider):
+
+        @provide(scope=Scope.APP)
+        def foobar(self, a: Annotated[int, FromComponent("X")]) -> float:
+            return a/10
+
+        @provide(scope=Scope.APP)
+        def foo(self) -> Annotated[int, FromComponent("X")]:
+            return 1
+
+    container = make_container(MainProvider())
+    container.get(float)  # returns 0.1
+
+.. warning::
+    Although dishka allows such declarations, it is considered to be a bad practice,
+    because it allows you to mix factories related to different components in
+    one provider. Use it only if your components consist of max of 1-2 factories and
+    split them in every other case.
+
+
 ``alias`` now can be used across components without changing the type:
 
 .. code-block:: python
@@ -176,6 +203,6 @@ when declaring a dependency by ``FromComponent`` type annotation.
 
 .. note::
     In frameworks integrations ``FromDishka[T]`` is used to get an object
-from default component. To use other component you can use the same syntax
-with annotated ``Annotated[T, FromComponent("X")]``.
+    from default component. To use other component you can use the same syntax
+    with annotated ``Annotated[T, FromComponent("X")]``.
 

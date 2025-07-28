@@ -3,7 +3,9 @@ target-version = "py310"
 src = ["src"]
 
 include = ["src/**.py", "tests/**.py"]
-exclude = ["src/dishka/_adaptix/**"]
+exclude = [
+    "src/dishka/_adaptix/**",
+]
 
 lint.select = [
     "ALL"
@@ -37,7 +39,17 @@ lint.ignore = [
 ]
 
 [lint.per-file-ignores]
-"tests/**" = ["TID252", "PLR2004", "S101", "TRY003"]
+"tests/**" = [
+    "TID252",
+    "PLR2004",
+    "S101",
+    "TRY003",
+    "PLW1641",
+]
+
+[per-file-target-version]
+"tests/unit/container/type_alias_type_provider.py" = "py312"
+"tests/unit/container/pep695_new_syntax.py" =  "py312"
 
 [lint.isort]
 no-lines-before = ["local-folder"]

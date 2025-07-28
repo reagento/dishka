@@ -30,6 +30,7 @@ master_doc = 'index'
 extensions = [
     'sphinx_copybutton',
     'sphinx.ext.autodoc',
+    'sphinx_design',
 ]
 autodoc_type_aliases = {
 }

@@ -95,6 +95,7 @@ EXPECTED_GRAPH = [
 def p_decorator(p: P) -> P:
     return p
 
+
 def test_deps():
     provider = Provider(scope=Scope.APP)
     provider.provide(A)

@@ -2,7 +2,11 @@ from collections.abc import Iterable
 from typing import NewType
 from unittest.mock import Mock
 
-from dishka import Provider, Scope, provide
+from dishka import Provider, Scope, from_context, provide
+from dishka.entities.depends_marker import FromDishka
+
+ContextDep = NewType("ContextDep", str)
+UserDep = NewType("UserDep", str)
 
 AppDep = NewType("AppDep", str)
 APP_DEP_VALUE = "APP"
@@ -17,11 +21,14 @@ AppMock = NewType("AppMock", Mock)
 
 
 class AppProvider(Provider):
+    context = from_context(provides=ContextDep, scope=Scope.REQUEST)
+
     def __init__(self) -> None:
         super().__init__()
         self.app_released = Mock()
         self.request_released = Mock()
         self.websocket_released = Mock()
+        self.db_session_released = Mock()
         self.mock = Mock()
         self.app_mock = AppMock(Mock())
 
@@ -39,6 +46,11 @@ class AppProvider(Provider):
     def websocket(self) -> Iterable[WebSocketDep]:
         yield WS_DEP_VALUE
         self.websocket_released()
+
+    @provide(scope=Scope.REQUEST)
+    def user(self, context: FromDishka[ContextDep]) -> Iterable[UserDep]:
+        yield f"user_id.from_context({context})"
+        self.db_session_released()
 
     @provide(scope=Scope.REQUEST)
     def get_mock(self) -> Mock:

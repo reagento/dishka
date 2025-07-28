@@ -96,11 +96,10 @@ class _TypeMatcher:
 
         if not t1.__bound__ and not t1.__constraints__:
             return True
-        if t1.__bound__:
+        elif t1.__bound__:
             return self._is_bound_broader(t1, t2)
-        elif t1.__constraints__:
+        else:
             return self._is_constraint_broader(t1, t2)
-        return False
 
     def _is_literal_same_types(
         self, t_literal: Any, types_to_check: Iterable[Any],

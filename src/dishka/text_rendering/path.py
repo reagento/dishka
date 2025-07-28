@@ -2,10 +2,10 @@ from collections.abc import Sequence
 from typing import NamedTuple
 
 from dishka.entities.component import Component
-from dishka.entities.factory_type import FactoryData, FactoryType
+from dishka.entities.factory_type import FactoryData
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
-from dishka.text_rendering import get_name
+from dishka.text_rendering.name import get_key_name, get_source_name
 
 
 class PathRenderer:
@@ -16,17 +16,17 @@ class PathRenderer:
         if length == 1:
             return "⥁ "
         elif index == 0:
-            return "╭─▷─╮ "
+            return "╭─>─╮ "
         elif index + 1 < length:
             return "│   ▼ "
         else:
-            return "╰─◁─╯ "
+            return "╰─<─╯ "
 
     def _arrow_line(self, index: int, length: int) -> str:
         if index + 1 < length:
             return "▼   "
         else:
-            return "╰─▷ "
+            return "╰─> "
 
     def _arrow(self, index: int, length: int) -> str:
         if self.cycle:
@@ -35,25 +35,13 @@ class PathRenderer:
 
     def _switch_arrow(self, index: int, length: int) -> str:
         if self.cycle:
-            if index> 0:
+            if index > 0:
                 return "│   │ "
             return "      "
         return "│   "
 
     def _switch_filler(self) -> str:
         return " "
-
-    def _key(self, key: DependencyKey) -> str:
-        return get_name(key.type_hint, include_module=True)
-
-    def _source(self, factory: FactoryData) -> str:
-        source = factory.source
-        if source == factory.provides.type_hint:
-            return ""
-        if factory.type is FactoryType.ALIAS:
-            return "alias"
-
-        return get_name(source, include_module=False)
 
     def _switch(
             self, scope: BaseScope | None, component: Component | None,
@@ -70,7 +58,7 @@ class PathRenderer:
             Row(
                 row_num,
                 self._arrow(row_num, row_count),
-                [self._key(factory.provides), self._source(factory)],
+                [get_key_name(factory.provides), get_source_name(factory)],
                 (factory.scope, factory.provides.component),
             )
             for row_num, factory in enumerate(path)
@@ -80,7 +68,7 @@ class PathRenderer:
                 Row(
                     row_count - 1,
                     self._arrow(row_count-1, row_count),
-                    [self._key(last), "???"],
+                    [get_key_name(last), "???"],
                     (rows[-1].dest[0], last.component),
                 ),
             )

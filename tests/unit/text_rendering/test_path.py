@@ -38,9 +38,9 @@ def test_cycle(cycle_renderer):
     res = textwrap.dedent(res)
     assert res == textwrap.dedent("""\
             ◈ None, component=None ◈
-      ╭─▷─╮ int   A.foo
+      ╭─>─╮ int   A.foo
       │   ▼ int   A.foo
-      ╰─◁─╯ int   A.foo
+      ╰─<─╯ int   A.foo
     """)
 
 
@@ -63,16 +63,15 @@ def test_cycle_2scopes(cycle_renderer):
         override=False,
     )
 
-
     res = cycle_renderer.render([app_factory, factory, factory, factory])
     res = textwrap.dedent(res)
     assert res == textwrap.dedent("""\
             ◈ Scope.APP, component='' ◈
-      ╭─▷─╮ int   A.foo
+      ╭─>─╮ int   A.foo
       │   │ ◈ Scope.REQUEST, component='' ◈
       │   ▼ int   A.foo
       │   ▼ int   A.foo
-      ╰─◁─╯ int   A.foo
+      ╰─<─╯ int   A.foo
     """)
 
 
@@ -112,8 +111,9 @@ def test_linear(linear_renderer):
     │   ◈ Scope.APP, component='' ◈
     ▼   int   A.foo
     ▼   int   A.foo
-    ╰─▷ int   ???  
+    ╰─> int   ???  
     """)  # noqa: W291
+
 
 def test_linear_2scopes(linear_renderer):
     foo = A().foo
@@ -145,5 +145,5 @@ def test_linear_2scopes(linear_renderer):
     │   ◈ Scope.REQUEST, component='' ◈
     ▼   int   A.foo
     ▼   int   A.foo
-    ╰─▷ int   ???  
+    ╰─> int   ???  
     """)  # noqa: W291

@@ -1,14 +1,17 @@
 import logging
 import os
 import random
-from typing import Iterable
+from collections.abc import Iterable
 
 import telebot
 from telebot.types import Message
 
-from dishka import Provider, Scope, provide, make_container
+from dishka import Provider, Scope, make_container, provide
 from dishka.integrations.telebot import (
-    FromDishka, inject, setup_dishka, TelebotProvider,
+    FromDishka,
+    TelebotProvider,
+    inject,
+    setup_dishka,
 )
 
 

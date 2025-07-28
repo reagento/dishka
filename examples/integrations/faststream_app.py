@@ -3,7 +3,9 @@ from faststream.nats import NatsBroker, NatsMessage
 
 from dishka import Provider, Scope, make_async_container, provide
 from dishka.integrations.faststream import (
-    FastStreamProvider, FromDishka, setup_dishka,
+    FastStreamProvider,
+    FromDishka,
+    setup_dishka,
 )
 
 

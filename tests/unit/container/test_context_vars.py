@@ -2,6 +2,7 @@ import pytest
 
 from dishka import (
     DEFAULT_COMPONENT,
+    STRICT_VALIDATION,
     DependencyKey,
     Provider,
     Scope,
@@ -46,7 +47,7 @@ def test_not_found():
     provider.from_context(provides=int, scope=Scope.APP)
     container = make_container(provider)
     with pytest.raises(NoContextValueError):
-        assert container.get(int) == 1
+        container.get(int)
 
 
 @pytest.mark.asyncio
@@ -55,7 +56,7 @@ async def test_not_found_async():
     provider.from_context(provides=int, scope=Scope.APP)
     container = make_async_container(provider)
     with pytest.raises(NoContextValueError):
-        assert await container.get(int) == 1
+        await container.get(int)
 
 
 @pytest.mark.asyncio
@@ -134,3 +135,16 @@ async def test_automatic_context_async():
 
     c = make_async_container(MyProvider(), context={int: 1})
     assert await c.get(str) == "1"
+
+
+def test_automatic_context_override():
+    class MyProvider(Provider):
+        scope = Scope.APP
+        x = from_context(int)
+
+    c = make_container(
+        MyProvider(),
+        context={int: 1},
+        validation_settings=STRICT_VALIDATION,
+    )
+    assert c.get(int) == 1

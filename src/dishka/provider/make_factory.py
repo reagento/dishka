@@ -22,6 +22,7 @@ from inspect import (
     signature,
     unwrap,
 )
+from types import UnionType
 from typing import (
     Annotated,
     Any,
@@ -467,6 +468,9 @@ def make_factory(
         raise CannotUseProtocolError(source)
 
     source_origin = get_origin(source)
+
+    if source_origin is UnionType:
+        raise NotAFactoryError(source)
 
     if isclass(source) or isclass(source_origin):
         return _make_factory_by_class(

@@ -577,6 +577,7 @@ def test_protocol_cannot_be_source_in_provide(provide_func, proto):
         ClassVar[str],
         Optional[str],  # noqa: UP007
         Literal["5"],
+        str | None,
     ],
 )
 def test_generic_alias_not_a_factory(type_hint):

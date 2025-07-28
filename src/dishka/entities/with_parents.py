@@ -5,6 +5,7 @@ from enum import Enum
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
+    Any,
     Final,
     Generic,
     Protocol,
@@ -15,6 +16,7 @@ from typing import (
 from dishka._adaptix.common import TypeHint
 from dishka._adaptix.feature_requirement import (
     HAS_PY_311,
+    HAS_PY_312,
     HAS_TV_TUPLE,
     HAS_UNPACK,
 )
@@ -61,6 +63,19 @@ else:
     def is_type_var_tuple(obj: TypeHint) -> bool:
         return False
 
+
+if HAS_PY_312:
+    from types import (  # type: ignore[attr-defined, unused-ignore]
+        get_original_bases,
+    )
+else:
+
+    def get_original_bases(cls: type, /) -> tuple[Any, ...]:
+        try:
+            return cls.__dict__.get("__orig_bases__", cls.__bases__)
+        except AttributeError:
+            msg = f"Expected an instance of type, not {type(cls).__name__!r}"
+            raise TypeError(msg) from None
 
 def has_orig_bases(obj: TypeHint) -> bool:
     return hasattr(obj, "__orig_bases__")
@@ -182,13 +197,10 @@ class ParentsResolver:
         ]
 
     def _get_parents(self, tp: TypeHint) -> list[TypeHint]:
-        if hasattr(tp, "__orig_bases__"):
-            return [
-                parent
-                for parent in tp.__orig_bases__
-                if strip_alias(parent) not in (Generic, Protocol)
-            ]
-        return list(tp.__bases__)
+        return [
+            parent for parent in get_original_bases(tp)
+            if strip_alias(parent) not in (Generic, Protocol)
+        ]
 
 
 if TYPE_CHECKING:

@@ -288,3 +288,27 @@ def test_pep695_generic_inheritance() -> None:
 
     assert type(container.get(Base[int]).value) is int
     assert type(container.get(Base[str]).value) is str
+
+
+def test_specific_generic_parents() -> None:
+    T = TypeVar("T")
+
+    class Repo(Generic[T], ABC):
+        ...
+
+    class IntRepo(Repo[int], ABC):
+        ...
+
+    class ConcreteRepoBase:
+        ...
+
+    class ConcreteRepo(ConcreteRepoBase, IntRepo):
+        ...
+
+    class MyProvider(Provider):
+        scope = Scope.APP
+        deps = provide(WithParents[ConcreteRepo])
+
+    container = make_container(MyProvider())
+
+    assert isinstance(container.get(IntRepo), ConcreteRepo)

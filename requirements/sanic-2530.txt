@@ -1,0 +1,4 @@
+-r asgi.txt
+sanic==25.3.0
+sanic-testing==24.6.0
+setuptools==70.1.0 # sanic==25.3.0 depends on setuptools>=70.1.0

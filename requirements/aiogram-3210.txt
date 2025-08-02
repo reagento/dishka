@@ -1,0 +1,2 @@
+-r test.txt
+aiogram==3.21.0

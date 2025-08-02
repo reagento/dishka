@@ -77,7 +77,10 @@ class Decorator:
             args = tuple(
                 typevar_replacement.get(t, t)
                 for t in get_args(old_key.type_hint)
+                if isinstance(t, TypeVar)
             )
+            if not args:
+                return old_key
             return DependencyKey(
                 old_key.type_hint[args],
                 self.provides.component,

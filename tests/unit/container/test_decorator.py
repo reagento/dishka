@@ -253,6 +253,33 @@ def test_generic_decorator_generic_factory():
     assert a.a.value == ""
 
 
+
+class GenericTwoArgs(Generic[T]):
+    def __init__(self, value: object, others: object) -> None:
+        self.value = value
+        self.others = others
+
+
+def test_generic_multiple_args():
+    # https://github.com/reagento/dishka/issues/498
+    # one of the args in generic decorator can be concrete generic
+    class MyProvider(Provider):
+        scope = Scope.APP
+        value = provide(lambda self: 42, provides=int)
+        others = provide(lambda self: [17], provides=list[int])
+
+        @decorate
+        def dec(self, value: Tint, others: list[int]) -> Tint:
+            return GenericTwoArgs(value, others)
+
+    container = make_container(MyProvider())
+    # we expect double decoration here
+    a = container.get(int)
+    assert isinstance(a, GenericTwoArgs)
+    assert a.value == 42
+    assert a.others == [17]
+
+
 def test_decorate_alias():
 
     class MyProvider(Provider):

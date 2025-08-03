@@ -1,0 +1,13 @@
+[versions]
+0096 = [
+    "fastapi==0.96.0",
+    "-r", "requirements/asgi.txt",
+]
+0109 = [
+    "fastapi==0.109.0",
+    "-r", "requirements/asgi.txt",
+]
+latest = [
+    "fastapi",
+    "-r", "requirements/asgi.txt",
+]

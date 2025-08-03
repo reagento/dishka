@@ -1,4 +1,0 @@
--r test.txt
-grpcio==1.64.1
-grpcio-tools==1.64.1
-grpcio-testing==1.64.1

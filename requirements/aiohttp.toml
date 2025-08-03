@@ -1,0 +1,4 @@
+[versions]
+31215 = ["aiohttp==3.12.15"]
+393 = ["aiohttp==3.9.3"]
+latest = ["aiohttp"]

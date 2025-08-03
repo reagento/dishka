@@ -1,0 +1,5 @@
+[versions]
+330 = ["aiogram==3.3.0"]
+3140 = ["aiogram==3.14.0"]
+3210 = ["aiogram==3.21.0"]
+latest = ["aiogram"]

@@ -1,0 +1,19 @@
+[versions]
+047 = [
+    "faststream[nats]==0.4.7",
+    "typing-extensions==4.11.0",
+    "anyio==4.6.2",
+]
+050 = [
+    "faststream[nats]==0.5.0rc2",
+    "typing-extensions==4.11.0",
+    "anyio==4.6.2",
+]
+0529 = [
+    "faststream[nats]==0.5.29",
+    "typing-extensions==4.12.2",
+    "anyio==4.6.0",
+]
+latest = [
+    "faststream[nats]",
+]

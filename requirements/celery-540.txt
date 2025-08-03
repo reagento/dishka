@@ -1,2 +1,0 @@
--r test.txt
-celery==5.4.0

@@ -1,2 +1,0 @@
--r test.txt
-click==8.1.7

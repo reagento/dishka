@@ -1,6 +1,8 @@
 import sys
+import tomllib
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 
 import nox
 
@@ -22,8 +24,8 @@ class IntegrationEnv:
     version: str
     constraint: Constraint | None = None
 
-    def get_req(self) -> str:
-        return f"requirements/{self.library.replace('_', '-')}-{self.version}.txt"
+    def get_req(self) -> tuple[str, str]:
+        return f"requirements/{self.library}.toml", self.version
 
     def get_tests(self) -> str:
         return f"tests/integrations/{self.library}"
@@ -87,6 +89,11 @@ def integrations_base(session: nox.Session) -> None:
     session.run("pytest", "tests/integrations/base")
 
 
+def load_toml(toml: str, group: str) -> list[str]:
+    data = tomllib.loads(Path(toml).read_text(encoding="utf-8"))
+    return data["versions"][group]
+
+
 for env in INTEGRATIONS:
     @nox.session(
         name=f"{env.library}_{env.version}",
@@ -96,7 +103,12 @@ for env in INTEGRATIONS:
         if env.constraint and not env.constraint.condition():
             session.skip(env.constraint.reason)
 
-        session.install(*INSTALL_CMD, env.get_req(), silent=False)
+        session.install(
+            *INSTALL_CMD,
+            "requirements/test.txt",
+            *load_toml(*env.get_req()),
+            silent=False,
+        )
         session.run("pytest", env.get_tests())
 
 

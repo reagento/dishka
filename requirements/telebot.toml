@@ -1,0 +1,3 @@
+[versions]
+415 = ["pytelegrambotapi==4.15.4"]
+latest = ["pytelegrambotapi"]

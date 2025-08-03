@@ -1,0 +1,3 @@
+[versions]
+302 = ["Flask==3.0.2"]
+latest = ["Flask"]

@@ -1,0 +1,16 @@
+[versions]
+1641 = [
+    "grpcio==1.64.1",
+    "grpcio-tools==1.64.1",
+    "grpcio-testing==1.64.1",
+]
+1680 = [
+    "grpcio==1.68.0",
+    "grpcio-tools==1.68.0",
+    "grpcio-testing==1.68.0",
+]
+latest = [
+    "grpcio",
+    "grpcio-tools",
+    "grpcio-testing",
+]

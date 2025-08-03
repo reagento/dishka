@@ -1,0 +1,9 @@
+[versions]
+232 = [
+    "litestar==2.3.2",
+    "-r", "requirements/asgi.txt",
+]
+latest = [
+    "litestar",
+    "-r", "requirements/asgi.txt",
+]

@@ -1,0 +1,9 @@
+[versions]
+0270 = [
+    "starlette==0.27.0",
+    "-r", "requirements/asgi.txt",
+]
+latest = [
+    "starlette",
+    "-r", "requirements/asgi.txt",
+]

@@ -2,12 +2,12 @@
 047 = [
     "faststream[nats]==0.4.7",
     "typing-extensions==4.11.0",
-    "anyio==4.6.2.post1", # `anyio==4.6.2` is yanked (reason: "This was 4.5.2 code, mistagged")
+    "anyio==4.5.2", # `anyio==4.6.2` is yanked (reason: "This was 4.5.2 code, mistagged")
 ]
 050 = [
     "faststream[nats]==0.5.0rc2",
     "typing-extensions==4.11.0",
-    "anyio==4.6.2.post1", # `anyio==4.6.2` is yanked (reason: "This was 4.5.2 code, mistagged")
+    "anyio==4.5.2", # `anyio==4.6.2` is yanked (reason: "This was 4.5.2 code, mistagged")
 ]
 0529 = [
     "faststream[nats]==0.5.29",

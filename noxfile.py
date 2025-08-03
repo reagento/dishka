@@ -7,7 +7,7 @@ import nox
 nox.options.default_venv_backend = "uv"
 nox.options.reuse_existing_virtualenvs = True
 
-INSTALL_CMD = ("pytest", "pytest-cov", "-e", ".")
+INSTALL_CMD = ("pytest", "pytest-cov", "-e", ".", "-r")
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,6 +34,7 @@ def skip_major_version(version: tuple[int, int]) -> Constraint:
         f"Skip tests on python {version[0]}.{version[1]} due to compatibility issues",
         lambda: sys.version_info < version,
     )
+
 
 INTEGRATIONS = [
     IntegrationEnv("aiogram", "330", skip_major_version((3, 13))),
@@ -80,7 +81,7 @@ INTEGRATIONS = [
 def integrations_base(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,
-        "-r", "requirements/test.txt",
+        "requirements/test.txt",
         silent=False,
     )
     session.run("pytest", "tests/integrations/base")
@@ -95,7 +96,7 @@ for env in INTEGRATIONS:
         if env.constraint and not env.constraint.condition():
             session.skip(env.constraint.reason)
 
-        session.install(*INSTALL_CMD, "-r", env.get_req(), silent=False)
+        session.install(*INSTALL_CMD, env.get_req(), silent=False)
         session.run("pytest", env.get_tests())
 
 
@@ -103,7 +104,7 @@ for env in INTEGRATIONS:
 def unit(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,
-        "-r", "requirements/test.txt",
+        "requirements/test.txt",
         silent=False,
     )
     session.run("pytest", "tests/unit")
@@ -113,7 +114,7 @@ def unit(session: nox.Session) -> None:
 def real_world(session: nox.Session) -> None:
     session.install(
         *INSTALL_CMD,
-        "-r", "examples/real_world/requirements_test.txt",
+        "examples/real_world/requirements_test.txt",
         silent=False,
     )
     session.run("pytest", "examples/real_world/tests/")

@@ -2,3 +2,4 @@ uv==0.8.*
 ruff==0.12.*
 mypy==1.16.*
 nox==2025.05.01
+tomli==2.2.1 ; python_version<'3.11'

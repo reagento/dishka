@@ -1,10 +1,14 @@
 import sys
-import tomllib
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
 import nox
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 nox.options.default_venv_backend = "uv"
 nox.options.reuse_existing_virtualenvs = True

@@ -186,10 +186,12 @@ class Provider(BaseProvider):
             source: Callable[..., Any] | type,
             *,
             provides: Any = None,
+            scope: BaseScope | None = None,
     ) -> CompositeDependencySource:
         composite = decorate_on_instance(
             source=source,
             provides=provides,
+            scope=scope,
         )
         self._add_dependency_sources(str(source), composite.dependency_sources)
         return composite

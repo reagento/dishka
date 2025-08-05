@@ -299,3 +299,86 @@ def test_decorate_alias():
     a = container.get(float)
     assert isinstance(a, ADecorator)
     assert a.a == 17
+
+
+def test_decorate_subscope_valid():
+
+    class MyProvider(Provider):
+        a = provide(A, scope=Scope.APP)
+
+        @decorate(scope=Scope.REQUEST)
+        def dec(self, a: A) -> A:
+            return ADecorator(a)
+
+        @decorate(scope=Scope.ACTION)
+        def dec2(self, a: A) -> A:
+            return ADecorator(a)
+
+    container = make_container(MyProvider())
+    with pytest.raises(NoFactoryError):
+        container.get(A)
+
+    with container() as request_container:
+        with pytest.raises(NoFactoryError):
+            request_container.get(A)
+        with request_container() as step_container:
+            a1 = step_container.get(A)
+        with request_container() as step_container:
+            a2 = step_container.get(A)
+    assert isinstance(a1, ADecorator)
+    assert isinstance(a1.a, ADecorator)
+    assert a1 is not a2
+    assert a1.a is a2.a
+
+    with container() as request_container:  # noqa: SIM117
+        with request_container() as step_container:
+            a3 = step_container.get(A)
+    assert a1.a is not a3.a
+    assert a1.a.a is a2.a.a
+
+
+def test_decorate_subscope_as_dep():
+
+    class MyProvider(Provider):
+        a = provide(A, scope=Scope.APP)
+
+        @decorate(scope=Scope.REQUEST)
+        def dec(self, a: A) -> A:
+            return ADecorator(a)
+
+        @provide(scope=Scope.APP)
+        def get_int(self, a: A) -> int:
+            return 1
+
+    with pytest.raises(NoFactoryError):
+        make_container(MyProvider())
+
+
+def test_decorate_subscope_validate_dep():
+
+    class MyProvider(Provider):
+        a = provide(A, scope=Scope.APP)
+
+        @decorate(scope=Scope.REQUEST)
+        def dec(self, a: A, _: int) -> A:
+            return ADecorator(a)
+
+        @provide(scope=Scope.REQUEST)
+        def get_int(self) -> int:
+            return 1
+
+    assert make_container(MyProvider())
+
+
+def test_decorate_superscope():
+
+    class MyProvider(Provider):
+        a = provide(A, scope=Scope.REQUEST)
+
+        @decorate(scope=Scope.APP)
+        def dec(self, a: A) -> A:
+            return ADecorator(a)
+
+
+    with pytest.raises(NoFactoryError):
+        make_container(MyProvider())

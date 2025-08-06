@@ -1,4 +1,5 @@
 __all__ = [
+    "DishkaRouter",
     "FromDishka",
     "LitestarProvider",
     "inject",

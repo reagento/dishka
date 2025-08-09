@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 import warnings
-from collections.abc import Awaitable, Callable, Container
+from collections.abc import Awaitable, Callable
 from functools import partial
 from inspect import Parameter, signature
 from typing import Any, Final, NewType, ParamSpec, TypeVar, cast
@@ -35,7 +35,7 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
     else:
         additional_params = [Parameter(
             name=CONTAINER_NAME,
-            annotation=Container,
+            annotation=AsyncContainer,
             kind=Parameter.KEYWORD_ONLY,
         )]
 

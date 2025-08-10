@@ -16,9 +16,6 @@ from typing import (
 )
 
 from faststream import BaseMiddleware, FastStream, context
-from faststream.__about__ import (
-    __version__ as FASTSTREAM_VERSION,  # noqa: N812
-)
 from faststream.broker.core.usecase import BrokerUsecase as BrokerType
 from faststream.broker.message import StreamMessage
 from faststream.types import DecodedMessage
@@ -32,20 +29,14 @@ class FastStreamProvider(Provider):
     context = from_context(ContextRepo, scope=Scope.REQUEST)
     message = from_context(StreamMessage, scope=Scope.REQUEST)
 
+try:
+    # AsgiFastStream was introduced in FastStream 0.5.16
+    from faststream.asgi import AsgiFastStream
 
-if FASTSTREAM_VERSION < "0.5.16":
-    warnings.warn(
-        "FastStream < 0.5.16 is deprecated and integration will be removed"
-        " in the 1.7.0 dishka release.",
-        category=DeprecationWarning,
-        stacklevel=1,
-    )
-
+except ImportError:
     Application: TypeAlias = FastStream  # type: ignore[no-redef,misc]
 
 else:
-    from faststream.asgi import AsgiFastStream
-
     Application: TypeAlias = FastStream | AsgiFastStream  # type: ignore[no-redef,misc]
 
 try:
@@ -106,14 +97,7 @@ def setup_dishka(
         broker.add_middleware(DishkaMiddleware(container))
 
     else:
-        # FastStream 0.5 - 0.5.6
-        warnings.warn(
-            "FastStream < 0.5.6 is deprecated and integration will be removed"
-            " in the 1.7.0 dishka release.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-
+        # FastStream 0.5 - 0.5.5 versions backport
         broker._middlewares = (  # noqa: SLF001
             DishkaMiddleware(container),
             *broker._middlewares,  # noqa: SLF001

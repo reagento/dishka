@@ -51,6 +51,7 @@ INTEGRATIONS = [
     IntegrationEnv("fastapi", "latest"),
     IntegrationEnv("faststream", "050", constraint_3_13),
     IntegrationEnv("faststream", "0529"),
+    IntegrationEnv("faststream", "060"),
     IntegrationEnv("faststream", "latest"),
     IntegrationEnv("flask", "302"),
     IntegrationEnv("flask", "latest"),

@@ -100,7 +100,7 @@ def test_type_var() -> None:
 
     container = make_container(provider)
 
-    assert(
+    assert (
         container.get(A2)
         is container.get(A1[str])
     )
@@ -188,7 +188,7 @@ def test_deep_inheritance() -> None:
     provider.provide(lambda: D1(), provides=WithParents[D1])
     container = make_container(provider)
 
-    assert(
+    assert (
         container.get(D1)
         is container.get(A2[int])
         is container.get(A1[int])

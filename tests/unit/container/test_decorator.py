@@ -250,8 +250,7 @@ def test_generic_decorator_generic_factory():
     a = container.get(GenericA[str])
     assert isinstance(a, ADecorator)
     assert isinstance(a.a, GenericA)
-    assert a.a.value == ""
-
+    assert not a.a.value
 
 
 class GenericTwoArgs(Generic[T]):

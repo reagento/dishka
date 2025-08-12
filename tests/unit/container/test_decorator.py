@@ -253,7 +253,6 @@ def test_generic_decorator_generic_factory():
     assert a.a.value == ""
 
 
-
 class GenericTwoArgs(Generic[T]):
     def __init__(self, value: object, others: object) -> None:
         self.value = value

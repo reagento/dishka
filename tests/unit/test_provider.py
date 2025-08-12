@@ -494,8 +494,10 @@ def test_annotated_factory():
 
 
 def test_self():
-
-    with pytest.warns():
+    with pytest.warns(
+            Warning,
+            match="without `self` argument",
+    ):
         class P(Provider):
 
             @provide(scope=Scope.APP)
@@ -564,7 +566,7 @@ def test_protocol_cannot_be_source_in_provide(provide_func, proto):
 
     with pytest.raises(
         CannotUseProtocolError,
-        match="Cannot use.*\n.*seems that this is a Protocol.*",
+        match=r"Cannot use.*\n.*seems that this is a Protocol.*",
     ):
         class P(Provider):
             p = provide_func(proto)

@@ -16,11 +16,8 @@ How to use
 
 ..  code-block:: python
 
-    from dishka.integrations.arq import (
-        FromDishka,
-        inject,
-        setup_dishka,
-    )
+    from dishka import FromDishka
+    from dishka.integrations.arq import inject, setup_dishka
 
 2. Create provider and container as usual
 

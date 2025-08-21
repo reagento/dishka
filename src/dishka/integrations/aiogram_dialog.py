@@ -32,6 +32,7 @@ _OnProccessResultEventResultT = TypeVar("_OnProccessResultEventResultT")
 _WidgetItemT = TypeVar("_WidgetItemT")
 _WidgetT = TypeVar("_WidgetT", bound=Widget)
 _ManagedWidgetT = TypeVar("_ManagedWidgetT", bound=ManagedWidget[Any])
+_DialogManagerT = TypeVar("_DialogManagerT", bound=DialogManager)
 
 
 def _container_getter(
@@ -55,14 +56,14 @@ def inject(
         Concatenate[
             _EventT,
             _ManagedWidgetT,
-            DialogManager,
+            _DialogManagerT,
             _WidgetItemT,
             _ParamsP,
         ],
         _ReturnT,
     ],
 ) -> Callable[
-    [_EventT, _ManagedWidgetT, DialogManager, _WidgetItemT],
+    [_EventT, _ManagedWidgetT, _DialogManagerT, _WidgetItemT],
     _ReturnT,
 ]:
     ...
@@ -74,12 +75,12 @@ def inject(
         Concatenate[
             _EventT,
             _WidgetT,
-            DialogManager,
+            _DialogManagerT,
             _ParamsP,
         ],
         _ReturnT,
     ],
-) -> Callable[[_EventT, _WidgetT, DialogManager], _ReturnT]:
+) -> Callable[[_EventT, _WidgetT, _DialogManagerT], _ReturnT]:
     ...
 
 # overload for on result event
@@ -90,13 +91,13 @@ def inject(  # type: ignore[overload-overlap]
         Concatenate[
             _OnDialogEventData,
             _OnProccessResultEventResultT,
-            DialogManager,
+            _DialogManagerT,
             _ParamsP,
         ],
         _ReturnT,
     ],
 ) -> Callable[
-    [_OnDialogEventData, _OnProccessResultEventResultT, DialogManager],
+    [_OnDialogEventData, _OnProccessResultEventResultT, _DialogManagerT],
     _ReturnT,
 ]:
     ...
@@ -107,12 +108,12 @@ def inject(
     func: Callable[
         Concatenate[
             _OnDialogEventData,
-            DialogManager,
+            _DialogManagerT,
             _ParamsP,
         ],
         _ReturnT,
     ],
-) -> Callable[[_OnDialogEventData, DialogManager], _ReturnT]:
+) -> Callable[[_OnDialogEventData, _DialogManagerT], _ReturnT]:
     ...
 
 

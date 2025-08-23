@@ -70,6 +70,11 @@ It is available on *SESSION* and *REQUEST* scopes.
 
     setup_dishka(container=container, app=app, auto_inject=True)
 
+Or pass your own inject decorator
+
+.. code-block:: python
+
+    setup_dishka(container=container, app=app, auto_inject=my_inject)
 
 6. *(optional)* Close container on app termination
 

@@ -1,6 +1,6 @@
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, ParamSpec, TypeVar
 from unittest.mock import Mock
 
 import pytest
@@ -22,6 +22,16 @@ from ..common import (
     RequestDep,
 )
 
+_ParamsP = ParamSpec("_ParamsP")
+_ReturnT = TypeVar("_ReturnT")
+
+
+def custom_inject(
+    func: Callable[_ParamsP, _ReturnT],
+) -> Callable[_ParamsP, _ReturnT]:
+    func.__custom__ = True
+    return inject(func)
+
 
 @asynccontextmanager
 async def dishka_app(
@@ -35,6 +45,24 @@ async def dishka_app(
 
     container = make_async_container(provider)
     setup_dishka(container, app=app)
+
+    async with TestNatsBroker(broker) as br:
+        yield br
+
+    await container.close()
+
+@asynccontextmanager
+async def dishka_auto_inject_app(
+    view: Callable[..., Any],
+    provider: AppProvider,
+) -> AsyncIterator[NatsBroker]:
+    broker = NatsBroker()
+    broker.subscriber("test")(view)
+
+    app = FastStream(broker)
+
+    container = make_async_container(provider)
+    setup_dishka(container, app=app, auto_inject=custom_inject)
 
     async with TestNatsBroker(broker) as br:
         yield br
@@ -75,6 +103,19 @@ async def test_request_dependency(app_provider: AppProvider) -> None:
 
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(
+    FASTSTREAM_04,
+    reason="Requires FastStream 0.5.0+",
+)
+async def test_custom_auto_inject(app_provider: AppProvider) -> None:
+    async with dishka_auto_inject_app(
+        get_with_request,
+        app_provider,
+    ):
+        assert getattr(get_with_request, "__custom__", False)
 
 
 @pytest.mark.asyncio

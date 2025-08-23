@@ -18,6 +18,7 @@ from dishka.integrations.aiogram import (
     setup_dishka,
 )
 from dishka.integrations.base import is_dishka_injected
+from tests.integrations.aiogram.conftest import custom_inject
 from ..common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
@@ -69,6 +70,21 @@ async def dishka_auto_app(handler, provider):
     await dp.emit_shutdown()
     await container.close()
 
+
+@asynccontextmanager
+async def dishka_custom_auto_inject_app(
+    handler,
+    provider,
+):
+    dp = Dispatcher()
+    dp.message()(handler)
+    container = make_async_container(provider)
+    setup_dishka(container, router=dp, auto_inject=custom_inject)
+
+    await dp.emit_startup()
+    yield dp
+    await dp.emit_shutdown()
+    await container.close()
 
 @asynccontextmanager
 async def dishka_auto_app_with_sub_router(handler, provider):
@@ -241,3 +257,23 @@ async def test_aiogram_provider_with_container_middleware(bot):
 
     async with dishka_auto_app(handler, AiogramProvider()) as dp:
         await send_message(bot, dp)
+
+
+@pytest.mark.asyncio
+async def test_auto_inject_with_custom_inject_func() -> None:
+    async def handler(
+            message: Message,
+            event: FromDishka[TelegramObject],
+            middleware_data: FromDishka[AiogramMiddlewareData],
+    ) -> None:
+        assert event is message
+
+        assert "bot" in middleware_data
+        # disable_fsm=False - tests this keys
+        assert "state" in middleware_data
+        assert "raw_state" in middleware_data
+        assert "fsm_storage" in middleware_data
+
+    async with dishka_custom_auto_inject_app(handler, AiogramProvider()):
+        assert getattr(handler, "__custom__", False)
+

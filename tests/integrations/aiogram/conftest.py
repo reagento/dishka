@@ -1,6 +1,13 @@
+from collections.abc import Callable
+from typing import ParamSpec, TypeVar
+
 import pytest
 from aiogram import Bot
 
+from dishka.integrations.aiogram import inject
+
+_ParamsP = ParamSpec("_ParamsP")
+_ReturnT = TypeVar("_ReturnT")
 
 class FakeBot(Bot):
     def __init__(self):
@@ -23,3 +30,9 @@ class FakeBot(Bot):
 @pytest.fixture
 def bot():
     return FakeBot()
+
+def custom_inject(
+    func: Callable[_ParamsP, _ReturnT],
+) -> Callable[_ParamsP, _ReturnT]:
+    func.__custom__ = True
+    return inject(func)

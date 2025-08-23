@@ -1,6 +1,6 @@
 from collections.abc import Callable, Generator, Iterable
 from contextlib import AbstractContextManager, contextmanager
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal, ParamSpec, TypeAlias, TypeVar
 from unittest.mock import Mock
 
 import pytest
@@ -23,6 +23,15 @@ AppFactory: TypeAlias = Callable[
     ...,
     AbstractContextManager[Flask],
 ]
+
+_ParamsP = ParamSpec("_ParamsP")
+_ReturnT = TypeVar("_ReturnT")
+
+def custom_inject(
+    func: Callable[_ParamsP, _ReturnT],
+) -> Callable[_ParamsP, _ReturnT]:
+    func.__custom__ = True
+    return inject(func)
 
 
 @contextmanager
@@ -66,6 +75,19 @@ def dishka_app_with_lifecycle_hooks(
     app.get("/")(view)
     container = make_container(provider)
     setup_dishka(container=container, app=app, auto_inject=True)
+    yield app
+    container.close()
+
+
+@contextmanager
+def dishka_custom_auto_inject_app(
+    view: Callable[..., Any],
+    provider: Provider,
+) -> Generator[Flask, None, None]:
+    app = Flask(__name__)
+    app.get("/")(view)
+    container = make_container(provider)
+    setup_dishka(container=container, app=app, auto_inject=custom_inject)
     yield app
     container.close()
 
@@ -154,3 +176,15 @@ def test_teardown_skips_container_close_when_not_in_flask_g(
     ):
         app.test_client().get("/")
         assert not hasattr(g, "dishka_container")
+
+def test_custom_auto_inject(
+    app_provider: AppProvider,
+) -> None:
+    with (
+        dishka_custom_auto_inject_app(
+            handle_with_request,
+            app_provider,
+        )
+    ):
+        assert getattr(handle_with_request, "__custom__", False)
+

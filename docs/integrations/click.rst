@@ -28,6 +28,15 @@ How to use
         container = make_container(MyProvider())
         setup_dishka(container=container, context=context, auto_inject=True)
 
+Or pass your own inject decorator
+
+.. code-block:: python
+
+    @click.group()
+    @click.pass_context
+    def main(context: click.Context):
+        container = make_container(MyProvider())
+        setup_dishka(container=container, context=context, auto_inject=my_inject)
 
 3. Mark those of your command handlers parameters which are to be injected with ``FromDishka[]``
 

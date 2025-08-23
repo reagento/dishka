@@ -1,4 +1,6 @@
+from collections.abc import Callable
 from contextlib import contextmanager
+from typing import TypeVar
 
 import click
 import pytest
@@ -12,6 +14,8 @@ from ..common import (
     AppMock,
     AppProvider,
 )
+
+_ReturnT = TypeVar("_ReturnT")
 
 
 @contextmanager
@@ -44,6 +48,31 @@ def dishka_auto_app(handler, provider):
             context=context,
             finalize_container=False,
             auto_inject=True,
+        )
+
+    main.add_command(command, name="test")
+    yield main
+    container.close()
+
+
+def custom_inject(func: Callable[..., _ReturnT]) -> Callable[..., _ReturnT]:
+    func.__custom__ = True
+    return inject(func)
+
+
+@contextmanager
+def dishka_custom_auto_inject_app(handler, provider):
+    command = click.command(handler)
+    container = make_container(provider)
+
+    @click.group()
+    @click.pass_context
+    def main(context: click.Context):
+        setup_dishka(
+            container=container,
+            context=context,
+            finalize_container=False,
+            auto_inject=custom_inject,
         )
 
     main.add_command(command, name="test")
@@ -145,3 +174,17 @@ def test_app_dependency_with_option(app_provider: AppProvider):
         assert result.exit_code == 0
         app_provider.app_mock.assert_called_with(APP_DEP_VALUE)
         app_provider.request_released.assert_not_called()
+
+
+def handle_for_auto_inject() -> None:
+    pass
+
+
+def test_custom_auto_inject(app_provider: AppProvider) -> None:
+    runner = CliRunner()
+    with dishka_custom_auto_inject_app(
+        handle_for_auto_inject,
+        app_provider,
+    ) as command:
+        runner.invoke(command, ["test"])
+        assert getattr(handle_for_auto_inject, "__custom__", False)

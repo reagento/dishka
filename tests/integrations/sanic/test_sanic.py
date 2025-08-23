@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 from sanic import HTTPResponse, Request, Sanic
+from sanic.models.handler_types import RouteHandler
 
 from dishka import make_async_container
 from dishka.integrations.sanic import FromDishka, inject, setup_dishka
@@ -13,6 +14,11 @@ from ..common import (
     AppProvider,
     RequestDep,
 )
+
+
+def custom_inject(func: RouteHandler) -> RouteHandler:
+    func.__custom__ = True
+    return inject(func)
 
 
 @asynccontextmanager
@@ -31,6 +37,16 @@ async def dishka_auto_app(view, provider):
     app.get("/")(view)
     container = make_async_container(provider)
     setup_dishka(container, app, auto_inject=True)
+    yield app
+    await container.close()
+
+
+@asynccontextmanager
+async def dishka_custom_auto_inject_app(view, provider):
+    app = Sanic("test1")
+    app.get("/")(view)
+    container = make_async_container(provider)
+    setup_dishka(container, app, auto_inject=custom_inject)
     yield app
     await container.close()
 
@@ -77,3 +93,19 @@ async def test_compat(app_provider: AppProvider):
         assert response.status_code == 200
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
+
+
+async def handle_for_auto_inject(
+    _: Request,
+) -> HTTPResponse:
+    pass
+
+
+@pytest.mark.asyncio
+async def test_custom_auto_inject(app_provider: AppProvider):
+    async with dishka_custom_auto_inject_app(
+        handle_for_auto_inject,
+        app_provider,
+    ) as app:
+        _, response = await app.asgi_client.get("/")
+        assert getattr(handle_for_auto_inject, "__custom__", False)

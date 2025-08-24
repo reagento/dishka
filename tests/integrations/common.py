@@ -7,6 +7,7 @@ from dishka.entities.depends_marker import FromDishka
 
 ContextDep = NewType("ContextDep", str)
 UserDep = NewType("UserDep", str)
+StepDep = NewType("StepDep", str)
 
 AppDep = NewType("AppDep", str)
 APP_DEP_VALUE = "APP"
@@ -59,6 +60,10 @@ class AppProvider(Provider):
     @provide(scope=Scope.APP)
     def app_mock(self) -> AppMock:
         return self.app_mock
+
+    @provide(scope=Scope.STEP)
+    def step(self, request: FromDishka[RequestDep]) -> StepDep:
+        return StepDep(f"step for {request}")
 
 
 class WebSocketAppProvider(Provider):

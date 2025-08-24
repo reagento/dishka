@@ -69,10 +69,13 @@ def provide_context(
 
 @pytest.mark.parametrize("func", [sync_func, sync_gen])
 @pytest.mark.parametrize(
-    "scope_tuple", [(True, None), (False, Scope.STEP), (True, Scope.STEP)]
+    "scope_tuple",
+    [(True, None), (False, Scope.STEP), (True, Scope.STEP)],
 )
 def test_sync_provide_context(
-    func: Callable, scope_tuple: tuple[bool, Scope], container: Container
+    func: Callable,
+    scope_tuple: tuple[bool, Scope],
+    container: Container,
 ) -> None:
     manage_scope, scope = scope_tuple
     wrapped_func = wrap_injection(
@@ -107,7 +110,8 @@ def test_invalid_provide_context(func: Callable, container: Container) -> None:
 @pytest.mark.asyncio
 @pytest.mark.parametrize("func", [async_func, async_gen])
 @pytest.mark.parametrize(
-    "scope_tuple", [(True, None), (False, Scope.STEP), (True, Scope.STEP)]
+    "scope_tuple",
+    [(True, None), (False, Scope.STEP), (True, Scope.STEP)],
 )
 async def test_async_provide_context(
     func: Callable,

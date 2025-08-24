@@ -41,7 +41,10 @@ async def async_gen(
 @pytest.mark.parametrize("func", [sync_func, sync_gen])
 @pytest.mark.parametrize("manage_scope", [False, True])
 def test_sync_custom_scope(
-    func: Callable, manage_scope: bool, container: Container
+    func: Callable,
+    *,
+    manage_scope: bool,
+    container: Container,
 ) -> None:
     wrapped_func = wrap_injection(
         func=func,
@@ -67,6 +70,7 @@ def test_sync_custom_scope(
 @pytest.mark.parametrize("manage_scope", [False, True])
 async def test_async_custom_scope(
     func: Callable,
+    *,
     manage_scope: bool,
     async_container: AsyncContainer,
 ) -> None:

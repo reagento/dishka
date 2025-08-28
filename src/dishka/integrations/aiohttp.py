@@ -96,10 +96,12 @@ def setup_dishka(
     app: Application,
     *,
     auto_inject: bool = False,
+    finalize_container: bool = True,
 ) -> None:
     app[DISHKA_CONTAINER_KEY] = container
     app.middlewares.append(container_middleware)
-    app.on_shutdown.append(_on_shutdown)
+    if finalize_container:
+        app.on_shutdown.append(_on_shutdown)
 
     if auto_inject:
         _inject_routes(app.router)

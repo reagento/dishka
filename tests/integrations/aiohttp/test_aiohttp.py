@@ -110,3 +110,35 @@ async def test_request_dependency2(app_provider: AppProvider, app_factory):
         await client.get("/")
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
+
+
+@pytest.mark.parametrize("provider", [AppProvider()])
+@pytest.mark.asyncio
+async def test_no_finalization_app(provider: AppProvider) -> None:
+    app = Application()
+    container = make_async_container(provider)
+    setup_dishka(
+        container,
+        app=app,
+        auto_inject=True,
+        finalize_container=False,
+    )
+    # app.on_shutdown should NOT contain shutdown handler
+    # when finalize_container=True
+    assert list(app.on_shutdown) == []
+
+
+@pytest.mark.parametrize("provider", [AppProvider()])
+@pytest.mark.asyncio
+async def test_with_finalization_app(provider: AppProvider) -> None:
+    app = Application()
+    container = make_async_container(provider)
+    setup_dishka(
+        container,
+        app=app,
+        auto_inject=True,
+        finalize_container=True,
+    )
+    # app.on_shutdown should contain shutdown handler
+    # when finalize_container=True
+    assert list(app.on_shutdown) != []

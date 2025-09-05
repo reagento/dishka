@@ -1,0 +1,20 @@
+name: Issue Notifier
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: read
+
+jobs:
+  notify:
+    name: "Telegram notification"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Telegram notification for new issue
+        uses: sehat1137/telegram-notifier@v1.2.1
+        with:
+          tg-bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          tg-chat-id: ${{ vars.TELEGRAM_CHAT_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

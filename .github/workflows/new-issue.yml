@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send Telegram notification for new issue
-        uses: sehat1137/telegram-notifier@v1.2.1
+        uses: sehat1137/telegram-notifier@v1.2.3
         with:
           tg-bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           tg-chat-id: ${{ vars.TELEGRAM_CHAT_ID }}

@@ -2,3 +2,4 @@
 
 faststream[nats]==0.6.0rc0
 fast-depends==3.0.0a12
+pydantic>=2.12.0a1

@@ -3,3 +3,4 @@
 faststream[nats]==0.5.29
 typing-extensions==4.12.2
 anyio==4.6.0
+pydantic>=2.12.0a1

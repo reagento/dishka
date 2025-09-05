@@ -28,14 +28,15 @@ class IntegrationEnv:
     def get_tests(self) -> str:
         return f"tests/integrations/{self.library}"
 
+def max_supported_python(version: tuple[int, int]) -> Constraint:
+    return Constraint(
+        f"Skip tests on python {version[0]}.{version[1]} due to compatibility issues",
+        lambda: sys.version_info < version,
+    )
 
-constraint_3_13 = Constraint(
-    "Skip tests on python 3.13 due to compatibility issues",
-    lambda: sys.version_info < (3, 13),
-)
 
 INTEGRATIONS = [
-    IntegrationEnv("aiogram", "330", constraint_3_13),
+    IntegrationEnv("aiogram", "330", max_supported_python((3, 13))),
     IntegrationEnv("aiogram", "3140"),
     IntegrationEnv("aiogram", "latest"),
     IntegrationEnv("aiogram_dialog", "210"),
@@ -49,18 +50,19 @@ INTEGRATIONS = [
     IntegrationEnv("fastapi", "0096"),
     IntegrationEnv("fastapi", "0109"),
     IntegrationEnv("fastapi", "latest"),
-    IntegrationEnv("faststream", "050", constraint_3_13),
+    IntegrationEnv("faststream", "050", max_supported_python((3, 13))),
     IntegrationEnv("faststream", "0529"),
     IntegrationEnv("faststream", "060"),
     IntegrationEnv("faststream", "latest"),
     IntegrationEnv("flask", "302"),
     IntegrationEnv("flask", "latest"),
-    IntegrationEnv("grpcio", "1641", constraint_3_13),
+    IntegrationEnv("grpcio", "1641", max_supported_python((3, 13))),
     IntegrationEnv("grpcio", "1680"),
     IntegrationEnv("grpcio", "latest"),
     IntegrationEnv("litestar", "232"),
     IntegrationEnv("litestar", "latest"),
-    IntegrationEnv("sanic", "23121"),
+    IntegrationEnv("sanic", "23121", max_supported_python((3, 14))),
+    IntegrationEnv("sanic", "2530"),
     IntegrationEnv("sanic", "latest"),
     IntegrationEnv("starlette", "0270"),
     IntegrationEnv("starlette", "latest"),

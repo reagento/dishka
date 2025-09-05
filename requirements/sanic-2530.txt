@@ -1,0 +1,4 @@
+-r asgi.txt
+sanic==25.3.0
+sanic-testing==24.6.0
+setuptools==70.1.0

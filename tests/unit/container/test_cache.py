@@ -78,7 +78,7 @@ async def test_nocache_async():
         assert await state.get(int) == 2
 
 
-@pytest.fixture()
+@pytest.fixture
 def alias_provider():
     class MyProvider(Provider):
         value = 0

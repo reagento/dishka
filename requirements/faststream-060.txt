@@ -1,0 +1,4 @@
+-r test.txt
+
+faststream[nats]==0.6.0rc0
+fast-depends==3.0.0a12

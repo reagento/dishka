@@ -63,7 +63,7 @@ def test_from_component():
         container.get(float)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_from_component_async():
     container = make_async_container(MainProvider(20), XProvider())
     assert await container.get(complex) == 210

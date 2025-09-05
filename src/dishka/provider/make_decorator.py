@@ -6,6 +6,7 @@ from dishka.dependency_source import (
     Decorator,
     ensure_composite,
 )
+from dishka.entities.scope import BaseScope
 from .exceptions import IndependentDecoratorError
 from .make_factory import make_factory
 from .unpack_provides import unpack_decorator
@@ -13,7 +14,8 @@ from .unpack_provides import unpack_decorator
 
 def _decorate(
         source: Callable[..., Any] | type,
-        provides: Any = None,
+        provides: Any,
+        scope: BaseScope | None,
         *,
         is_in_class: bool = True,
 ) -> CompositeDependencySource:
@@ -27,6 +29,7 @@ def _decorate(
             is_in_class=is_in_class,
             override=False,
         ),
+        scope=scope,
     )
     if (
         decorator.provides not in decorator.factory.kw_dependencies.values()
@@ -42,6 +45,7 @@ def _decorate(
 def decorate(
         *,
         provides: Any = None,
+        scope: BaseScope | None = None,
 ) -> Callable[
     [Callable[..., Any]], CompositeDependencySource,
 ]:
@@ -53,6 +57,7 @@ def decorate(
         source: Callable[..., Any] | type,
         *,
         provides: Any = None,
+        scope: BaseScope | None = None,
 ) -> CompositeDependencySource:
     ...
 
@@ -60,20 +65,22 @@ def decorate(
 def decorate(
         source: Callable[..., Any] | type | None = None,
         provides: Any = None,
+        scope: BaseScope | None = None,
 ) -> CompositeDependencySource | Callable[
     [Callable[..., Any]], CompositeDependencySource,
 ]:
     if source is not None:
-        return _decorate(source, provides, is_in_class=True)
+        return _decorate(source, provides, scope=scope, is_in_class=True)
 
     def scoped(func: Callable[..., Any]) -> CompositeDependencySource:
-        return _decorate(func, provides, is_in_class=True)
+        return _decorate(func, provides, scope=scope, is_in_class=True)
 
     return scoped
 
 
 def decorate_on_instance(
         source: Callable[..., Any] | type,
-        provides: Any = None,
+        provides: Any,
+        scope: BaseScope | None,
 ) -> CompositeDependencySource:
-    return _decorate(source, provides, is_in_class=False)
+    return _decorate(source, provides, scope=scope, is_in_class=False)

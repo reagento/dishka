@@ -1,5 +1,0 @@
--r test.txt
-
-faststream[nats]==0.4.7
-typing-extensions==4.11.0
-anyio==4.6.2

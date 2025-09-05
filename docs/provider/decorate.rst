@@ -36,7 +36,7 @@ If you want to apply decorator pattern and do not want to alter existing provide
         def decorate_user_dao(self, dao: UserDAO) -> UserDAO:
             return UserDAOWithMetrics(dao)
 
-Such decorator function can also have additional parameters.
+Such decorator function can also have **additional parameters**.
 
 .. code-block:: python
 
@@ -66,6 +66,9 @@ Such decorator function can also have additional parameters.
             self, dao: UserDAO, prom: Prometheus
         ) -> UserDAO:
             return UserDAOWithMetrics(dao, prom)
+
+
+Decorator can change the **Scope** of an object to more narrow one, just pass ``scope=`` argument.
 
 The limitation is that you cannot use ``decorate`` in the same provider as you declare factory or alias for dependency. But you won't need it because you can update the factory code.
 

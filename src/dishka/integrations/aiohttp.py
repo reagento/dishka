@@ -60,8 +60,7 @@ async def container_middleware(
     context = {Request: request}
 
     async with container(context=context, scope=scope) as request_container:
-        request[
-            DISHKA_CONTAINER_KEY] = request_container  # type: ignore[index]
+        request[DISHKA_CONTAINER_KEY] = request_container  # type: ignore[index]
         return await handler(request)
 
 

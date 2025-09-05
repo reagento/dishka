@@ -13,7 +13,7 @@ across all provided objects. But what if there are some intersections.
 Let's talk about three situations:
 
 1. Only several types are used with different meaning within a monolithic app.
-2. Several parts of an application are developed them more or less independently, while they are used within same processing context.
+2. Several parts of an application are developed more or less independently, while they are used within same processing context.
 3. You have a modular application with multiple bounded contexts.
 
 **First situation** can appear when you have for-example multiple thread pools

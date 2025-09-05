@@ -1,5 +1,4 @@
 import warnings
-from asyncio import iscoroutinefunction
 from collections.abc import (
     AsyncGenerator,
     AsyncIterable,
@@ -16,6 +15,7 @@ from inspect import (
     isasyncgenfunction,
     isbuiltin,
     isclass,
+    iscoroutinefunction,
     isfunction,
     isgeneratorfunction,
     ismethod,

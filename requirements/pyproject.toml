@@ -1,0 +1,202 @@
+[project]
+name = "requirements"
+version = "0.0.0"
+
+[dependency-groups]
+test = [
+    "pytest==8.*",
+    "pytest-asyncio==0.24.*",
+    "pytest-repeat==0.9.*",
+    "pytest-cov==5.0.*",
+]
+asgi = [
+    "httpx==0.27.*",
+    "asgi_lifespan==2.1.*",
+    {include-group = "test"},
+]
+# aiogram
+aiogram-330 = [
+    "aiogram==3.3.0",
+    {include-group = "test"},
+]
+aiogram-3140 = [
+    "aiogram==3.14.0",
+    {include-group = "test"},
+]
+aiogram-latest = [
+    "aiogram",
+    {include-group = "test"},
+]
+# aiogram_dialog
+aiogram-dialog-210 = [
+    "aiogram_dialog==2.1.0",
+    {include-group = "test"},
+]
+aiogram-dialog-latest = [
+    "aiogram_dialog",
+    {include-group = "test"},
+]
+# aiohttp
+aiohttp-393 = [
+    "aiohttp==3.9.3",
+    {include-group = "test"},
+]
+aiohttp-31215 = [
+    "aiohttp==3.12.15",
+    {include-group = "test"},
+]
+aiohttp-latest = [
+    "aiohttp",
+    {include-group = "test"},
+]
+# arq
+arq-0250 = [
+    "arq==0.25.0",
+    {include-group = "test"},
+]
+arq-latest = [
+    "arq",
+    {include-group = "test"},
+]
+# celery
+celery-540 = [
+    "celery==5.4.0",
+    {include-group = "test"},
+]
+celery-latest = [
+    "celery",
+    {include-group = "test"},
+]
+# click
+click-817 = [
+    "click==8.1.7",
+    {include-group = "test"},
+]
+click-latest = [
+    "click",
+    {include-group = "test"},
+]
+# fastapi
+fastapi-0096 = [
+    "fastapi==0.96.0",
+    {include-group = "asgi"},
+]
+fastapi-0109 = [
+    "fastapi==0.109.0",
+    "pydantic>=2.12.0a1",
+    {include-group = "asgi"},
+]
+fastapi-latest = [
+    "fastapi",
+    "pydantic>=2.12.0a1",
+    {include-group = "asgi"},
+]
+# faststream
+faststream-050 = [
+    "faststream[nats]==0.5.0rc2",
+    "typing-extensions==4.11.0",
+    "anyio==4.6.2",
+    {include-group = "test"},
+]
+faststream-0529 = [
+    "faststream[nats]==0.5.29",
+    "typing-extensions==4.12.2",
+    "anyio==4.6.0",
+    {include-group = "test"},
+]
+faststream-060 = [
+    "faststream[nats]==0.6.0rc0",
+    "fast-depends==3.0.0a12",
+    "pydantic>=2.12.0a1",
+    {include-group = "test"},
+]
+faststream-latest = [
+    "faststream[nats]",
+    "pydantic>=2.12.0a1",
+    {include-group = "test"},
+]
+# flask
+flask-302 = [
+    "Flask==3.0.2",
+    {include-group = "test"},
+]
+flask-latest = [
+    "Flask",
+    {include-group = "test"},
+]
+# grpcio
+grpcio-1641 = [
+    "grpcio==1.64.1",
+    "grpcio-tools==1.64.1",
+    "grpcio-testing==1.64.1",
+    {include-group = "test"},
+]
+grpcio-1680 = [
+    "grpcio==1.68.0",
+    "grpcio-tools==1.68.0",
+    "grpcio-testing==1.68.0",
+    {include-group = "test"},
+]
+grpcio-latest = [
+    "grpcio",
+    "grpcio-tools",
+    "grpcio-testing",
+    {include-group = "test"},
+]
+# litestar
+litestar-232 = [
+    "litestar==2.3.2",
+    {include-group = "asgi"},
+]
+litestar-latest = [
+    "litestar",
+    {include-group = "asgi"},
+]
+# sanic
+sanic-23121 = [
+    "sanic==23.12.1",
+    "sanic-testing==23.12.0",
+    "setuptools==69.5.1",
+    {include-group = "asgi"},
+]
+sanic-2530 = [
+    "sanic==25.3.0",
+    "sanic-testing==24.6.0",
+    "setuptools==70.1.0",
+    {include-group = "asgi"},
+]
+sanic-latest = [
+    "sanic",
+    "sanic-testing",
+    "setuptools>=69.5.1",
+    {include-group = "asgi"},
+]
+# starlette
+starlette-0270 = [
+    "starlette==0.27.0",
+    {include-group = "asgi"},
+]
+starlette-latest = [
+    "starlette",
+    {include-group = "asgi"},
+]
+# taskiq
+taskiq-0110 = [
+    "taskiq==0.11.0",
+    "pydantic>=2.12.0a1",
+    {include-group = "test"},
+]
+taskiq-latest = [
+    "taskiq",
+    "pydantic>=2.12.0a1",
+    {include-group = "test"},
+]
+# telebot
+telebot-415 = [
+    "pytelegrambotapi==4.15.4",
+    {include-group = "test"},
+]
+telebot-latest = [
+    "pytelegrambotapi",
+    {include-group = "test"},
+]

@@ -113,6 +113,8 @@ def unit(session: nox.Session) -> None:
 
 @nox.session(tags=["ci"])
 def real_world(session: nox.Session) -> None:
+    if sys.version_info >= (3, 14):
+        session.skip("Skipping tests on python >=3.14 due to requirements limitations")
     session.install(
         *INSTALL_CMD,
         "-r", "examples/real_world/requirements_test.txt",

@@ -186,6 +186,20 @@ class Container:
         if key in self._cache:
             return self._cache[key]
         compiled = self.registry.get_compiled(key)
+        if not compiled:
+            abstract_dependencies = (
+                self.registry.get_more_abstract_factories(key)
+            )
+            concrete_dependencies = (
+                self.registry.get_more_concrete_factories(key)
+            )
+
+            raise NoFactoryError(
+                key,
+                suggest_abstract_factories=abstract_dependencies,
+                suggest_concrete_factories=concrete_dependencies,
+            )
+
         if compiled.scope == self.scope:
             try:
                 return compiled(self._get_unlocked, self._exits, self._cache)
@@ -204,42 +218,7 @@ class Container:
                 parent = parent.parent_container
 
             return parent._get(key)
-        if not compiled:
-            if not self.parent_container:
-                abstract_dependencies = (
-                    self.registry.get_more_abstract_factories(key)
-                )
-                concrete_dependencies = (
-                    self.registry.get_more_concrete_factories(key)
-                )
 
-                raise NoFactoryError(
-                    key,
-                    suggest_abstract_factories=abstract_dependencies,
-                    suggest_concrete_factories=concrete_dependencies,
-                )
-            try:
-                return self.parent_container._get(key)  # noqa: SLF001
-            except NoFactoryError as ex:
-                abstract_dependencies = (
-                    self.registry.get_more_abstract_factories(key)
-                )
-                concrete_dependencies = (
-                    self.registry.get_more_concrete_factories(key)
-                )
-                ex.suggest_abstract_factories.extend(abstract_dependencies)
-                ex.suggest_concrete_factories.extend(concrete_dependencies)
-                raise
-
-        try:
-            return compiled(self._get_unlocked, self._exits, self._cache)
-        except NoFactoryError as e:
-            # cast is needed because registry.get_factory will always
-            # return Factory. This happens because registry.get_compiled
-            # uses the same method and returns None if the factory is not found
-            # If None is returned, then go to the parent container
-            e.add_path(cast(Factory, self.registry.get_factory(key)))
-            raise
 
     def close(self, exception: BaseException | None = None) -> None:
         errors = []

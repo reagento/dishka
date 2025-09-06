@@ -155,4 +155,6 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
     compiled = compile(body, source_file_name, "exec")
     exec(compiled, func_globals)  # noqa: S102
     # typing.cast is called because func_globals["get"] is not typed
-    return cast(CompiledFactory, func_globals["get"])
+    compiled = cast(CompiledFactory, func_globals["get"])
+    compiled.scope = factory.scope
+    return compiled

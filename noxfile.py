@@ -28,41 +28,43 @@ class IntegrationEnv:
     def get_tests(self) -> str:
         return f"tests/integrations/{self.library}"
 
-def max_supported_python(version: tuple[int, int]) -> Constraint:
+
+def python_version_less(*version:int) -> Constraint:
+    version_str = ".".join(map(str, version))
     return Constraint(
-        f"Skip tests on python {version[0]}.{version[1]} due to compatibility issues",
+        f"Skip tests on python {version_str} due to compatibility issues",
         lambda: sys.version_info < version,
     )
 
 
 INTEGRATIONS = [
-    IntegrationEnv("aiogram", "330", max_supported_python((3, 13))),
-    IntegrationEnv("aiogram", "3140"),
+    IntegrationEnv("aiogram", "330", python_version_less(3, 13)),
+    IntegrationEnv("aiogram", "3140", python_version_less(3, 14)),
     IntegrationEnv("aiogram", "latest"),
-    IntegrationEnv("aiogram_dialog", "210"),
+    IntegrationEnv("aiogram_dialog", "210", python_version_less(3, 14)),
     IntegrationEnv("aiogram_dialog", "latest"),
-    IntegrationEnv("aiohttp", "393", max_supported_python((3, 13))),
+    IntegrationEnv("aiohttp", "393", python_version_less(3, 13)),
     IntegrationEnv("aiohttp", "31215"),
     IntegrationEnv("aiohttp", "latest"),
     IntegrationEnv("arq", "0250"),
     IntegrationEnv("arq", "latest"),
     IntegrationEnv("click", "817"),
     IntegrationEnv("click", "latest"),
-    IntegrationEnv("fastapi", "0096", max_supported_python((3, 13))),
+    IntegrationEnv("fastapi", "0096", python_version_less(3, 13)),
     IntegrationEnv("fastapi", "0109"),
     IntegrationEnv("fastapi", "latest"),
-    IntegrationEnv("faststream", "050", max_supported_python((3, 13))),
-    IntegrationEnv("faststream", "0529", max_supported_python((3, 13))),
+    IntegrationEnv("faststream", "050", python_version_less(3, 13)),
+    IntegrationEnv("faststream", "0529", python_version_less(3, 13)),
     IntegrationEnv("faststream", "060"),
     IntegrationEnv("faststream", "latest"),
     IntegrationEnv("flask", "302"),
     IntegrationEnv("flask", "latest"),
-    IntegrationEnv("grpcio", "1641", max_supported_python((3, 13))),
+    IntegrationEnv("grpcio", "1641", python_version_less(3, 13)),
     IntegrationEnv("grpcio", "1680"),
     IntegrationEnv("grpcio", "latest"),
     IntegrationEnv("litestar", "232"),
     IntegrationEnv("litestar", "latest"),
-    IntegrationEnv("sanic", "23121", max_supported_python((3, 14))),
+    IntegrationEnv("sanic", "23121", python_version_less(3, 14)),
     IntegrationEnv("sanic", "2530"),
     IntegrationEnv("sanic", "latest"),
     IntegrationEnv("starlette", "0270"),

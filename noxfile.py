@@ -29,7 +29,7 @@ class IntegrationEnv:
         return f"tests/integrations/{self.library}"
 
 
-def python_version_less(*version:int) -> Constraint:
+def python_version_less(*version: int) -> Constraint:
     version_str = ".".join(map(str, version))
     return Constraint(
         f"Skip tests on python {version_str} due to compatibility issues",

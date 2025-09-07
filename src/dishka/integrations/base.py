@@ -94,7 +94,7 @@ def _get_auto_injected_async_gen(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, AsyncIterator[T]],
     provide_context: ProvideContext | None = None,
-    **kwargs: Any,
+    scope: Scope | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
     if provide_context is not None:
         raise ImproperProvideContextUsageError
@@ -155,7 +155,7 @@ def _get_auto_injected_async_func(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Awaitable[T]],
     provide_context: ProvideContext | None = None,
-    **kwargs: Any,
+    scope: Scope | None = None,
 ) -> Callable[P, Awaitable[T]]:
     if provide_context is not None:
         raise ImproperProvideContextUsageError
@@ -211,7 +211,7 @@ def _get_auto_injected_sync_gen(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Iterator[T]],
     provide_context: ProvideContext | None = None,
-    **kwargs: Any,
+    scope: Scope | None = None,
 ) -> Callable[P, Iterator[T]]:
     if provide_context is not None:
         raise ImproperProvideContextUsageError
@@ -264,7 +264,7 @@ def _get_auto_injected_sync_func(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, T],
     provide_context: ProvideContext | None = None,
-    **kwargs: Any,
+    scope: Scope | None = None,
 ) -> Callable[P, T]:
     if provide_context is not None:
         raise ImproperProvideContextUsageError
@@ -289,7 +289,7 @@ def _get_auto_injected_sync_container_async_gen_scoped(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Iterator[T]],
     provide_context: ProvideContext | None = None,
-    **kwargs: Any,
+    scope: Scope | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
     async def auto_injected_generator(
         *args: P.args,
@@ -319,7 +319,7 @@ def _get_auto_injected_sync_container_async_gen(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Iterator[T]],
     provide_context: ProvideContext | None = None,
-    **kwargs: Any,
+    scope: Scope | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
     if provide_context is not None:
         raise ImproperProvideContextUsageError
@@ -347,7 +347,7 @@ def _get_auto_injected_sync_container_async_func_scoped(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, T],
     provide_context: ProvideContext | None = None,
-    **kwargs: Any,
+    scope: Scope | None = None,
 ) -> Callable[P, T]:
     async def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         for param in additional_params:
@@ -373,7 +373,7 @@ def _get_auto_injected_sync_container_async_func(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, T],
     provide_context: ProvideContext | None = None,
-    **kwargs: Any,
+    scope: Scope | None = None,
 ) -> Callable[P, T]:
     if provide_context is not None:
         raise ImproperProvideContextUsageError

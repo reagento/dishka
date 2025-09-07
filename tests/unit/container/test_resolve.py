@@ -38,7 +38,7 @@ def test_sync(factory, closed):
             return 100
 
     container = make_container(MyProvider())
-    assert container.registry.scope is Scope.APP
+    assert container.scope is Scope.APP
     a = container.get(ClassA)
     assert a
     assert a.dep == 100
@@ -68,7 +68,7 @@ async def test_async(factory, closed):
             return 100
 
     container = make_async_container(MyProvider())
-    assert container.registry.scope is Scope.APP
+    assert container.scope is Scope.APP
     a = await container.get(ClassA)
     assert a
     assert a.dep == 100

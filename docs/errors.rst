@@ -43,7 +43,7 @@ Object cannot be created if dishka doesn't have info about its scope.
 You can set it in multiple places (from lower to higher priority):
 
 * as a parameter of ``@provide()`` decorator or ``.provide()`` method
-* as a papameter when creating an instance of your provider
+* as a parameter when creating an instance of your provider
 * within your provider as a class attribute
 
 
@@ -106,7 +106,7 @@ There are multiple reasons for this error. If possible, dishka tries to predict 
   create object separately for appropriate component using ``provide`` annotation
 
 * **Dependency is parent class while provided child class (or vice versa)**
-  Use ``provives=`` argument to mark that source and provided types are different.
+  Use ``provides=`` argument to mark that source and provided types are different.
   Use ``WithParents[X]`` to provide an object as its type with parent classes
 
 

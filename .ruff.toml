@@ -33,9 +33,6 @@ lint.ignore = [
     "TC002",
     "TC003",
     "TC006",
-
-    # only affects performance and brings nothing useful
-    "UP038",
 ]
 
 [lint.per-file-ignores]
@@ -45,6 +42,7 @@ lint.ignore = [
     "S101",
     "TRY003",
     "PLW1641",
+    "PYI059"
 ]
 
 [per-file-target-version]

@@ -12,5 +12,7 @@ build:
       - asdf plugin add uv
       - asdf install uv latest
       - asdf global uv latest
+  create_environment:
+    - uv venv "${READTHEDOCS_VIRTUALENV_PATH}"
   install:
-    - uv pip install -r requirements_doc.txt --system
+    - UV_PROJECT_ENVIRONMENT="${READTHEDOCS_VIRTUALENV_PATH}" uv pip install -r requirements_doc.txt

@@ -35,6 +35,7 @@ from dishka.container import Container
 from dishka.entities.component import DEFAULT_COMPONENT
 from dishka.entities.depends_marker import FromDishka
 from dishka.entities.key import DependencyKey, _FromComponent
+from dishka.entities.scope import Scope
 from dishka.integrations.exceptions import (
     ImproperProvideContextUsageError,
     InvalidInjectedFuncTypeError,
@@ -61,6 +62,7 @@ def _get_auto_injected_async_gen_scoped(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, AsyncIterator[T]],
     provide_context: ProvideContext | None = None,
+    scope: Scope | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
     async def auto_injected_generator(
         *args: P.args,
@@ -73,7 +75,7 @@ def _get_auto_injected_async_gen_scoped(
             {} if provide_context is None else provide_context(args, kwargs)
         )
         container = container_getter(args, kwargs)
-        async with container(additional_context) as container:
+        async with container(additional_context, scope=scope) as container:
             solved = {
                 name: await container.get(
                     dep.type_hint,
@@ -93,6 +95,7 @@ def _get_auto_injected_async_gen(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, AsyncIterator[T]],
     provide_context: ProvideContext | None = None,
+    scope: Scope | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
     if provide_context is not None:
         raise ImproperProvideContextUsageError
@@ -124,6 +127,7 @@ def _get_auto_injected_async_func_scoped(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Awaitable[T]],
     provide_context: ProvideContext | None = None,
+    scope: Scope | None = None,
 ) -> Callable[P, Awaitable[T]]:
     async def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         container = container_getter(args, kwargs)
@@ -133,7 +137,7 @@ def _get_auto_injected_async_func_scoped(
         additional_context = (
             {} if provide_context is None else provide_context(args, kwargs)
         )
-        async with container(additional_context) as container:
+        async with container(additional_context, scope=scope) as container:
             solved = {
                 name: await container.get(
                     dep.type_hint,
@@ -152,6 +156,7 @@ def _get_auto_injected_async_func(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Awaitable[T]],
     provide_context: ProvideContext | None = None,
+    scope: Scope | None = None,
 ) -> Callable[P, Awaitable[T]]:
     if provide_context is not None:
         raise ImproperProvideContextUsageError
@@ -178,6 +183,7 @@ def _get_auto_injected_sync_gen_scoped(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Iterator[T]],
     provide_context: ProvideContext | None = None,
+    scope: Scope | None = None,
 ) -> Callable[P, Iterator[T]]:
     def auto_injected_generator(
         *args: P.args,
@@ -190,7 +196,7 @@ def _get_auto_injected_sync_gen_scoped(
             {} if provide_context is None else provide_context(args, kwargs)
         )
         container = container_getter(args, kwargs)
-        with container(additional_context) as container:
+        with container(additional_context, scope=scope) as container:
             solved = {
                 name: container.get(dep.type_hint, component=dep.component)
                 for name, dep in dependencies.items()
@@ -206,6 +212,7 @@ def _get_auto_injected_sync_gen(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Iterator[T]],
     provide_context: ProvideContext | None = None,
+    scope: Scope | None = None,
 ) -> Callable[P, Iterator[T]]:
     if provide_context is not None:
         raise ImproperProvideContextUsageError
@@ -232,6 +239,7 @@ def _get_auto_injected_sync_func_scoped(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, T],
     provide_context: ProvideContext | None = None,
+    scope: Scope | None = None,
 ) -> Callable[P, T]:
     def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         for param in additional_params:
@@ -241,7 +249,7 @@ def _get_auto_injected_sync_func_scoped(
             {} if provide_context is None else provide_context(args, kwargs)
         )
         container = container_getter(args, kwargs)
-        with container(additional_context) as container:
+        with container(additional_context, scope=scope) as container:
             solved = {
                 name: container.get(dep.type_hint, component=dep.component)
                 for name, dep in dependencies.items()
@@ -257,6 +265,7 @@ def _get_auto_injected_sync_func(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, T],
     provide_context: ProvideContext | None = None,
+    scope: Scope | None = None,
 ) -> Callable[P, T]:
     if provide_context is not None:
         raise ImproperProvideContextUsageError
@@ -281,6 +290,7 @@ def _get_auto_injected_sync_container_async_gen_scoped(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Iterator[T]],
     provide_context: ProvideContext | None = None,
+    scope: Scope | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
     async def auto_injected_generator(
         *args: P.args,
@@ -310,6 +320,7 @@ def _get_auto_injected_sync_container_async_gen(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, Iterator[T]],
     provide_context: ProvideContext | None = None,
+    scope: Scope | None = None,
 ) -> Callable[P, AsyncIterator[T]]:
     if provide_context is not None:
         raise ImproperProvideContextUsageError
@@ -337,6 +348,7 @@ def _get_auto_injected_sync_container_async_func_scoped(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, T],
     provide_context: ProvideContext | None = None,
+    scope: Scope | None = None,
 ) -> Callable[P, T]:
     async def auto_injected_func(*args: P.args, **kwargs: P.kwargs) -> T:
         for param in additional_params:
@@ -362,6 +374,7 @@ def _get_auto_injected_sync_container_async_func(
     dependencies: dict[str, DependencyKey],
     func: Callable[P, T],
     provide_context: ProvideContext | None = None,
+    scope: Scope | None = None,
 ) -> Callable[P, T]:
     if provide_context is not None:
         raise ImproperProvideContextUsageError
@@ -507,6 +520,7 @@ def wrap_injection(
     parse_dependency: DependencyParser = default_parse_dependency,
     manage_scope: bool = False,
     provide_context: ProvideContext | None = None,
+    scope: Scope | None = None,
 ) -> Callable[P, T]: ...
 
 
@@ -521,6 +535,7 @@ def wrap_injection(
     parse_dependency: DependencyParser = default_parse_dependency,
     manage_scope: bool = False,
     provide_context: ProvideContext | None = None,
+    scope: Scope | None = None,
 ) -> Callable[P, T]: ...
 
 
@@ -533,6 +548,7 @@ def wrap_injection(
     additional_params: Sequence[Parameter] = (),
     parse_dependency: DependencyParser = default_parse_dependency,
     manage_scope: bool = False,
+    scope: Scope | None = None,
     provide_context: ProvideContext | None = None,
 ) -> Callable[P, T]:
     hints = get_type_hints(func, include_extras=True)
@@ -594,7 +610,7 @@ def wrap_injection(
 
     injected_func_type = InjectedFuncType(
         is_async_container=is_async,
-        manage_scope=manage_scope,
+        manage_scope=manage_scope or bool(scope),
         func_type=get_func_type(func),
     )
     get_auto_injected_func = _GET_AUTO_INJECTED_FUNC_DICT[injected_func_type]
@@ -605,6 +621,7 @@ def wrap_injection(
         dependencies=dependencies,
         additional_params=additional_params,
         container_getter=container_getter,
+        scope=scope,
     )
 
     auto_injected_func.__dishka_orig_func__ = func

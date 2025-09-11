@@ -37,7 +37,7 @@ It is also available as a method:
     )
 
 
-You can combine different ``provide``, ``alias``, ``decorate``, ``from_context``, ``provide_all``, ``from_context`` and others with each other without thinking about the variable names for each of them.
+You can combine different ``provide``, ``alias``, ``decorate``, ``from_context``, ``provide_all`` and others with each other without thinking about the variable names for each of them.
 
 These two providers are equal for the container:
 

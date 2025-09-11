@@ -29,38 +29,43 @@ class IntegrationEnv:
         return f"tests/integrations/{self.library}"
 
 
-constraint_3_13 = Constraint(
-    "Skip tests on python 3.13 due to compatibility issues",
-    lambda: sys.version_info < (3, 13),
-)
+def python_version_less(*version: int) -> Constraint:
+    version_str = ".".join(map(str, version))
+    return Constraint(
+        f"Skip tests on python {version_str} due to compatibility issues",
+        lambda: sys.version_info < version,
+    )
+
 
 INTEGRATIONS = [
-    IntegrationEnv("aiogram", "330", constraint_3_13),
-    IntegrationEnv("aiogram", "3140"),
+    IntegrationEnv("aiogram", "330", python_version_less(3, 13)),
+    IntegrationEnv("aiogram", "3140", python_version_less(3, 14)),
     IntegrationEnv("aiogram", "latest"),
-    IntegrationEnv("aiogram_dialog", "210"),
+    IntegrationEnv("aiogram_dialog", "210", python_version_less(3, 14)),
     IntegrationEnv("aiogram_dialog", "latest"),
-    IntegrationEnv("aiohttp", "393"),
+    IntegrationEnv("aiohttp", "393", python_version_less(3, 14)),
+    IntegrationEnv("aiohttp", "31215"),
     IntegrationEnv("aiohttp", "latest"),
     IntegrationEnv("arq", "0250"),
     IntegrationEnv("arq", "latest"),
     IntegrationEnv("click", "817"),
     IntegrationEnv("click", "latest"),
-    IntegrationEnv("fastapi", "0096"),
+    IntegrationEnv("fastapi", "0096", python_version_less(3, 14)),
     IntegrationEnv("fastapi", "0109"),
     IntegrationEnv("fastapi", "latest"),
-    IntegrationEnv("faststream", "050", constraint_3_13),
-    IntegrationEnv("faststream", "0529"),
+    IntegrationEnv("faststream", "050", python_version_less(3, 13)),
+    IntegrationEnv("faststream", "0529", python_version_less(3, 14)),
     IntegrationEnv("faststream", "060"),
     IntegrationEnv("faststream", "latest"),
     IntegrationEnv("flask", "302"),
     IntegrationEnv("flask", "latest"),
-    IntegrationEnv("grpcio", "1641", constraint_3_13),
-    IntegrationEnv("grpcio", "1680"),
+    IntegrationEnv("grpcio", "1641", python_version_less(3, 13)),
+    IntegrationEnv("grpcio", "1680", python_version_less(3, 14)),
     IntegrationEnv("grpcio", "latest"),
     IntegrationEnv("litestar", "232"),
     IntegrationEnv("litestar", "latest"),
-    IntegrationEnv("sanic", "23121"),
+    IntegrationEnv("sanic", "23121", python_version_less(3, 14)),
+    IntegrationEnv("sanic", "2530"),
     IntegrationEnv("sanic", "latest"),
     IntegrationEnv("starlette", "0270"),
     IntegrationEnv("starlette", "latest"),
@@ -108,6 +113,8 @@ def unit(session: nox.Session) -> None:
 
 @nox.session(tags=["ci"])
 def real_world(session: nox.Session) -> None:
+    if sys.version_info >= (3, 14):
+        session.skip("Skipping tests on python >=3.14 due to requirements limitations")
     session.install(
         *INSTALL_CMD,
         "-r", "examples/real_world/requirements_test.txt",

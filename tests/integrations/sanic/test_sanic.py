@@ -15,7 +15,6 @@ from ..common import (
 )
 
 
-
 @asynccontextmanager
 async def dishka_app(view, provider):
     app = Sanic("test")

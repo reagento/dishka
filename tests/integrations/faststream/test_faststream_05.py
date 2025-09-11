@@ -5,11 +5,11 @@ from typing import Any, ParamSpec, TypeVar
 from unittest.mock import Mock
 
 import pytest
-from dishka.integrations.base import InjectFunc
 from faststream import FastStream
 from faststream.nats import NatsBroker, TestNatsBroker
 
 from dishka import make_async_container
+from dishka.integrations.base import InjectFunc
 from dishka.integrations.faststream import (
     FromDishka,
     inject,
@@ -40,6 +40,7 @@ _ReturnT = TypeVar("_ReturnT")
 async def dishka_app(
     view: Callable[..., Any],
     provider: AppProvider,
+    *,
     auto_inject: bool | InjectFunc[_ParamsP, _ReturnT] = False,
 ) -> AsyncIterator[NatsBroker]:
     broker = NatsBroker()
@@ -154,7 +155,11 @@ async def handle_for_custom_inject(
 
 @pytest.mark.asyncio()
 async def test_custom_auto_inject(app_provider: AppProvider) -> None:
-    async with dishka_app(handle_for_custom_inject, app_provider, auto_inject=inject) as client:
+    async with dishka_app(
+        handle_for_custom_inject,
+        app_provider,
+        auto_inject=inject,
+    ) as client:
         await client.publish("", "test")
 
         app_provider.mock.assert_called_with(APP_DEP_VALUE)

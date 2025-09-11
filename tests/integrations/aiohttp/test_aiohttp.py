@@ -133,7 +133,10 @@ async def test_request_dependency2(app_provider: AppProvider, app_factory):
 
 @pytest.mark.asyncio
 async def test_custom_auto_inject(app_provider: Provider) -> None:
-    async with dishka_custom_inject_app(get_with_request, app_provider) as client:
+    async with dishka_custom_inject_app(
+        get_with_request,
+        app_provider,
+    ) as client:
         await client.get("/")
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()

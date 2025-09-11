@@ -13,7 +13,7 @@ from flask.sansio.scaffold import Scaffold
 from flask.typing import RouteCallable
 
 from dishka import Container, FromDishka, Provider, Scope, from_context
-from .base import is_dishka_injected, wrap_injection
+from .base import InjectFunc, is_dishka_injected, wrap_injection
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -45,24 +45,33 @@ class ContainerMiddleware:
             g.dishka_container.close()
 
 
-def _inject_routes(scaffold: Scaffold) -> None:
+def _inject_routes(scaffold: Scaffold, inject_func: InjectFunc[P, T]) -> None:
     for key, func in scaffold.view_functions.items():
         if not is_dishka_injected(func):
             # typing.cast is applied because there
             # are RouteCallable objects in dict value
-            scaffold.view_functions[key] = cast(RouteCallable, inject(func))
+            scaffold.view_functions[key] = cast(
+                RouteCallable,
+                inject_func(func),
+            )
 
 
 def setup_dishka(
         container: Container,
         app: Flask,
         *,
-        auto_inject: bool = False,
+        auto_inject: bool | InjectFunc[P, T] = False,
 ) -> None:
     middleware = ContainerMiddleware(container)
     app.before_request(middleware.enter_request)
     app.teardown_appcontext(middleware.exit_request)
-    if auto_inject:
-        _inject_routes(app)
+    if auto_inject is not False:
+        inject_func: InjectFunc[P, T]
+        if auto_inject is True:
+            inject_func = inject
+        else:
+            inject_func = auto_inject
+
+        _inject_routes(app, inject_func)
         for blueprint in app.blueprints.values():
-            _inject_routes(blueprint)
+            _inject_routes(blueprint, inject_func)

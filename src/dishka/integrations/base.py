@@ -53,6 +53,7 @@ DependsClass: TypeAlias = cast(
     type | Sequence[type],
     FromDishka | _FromComponent,
 )
+InjectFunc: TypeAlias = Callable[[Callable[P, T]], Callable[P, T]]
 
 
 def _get_auto_injected_async_gen_scoped(

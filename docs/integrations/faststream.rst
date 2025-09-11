@@ -81,6 +81,11 @@ How to use
 
     setup_dishka(container=container, broker=broker, auto_inject=True)
 
+Or pass your own inject decorator
+
+.. code-block:: python
+
+    setup_dishka(container=container, broker=broker, auto_inject=my_inject)
 
 FastStream - Litestar/FastAPI - dishka integration
 *********************************************************

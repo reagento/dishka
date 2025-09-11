@@ -22,8 +22,10 @@ from faststream.types import DecodedMessage
 from faststream.utils.context import ContextRepo
 
 from dishka import AsyncContainer, Provider, Scope, from_context
-from dishka.integrations.base import wrap_injection
+from dishka.integrations.base import InjectFunc, wrap_injection
 
+_ReturnT = TypeVar("_ReturnT")
+_ParamsP = ParamSpec("_ParamsP")
 
 class FastStreamProvider(Provider):
     context = from_context(ContextRepo, scope=Scope.REQUEST)
@@ -57,7 +59,7 @@ def setup_dishka(
     broker: "BrokerType[Any, Any] | None" = None,
     *,
     finalize_container: bool = True,
-    auto_inject: bool = False,
+    auto_inject: bool | InjectFunc[_ParamsP, _ReturnT] = False,
 ) -> None:
     """
     Setup dishka integration with FastStream.
@@ -68,7 +70,7 @@ def setup_dishka(
         app: FastStream Application or StreamRouter instance.
         broker: FastStream broker instance.
         finalize_container: bool. Can be used only with app.
-        auto_inject: bool.
+        auto_inject: bool or custom inject decorator.
     """
     if (app and broker) or (not app and not broker):
         raise ValueError(  # noqa: TRY003
@@ -115,18 +117,21 @@ def setup_dishka(
                 *publisher._broker_middlewares,  # noqa: SLF001
             )
 
-    if auto_inject:
+    if auto_inject is not False:
+        inject_func: InjectFunc[_ParamsP, _ReturnT]
+
+        if auto_inject is True:
+            inject_func = inject
+        else:
+            inject_func = auto_inject
+
         broker._call_decorators = (  # noqa: SLF001
-            inject,
+            inject_func,
             *broker._call_decorators,  # noqa: SLF001
         )
 
 
-T = TypeVar("T")
-P = ParamSpec("P")
-
-
-def inject(func: Callable[P, T]) -> Callable[P, T]:
+def inject(func: Callable[_ParamsP, _ReturnT]) -> Callable[_ParamsP, _ReturnT]:
     return wrap_injection(
         func=func,
         is_async=True,

@@ -71,6 +71,21 @@ async def dishka_auto_app(handler, provider):
 
 
 @asynccontextmanager
+async def dishka_custom_auto_inject_app(
+    handler,
+    provider,
+):
+    dp = Dispatcher()
+    dp.message()(handler)
+    container = make_async_container(provider)
+    setup_dishka(container, router=dp, auto_inject=inject)
+
+    await dp.emit_startup()
+    yield dp
+    await dp.emit_shutdown()
+    await container.close()
+
+@asynccontextmanager
 async def dishka_auto_app_with_sub_router(handler, provider):
     dp = Dispatcher()
     router = Router()
@@ -86,7 +101,7 @@ async def dishka_auto_app_with_sub_router(handler, provider):
     await container.close()
 
 
-async def send_message(bot, dp):
+async def send_message(bot: Bot, dp: Dispatcher) -> None:
     await dp.feed_update(bot, Update(
         update_id=1,
         message=Message(
@@ -241,3 +256,20 @@ async def test_aiogram_provider_with_container_middleware(bot):
 
     async with dishka_auto_app(handler, AiogramProvider()) as dp:
         await send_message(bot, dp)
+
+
+@pytest.mark.asyncio
+async def test_auto_inject_with_custom_inject_func(
+    bot: Bot,
+    app_provider: AppProvider,
+) -> None:
+    async def handler(
+            message: Message,
+            a: FromDishka[AppDep],
+            mock: FromDishka[Mock],
+    ) -> None:
+        mock(a)
+
+    async with dishka_custom_auto_inject_app(handler, app_provider) as dp:
+        await send_message(bot, dp)
+

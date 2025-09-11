@@ -26,8 +26,10 @@ from faststream.asgi import AsgiFastStream
 from faststream.message import StreamMessage
 
 from dishka import AsyncContainer, Provider, Scope, from_context
-from dishka.integrations.base import wrap_injection
+from dishka.integrations.base import InjectFunc, wrap_injection
 
+_ReturnT = TypeVar("_ReturnT")
+_ParamsP = ParamSpec("_ParamsP")
 
 class FastStreamProvider(Provider):
     context = from_context(ContextRepo, scope=Scope.REQUEST)
@@ -57,7 +59,7 @@ def setup_dishka(
     broker: "BrokerType[Any, Any] | None" = None,
     *,
     finalize_container: bool = False,
-    auto_inject: bool = False,
+    auto_inject: bool | InjectFunc[_ParamsP, _ReturnT] = False,
 ) -> None:
     """Setup dishka integration with FastStream.
 
@@ -68,7 +70,7 @@ def setup_dishka(
         app: FastStream Application or StreamRouter instance.
         broker: FastStream broker instance.
         finalize_container: bool. Can be used only with app.
-        auto_inject: bool.
+        auto_inject: bool or custom inject func.
     """
     if (app and broker) or (not app and not broker):
         raise ValueError(  # noqa: TRY003
@@ -94,9 +96,16 @@ def setup_dishka(
 
     broker.insert_middleware(DishkaMiddleware(container))
 
-    if auto_inject:
+    if auto_inject is not False:
+        inject_func: InjectFunc[_ParamsP, _ReturnT]
+
+        if auto_inject is True:
+            inject_func = inject
+        else:
+            inject_func = auto_inject
+
         broker.config.fd_config.call_decorators = (
-            inject,
+            inject_func,
             *broker.config.fd_config.call_decorators,
         )
 
@@ -138,11 +147,7 @@ class _DishkaMiddleware(BaseMiddleware):
                 )
 
 
-T = TypeVar("T")
-P = ParamSpec("P")
-
-
-def inject(func: Callable[P, T]) -> Callable[P, T]:
+def inject(func: Callable[_ParamsP, _ReturnT]) -> Callable[_ParamsP, _ReturnT]:
     param_name = _find_context_param(func)
     if param_name:
         additional_params = []
@@ -158,7 +163,7 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
     )
 
 
-def _find_context_param(func: Callable[P, T]) -> str | None:
+def _find_context_param(func: Callable[_ParamsP, _ReturnT]) -> str | None:
     hints = get_type_hints(func)
     return next(
         (name for name, hint in hints.items() if hint is ContextRepo),

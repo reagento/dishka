@@ -24,7 +24,6 @@ AppFactory: TypeAlias = Callable[
     AbstractContextManager[Flask],
 ]
 
-
 @contextmanager
 def dishka_app(
     view: Callable[..., Any],
@@ -66,6 +65,19 @@ def dishka_app_with_lifecycle_hooks(
     app.get("/")(view)
     container = make_container(provider)
     setup_dishka(container=container, app=app, auto_inject=True)
+    yield app
+    container.close()
+
+
+@contextmanager
+def dishka_custom_auto_inject_app(
+    view: Callable[..., Any],
+    provider: Provider,
+) -> Generator[Flask, None, None]:
+    app = Flask(__name__)
+    app.get("/")(view)
+    container = make_container(provider)
+    setup_dishka(container=container, app=app, auto_inject=inject)
     yield app
     container.close()
 
@@ -154,3 +166,23 @@ def test_teardown_skips_container_close_when_not_in_flask_g(
     ):
         app.test_client().get("/")
         assert not hasattr(g, "dishka_container")
+
+
+def handle_for_custom_inject(
+    a: FromDishka[RequestDep],
+    mock: FromDishka[Mock],
+) -> None:
+    mock(a)
+
+
+def test_custom_auto_inject(
+    app_provider: AppProvider,
+) -> None:
+    with (
+        dishka_custom_auto_inject_app(
+            handle_for_custom_inject,
+            app_provider,
+        ) as app,
+        app.test_request_context(),
+    ):
+        app.test_client().get("/")

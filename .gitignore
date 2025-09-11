@@ -15,3 +15,4 @@ __pycache__/
 .idea/
 .vscode/
 .venv/
+.DS_Store

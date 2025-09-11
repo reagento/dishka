@@ -24,7 +24,7 @@ lint.ignore = [
     "SIM103",
     "ISC003",
 
-    # identitcal by code != identical by meaning
+    # identical by code != identical by meaning
     "SIM114",
 
     # awful things, never use.
@@ -34,7 +34,7 @@ lint.ignore = [
     "TC003",
     "TC006",
 
-    # only affects perfomance and brings nothing useful
+    # only affects performance and brings nothing useful
     "UP038",
 ]
 

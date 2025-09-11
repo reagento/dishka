@@ -1,10 +1,11 @@
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from importlib.metadata import version
-from typing import Any
+from typing import Any, ParamSpec, TypeVar
 from unittest.mock import Mock
 
 import pytest
+from dishka.integrations.base import InjectFunc
 from faststream import FastStream
 from faststream.nats import NatsBroker, TestNatsBroker
 
@@ -31,11 +32,15 @@ if FASTSTREAM_VERSION.startswith("0.6"):
         reason="These tests is not compatible with FastStream 0.6",
     )
 
+_ParamsP = ParamSpec("_ParamsP")
+_ReturnT = TypeVar("_ReturnT")
+
 
 @asynccontextmanager
 async def dishka_app(
     view: Callable[..., Any],
     provider: AppProvider,
+    auto_inject: bool | InjectFunc[_ParamsP, _ReturnT] = False,
 ) -> AsyncIterator[NatsBroker]:
     broker = NatsBroker()
     broker.subscriber("test")(inject(view))
@@ -43,7 +48,7 @@ async def dishka_app(
     app = FastStream(broker)
 
     container = make_async_container(provider)
-    setup_dishka(container, app=app)
+    setup_dishka(container, app=app, auto_inject=auto_inject)
 
     async with TestNatsBroker(broker) as br:
         yield br
@@ -138,3 +143,21 @@ async def test_faststream_with_broker(app_provider: AppProvider) -> None:
         app_provider.request_released.assert_called_once()
 
     await container.close()
+
+async def handle_for_custom_inject(
+    a: FromDishka[AppDep],
+    mock: FromDishka[Mock],
+) -> str:
+    mock(a)
+    return "passed"
+
+
+@pytest.mark.asyncio()
+async def test_custom_auto_inject(app_provider: AppProvider) -> None:
+    async with dishka_app(handle_for_custom_inject, app_provider, auto_inject=inject) as client:
+        await client.publish("", "test")
+
+        app_provider.mock.assert_called_with(APP_DEP_VALUE)
+        app_provider.app_released.assert_not_called()
+    app_provider.app_released.assert_called()
+

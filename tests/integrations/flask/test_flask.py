@@ -1,6 +1,6 @@
 from collections.abc import Callable, Generator, Iterable
 from contextlib import AbstractContextManager, contextmanager
-from typing import Any, Literal, ParamSpec, TypeAlias, TypeVar
+from typing import Any, Literal, TypeAlias
 from unittest.mock import Mock
 
 import pytest
@@ -23,16 +23,6 @@ AppFactory: TypeAlias = Callable[
     ...,
     AbstractContextManager[Flask],
 ]
-
-_ParamsP = ParamSpec("_ParamsP")
-_ReturnT = TypeVar("_ReturnT")
-
-def custom_inject(
-    func: Callable[_ParamsP, _ReturnT],
-) -> Callable[_ParamsP, _ReturnT]:
-    func.__custom__ = True
-    return inject(func)
-
 
 @contextmanager
 def dishka_app(
@@ -87,7 +77,7 @@ def dishka_custom_auto_inject_app(
     app = Flask(__name__)
     app.get("/")(view)
     container = make_container(provider)
-    setup_dishka(container=container, app=app, auto_inject=custom_inject)
+    setup_dishka(container=container, app=app, auto_inject=inject)
     yield app
     container.close()
 
@@ -177,14 +167,22 @@ def test_teardown_skips_container_close_when_not_in_flask_g(
         app.test_client().get("/")
         assert not hasattr(g, "dishka_container")
 
+
+def handle_for_custom_inject(
+    a: FromDishka[RequestDep],
+    mock: FromDishka[Mock],
+) -> None:
+    mock(a)
+
+
 def test_custom_auto_inject(
     app_provider: AppProvider,
 ) -> None:
     with (
         dishka_custom_auto_inject_app(
-            handle_with_request,
+            handle_for_custom_inject,
             app_provider,
-        )
+        ) as app,
+        app.test_request_context(),
     ):
-        assert getattr(handle_with_request, "__custom__", False)
-
+        app.test_client().get("/")

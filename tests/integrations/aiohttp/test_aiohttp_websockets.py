@@ -15,7 +15,6 @@ from dishka.integrations.aiohttp import (
     inject,
     setup_dishka,
 )
-from tests.integrations.aiohttp.conftest import custom_inject
 from ..common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
@@ -69,7 +68,7 @@ async def dishka_custom_auto_inject_app(
     app.router.add_get("/", view)
 
     container = make_async_container(provider)
-    setup_dishka(container, app=app, auto_inject=custom_inject)
+    setup_dishka(container, app=app, auto_inject=inject)
     client = TestClient(TestServer(app))
     await client.start_server()
     yield client
@@ -203,16 +202,27 @@ async def test_websocket_dependency(ws_app_provider: AppProvider, app_factory):
 
 async def handle_for_custom_auto_inject(
     request: Request,
-    ws: FromDishka[WebSocketDep],
+    a: FromDishka[WebSocketDep],
     mock: FromDishka[Mock],
-) -> None:
-    pass
+) -> WebSocketResponse:
+    websocket = WebSocketResponse()
+    await websocket.prepare(request)
+
+    await websocket.receive()
+    mock(a)
+    await websocket.send_str("passed")
+    return websocket
 
 
 @pytest.mark.asyncio
-async def test_custom_auto_inject(ws_app_provider: AppProvider):
+async def test_custom_auto_inject(ws_app_provider: AppProvider) -> None:
     async with dishka_custom_auto_inject_app(
         handle_for_custom_auto_inject,
         ws_app_provider,
-    ):
-        assert getattr(handle_for_custom_auto_inject, "__custom__", False)
+    ) as client:
+        async with client.ws_connect("/") as conn:
+            await conn.send_str("...")
+            assert await conn.receive_str() == "passed"
+
+        ws_app_provider.mock.assert_called_with(WS_DEP_VALUE)
+        ws_app_provider.websocket_released.assert_called_once()

@@ -122,7 +122,10 @@ def setup_dishka(
         router.startup.register(callback)
 
 
-def inject_router(router: Router, inject_func: InjectFunc[P, T]) -> None:
+def inject_router(
+    router: Router,
+    inject_func: InjectFunc[P, T] = inject,
+) -> None:
     """Inject dishka to the router handlers."""
     for sub_router in router.chain_tail:
         for observer in sub_router.observers.values():
@@ -136,7 +139,7 @@ def inject_router(router: Router, inject_func: InjectFunc[P, T]) -> None:
 
 def inject_handler(
     handler: HandlerObject,
-    inject_func: InjectFunc[P, T],
+    inject_func: InjectFunc[P, T] = inject,
 ) -> HandlerObject:
     """Inject dishka for callback in aiogram's handler."""
     # temp_handler is used to apply original __post_init__ processing

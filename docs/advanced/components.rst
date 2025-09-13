@@ -13,7 +13,7 @@ across all provided objects. But what if there are some intersections.
 Let's talk about three situations:
 
 1. Only several types are used with different meaning within a monolithic app.
-2. Several parts of an application are developed them more or less independently, while they are used within same processing context.
+2. Several parts of an application are developed more or less independently, while they are used within same processing context.
 3. You have a modular application with multiple bounded contexts.
 
 **First situation** can appear when you have for-example multiple thread pools
@@ -165,6 +165,34 @@ when declaring a dependency by ``FromComponent`` type annotation.
 
     container = make_container(MainProvider(), AdditionalProvider())
     container.get(float)  # returns 0.1
+
+
+You can use ``Annotated[T, FromComponent(...)]`` in factory return type to provide this factory
+in specified component, instead of marking ``component = "component_name"`` in provider itself:
+
+.. code-block:: python
+
+    from typing import Annotated
+    from dishka import FromComponent, make_container, Provider, provide, Scope
+
+    class MainProvider(Provider):
+
+        @provide(scope=Scope.APP)
+        def foobar(self, a: Annotated[int, FromComponent("X")]) -> float:
+            return a/10
+
+        @provide(scope=Scope.APP)
+        def foo(self) -> Annotated[int, FromComponent("X")]:
+            return 1
+
+    container = make_container(MainProvider())
+    container.get(float)  # returns 0.1
+
+.. warning::
+    Although dishka allows such declarations, it is considered to be a bad practice,
+    because it allows you to mix factories related to different components in
+    one provider. Use it only if your components consist of max of 1-2 factories and
+    split them in every other case.
 
 
 ``alias`` now can be used across components without changing the type:

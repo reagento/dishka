@@ -1,3 +1,4 @@
+import math
 from collections.abc import (
     AsyncGenerator,
     AsyncIterable,
@@ -398,7 +399,7 @@ def test_provide_all_as_provider_method():
     assert hundred == 100
 
     fifty = container.get(float)
-    assert fifty == 50.0
+    assert math.isclose(fifty, 50.0, abs_tol=1e-9)
 
 
 def test_provide_all_in_class():
@@ -419,7 +420,7 @@ def test_provide_all_in_class():
     assert hundred == 100
 
     fifty = container.get(float)
-    assert fifty == 50.0
+    assert math.isclose(fifty, 50.0, abs_tol=1e-9)
 
 
 make_factory_by_source = partial(
@@ -493,8 +494,10 @@ def test_annotated_factory():
 
 
 def test_self():
-
-    with pytest.warns():
+    with pytest.warns(
+            Warning,
+            match="without `self` argument",
+    ):
         class P(Provider):
 
             @provide(scope=Scope.APP)
@@ -563,7 +566,7 @@ def test_protocol_cannot_be_source_in_provide(provide_func, proto):
 
     with pytest.raises(
         CannotUseProtocolError,
-        match="Cannot use.*\n.*seems that this is a Protocol.*",
+        match=r"Cannot use.*\n.*seems that this is a Protocol.*",
     ):
         class P(Provider):
             p = provide_func(proto)
@@ -575,8 +578,9 @@ def test_protocol_cannot_be_source_in_provide(provide_func, proto):
         Union[str, int],  # noqa: UP007
         Final[str],
         ClassVar[str],
-        Optional[str],  # noqa: UP007
+        Optional[str],  # noqa: UP045
         Literal["5"],
+        str | None,
     ],
 )
 def test_generic_alias_not_a_factory(type_hint):

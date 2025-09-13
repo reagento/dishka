@@ -92,7 +92,7 @@ Compile docs:
 
 .. code-block::
 
-    make html
+    sphinx-build -M html docs docs-build -W
 
 Open file ``docs-build/html/index.html`` in your browser
 

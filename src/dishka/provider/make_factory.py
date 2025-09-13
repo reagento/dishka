@@ -1,5 +1,4 @@
 import warnings
-from asyncio import iscoroutinefunction
 from collections.abc import (
     AsyncGenerator,
     AsyncIterable,
@@ -16,12 +15,14 @@ from inspect import (
     isasyncgenfunction,
     isbuiltin,
     isclass,
+    iscoroutinefunction,
     isfunction,
     isgeneratorfunction,
     ismethod,
     signature,
     unwrap,
 )
+from types import UnionType
 from typing import (
     Annotated,
     Any,
@@ -100,7 +101,6 @@ def _get_init_members(tp: type) -> MembersStorage[str, None]:
         members=type_hints,
         overriden=overridden,
     )
-
 
 
 def _get_kw_dependencies(
@@ -468,6 +468,9 @@ def make_factory(
         raise CannotUseProtocolError(source)
 
     source_origin = get_origin(source)
+
+    if source_origin is UnionType:
+        raise NotAFactoryError(source)
 
     if isclass(source) or isclass(source_origin):
         return _make_factory_by_class(

@@ -103,7 +103,7 @@ sub_dialog = Dialog(
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def message_manager() -> MockMessageManager:
     return MockMessageManager()
 

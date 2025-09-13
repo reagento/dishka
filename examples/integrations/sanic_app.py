@@ -4,7 +4,10 @@ from sanic import Blueprint, HTTPResponse, Request, Sanic
 
 from dishka import Provider, Scope, make_async_container, provide
 from dishka.integrations.sanic import (
-    FromDishka, inject, setup_dishka, SanicProvider,
+    FromDishka,
+    SanicProvider,
+    inject,
+    setup_dishka,
 )
 
 

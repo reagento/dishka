@@ -1,7 +1,7 @@
 import logging
 from abc import abstractmethod
 from contextlib import asynccontextmanager
-from typing import Annotated, Protocol
+from typing import Protocol
 
 import uvicorn
 from fastapi import APIRouter, FastAPI

@@ -68,3 +68,9 @@ It is available on *REQUEST*-scope
 .. code-block:: python
 
     setup_dishka(container=container, app=app, auto_inject=True)
+
+Or pass your own inject decorator
+
+.. code-block:: python
+
+    setup_dishka(container=container, app=app, auto_inject=my_inject)

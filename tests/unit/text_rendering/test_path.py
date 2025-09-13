@@ -63,7 +63,6 @@ def test_cycle_2scopes(cycle_renderer):
         override=False,
     )
 
-
     res = cycle_renderer.render([app_factory, factory, factory, factory])
     res = textwrap.dedent(res)
     assert res == textwrap.dedent("""\
@@ -114,6 +113,7 @@ def test_linear(linear_renderer):
     ▼   int   A.foo
     ╰─> int   ???  
     """)  # noqa: W291
+
 
 def test_linear_2scopes(linear_renderer):
     foo = A().foo

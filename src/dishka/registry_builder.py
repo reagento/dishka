@@ -13,7 +13,7 @@ from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope, InvalidScopes
-from .entities.validation_settigs import ValidationSettings
+from .entities.validation_settings import ValidationSettings
 from .exceptions import (
     AliasedFactoryNotFoundError,
     CycleDependenciesError,
@@ -291,12 +291,12 @@ class RegistryBuilder:
         found = []
         provides = decorator.provides.with_component(provider.component)
         for factory in self.processed_factories.values():
-                if factory.provides.component != provides.component:
-                    continue
-                if factory.type is FactoryType.CONTEXT:
-                    continue
-                if decorator.match_type(factory.provides.type_hint):
-                    found.append(factory)
+            if factory.provides.component != provides.component:
+                continue
+            if factory.type is FactoryType.CONTEXT:
+                continue
+            if decorator.match_type(factory.provides.type_hint):
+                found.append(factory)
         if found:
             for factory in found:
                 self._decorate_factory(

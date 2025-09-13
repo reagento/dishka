@@ -54,7 +54,9 @@ def test_is_type_var_tuple() -> None:
 
 def test_simple_inheritance() -> None:
     class A1: ...
+
     class A2(A1): ...
+
     class A3(A2): ...
 
     provider = Provider(scope=Scope.APP)
@@ -90,6 +92,7 @@ def test_ignore_parent_type(obj: Any, value: Any, component: Any) -> None:
 
 def test_type_var() -> None:
     class A1(Protocol[T]): ...
+
     class A2(A1[str]): ...
 
     provider = Provider(scope=Scope.APP)
@@ -97,7 +100,7 @@ def test_type_var() -> None:
 
     container = make_container(provider)
 
-    assert(
+    assert (
         container.get(A2)
         is container.get(A1[str])
     )
@@ -109,6 +112,7 @@ def test_type_var() -> None:
 )
 def test_type_var_tuple() -> None:
     class A1(Generic[Unpack[Ts]]): ...
+
     class A2(A1[str, int, type]): ...
 
     provider = Provider(scope=Scope.APP)
@@ -167,20 +171,24 @@ def test_type_var_and_type_var_tuple(
 
 def test_deep_inheritance() -> None:
     class A1(Generic[T], float): ...
+
     class A2(A1[T], Generic[T]): ...
 
     class B1: ...
+
     class B2(B1): ...
+
     class B3(B2): ...
 
     class C1(Generic[T], B3): ...
+
     class D1(A2[int], C1[str]): ...
 
     provider = Provider(scope=Scope.APP)
     provider.provide(lambda: D1(), provides=WithParents[D1])
     container = make_container(provider)
 
-    assert(
+    assert (
         container.get(D1)
         is container.get(A2[int])
         is container.get(A1[int])
@@ -195,6 +203,7 @@ def test_deep_inheritance() -> None:
 
 def test_get_parents_by_generic_alias() -> None:
     class A1(Generic[T], float): ...
+
     class A2(A1[T], Generic[T]): ...
 
     provider = Provider(scope=Scope.APP)
@@ -219,8 +228,14 @@ def test_ignoring_parent() -> None:
 
 
 class TupleGeneric(tuple[T], Generic[T]): ...  # noqa: SLOT001
+
+
 class SequenceInt(Sequence[int]): ...
+
+
 class ListAny(list[Any]): ...
+
+
 class JsonMapping(dict[str, str | int]): ...
 
 
@@ -273,3 +288,27 @@ def test_pep695_generic_inheritance() -> None:
 
     assert type(container.get(Base[int]).value) is int
     assert type(container.get(Base[str]).value) is str
+
+
+def test_specific_generic_parents() -> None:
+    T = TypeVar("T")
+
+    class Repo(Generic[T], ABC):
+        ...
+
+    class IntRepo(Repo[int], ABC):
+        ...
+
+    class ConcreteRepoBase:
+        ...
+
+    class ConcreteRepo(ConcreteRepoBase, IntRepo):
+        ...
+
+    class MyProvider(Provider):
+        scope = Scope.APP
+        deps = provide(WithParents[ConcreteRepo])
+
+    container = make_container(MyProvider())
+
+    assert isinstance(container.get(IntRepo), ConcreteRepo)

@@ -38,7 +38,7 @@ def render_suggestions_for_missing(
         for factory in suggest_abstract_factories:
             source_name = get_source_name(factory)
             provides_name = get_key_name(factory.provides)
-            abstract_names += "("+ provides_name
+            abstract_names += "(" + provides_name
             if source_name:
                 abstract_names += ", " + source_name
             abstract_names += ");"

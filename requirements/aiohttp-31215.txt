@@ -1,0 +1,2 @@
+-r test.txt
+aiohttp==3.12.15

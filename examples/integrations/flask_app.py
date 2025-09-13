@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Annotated, Protocol
+from typing import Protocol
 
 from flask import Flask
 

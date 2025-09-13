@@ -72,6 +72,11 @@ How to use
 
     setup_dishka(container=container, router=dp, auto_inject=True)
 
+Or pass your own inject decorator
+
+.. code-block:: python
+
+    setup_dishka(container=container, router=dp, auto_inject=my_inject)
 
 6. *(optional)* Close container on dispatcher shutdown
 

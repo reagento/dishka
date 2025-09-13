@@ -21,6 +21,7 @@ def baz(): ...
 
 T = TypeVar("T")
 
+
 class GenericA(Generic[T]):
     pass
 

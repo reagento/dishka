@@ -450,7 +450,7 @@ def _create_norm_literal(args: Iterable):
 
 def _replace_source(norm: BaseNormType, *, source: TypeHint) -> BaseNormType:
     norm_copy = copy(norm)
-    norm_copy._source = source  # type: ignore[attr-defined]
+    norm_copy._source = source  # type: ignore[attr-defined, unused-ignore]
     return norm_copy
 
 

@@ -57,7 +57,7 @@ jobs:
     - name: Build doc
       run: |
         uv pip install -r requirements_doc.txt --system
-        sphinx-build -M html docs docs-build
+        sphinx-build -M html docs docs-build -W
 
     - name: Store coverage file
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

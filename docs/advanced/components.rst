@@ -171,6 +171,7 @@ You can use ``Annotated[T, FromComponent(...)]`` in factory return type to provi
 in specified component, instead of marking ``component = "component_name"`` in provider itself:
 
 .. code-block:: python
+
     from typing import Annotated
     from dishka import FromComponent, make_container, Provider, provide, Scope
 

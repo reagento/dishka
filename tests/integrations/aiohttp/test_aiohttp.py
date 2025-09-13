@@ -38,7 +38,6 @@ async def dishka_app(view, provider) -> AsyncIterable[TestClient]:
     await client.start_server()
     yield client
     await client.close()
-    await container.close()
 
 
 @asynccontextmanager
@@ -53,7 +52,6 @@ async def dishka_auto_app(view, provider) -> AsyncIterable[TestClient]:
     await client.start_server()
     yield client
     await client.close()
-    await container.close()
 
 
 @asynccontextmanager
@@ -140,3 +138,25 @@ async def test_custom_auto_inject(app_provider: Provider) -> None:
         await client.get("/")
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
+
+
+@pytest.mark.parametrize("finalize", [])
+@pytest.mark.asyncio
+async def test_app_dependency_finalized(
+    *,
+    app_provider: AppProvider,
+    finalize: bool,
+) -> None:
+    app = Application()
+    container = make_async_container(app_provider)
+    setup_dishka(container, app=app, finalize_container=finalize)
+
+    client = TestClient(TestServer(app))
+    await client.start_server()
+    await client.close()
+
+    await container.get(AppDep)
+    if finalize:
+        app_provider.app_released.assert_called_once()
+    else:
+        app_provider.app_released.assert_not_called()

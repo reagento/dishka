@@ -1,4 +1,7 @@
 __all__ = [
+    "DISHKA_APP_CONTAINER_KEY",
+    "DISHKA_REQUEST_CONTAINER_KEY",
+    "FromDishka",
     "inject",
     "setup_dishka",
 ]
@@ -9,7 +12,7 @@ from typing import Any, Final, ParamSpec, TypeVar
 from arq import Worker
 from arq.typing import StartupShutdown
 
-from dishka.async_container import AsyncContainer
+from dishka import AsyncContainer, FromDishka
 from dishka.integrations.base import wrap_injection
 
 T = TypeVar("T")

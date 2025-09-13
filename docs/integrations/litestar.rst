@@ -39,7 +39,7 @@ How to use
 
 .. code-block:: python
 
-    get('/')
+    @get('/')
     @inject
     async def endpoint(
         request: str, gateway: FromDishka[Gateway],
@@ -50,7 +50,7 @@ How to use
 
 .. code-block:: python
 
-    get('/')
+    @get('/')
     async def endpoint(
         request: str, gateway: FromDishka[Gateway],
     ) -> Response:

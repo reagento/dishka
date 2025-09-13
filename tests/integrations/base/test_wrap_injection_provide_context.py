@@ -7,6 +7,7 @@ import pytest
 from dishka.async_container import AsyncContainer
 from dishka.container import Container
 from dishka.entities.depends_marker import FromDishka
+from dishka.entities.scope import Scope
 from dishka.integrations.base import wrap_injection
 from dishka.integrations.exceptions import ImproperProvideContextUsageError
 from tests.integrations.common import ContextDep, UserDep
@@ -67,12 +68,22 @@ def provide_context(
 
 
 @pytest.mark.parametrize("func", [sync_func, sync_gen])
-def test_sync_provide_context(func: Callable, container: Container) -> None:
+@pytest.mark.parametrize(
+    "scope_tuple",
+    [(True, None), (False, Scope.STEP), (True, Scope.STEP)],
+)
+def test_sync_provide_context(
+    func: Callable,
+    scope_tuple: tuple[bool, Scope],
+    container: Container,
+) -> None:
+    manage_scope, scope = scope_tuple
     wrapped_func = wrap_injection(
         func=func,
         container_getter=lambda *_: container,
         is_async=False,
-        manage_scope=True,
+        manage_scope=manage_scope,
+        scope=scope,
         provide_context=provide_context,
     )
 
@@ -98,15 +109,22 @@ def test_invalid_provide_context(func: Callable, container: Container) -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("func", [async_func, async_gen])
+@pytest.mark.parametrize(
+    "scope_tuple",
+    [(True, None), (False, Scope.STEP), (True, Scope.STEP)],
+)
 async def test_async_provide_context(
     func: Callable,
+    scope_tuple: tuple[bool, Scope],
     async_container: AsyncContainer,
 ) -> None:
+    manage_scope, scope = scope_tuple
     wrapped_func = wrap_injection(
         func=func,
         container_getter=lambda *_: async_container,
         is_async=True,
-        manage_scope=True,
+        manage_scope=manage_scope,
+        scope=scope,
         provide_context=provide_context,
     )
 

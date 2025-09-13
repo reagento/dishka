@@ -24,12 +24,12 @@ from ..common import (
 )
 
 FASTSTREAM_VERSION = version("faststream")
+
 # `broker.request` was introduced in FastStream 0.5.19
 # `broker.publish(..., rpc=True)` was removed in FastStream 0.6.0rc0
-_, MINOR, PATCH = FASTSTREAM_VERSION.split(".")
-if MINOR == "5" and PATCH < "19":
+if FASTSTREAM_VERSION.startswith("0.6"):
     pytestmark = pytest.mark.skip(
-        reason="These tests is not compatible with FastStream < 0.5.19",
+        reason="These tests is not compatible with FastStream 0.6",
     )
 
 _ParamsP = ParamSpec("_ParamsP")
@@ -44,8 +44,7 @@ async def dishka_app(
     auto_inject: bool | InjectFunc[_ParamsP, _ReturnT] = False,
 ) -> AsyncIterator[NatsBroker]:
     broker = NatsBroker()
-    sub = broker.subscriber("test")
-    sub(inject(view))
+    broker.subscriber("test")(inject(view))
 
     app = FastStream(broker)
 
@@ -66,11 +65,10 @@ async def get_with_app(
     return "passed"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_app_dependency(app_provider: AppProvider) -> None:
     async with dishka_app(get_with_app, app_provider) as client:
-        msg = await client.request("", "test")
-        assert await msg.decode() == "passed"
+        assert await client.publish("", "test", rpc=True) == "passed"
 
         app_provider.mock.assert_called_with(APP_DEP_VALUE)
         app_provider.app_released.assert_not_called()
@@ -85,17 +83,16 @@ async def get_with_request(
     return "passed"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_request_dependency(app_provider: AppProvider) -> None:
     async with dishka_app(get_with_request, app_provider) as client:
-        msg = await client.request("", "test")
-        assert await msg.decode() == "passed"
+        assert await client.publish("", "test", rpc=True) == "passed"
 
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_autoinject_before_subscriber(app_provider: AppProvider) -> None:
     broker = NatsBroker()
     app = FastStream(broker)
@@ -103,12 +100,10 @@ async def test_autoinject_before_subscriber(app_provider: AppProvider) -> None:
     container = make_async_container(app_provider)
     setup_dishka(container, app=app, auto_inject=True)
 
-    sub = broker.subscriber("test")
-    sub(get_with_request)
+    broker.subscriber("test")(get_with_request)
 
     async with TestNatsBroker(broker) as br:
-        msg = await br.request("", "test")
-        assert await msg.decode() == "passed"
+        assert await br.publish("", "test", rpc=True) == "passed"
 
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
@@ -116,20 +111,18 @@ async def test_autoinject_before_subscriber(app_provider: AppProvider) -> None:
     await container.close()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_autoinject_after_subscriber(app_provider: AppProvider) -> None:
     broker = NatsBroker()
     app = FastStream(broker)
 
-    sub = broker.subscriber("test")
-    sub(get_with_request)
+    broker.subscriber("test")(get_with_request)
 
     container = make_async_container(app_provider)
     setup_dishka(container, app=app, auto_inject=True)
 
     async with TestNatsBroker(broker) as br:
-        msg = await br.request("", "test")
-        assert await msg.decode() == "passed"
+        assert await br.publish("", "test", rpc=True) == "passed"
 
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
@@ -137,19 +130,15 @@ async def test_autoinject_after_subscriber(app_provider: AppProvider) -> None:
     await container.close()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_faststream_with_broker(app_provider: AppProvider) -> None:
     broker = NatsBroker()
-
-    sub = broker.subscriber("test")
-    sub(get_with_request)
-
+    broker.subscriber("test")(get_with_request)
     container = make_async_container(app_provider)
     setup_dishka(container, broker=broker, auto_inject=True)
 
     async with TestNatsBroker(broker) as br:
-        msg = await br.request("", "test")
-        assert await msg.decode() == "passed"
+        assert await br.publish("", "test", rpc=True) == "passed"
 
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
@@ -171,9 +160,9 @@ async def test_custom_auto_inject(app_provider: AppProvider) -> None:
         app_provider,
         auto_inject=inject,
     ) as client:
-        msg = await client.request("", "test")
-        assert await msg.decode() == "passed"
+        await client.publish("", "test")
 
         app_provider.mock.assert_called_with(APP_DEP_VALUE)
         app_provider.app_released.assert_not_called()
     app_provider.app_released.assert_called()
+

@@ -21,7 +21,7 @@ from aiogram.dispatcher.event.handler import HandlerObject
 from aiogram.types import TelegramObject
 
 from dishka import AsyncContainer, FromDishka, Provider, Scope, from_context
-from .base import is_dishka_injected, wrap_injection
+from .base import InjectFunc, is_dishka_injected, wrap_injection
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -73,7 +73,7 @@ class ContainerMiddleware(BaseMiddleware):
 
 
 class AutoInjectMiddleware(BaseMiddleware):
-    def __init__(self):
+    def __init__(self) -> None:
         warnings.warn(
             f"{self.__class__.__name__} is slow, "
             "use `setup_dishka` instead if you care about performance",
@@ -91,7 +91,7 @@ class AutoInjectMiddleware(BaseMiddleware):
         if is_dishka_injected(old_handler.callback):
             return await handler(event, data)
 
-        inject_handler(old_handler)
+        inject_handler(old_handler, inject)
         return await handler(event, data)
 
 
@@ -99,19 +99,30 @@ def setup_dishka(
     container: AsyncContainer,
     router: Router,
     *,
-    auto_inject: bool = False,
+    auto_inject: bool | InjectFunc[P, T] = False,
 ) -> None:
     middleware = ContainerMiddleware(container)
 
     for observer in router.observers.values():
         observer.outer_middleware(middleware)
 
-    if auto_inject:
-        callback = partial(inject_router, router=router)
+    if auto_inject is not False:
+        inject_func: InjectFunc[P, T]
+
+        if auto_inject is True:
+            inject_func = inject
+        else:
+            inject_func = auto_inject
+
+        callback = partial(
+            inject_router,
+            router=router,
+            inject_func=inject_func,
+        )
         router.startup.register(callback)
 
 
-def inject_router(router: Router) -> None:
+def inject_router(router: Router, inject_func: InjectFunc[P, T]) -> None:
     """Inject dishka to the router handlers."""
     for sub_router in router.chain_tail:
         for observer in sub_router.observers.values():
@@ -120,15 +131,18 @@ def inject_router(router: Router) -> None:
 
             for handler in observer.handlers:
                 if not is_dishka_injected(handler.callback):
-                    inject_handler(handler)
+                    inject_handler(handler, inject_func)
 
 
-def inject_handler(handler: HandlerObject) -> HandlerObject:
+def inject_handler(
+    handler: HandlerObject,
+    inject_func: InjectFunc[P, T],
+) -> HandlerObject:
     """Inject dishka for callback in aiogram's handler."""
     # temp_handler is used to apply original __post_init__ processing
     # for callback object wrapped by injector
     temp_handler = HandlerObject(
-        callback=inject(handler.callback),
+        callback=inject_func(handler.callback),
         filters=handler.filters,
         flags=handler.flags,
     )

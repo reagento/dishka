@@ -81,7 +81,7 @@ According to the scope order, container can be used to get dependencies from its
 
     config = app_container.get(Config)  # APP-scoped object
 
-    with container() as request_container:  # enter REQUEST scope
+    with app_container() as request_container:  # enter REQUEST scope
         connection = request_container.get(Connection)  # REQUEST-scoped object
         config = request_container.get(Config)  # APP-scoped object
 

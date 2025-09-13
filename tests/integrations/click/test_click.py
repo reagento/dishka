@@ -52,6 +52,26 @@ def dishka_auto_app(handler, provider):
 
 
 @contextmanager
+def dishka_custom_auto_inject_app(handler, provider):
+    command = click.command(handler)
+    container = make_container(provider)
+
+    @click.group()
+    @click.pass_context
+    def main(context: click.Context):
+        setup_dishka(
+            container=container,
+            context=context,
+            finalize_container=False,
+            auto_inject=inject,
+        )
+
+    main.add_command(command, name="test")
+    yield main
+    container.close()
+
+
+@contextmanager
 def dishka_app_with_option(handler, provider):
     command = click.command(click.option("--foo")(inject(handler)))
     container = make_container(provider)
@@ -142,6 +162,25 @@ def test_app_dependency_with_option(app_provider: AppProvider):
         app_provider,
     ) as command:
         result = runner.invoke(command, ["test", "--foo", "bar"])
+        assert result.exit_code == 0
+        app_provider.app_mock.assert_called_with(APP_DEP_VALUE)
+        app_provider.request_released.assert_not_called()
+
+
+def handle_for_auto_inject(
+    a: FromDishka[AppDep],
+    mock: FromDishka[AppMock],
+) -> None:
+    mock(a)
+
+
+def test_custom_auto_inject(app_provider: AppProvider) -> None:
+    runner = CliRunner()
+    with dishka_custom_auto_inject_app(
+        handle_for_auto_inject,
+        app_provider,
+    ) as command:
+        result = runner.invoke(command, ["test"])
         assert result.exit_code == 0
         app_provider.app_mock.assert_called_with(APP_DEP_VALUE)
         app_provider.request_released.assert_not_called()

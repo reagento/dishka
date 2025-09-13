@@ -14,6 +14,7 @@ from dishka.integrations.aiohttp import (
     inject,
     setup_dishka,
 )
+from dishka.provider.provider import Provider
 from ..common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
@@ -48,6 +49,24 @@ async def dishka_auto_app(view, provider) -> AsyncIterable[TestClient]:
 
     container = make_async_container(provider)
     setup_dishka(container, app=app, auto_inject=True)
+    client = TestClient(TestServer(app))
+    await client.start_server()
+    yield client
+    await client.close()
+    await container.close()
+
+
+@asynccontextmanager
+async def dishka_custom_inject_app(
+    view,
+    provider,
+) -> AsyncIterable[TestClient]:
+    app = Application()
+
+    app.router.add_get("/", view)
+
+    container = make_async_container(provider)
+    setup_dishka(container, app=app, auto_inject=inject)
     client = TestClient(TestServer(app))
     await client.start_server()
     yield client
@@ -107,6 +126,17 @@ async def test_request_dependency2(app_provider: AppProvider, app_factory):
         app_provider.mock.reset_mock()
         app_provider.request_released.assert_called_once()
         app_provider.request_released.reset_mock()
+        await client.get("/")
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_custom_auto_inject(app_provider: Provider) -> None:
+    async with dishka_custom_inject_app(
+        get_with_request,
+        app_provider,
+    ) as client:
         await client.get("/")
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()

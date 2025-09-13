@@ -35,6 +35,16 @@ async def dishka_auto_app(view, provider):
     await container.close()
 
 
+@asynccontextmanager
+async def dishka_custom_auto_inject_app(view, provider):
+    app = Sanic("test1")
+    app.get("/")(view)
+    container = make_async_container(provider)
+    setup_dishka(container, app, auto_inject=inject)
+    yield app
+    await container.close()
+
+
 async def get_with_app(
     _: Request,
     a: FromDishka[AppDep],
@@ -73,6 +83,27 @@ async def get_compat(
 @pytest.mark.asyncio
 async def test_compat(app_provider: AppProvider):
     async with dishka_app(get_compat, app_provider) as app:
+        _, response = await app.asgi_client.get("/")
+        assert response.status_code == 200
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()
+
+
+async def handle_for_auto_inject(
+    _: Request,
+    a: FromDishka[RequestDep],
+    mock: FromDishka[Mock],
+) -> HTTPResponse:
+    mock(a)
+    return HTTPResponse(status=200)
+
+
+@pytest.mark.asyncio
+async def test_custom_auto_inject(app_provider: AppProvider) -> None:
+    async with dishka_custom_auto_inject_app(
+        handle_for_auto_inject,
+        app_provider,
+    ) as app:
         _, response = await app.asgi_client.get("/")
         assert response.status_code == 200
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)

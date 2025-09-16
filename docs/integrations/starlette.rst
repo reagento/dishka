@@ -18,7 +18,6 @@ How to use
 ..  code-block:: python
 
     from dishka.integrations.starlette import (
-        DishkaRoute,
         FromDishka,
         StarletteProvider,
         inject,
@@ -85,4 +84,12 @@ To achieve *REQUEST*-scope you can enter in manually:
             # enter the nested scope, which is Scope.REQUEST
             async with container() as request_container:
                 b = await request_container.get(B)  # object with Scope.REQUEST
+
+
+
+
+
+
+
+
 

@@ -18,7 +18,7 @@ from typing import (
     get_type_hints,
 )
 
-from faststream import BaseMiddleware, Context, FastStream
+from faststream import BaseMiddleware, FastStream
 from faststream._internal.basic_types import DecodedMessage
 from faststream._internal.broker import BrokerUsecase as BrokerType
 from faststream._internal.context import ContextRepo
@@ -30,6 +30,7 @@ from dishka.integrations.base import InjectFunc, wrap_injection
 
 _ReturnT = TypeVar("_ReturnT")
 _ParamsP = ParamSpec("_ParamsP")
+
 
 class FastStreamProvider(Provider):
     context = from_context(ContextRepo, scope=Scope.REQUEST)

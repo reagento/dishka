@@ -27,9 +27,11 @@ from dishka.integrations.base import InjectFunc, wrap_injection
 _ReturnT = TypeVar("_ReturnT")
 _ParamsP = ParamSpec("_ParamsP")
 
+
 class FastStreamProvider(Provider):
     context = from_context(ContextRepo, scope=Scope.REQUEST)
     message = from_context(StreamMessage, scope=Scope.REQUEST)
+
 
 try:
     # AsgiFastStream was introduced in FastStream 0.5.16

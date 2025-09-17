@@ -99,7 +99,7 @@ def test_sync_enter(provide_scope, start_scope, expected_scope):
 
     base_container = make_container(MyProvider())
     with base_container(scope=start_scope) as container:
-        assert container.registry.scope is expected_scope
+        assert container.scope is expected_scope
         a = container.get(ClassA)
         assert a
         assert a.dep == 100
@@ -131,7 +131,7 @@ def test_error_in_sync_enter(provide_scope, start_scope, expected_scope):
 
     try:
         with base_container(scope=start_scope) as container:
-            assert container.registry.scope is expected_scope
+            assert container.scope is expected_scope
             a = container.get(ClassA)
             assert a
             assert a.dep == 100
@@ -165,7 +165,7 @@ async def test_async_enter(provide_scope, start_scope, expected_scope):
 
     base_container = make_async_container(MyProvider())
     async with base_container(scope=start_scope) as container:
-        assert container.registry.scope is expected_scope
+        assert container.scope is expected_scope
         a = await container.get(ClassA)
         assert a
         assert a.dep == 100
@@ -202,7 +202,7 @@ async def test_error_in_async_enter(
 
     try:
         async with base_container(scope=start_scope) as container:
-            assert container.registry.scope is expected_scope
+            assert container.scope is expected_scope
             a = await container.get(ClassA)
             assert a
             assert a.dep == 100
@@ -246,7 +246,7 @@ async def test_error_in_async_enter_with_async_gen(
 
     try:
         async with base_container(scope=start_scope) as container:
-            assert container.registry.scope is expected_scope
+            assert container.scope is expected_scope
             a = await container.get(ClassA)
             assert a
             assert a.dep == 100

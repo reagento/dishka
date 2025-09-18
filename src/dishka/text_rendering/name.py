@@ -1,7 +1,12 @@
+import re
 from typing import Any, get_args, get_origin
 
 from dishka.entities.factory_type import FactoryData, FactoryType
 from dishka.entities.key import DependencyKey
+
+
+def _escape(line: str) -> str:
+    return re.sub(r"<class '([^']+)'>", r"\1", line)
 
 
 def _render_args(hint: Any) -> str:
@@ -36,7 +41,7 @@ def get_name(hint: Any, *, include_module: bool) -> str:
             args = f"[{_render_args(hint)}]"
         else:
             args = ""
-        return f"{module}{name}{args}"
+        return f"{module}{name}{_escape(args)}"
     return str(hint)
 
 

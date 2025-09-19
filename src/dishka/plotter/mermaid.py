@@ -1,4 +1,4 @@
-import re
+import html
 
 from dishka.plotter.model import Group, Node, NodeType, Renderer
 
@@ -35,15 +35,23 @@ class MermaidRenderer(Renderer):
         return (
             f'class {node.id}["{name}"]'
             + "{\n"
-            + (f"    {node.source_name}()\n" if node.source_name else " \n")
+            + (
+                f"    {self._escape(node.source_name)}()\n"
+                if node.source_name
+                else " \n"
+            )
             + "".join(
-                f"    {self.nodes[dep].name}\n" for dep in node.dependencies
+                f"    {self._escape(self.nodes[dep].name)}\n"
+                for dep in node.dependencies
             )
             + "}\n"
         )
 
     def _escape(self, line: str) -> str:
-        return re.sub(r"[^\w_.\-]", "_", line)
+        # due to mermaid behavior we should escape <> twice
+        line = line.replace("<", r"&lt")
+        line = line.replace(">", r"&gt")
+        return html.escape(line, quote=True)
 
     def _render_node_deps(self, node: Node) -> list[str]:
         res: list[str] = []

@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from typing import Generic, TypeVar
 
 import pytest
@@ -42,6 +43,7 @@ class GenericA(Generic[T]):
         (dishka.Scope, True, "dishka.entities.scope.Scope"),
         (GenericA[int], False, "GenericA[int]"),
         (GenericA[T], False, "GenericA[T]"),
+        (Callable[[str], str], False, "Callable[[str], str]"),
         (GenericA, False, "GenericA"),
     ],
 )

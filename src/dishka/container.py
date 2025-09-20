@@ -272,6 +272,7 @@ def make_container(
         providers=(*providers, context_provider),
         skip_validation=skip_validation,
         validation_settings=validation_settings,
+        root_context=context,
     ).build()
     container = Container(
         *registries,

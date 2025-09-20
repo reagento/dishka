@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, TypeVar, get_args, get_origin
 
+from dishka.entities.activator import ActivationFunc
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
@@ -10,13 +11,14 @@ from .type_match import get_typevar_replacement, is_broader_or_same_type
 
 
 class Decorator:
-    __slots__ = ("factory", "provides", "scope")
+    __slots__ = ("factory", "provides", "scope", "when")
 
     def __init__(
             self,
             factory: Factory,
             provides: DependencyKey | None = None,
             scope: BaseScope | None = None,
+            when: ActivationFunc | None = None,
     ) -> None:
         self.factory = factory
         if provides:
@@ -24,6 +26,7 @@ class Decorator:
         else:
             self.provides = factory.provides
         self.scope = scope
+        self.when = when
 
     def is_generic(self) -> bool:
         return (
@@ -67,6 +70,7 @@ class Decorator:
             type_=self.factory.type,
             cache=cache,
             override=False,
+            when=self.when,
         )
 
     def _replace_dep(
@@ -95,4 +99,5 @@ class Decorator:
         return Decorator(
             self.factory.__get__(instance, owner),
             scope=self.scope,
+            when=self.when,
         )

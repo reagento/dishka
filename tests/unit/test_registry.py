@@ -26,6 +26,7 @@ def factory() -> Factory:
         cache=True,
         is_in_class=False,
         override=False,
+        when=None,
     )
 
 

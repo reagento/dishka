@@ -5,6 +5,7 @@ from dishka.dependency_source import (
     CompositeDependencySource,
     ensure_composite,
 )
+from dishka.entities.activator import ActivationFunc
 from dishka.entities.component import Component
 from dishka.entities.key import hint_to_dependency_key
 from .unpack_provides import unpack_alias
@@ -17,6 +18,7 @@ def alias(
         cache: bool = True,
         component: Component | None = None,
         override: bool = False,
+        when: ActivationFunc | None = None,
 ) -> CompositeDependencySource:
     if component is provides is None:
         raise ValueError(  # noqa: TRY003
@@ -31,6 +33,7 @@ def alias(
         provides=hint_to_dependency_key(provides),
         cache=cache,
         override=override,
+        when=when,
     )
     composite.dependency_sources.extend(unpack_alias(alias_instance))
     return composite

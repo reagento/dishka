@@ -193,6 +193,8 @@ class RegistryBuilder:
                 provides=self.container_key,
                 scope=scope,
                 override=False,
+                # Container have no activation function.
+                when=None,
             )
             for component in self.components:
                 registry.add_factory(context_var.as_factory(component))

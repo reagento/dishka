@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from dishka.entities.activator import ActivationFunc
 from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
@@ -14,7 +15,10 @@ def _identity(x: Any) -> Any:
 
 
 class Alias:
-    __slots__ = ("cache", "component", "override", "provides", "source")
+    __slots__ = (
+        "cache", "component", "override",
+        "provides", "source", "when",
+    )
 
     def __init__(
             self, *,
@@ -22,11 +26,13 @@ class Alias:
             provides: DependencyKey,
             cache: bool,
             override: bool,
+            when: ActivationFunc | None,
     ) -> None:
         self.source = source
         self.provides = provides
         self.cache = cache
         self.override = override
+        self.when = when
 
     def as_factory(
             self, scope: BaseScope | None, component: Component | None,
@@ -41,6 +47,7 @@ class Alias:
             type_=FactoryType.ALIAS,
             cache=self.cache,
             override=self.override,
+            when=self.when,
         )
 
     def __get__(self, instance: Any, owner: Any) -> Alias:

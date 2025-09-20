@@ -38,13 +38,16 @@ class MermaidRenderer(Renderer):
         if node.type is NodeType.ALIAS:
             return ""
         name = self._node_type(node) + self._escape(node.name)
-        return "\n".join(
-            [f'class {node.id}["{name}"]{{']
-            + [f"{self._escape(node.source_name)}()" if node.source_name else " "]
-            + [f"{self._escape(self.nodes[dep].name)}" for dep in
-               node.dependencies]
-            + ["}"],
-        )
+        source_name = self._escape(node.source_name)
+        return "\n".join([
+            f'class {node.id}["{name}"]{{',
+            f"{source_name}()" if source_name else " ",
+            *(
+                f"{self._escape(self.nodes[dep].name)}"
+                for dep in node.dependencies
+            ),
+            "}",
+        ])
 
     def _escape(self, line: str) -> str:
         line = line.translate(MERMAID_SYMBOLS_SUBST)

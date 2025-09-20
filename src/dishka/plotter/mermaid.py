@@ -24,6 +24,12 @@ HTML_TEMPLATE = """\
 """
 
 
+# these symbols should be escaped additionally to html.escape
+MERMAID_SYMBOLS_SUBST = str.maketrans({
+    "<": "&lt",
+    ">": "&gt",
+})
+
 class MermaidRenderer(Renderer):
     def __init__(self) -> None:
         self.nodes: dict[str, Node] = {}
@@ -32,25 +38,16 @@ class MermaidRenderer(Renderer):
         if node.type is NodeType.ALIAS:
             return ""
         name = self._node_type(node) + self._escape(node.name)
-        return (
-            f'class {node.id}["{name}"]'
-            + "{\n"
-            + (
-                f"    {self._escape(node.source_name)}()\n"
-                if node.source_name
-                else " \n"
-            )
-            + "".join(
-                f"    {self._escape(self.nodes[dep].name)}\n"
-                for dep in node.dependencies
-            )
-            + "}\n"
+        return "\n".join(
+            [f'class {node.id}["{name}"]{{']
+            + [f"{self._escape(node.source_name)}()" if node.source_name else " "]
+            + [f"{self._escape(self.nodes[dep].name)}" for dep in
+               node.dependencies]
+            + ["}"],
         )
 
     def _escape(self, line: str) -> str:
-        # due to mermaid behavior we should escape <> twice
-        line = line.replace("<", r"&lt")
-        line = line.replace(">", r"&gt")
+        line = line.translate(MERMAID_SYMBOLS_SUBST)
         return html.escape(line, quote=True)
 
     def _render_node_deps(self, node: Node) -> list[str]:

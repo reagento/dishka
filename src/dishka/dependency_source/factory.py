@@ -73,7 +73,7 @@ class Factory(FactoryData):
             when=self.when,
         )
 
-    def with_component(self, component: Component) -> Factory:
+    def with_component(self, component: Component | None) -> Factory:
         return Factory(
             dependencies=[
                 d.with_component(component) for d in self.dependencies

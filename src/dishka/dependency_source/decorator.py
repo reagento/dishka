@@ -42,7 +42,7 @@ class Decorator:
             scope: BaseScope,
             new_dependency: DependencyKey,
             cache: bool,
-            component: Component,
+            component: Component | None,
     ) -> Factory:
         typevar_replacement = get_typevar_replacement(
             self.provides.type_hint,

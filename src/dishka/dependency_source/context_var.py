@@ -30,9 +30,7 @@ class ContextVariable:
         self.override = override
         self.when = when
 
-    def as_factory(
-            self, component: Component,
-    ) -> Factory:
+    def as_factory(self, component: Component | None) -> Factory:
         if component == DEFAULT_COMPONENT:
             return Factory(
                 scope=self.scope,

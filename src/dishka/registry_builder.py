@@ -191,7 +191,7 @@ class RegistryBuilder:
         self.inactive_sources.add((provider, source))
         return False
 
-    def _collect_sources(self):
+    def _collect_sources(self) -> None:
         for provider in self.providers:
             for factory in provider.factories:
                 self.all_sources.append((provider, factory))
@@ -202,7 +202,7 @@ class RegistryBuilder:
             for decorator in provider.decorators:
                 self.all_sources.append((provider, decorator))
 
-    def _filter_active_sources(self):
+    def _filter_active_sources(self) -> None:
         self.all_sources = [
             (provider, source)
             for provider, source in self.all_sources
@@ -225,7 +225,8 @@ class RegistryBuilder:
 
     def _collect_components(self) -> None:
         for provider in self.providers:
-            self.components.add(provider.component)
+            if provider.component is not None:
+                self.components.add(provider.component)
 
     def _collect_provided_scopes(self) -> None:
         for provider, source in self.all_sources:
@@ -517,7 +518,7 @@ class RegistryBuilder:
         self,
         provider: BaseProvider,
         source: DependencySource,
-    ):
+    ) -> None:
         match source:
             case Factory():
                 self._process_factory(provider, source)

@@ -185,7 +185,8 @@ class RegistryBuilder:
             builder=self,
             request_stack=[*request_stack, key],
         )
-        if not source.when or source.when(context):
+        if ((not source.when or source.when(context)) and
+                (not provider.when or provider.when(context))):
             self.active_sources.add((provider, source))
             return True
         self.inactive_sources.add((provider, source))
@@ -236,13 +237,21 @@ class RegistryBuilder:
                     key = source.provides.with_component(provider.component)
                     self.dependency_scopes[key] = source.scope
                 case ContextVariable():
+                    if not isinstance(source.scope, self.scopes):
+                        raise UnknownScopeError(source.scope, self.scopes)
                     for component in self.components:
                         key = source.provides.with_component(component)
                         # typing.cast is applied because the scope
                         # was checked above
-                        self.dependency_scopes[key] = cast(
-                            BaseScope, source.scope,
-                        )
+                        self.dependency_scopes[key] = source.scope
+                case Decorator():
+                    if not source.scope:
+                        continue
+                    if not isinstance(source.scope, self.scopes):
+                        raise UnknownScopeError(source.scope, self.scopes)
+                    key = source.provides.with_component(provider.component)
+                    self.dependency_scopes[key] = source.scope
+
 
 
     def _collect_aliases(self) -> None:
@@ -505,6 +514,26 @@ class RegistryBuilder:
                 )
         self.processed_factories[factory.provides] = factory
 
+    def _process_source(
+        self,
+        provider: BaseProvider,
+        source: DependencySource,
+    ):
+        match source:
+            case Factory():
+                self._process_factory(provider, source)
+            case Alias():
+                self._process_alias(provider, source)
+            case ContextVariable():
+                self._process_context_var(provider, source)
+            case Decorator():
+                if source.is_generic():
+                    self._process_generic_decorator(provider, source)
+                else:
+                    self._process_normal_decorator(provider, source)
+            case _:
+                raise TypeError
+
     def build(self) -> tuple[Registry, ...]:
         self._collect_components()
         self._collect_sources()
@@ -518,23 +547,12 @@ class RegistryBuilder:
                 case Factory():
                     key = source.provides.with_component(provider.component)
                     self.dependency_scopes[key] = cast(BaseScope, source.scope)
-                # TODO: context var?
+                case ContextVariable():
+                    key = source.provides.with_component(provider.component)
+                    self.dependency_scopes[key] = cast(BaseScope, source.scope)
 
         for provider, source in self.all_sources:
-            match source:
-                case Factory():
-                    self._process_factory(provider, source)
-                case Alias():
-                    self._process_alias(provider, source)
-                case ContextVariable():
-                    self._process_context_var(provider, source)
-                case Decorator():
-                    if source.is_generic():
-                        self._process_generic_decorator(provider, source)
-                    else:
-                        self._process_normal_decorator(provider, source)
-                case _:
-                    raise TypeError
+            self._process_source(provider, source)
         self._post_process_generic_factories()
 
         registries = self._make_registries()

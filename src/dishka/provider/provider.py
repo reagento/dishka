@@ -202,6 +202,7 @@ class Provider(BaseProvider):
             source=source,
             provides=provides,
             scope=scope,
+            when=when,
         )
         self._add_dependency_sources(str(source), composite.dependency_sources)
         return composite

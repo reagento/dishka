@@ -33,6 +33,7 @@ def _decorate(
             when=when,
         ),
         scope=scope,
+        when=when,
     )
     if (
         decorator.provides not in decorator.factory.kw_dependencies.values()

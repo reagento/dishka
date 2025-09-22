@@ -38,6 +38,7 @@ def test_has_cycle():
     assert c.get(str) == "s"
     assert c.get(int) == 42
 
+
 def test_chain():
     p = Provider()
     p.provide(lambda: 42, provides=int, scope=Scope.APP, when=never)

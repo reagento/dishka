@@ -4,18 +4,18 @@ from dishka.dependency_source import (
     Decorator,
     Factory,
 )
-from dishka.entities.activator import ActivationFunc
+from dishka.entities.activator import Activator
 from dishka.entities.component import Component
 
 
 class BaseProvider:
-    when: ActivationFunc | None = None
+    when: Activator | None = None
     component: Component | None = None
 
     def __init__(
         self,
         component: Component | None,
-        when: ActivationFunc | None = None,
+        when: Activator | None = None,
     ) -> None:
         if component is not None:
             self.component = component
@@ -32,7 +32,7 @@ class ProviderWrapper(BaseProvider):
         self,
         component: Component,
         provider: BaseProvider,
-        when: ActivationFunc | None = None,
+        when: Activator | None = None,
     ) -> None:
         super().__init__(component, when=when)
         self.factories.extend(provider.factories)

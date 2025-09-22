@@ -10,7 +10,7 @@ from .dependency_source import (
     DependencySource,
     Factory,
 )
-from .entities.activator import ActivationCtx
+from .entities.activator import ActivationContext
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
@@ -166,10 +166,10 @@ class RegistryBuilder:
         self.root_context = root_context
 
     def _is_active(
-            self,
-            provider: BaseProvider,
-            source: DependencySource,
-            request_stack: list[DependencyKey],
+        self,
+        provider: BaseProvider,
+        source: DependencySource,
+        request_stack: list[DependencyKey],
     ) -> bool:
         if (provider, source) in self.active_sources:
             return True
@@ -177,11 +177,10 @@ class RegistryBuilder:
             return False
 
         key = source.provides.with_component(provider.component)
-        context = ActivationCtx(
-            container_ctx=self.root_context,
+        context = ActivationContext(
+            container_context=self.root_context,
             container_key=self.container_key,
             key=key,
-            registered_deps=[],
             builder=self,
             request_stack=[*request_stack, key],
         )

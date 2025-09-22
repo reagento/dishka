@@ -10,7 +10,7 @@ from dishka.dependency_source import (
     DependencySource,
     Factory,
 )
-from dishka.entities.activator import ActivationFunc
+from dishka.entities.activator import Activator
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.scope import BaseScope
 from .base_provider import BaseProvider, ProviderWrapper
@@ -48,13 +48,13 @@ class Provider(BaseProvider):
     """
     scope: BaseScope | None = None
     component: Component = DEFAULT_COMPONENT
-    when: ActivationFunc | None = None
+    when: Activator | None = None
 
     def __init__(
             self,
             scope: BaseScope | None = None,
             component: Component | None = None,
-            when: ActivationFunc | None = None,
+            when: Activator | None = None,
     ):
         super().__init__(component, when=when)
         self.scope = self.scope or scope
@@ -131,7 +131,7 @@ class Provider(BaseProvider):
             cache: bool = True,
             recursive: bool = False,
             override: bool = False,
-            when: ActivationFunc | None = None,
+            when: Activator | None = None,
     ) -> CompositeDependencySource:
         if scope is None:
             scope = self.scope
@@ -192,7 +192,7 @@ class Provider(BaseProvider):
             *,
             provides: Any = None,
             scope: BaseScope | None = None,
-            when: ActivationFunc | None = None,
+            when: Activator | None = None,
     ) -> CompositeDependencySource:
         composite = decorate_on_instance(
             source=source,
@@ -211,7 +211,7 @@ class Provider(BaseProvider):
             *,
             scope: BaseScope | None = None,
             override: bool = False,
-            when: ActivationFunc | None = None,
+            when: Activator | None = None,
     ) -> CompositeDependencySource:
         composite = from_context(
             provides=provides,

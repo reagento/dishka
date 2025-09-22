@@ -1,8 +1,8 @@
 __all__ = [
     "DEFAULT_COMPONENT",
     "STRICT_VALIDATION",
-    "ActivationCtx",
-    "ActivationFunc",
+    "ActivationContext",
+    "Activator",
     "AnyOf",
     "AsyncContainer",
     "BaseScope",
@@ -28,7 +28,7 @@ __all__ = [
 
 from .async_container import AsyncContainer, make_async_container
 from .container import Container, make_container
-from .entities.activator import ActivationCtx, ActivationFunc, Has
+from .entities.activator import ActivationContext, Activator, Has
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.depends_marker import FromDishka
 from .entities.key import DependencyKey, FromComponent

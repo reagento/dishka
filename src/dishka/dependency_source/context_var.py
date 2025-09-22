@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, NoReturn
 
-from dishka.entities.activator import ActivationFunc
+from dishka.entities.activator import Activator
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
@@ -23,7 +23,7 @@ class ContextVariable:
             provides: DependencyKey,
             scope: BaseScope | None,
             override: bool,
-            when: ActivationFunc | None,
+            when: Activator | None,
     ) -> None:
         self.provides = provides
         self.scope = scope

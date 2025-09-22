@@ -6,7 +6,7 @@ from dishka.dependency_source import (
     Decorator,
     ensure_composite,
 )
-from dishka.entities.activator import ActivationFunc
+from dishka.entities.activator import Activator
 from dishka.entities.scope import BaseScope
 from .exceptions import IndependentDecoratorError
 from .make_factory import make_factory
@@ -19,7 +19,7 @@ def _decorate(
         scope: BaseScope | None,
         *,
         is_in_class: bool = True,
-        when: ActivationFunc | None = None,
+        when: Activator | None = None,
 ) -> CompositeDependencySource:
     composite = ensure_composite(source)
     decorator = Decorator(
@@ -49,7 +49,7 @@ def decorate(
         *,
         provides: Any = None,
         scope: BaseScope | None = None,
-        when: ActivationFunc | None = None,
+        when: Activator | None = None,
 ) -> Callable[
     [Callable[..., Any]], CompositeDependencySource,
 ]:
@@ -62,7 +62,7 @@ def decorate(
         *,
         provides: Any = None,
         scope: BaseScope | None = None,
-        when: ActivationFunc | None = None,
+        when: Activator | None = None,
 ) -> CompositeDependencySource:
     ...
 
@@ -71,7 +71,7 @@ def decorate(
         source: Callable[..., Any] | type | None = None,
         provides: Any = None,
         scope: BaseScope | None = None,
-        when: ActivationFunc | None = None,
+        when: Activator | None = None,
 ) -> CompositeDependencySource | Callable[
     [Callable[..., Any]], CompositeDependencySource,
 ]:
@@ -92,7 +92,7 @@ def decorate_on_instance(
         source: Callable[..., Any] | type,
         provides: Any,
         scope: BaseScope | None,
-        when: ActivationFunc | None = None,
+        when: Activator | None = None,
 ) -> CompositeDependencySource:
     return _decorate(
         source, provides, scope=scope, is_in_class=False, when=when,

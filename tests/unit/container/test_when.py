@@ -1,6 +1,6 @@
 import pytest
 
-from dishka import Has, Provider, Scope, make_container, ActivationCtx
+from dishka import Has, Provider, Scope, make_container, ActivationContext
 from dishka.exceptions import NoFactoryError
 
 
@@ -57,7 +57,7 @@ def test_provider():
 
 def test_provider_class_when():
     class MyProvide(Provider):
-        def when(self, x: ActivationCtx) -> bool:
+        def when(self, x: ActivationContext) -> bool:
             return False
 
     p = MyProvide()

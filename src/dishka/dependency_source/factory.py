@@ -6,7 +6,7 @@ from collections.abc import (
 )
 from typing import Any
 
-from dishka.entities.activator import ActivationFunc
+from dishka.entities.activator import Activator
 from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryData, FactoryType
 from dishka.entities.key import DependencyKey
@@ -35,7 +35,7 @@ class Factory(FactoryData):
             is_to_bind: bool,
             cache: bool,
             override: bool,
-            when: ActivationFunc | None,
+            when: Activator | None,
     ) -> None:
         super().__init__(
             source=source,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, TypeVar, get_args, get_origin
 
-from dishka.entities.activator import ActivationFunc
+from dishka.entities.activator import Activator
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
@@ -18,7 +18,7 @@ class Decorator:
             factory: Factory,
             provides: DependencyKey | None = None,
             scope: BaseScope | None = None,
-            when: ActivationFunc | None = None,
+            when: Activator | None = None,
     ) -> None:
         self.factory = factory
         if provides:

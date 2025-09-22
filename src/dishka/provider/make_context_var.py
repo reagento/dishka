@@ -6,7 +6,7 @@ from dishka.dependency_source import (
     ContextVariable,
     context_stub,
 )
-from dishka.entities.activator import ActivationFunc
+from dishka.entities.activator import Activator
 from dishka.entities.component import DEFAULT_COMPONENT
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
@@ -21,7 +21,7 @@ def from_context(
         *,
         scope: BaseScope | None = None,
         override: bool = False,
-        when: ActivationFunc | None = None,
+        when: Activator | None = None,
 ) -> CompositeDependencySource:
     composite = CompositeDependencySource(origin=context_stub)
     composite.dependency_sources.append(

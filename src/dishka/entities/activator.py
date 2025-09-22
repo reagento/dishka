@@ -16,16 +16,15 @@ class ActivationBuilder(Protocol):
         raise NotImplementedError
 
 
-class ActivationCtx(NamedTuple):
-    container_ctx: dict[Any, Any] | None
+class ActivationContext(NamedTuple):
+    container_context: dict[Any, Any] | None
     container_key: DependencyKey
     key: DependencyKey
-    registered_deps: list[DependencyKey]
     builder: ActivationBuilder
     request_stack: list[DependencyKey]
 
 
-ActivationFunc: TypeAlias = Callable[[ActivationCtx], bool]
+Activator: TypeAlias = Callable[[ActivationContext], bool]
 
 
 class Has:
@@ -36,7 +35,7 @@ class Has:
     ) -> None:
         self.key = DependencyKey(cls, component=component)
 
-    def __call__(self, ctx: ActivationCtx) -> bool:
+    def __call__(self, ctx: ActivationContext) -> bool:
         key = self.key.with_component(ctx.key.component)
         if key in ctx.request_stack:  # cycle
             return True

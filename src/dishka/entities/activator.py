@@ -30,7 +30,8 @@ Activator: TypeAlias = Callable[[ActivationContext], bool]
 class Has:
     def __init__(
         self,
-        cls: Any, *,
+        cls: Any,
+        *,
         component: Component | None = None,
     ) -> None:
         self.key = DependencyKey(cls, component=component)

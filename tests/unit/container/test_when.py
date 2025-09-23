@@ -9,7 +9,8 @@ from dishka import (
     decorate,
     from_context,
     make_container,
-    provide, provide_all,
+    provide,
+    provide_all,
 )
 from dishka.exceptions import NoFactoryError
 

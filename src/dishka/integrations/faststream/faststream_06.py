@@ -37,7 +37,7 @@ class FastStreamProvider(Provider):
     message = from_context(StreamMessage, scope=Scope.REQUEST)
 
 
-Application: TypeAlias = FastStream | AsgiFastStream  # type: ignore[no-redef,misc]
+Application: TypeAlias = FastStream | AsgiFastStream
 
 try:
     # import works only if fastapi is installed
@@ -48,16 +48,16 @@ try:
 
 
 except ImportError:
-    ContextAnnotation: TypeAlias= Annotated[ContextRepo, Context("context")]
+    ContextAnnotation: TypeAlias = Annotated[ContextRepo, Context("context")]
 
 else:
-    ContextAnnotation = Annotated[
+    ContextAnnotation = Annotated[  # type: ignore[misc,assignment]
         ContextRepo,
         FastAPIContext("context"),
         Context("context"),
     ]
 
-    Application |= StreamRouter  # type: ignore[assignment]
+    Application |= StreamRouter
 
 
 class ApplicationLike(Protocol):
@@ -102,7 +102,7 @@ def setup_dishka(
                 stacklevel=2,
             )
 
-    broker: BrokerType = broker or getattr(app, "broker", None)
+    broker: BrokerType[Any, Any] = broker or getattr(app, "broker", None)
     assert broker  # noqa: S101
 
     broker.insert_middleware(DishkaMiddleware(container))

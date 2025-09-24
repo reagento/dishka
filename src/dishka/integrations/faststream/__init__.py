@@ -10,7 +10,11 @@ FASTSTREAM_06 = FASTSTREAM_VERSION.startswith("0.6")
 if FASTSTREAM_05:
     from .faststream_05 import FastStreamProvider, inject, setup_dishka
 elif FASTSTREAM_06:
-    from .faststream_06 import FastStreamProvider, inject, setup_dishka
+    from .faststream_06 import (  # type: ignore[assignment]
+        FastStreamProvider,
+        inject,
+        setup_dishka,
+    )
 else:
     raise RuntimeError(  # noqa: TRY003
         f"FastStream {FASTSTREAM_VERSION} version not supported",

@@ -109,11 +109,10 @@ FastStream - Litestar/FastAPI - dishka integration
     from dishka import make_async_container
     from dishka.integrations import faststream as faststream_integration
     from dishka.integrations import litestar as litestar_integration
-    from dishka.integrations.base import FromDishka as Depends
+    from dishka.integrations.base import FromDishka
     from dishka.integrations.faststream import inject as faststream_inject
     from dishka.integrations.litestar import inject as litestar_inject
-    from faststream import FastStream
-    from faststream.rabbit import RabbitBroker, RabbitRouter, RabbitRoute
+    from faststream.rabbit import RabbitBroker, RabbitRouter
     from litestar import Litestar, route, HttpMethod
 
 
@@ -131,34 +130,30 @@ FastStream - Litestar/FastAPI - dishka integration
 
     @route(http_method=HttpMethod.GET, path="/", status_code=200)
     @litestar_inject
-    async def http_handler(some_dependency: Depends[SomeDependency]) -> None:
+    async def http_handler(some_dependency: FromDishka[SomeDependency]) -> None:
         await some_dependency.do_something()
 
 
+    amqp_router = RabbitRouter()
+
+
+    @amqp_router.subscriber("test-queue")
     @faststream_inject
-    async def amqp_handler(data: str, some_dependency: Depends[SomeDependency]) -> None:
-        print(f"{data=}")
+    async def amqp_handler(some_dependency: FromDishka[SomeDependency]) -> None:
         await some_dependency.do_something()
 
 
-    def create_app():
+    def create_app() -> Litestar:
         container = make_async_container(SomeProvider())
 
-        broker = RabbitBroker(
-            url="amqp://guest:guest@localhost:5672/",
-        )
-        amqp_routes = RabbitRouter(
-            handlers=(
-                RabbitRoute(amqp_handler, "test-queue"),
-            )
-        )
-        broker.include_router(amqp_routes)
-        faststream_integration.setup_dishka(container, FastStream(broker))
+        broker = RabbitBroker(url="amqp://guest:guest@localhost:5672/")
+        broker.include_router(amqp_router)
+        faststream_integration.setup_dishka(container, broker=broker)
 
         http = Litestar(
             route_handlers=[http_handler],
             on_startup=[broker.start],
-            on_shutdown=[broker.close],
+            on_shutdown=[broker.stop],
         )
         litestar_integration.setup_dishka(container, http)
         return http
@@ -167,21 +162,23 @@ FastStream - Litestar/FastAPI - dishka integration
     if __name__ == "__main__":
         uvicorn.run(create_app(), host="0.0.0.0", port=8000)
 
+
 3. Example of usage ``FastStream`` + ``FastAPI``
 
 .. code-block:: python
 
+    from collections.abc import AsyncIterator
+    from contextlib import asynccontextmanager
+
     import uvicorn
-    from dishka import Provider, Scope, provide
-    from dishka import make_async_container
+    from fastapi import APIRouter, FastAPI
+    from faststream.rabbit import RabbitBroker, RabbitRouter
+    from dishka import Provider, Scope, make_async_container, provide
     from dishka.integrations import fastapi as fastapi_integration
     from dishka.integrations import faststream as faststream_integration
-    from dishka.integrations.base import FromDishka as Depends
+    from dishka.integrations.base import FromDishka
     from dishka.integrations.fastapi import DishkaRoute
     from dishka.integrations.faststream import inject as faststream_inject
-    from fastapi import FastAPI, APIRouter
-    from faststream import FastStream
-    from faststream.rabbit import RabbitBroker, RabbitRouter, RabbitRoute
 
 
     class SomeDependency:
@@ -196,40 +193,37 @@ FastStream - Litestar/FastAPI - dishka integration
             return SomeDependency()
 
 
-    router = APIRouter(
-        route_class=DishkaRoute,
-    )
+    router = APIRouter(route_class=DishkaRoute)
 
 
     @router.get("/")
-    async def http_handler(some_dependency: Depends[SomeDependency]) -> None:
+    async def http_handler(some_dependency: FromDishka[SomeDependency]) -> None:
         await some_dependency.do_something()
 
 
+    amqp_router = RabbitRouter()
+
+
+    @amqp_router.subscriber("test-queue")
     @faststream_inject
-    async def amqp_handler(data: str, some_dependency: Depends[SomeDependency]) -> None:
-        print(f"{data=}")
+    async def amqp_handler(some_dependency: FromDishka[SomeDependency]) -> None:
         await some_dependency.do_something()
 
 
-    def create_app():
+    def create_app() -> FastAPI:
         container = make_async_container(SomeProvider())
 
-        broker = RabbitBroker(
-            url="amqp://guest:guest@localhost:5672/",
-        )
-        amqp_routes = RabbitRouter(
-            handlers=(
-                RabbitRoute(amqp_handler, "test-queue"),
-            )
-        )
-        broker.include_router(amqp_routes)
-        faststream_integration.setup_dishka(container, FastStream(broker))
+        broker = RabbitBroker(url="amqp://guest:guest@localhost:5672/")
+        broker.include_router(amqp_router)
+        faststream_integration.setup_dishka(container, broker=broker)
 
-        http = FastAPI(
-            on_startup=[broker.start],
-            on_shutdown=[broker.close],
-        )
+        @asynccontextmanager
+        async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+            async with broker:
+                await broker.start()
+                yield
+
+        http = FastAPI(lifespan=lifespan)
         http.include_router(router)
         fastapi_integration.setup_dishka(container, http)
         return http

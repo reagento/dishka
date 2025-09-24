@@ -18,7 +18,6 @@ How to use
 ..  code-block:: python
 
     from dishka.integrations.starlette import (
-        DishkaRoute,
         FromDishka,
         StarletteProvider,
         inject,

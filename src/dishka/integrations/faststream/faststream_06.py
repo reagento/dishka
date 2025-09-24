@@ -183,7 +183,7 @@ def _find_context_param(func: Callable[_ParamsP, _ReturnT]) -> str | None:
 
 
 DISHKA_CONTEXT_PARAM = Parameter(
-    name="___dishka_context",
+    name="dishka_context__",
     annotation=ContextAnnotation,
     kind=Parameter.KEYWORD_ONLY,
 )

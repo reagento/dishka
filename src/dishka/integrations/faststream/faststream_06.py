@@ -18,7 +18,7 @@ from typing import (
     get_type_hints,
 )
 
-from faststream import BaseMiddleware, FastStream
+from faststream import BaseMiddleware, Context, FastStream
 from faststream._internal.basic_types import DecodedMessage
 from faststream._internal.broker import BrokerUsecase as BrokerType
 from faststream._internal.context import ContextRepo
@@ -41,12 +41,22 @@ Application: TypeAlias = FastStream | AsgiFastStream  # type: ignore[no-redef,mi
 
 try:
     # import works only if fastapi is installed
-    from faststream._internal.fastapi import Context, StreamRouter
+    from faststream._internal.fastapi import (
+        Context as FastAPIContext,
+    )
+    from faststream._internal.fastapi import StreamRouter
+
 
 except ImportError:
-    from faststream import Context
+    ContextAnnotation: TypeAlias= Annotated[ContextRepo, Context("context")]
 
 else:
+    ContextAnnotation = Annotated[
+        ContextRepo,
+        FastAPIContext("context"),
+        Context("context"),
+    ]
+
     Application |= StreamRouter  # type: ignore[assignment]
 
 
@@ -174,6 +184,6 @@ def _find_context_param(func: Callable[_ParamsP, _ReturnT]) -> str | None:
 
 DISHKA_CONTEXT_PARAM = Parameter(
     name="___dishka_context",
-    annotation=Annotated[ContextRepo, Context("context")],
+    annotation=ContextAnnotation,
     kind=Parameter.KEYWORD_ONLY,
 )

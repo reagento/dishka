@@ -102,7 +102,7 @@ def setup_dishka(
                 stacklevel=2,
             )
 
-    broker: BrokerType[Any, Any] = broker or getattr(app, "broker", None)
+    broker = broker or getattr(app, "broker", None)
     assert broker  # noqa: S101
 
     broker.insert_middleware(DishkaMiddleware(container))
@@ -139,7 +139,7 @@ class _DishkaMiddleware(BaseMiddleware):
         self.container = container
         super().__init__(*args, **kwargs)
 
-    async def consume_scope(  # type: ignore[misc]
+    async def consume_scope(
         self,
         call_next: Callable[[Any], Awaitable[Any]],
         msg: StreamMessage[Any],

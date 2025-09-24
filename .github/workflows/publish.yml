@@ -1,0 +1,36 @@
+name: Upload Python Package to PyPI when a new Release is Created
+
+on:
+  release:
+    types: [created]
+
+env:
+  UV_PYTHON_DOWNLOADS: 0
+
+jobs:
+  pypi-publish:
+    name: Publish release to PyPI
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Build
+        run: uv build
+
+      - name: Publish
+        run: uv publish

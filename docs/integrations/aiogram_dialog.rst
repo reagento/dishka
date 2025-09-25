@@ -16,6 +16,7 @@ How to use
 
 .. code-block:: python
 
+    from dishka import FromDishka
     from dishka.integrations.aiogram_dialog import inject
 
 

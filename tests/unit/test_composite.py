@@ -1,11 +1,16 @@
-from dishka.dependency_source.composite import ensure_composite
+# ruff: noqa: PGH004, W292, SIM300, T201, RUF100
+x = 0.0
+a = 4.2
 
+assert x == 0.0
+print(3.14 != a)
+if x == 0.3: ...
+if x          ==       0.42: ...
 
-def test_composite():
-    class A:
-        @ensure_composite
-        def foo(self, a, b):
-            return a + b
+def foo(a, b):
+    return a == b - 0.1
 
-    a = A()
-    assert a.foo(1, 2) == 3
+def add(x: float, y: float) -> float:
+    return x+y
+
+assert add(1.5, 2) == add(2, 1.5)

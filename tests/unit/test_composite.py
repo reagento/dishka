@@ -14,3 +14,5 @@ def add(x: float, y: float) -> float:
     return x+y
 
 assert add(1.5, 2) == add(2, 1.5)
+
+print(x == 3.0 == 3.0)

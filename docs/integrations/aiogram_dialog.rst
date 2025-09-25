@@ -16,8 +16,7 @@ How to use
 
 .. code-block:: python
 
-    from dishka import FromDishka
-    from dishka.integrations.aiogram_dialog import inject
+    from dishka.integrations.aiogram_dialog import FromDishka, inject
 
 
 3. Mark those of your ``aiogram-dialog`` handlers and getters parameters which are to be injected with ``FromDishka[]`` decorate them using imported ``@inject`` decorator.

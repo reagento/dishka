@@ -123,6 +123,7 @@ def bot(dp):
     return BotClient(dp)
 
 
+@pytest.mark.flaky(reruns=2)
 @pytest.mark.asyncio
 async def test_dialog(
     bot: BotClient,

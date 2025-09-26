@@ -2,3 +2,5 @@ pytest==8.*
 pytest-asyncio==1.1.*
 pytest-repeat==0.9.*
 pytest-cov==7.*
+# https://github.com/Tishka17/aiogram_dialog/issues/467
+pytest-rerunfailures==16.*

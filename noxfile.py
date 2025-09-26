@@ -7,7 +7,7 @@ import nox
 nox.options.default_venv_backend = "uv"
 nox.options.reuse_existing_virtualenvs = True
 
-INSTALL_CMD = ("pytest", "pytest-cov", "-e", ".")
+EDITABLE_INSTALL = ("-e", ".")
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,7 +81,7 @@ INTEGRATIONS = [
 @nox.session(tags=["ci"])
 def integrations_base(session: nox.Session) -> None:
     session.install(
-        *INSTALL_CMD,
+        *EDITABLE_INSTALL,
         "-r", "requirements/test.txt",
         silent=False,
     )
@@ -97,14 +97,14 @@ for env in INTEGRATIONS:
         if env.constraint and not env.constraint.condition():
             session.skip(env.constraint.reason)
 
-        session.install(*INSTALL_CMD, "-r", env.get_req(), silent=False)
+        session.install(*EDITABLE_INSTALL, "-r", env.get_req(), silent=False)
         session.run("pytest", env.get_tests())
 
 
 @nox.session(tags=["ci"])
 def unit(session: nox.Session) -> None:
     session.install(
-        *INSTALL_CMD,
+        *EDITABLE_INSTALL,
         "-r", "requirements/test.txt",
         silent=False,
     )
@@ -116,7 +116,7 @@ def real_world(session: nox.Session) -> None:
     if sys.version_info >= (3, 14):
         session.skip("Skipping tests on python >=3.14 due to requirements limitations")
     session.install(
-        *INSTALL_CMD,
+        *EDITABLE_INSTALL,
         "-r", "examples/real_world/requirements_test.txt",
         silent=False,
     )

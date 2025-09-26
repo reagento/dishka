@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 from dishka.entities.factory_type import FactoryType
+from dishka.entities.scope import BaseScope
 
 
 @dataclass(slots=True)
@@ -20,4 +21,9 @@ class CompiledFactory(Protocol):
             exits: list[Exit],
             context: Any,
     ) -> Any:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def scope(self) -> BaseScope:
         raise NotImplementedError

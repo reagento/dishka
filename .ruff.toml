@@ -44,6 +44,9 @@ lint.ignore = [
     "PLW1641",
     "PYI059"
 ]
+"src/dishka/_version.py" = [
+    "ALL",
+]
 
 [per-file-target-version]
 "tests/unit/container/type_alias_type_provider.py" = "py312"

@@ -169,6 +169,7 @@ class Registry:
             cache=False,
             override=False,
             source=lambda: typevar,
+            when=None,
         )
 
     def _specialize_generic(
@@ -214,4 +215,5 @@ class Registry:
             scope=factory.scope,
             cache=factory.cache,
             override=factory.override,
+            when=factory.when,
         )

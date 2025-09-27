@@ -7,8 +7,10 @@ from .dependency_source import (
     Alias,
     ContextVariable,
     Decorator,
+    DependencySource,
     Factory,
 )
+from .entities.activator import ActivationContext
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
@@ -133,6 +135,9 @@ class GraphValidator:
         return found
 
 
+ProviderSource = tuple[BaseProvider, DependencySource]
+
+
 class RegistryBuilder:
     def __init__(
             self,
@@ -142,9 +147,13 @@ class RegistryBuilder:
             container_key: DependencyKey,
             skip_validation: bool,
             validation_settings: ValidationSettings,
+            root_context: dict[Any, Any] | None,
     ) -> None:
         self.scopes = scopes
         self.providers = providers
+        self.all_sources: list[ProviderSource] = []
+        self.active_sources: set[ProviderSource] = set()
+        self.inactive_sources: set[ProviderSource] = set()
         self.dependency_scopes: dict[DependencyKey, BaseScope] = {}
         self.components: set[Component] = {DEFAULT_COMPONENT}
         self.alias_sources: dict[DependencyKey, Any] = {}
@@ -154,35 +163,106 @@ class RegistryBuilder:
         self.skip_validation = skip_validation
         self.validation_settings = validation_settings
         self.processed_factories: dict[DependencyKey, Factory] = {}
+        self.root_context = root_context
+
+    def _is_active(
+        self,
+        provider: BaseProvider,
+        source: DependencySource,
+        request_stack: list[DependencyKey],
+    ) -> bool:
+        if (provider, source) in self.active_sources:
+            return True
+        if (provider, source) in self.inactive_sources:
+            return False
+
+        key = source.provides.with_component(provider.component)
+        context = ActivationContext(
+            container_context=self.root_context,
+            container_key=self.container_key,
+            key=key,
+            builder=self,
+            request_stack=[*request_stack, key],
+        )
+        if ((not source.when or source.when(context)) and
+                (not provider.when or provider.when(context))):
+            self.active_sources.add((provider, source))
+            return True
+        self.inactive_sources.add((provider, source))
+        return False
+
+    def _collect_sources(self) -> None:
+        for provider in self.providers:
+            for factory in provider.factories:
+                self.all_sources.append((provider, factory))
+            for alias in provider.aliases:
+                self.all_sources.append((provider, alias))
+            for context_var in provider.context_vars:
+                self.all_sources.append((provider, context_var))
+            for decorator in provider.decorators:
+                self.all_sources.append((provider, decorator))
+
+    def _filter_active_sources(self) -> None:
+        self.all_sources = [
+            (provider, source)
+            for provider, source in self.all_sources
+            if self._is_active(provider, source, [])
+        ]
+
+    def has_active(
+        self,
+        key: DependencyKey,
+        request_stack: list[DependencyKey],
+    ) -> bool:
+        for provider, source in self.all_sources:
+            src_key = source.provides.with_component(provider.component)
+            if (
+                src_key==key
+                and self._is_active(provider, source, request_stack)
+            ):
+                return True
+        return False
 
     def _collect_components(self) -> None:
         for provider in self.providers:
-            self.components.add(provider.component)
+            if provider.component is not None:
+                self.components.add(provider.component)
 
     def _collect_provided_scopes(self) -> None:
-        for provider in self.providers:
-            for factory in provider.factories:
-                if not isinstance(factory.scope, self.scopes):
-                    raise UnknownScopeError(factory.scope, self.scopes)
-                provides = factory.provides.with_component(provider.component)
-                self.dependency_scopes[provides] = factory.scope
-            for context_var in provider.context_vars:
-                for component in self.components:
-                    provides = context_var.provides.with_component(component)
-                    # typing.cast is applied because the scope
-                    # was checked above
-                    self.dependency_scopes[provides] = cast(
-                        BaseScope, context_var.scope,
-                    )
+        for provider, source in self.all_sources:
+            match source:
+                case Factory():
+                    if not isinstance(source.scope, self.scopes):
+                        raise UnknownScopeError(source.scope, self.scopes)
+                    key = source.provides.with_component(provider.component)
+                    self.dependency_scopes[key] = source.scope
+                case ContextVariable():
+                    if not isinstance(source.scope, self.scopes):
+                        raise UnknownScopeError(source.scope, self.scopes)
+                    for component in self.components:
+                        key = source.provides.with_component(component)
+                        # typing.cast is applied because the scope
+                        # was checked above
+                        self.dependency_scopes[key] = source.scope
+                case Decorator():
+                    if not source.scope:
+                        continue
+                    if not isinstance(source.scope, self.scopes):
+                        raise UnknownScopeError(source.scope, self.scopes)
+                    key = source.provides.with_component(provider.component)
+                    self.dependency_scopes[key] = source.scope
+
+
 
     def _collect_aliases(self) -> None:
-        for provider in self.providers:
-            component = provider.component
-            for alias in provider.aliases:
-                provides = alias.provides.with_component(component)
-                alias_source = alias.source.with_component(component)
-                self.alias_sources[provides] = alias_source
-                self.aliases[provides] = alias
+        for provider, source in self.all_sources:
+            match source:
+                case Alias():
+                    component = provider.component
+                    provides = source.provides.with_component(component)
+                    alias_source = source.source.with_component(component)
+                    self.alias_sources[provides] = alias_source
+                    self.aliases[provides] = source
 
     def _make_registries(self) -> tuple[Registry, ...]:
         registries: dict[BaseScope, Registry] = {}
@@ -193,6 +273,8 @@ class RegistryBuilder:
                 provides=self.container_key,
                 scope=scope,
                 override=False,
+                # Container have no activation function.
+                when=None,
             )
             for component in self.components:
                 registry.add_factory(context_var.as_factory(component))
@@ -432,29 +514,45 @@ class RegistryBuilder:
                 )
         self.processed_factories[factory.provides] = factory
 
+    def _process_source(
+        self,
+        provider: BaseProvider,
+        source: DependencySource,
+    ) -> None:
+        match source:
+            case Factory():
+                self._process_factory(provider, source)
+            case Alias():
+                self._process_alias(provider, source)
+            case ContextVariable():
+                self._process_context_var(provider, source)
+            case Decorator():
+                if source.is_generic():
+                    self._process_generic_decorator(provider, source)
+                else:
+                    self._process_normal_decorator(provider, source)
+            case _:
+                raise TypeError
+
     def build(self) -> tuple[Registry, ...]:
         self._collect_components()
+        self._collect_sources()
+        self._filter_active_sources()
+
         self._collect_provided_scopes()
         self._collect_aliases()
 
-        for provider in self.providers:
-            for factory in provider.factories:
-                self.dependency_scopes[
-                    factory.provides.with_component(provider.component)
-                ] = cast(BaseScope, factory.scope)
+        for provider, source in self.all_sources:
+            match source:
+                case Factory():
+                    key = source.provides.with_component(provider.component)
+                    self.dependency_scopes[key] = cast(BaseScope, source.scope)
+                case ContextVariable():
+                    key = source.provides.with_component(provider.component)
+                    self.dependency_scopes[key] = cast(BaseScope, source.scope)
 
-        for provider in self.providers:
-            for factory in provider.factories:
-                self._process_factory(provider, factory)
-            for alias in provider.aliases:
-                self._process_alias(provider, alias)
-            for context_var in provider.context_vars:
-                self._process_context_var(provider, context_var)
-            for decorator in provider.decorators:
-                if decorator.is_generic():
-                    self._process_generic_decorator(provider, decorator)
-                else:
-                    self._process_normal_decorator(provider, decorator)
+        for provider, source in self.all_sources:
+            self._process_source(provider, source)
         self._post_process_generic_factories()
 
         registries = self._make_registries()

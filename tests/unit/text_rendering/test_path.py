@@ -32,6 +32,7 @@ def test_cycle(cycle_renderer):
         scope=None,
         is_in_class=True,
         override=False,
+        when=None,
     )
 
     res = cycle_renderer.render([factory, factory, factory])
@@ -53,6 +54,7 @@ def test_cycle_2scopes(cycle_renderer):
         scope=Scope.APP,
         is_in_class=True,
         override=False,
+        when=None,
     )
     factory = make_factory(
         provides=Annotated[int, FromComponent("")],
@@ -61,6 +63,7 @@ def test_cycle_2scopes(cycle_renderer):
         scope=Scope.REQUEST,
         is_in_class=True,
         override=False,
+        when=None,
     )
 
     res = cycle_renderer.render([app_factory, factory, factory, factory])
@@ -84,6 +87,7 @@ def test_cycle_1(cycle_renderer):
         scope=None,
         is_in_class=True,
         override=False,
+        when=None,
     )
 
     res = cycle_renderer.render([factory])
@@ -103,6 +107,7 @@ def test_linear(linear_renderer):
         scope=Scope.APP,
         is_in_class=True,
         override=False,
+        when=None,
     )
 
     res = linear_renderer.render([factory, factory], last=factory.provides)
@@ -124,6 +129,7 @@ def test_linear_2scopes(linear_renderer):
         scope=Scope.APP,
         is_in_class=True,
         override=False,
+        when=None,
     )
     factory = make_factory(
         provides=Annotated[int, FromComponent("")],
@@ -132,6 +138,7 @@ def test_linear_2scopes(linear_renderer):
         scope=Scope.REQUEST,
         is_in_class=True,
         override=False,
+        when=None,
     )
 
     res = linear_renderer.render(

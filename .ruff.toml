@@ -5,6 +5,7 @@ src = ["src"]
 include = ["src/**.py", "tests/**.py"]
 exclude = [
     "src/dishka/_adaptix/**",
+    "src/dishka/_version.py",
 ]
 
 lint.select = [
@@ -43,9 +44,6 @@ lint.ignore = [
     "TRY003",
     "PLW1641",
     "PYI059"
-]
-"src/dishka/_version.py" = [
-    "ALL",
 ]
 
 [per-file-target-version]

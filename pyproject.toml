@@ -1,5 +1,8 @@
 [build-system]
-requires = ["setuptools>=66.0"]
+requires = [
+    "setuptools==80.9.0",
+    "setuptools-scm[simple]==9.2.0",
+]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -7,7 +10,7 @@ where = ["src"]
 
 [project]
 name = "dishka"
-version = "1.6.0"
+dynamic = ["version"]
 readme = "README.md"
 authors = [
     { name = "Andrey Tikhonov", email = "17@itishka.org" },

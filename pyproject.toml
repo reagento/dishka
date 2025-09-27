@@ -8,6 +8,9 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools_scm]
+version_file = "src/dishka/_version.py"
+
 [project]
 name = "dishka"
 dynamic = ["version"]

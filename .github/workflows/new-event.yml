@@ -12,6 +12,7 @@ concurrency:
 
 permissions:
   issues: read
+  pull-requests: read
 
 jobs:
   notify:

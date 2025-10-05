@@ -56,7 +56,7 @@ html_theme = "shibuya"
 pygments_style = "one-light"
 pygments_dark_style = "one-dark-pro"
 html_theme_options = {
-    "accent_color": "grass",
+    "accent_color": "indigo",
     "github_url": "https://github.com/reagento/dishka",
 }
 

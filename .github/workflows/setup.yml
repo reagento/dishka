@@ -54,7 +54,7 @@ jobs:
     - name: Run tests
       run: |
         nox -t ci
-        mv .config/.coverage .coverage.${{ matrix.python-version }}
+        mv .coverage .coverage.${{ matrix.python-version }}
 
     - name: Build doc
       run: |

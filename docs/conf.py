@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = "dishka"
-copyright = "2022, reagento"
+copyright = "2022 - %Y, reagento"
 author = "Tishka17"
 master_doc = "index"
 
@@ -32,8 +32,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx_design",
 ]
-autodoc_type_aliases = {
-}
+autodoc_type_aliases = {}
 autodoc_typehints = "description"
 
 # Add any paths that contain templates here, relative to this directory.
@@ -50,8 +49,12 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "furo"
-
+html_theme = "shibuya"
+pygments_style = "one-light"
+pygments_dark_style = "one-dark-pro"
+html_theme_options = {
+    "accent_color": "iris",
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

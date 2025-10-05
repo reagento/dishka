@@ -17,7 +17,6 @@ class Constraint:
     condition: Callable[[], bool] = lambda: True
 
 
-
 @dataclass(frozen=True, slots=True)
 class IntegrationEnv:
     library: str

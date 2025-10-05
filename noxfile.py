@@ -8,6 +8,7 @@ nox.options.default_venv_backend = "uv"
 nox.options.reuse_existing_virtualenvs = True
 
 EDITABLE_INSTALL = ("-e", ".")
+PYTEST = ("pytest", "--config-file", ".config/.pytest.ini")
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,7 +86,7 @@ def integrations_base(session: nox.Session) -> None:
         "-r", "requirements/test.txt",
         silent=False,
     )
-    session.run("pytest", "tests/integrations/base")
+    session.run(*PYTEST, "tests/integrations/base")
 
 
 for env in INTEGRATIONS:
@@ -98,7 +99,7 @@ for env in INTEGRATIONS:
             session.skip(env.constraint.reason)
 
         session.install(*EDITABLE_INSTALL, "-r", env.get_req(), silent=False)
-        session.run("pytest", env.get_tests())
+        session.run(*PYTEST, env.get_tests())
 
 
 @nox.session(tags=["ci"])
@@ -108,7 +109,7 @@ def unit(session: nox.Session) -> None:
         "-r", "requirements/test.txt",
         silent=False,
     )
-    session.run("pytest", "tests/unit")
+    session.run(*PYTEST, "tests/unit")
 
 
 @nox.session(tags=["ci"])
@@ -120,4 +121,4 @@ def real_world(session: nox.Session) -> None:
         "-r", "examples/real_world/requirements_test.txt",
         silent=False,
     )
-    session.run("pytest", "examples/real_world/tests/")
+    session.run(*PYTEST, "examples/real_world/tests/")

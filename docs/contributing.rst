@@ -34,7 +34,7 @@ Currently we use ``ruff`` to check code. To run it do
 
 .. code-block::
 
-    ruff check
+    ruff check --config .config/.ruff.toml
 
 We do not use ruff formatter for all code, so ensure that you formatted only your part of code proposing new changes.
 We have a lot of checks enabled and some of them can be false positive. Double check your code before suppressing any linter warning.
@@ -46,7 +46,7 @@ Currently we use ``mypy`` to check types. To run it do
 
 .. code-block::
 
-    mypy
+    mypy --config-file .config/.mypy.ini
 
 Running tests
 ========================

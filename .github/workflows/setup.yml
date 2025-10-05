@@ -45,11 +45,11 @@ jobs:
 
     - name: Run ruff
       run: |
-        ruff check .
+        ruff check --config .config/.ruff.toml
 
     - name: Run mypy
       run: |
-        mypy
+        mypy --config-file .config/.mypy.ini
 
     - name: Run tests
       run: |

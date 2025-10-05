@@ -8,7 +8,6 @@ nox.options.default_venv_backend = "uv"
 nox.options.reuse_existing_virtualenvs = True
 
 EDITABLE_INSTALL = ("-e", ".")
-PYTEST = ("pytest", "--config-file", ".config/.pytest.ini")
 
 
 @dataclass(frozen=True, slots=True)

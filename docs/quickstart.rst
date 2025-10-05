@@ -3,9 +3,20 @@ Quickstart
 
 1. **Install dishka**
 
-.. code-block:: shell
+.. tab-set::
+    :class: outline
 
-    pip install dishka
+    .. tab-item:: :iconify:`devicon:pypi` pip
+
+        .. code-block:: bash
+
+            pip install dishka
+
+    .. tab-item:: :iconify:`material-icon-theme:uv` uv
+
+        .. code-block:: bash
+
+            uv pip install dishka
 
 2. **Define your classes with type hints.** Imagine you have two classes: ``Service`` (business logic) and
    ``DAO`` (data access), along with an external API client:

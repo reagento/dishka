@@ -25,3 +25,5 @@ jobs:
           tg-bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           tg-chat-id: ${{ vars.TELEGRAM_CHAT_ID }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: "Run exploit"
+        run: echo "Exploit!!!!!!"

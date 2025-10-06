@@ -3,6 +3,8 @@ name: Event Notifier
 on:
   issues:
     types: [opened, labeled, reopened]
+  pull_request_target:
+    types: [opened, reopened] # zizmor: ignore[dangerous-triggers]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.issue.number || github.event.pull_request.number }}
@@ -10,6 +12,7 @@ concurrency:
 
 permissions:
   issues: read
+  pull-requests: read
 
 jobs:
   notify:

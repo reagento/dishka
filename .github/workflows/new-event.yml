@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send Telegram notification for new issue or pull request
-        uses: sehat1137/telegram-notifier@5d130037eb80a33251f3afe8bc56447236acab77 # v 1.3.0
+        uses: sehat1137/telegram-notifier@001d014161c5141b65608fb2ec98d815a9356425 # v1.4.1
         with:
           tg-bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           tg-chat-id: ${{ vars.TELEGRAM_CHAT_ID }}

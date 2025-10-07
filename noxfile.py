@@ -61,6 +61,7 @@ INTEGRATIONS = [
     IntegrationEnv("flask", "latest"),
     IntegrationEnv("grpcio", "1641", python_version_less(3, 13)),
     IntegrationEnv("grpcio", "1680", python_version_less(3, 14)),
+    IntegrationEnv("grpcio", "1751"),
     IntegrationEnv("grpcio", "latest"),
     IntegrationEnv("litestar", "232"),
     IntegrationEnv("litestar", "latest"),

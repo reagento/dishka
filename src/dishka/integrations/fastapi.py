@@ -151,14 +151,13 @@ def _wrap_fastapi_injection(
     param_name = _find_request_param(func)
     if param_name:
         additional_params = []
-    else:
+    elif _needs_websocket_param(func):
         # Determine if we need WebSocket or Request parameter
-        if _needs_websocket_param(func):
-            additional_params = [DISHKA_WEBSOCKET_PARAM]
-            param_name = DISHKA_WEBSOCKET_PARAM.name
-        else:
-            additional_params = [DISHKA_REQUEST_PARAM]
-            param_name = DISHKA_REQUEST_PARAM.name
+        additional_params = [DISHKA_WEBSOCKET_PARAM]
+        param_name = DISHKA_WEBSOCKET_PARAM.name
+    else:
+        additional_params = [DISHKA_REQUEST_PARAM]
+        param_name = DISHKA_REQUEST_PARAM.name
     return wrap_injection(
         func=func,
         is_async=is_async,

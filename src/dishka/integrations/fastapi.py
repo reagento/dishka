@@ -122,7 +122,7 @@ def inject_sync(func: Callable[P, T]) -> Callable[P, T]:
 
 
 def _needs_websocket_param(func: Callable[P, T]) -> bool:
-    """Check if function needs WebSocket parameter based on FromDishka dependencies."""
+    """Check if function needs WebSocket parameter from FromDishka."""
     hints = get_type_hints(func, include_extras=True)
     func_signature = signature(func)
 

@@ -15,7 +15,15 @@ from inspect import (
     iscoroutinefunction,
     signature,
 )
-from typing import Annotated, Any, ParamSpec, TypeVar, get_type_hints
+from typing import (
+    Annotated,
+    Any,
+    ParamSpec,
+    TypeVar,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 from fastapi import Depends, FastAPI, Request, WebSocket
 from fastapi.routing import APIRoute
@@ -96,6 +104,12 @@ DISHKA_REQUEST_PARAM = Parameter(
     kind=Parameter.KEYWORD_ONLY,
 )
 
+DISHKA_WEBSOCKET_PARAM = Parameter(
+    name="___dishka_websocket",
+    annotation=WebSocket,
+    kind=Parameter.KEYWORD_ONLY,
+)
+
 
 def inject(func: Callable[P, T]) -> Callable[P, T]:
     if not iscoroutinefunction(func) and not isasyncgenfunction(func):
@@ -107,6 +121,28 @@ def inject_sync(func: Callable[P, T]) -> Callable[P, T]:
     return _wrap_fastapi_injection(func=func, is_async=False)
 
 
+def _needs_websocket_param(func: Callable[P, T]) -> bool:
+    """Check if function needs WebSocket parameter based on FromDishka dependencies."""
+    hints = get_type_hints(func, include_extras=True)
+    func_signature = signature(func)
+
+    for name, hint in hints.items():
+        param = func_signature.parameters.get(name)
+        if param is None:
+            continue
+        # Check if this is a FromDishka dependency
+        dep = default_parse_dependency(param, hint)
+        if dep is not None:
+            # Check if the dependency type is WebSocket or WebSocket-related
+            # We need to extract the actual type from FromDishka[T]
+            origin = get_origin(hint)
+            if origin is not None:
+                args = get_args(hint)
+                if args and args[0] is WebSocket:
+                    return True
+    return False
+
+
 def _wrap_fastapi_injection(
     *,
     func: Callable[P, T],
@@ -116,8 +152,13 @@ def _wrap_fastapi_injection(
     if param_name:
         additional_params = []
     else:
-        additional_params = [DISHKA_REQUEST_PARAM]
-        param_name = DISHKA_REQUEST_PARAM.name
+        # Determine if we need WebSocket or Request parameter
+        if _needs_websocket_param(func):
+            additional_params = [DISHKA_WEBSOCKET_PARAM]
+            param_name = DISHKA_WEBSOCKET_PARAM.name
+        else:
+            additional_params = [DISHKA_REQUEST_PARAM]
+            param_name = DISHKA_REQUEST_PARAM.name
     return wrap_injection(
         func=func,
         is_async=is_async,

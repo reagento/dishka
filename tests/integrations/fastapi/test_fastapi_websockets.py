@@ -130,12 +130,16 @@ async def get_with_fromdishka_websocket_only(
 
 
 @pytest.mark.asyncio
-async def test_fromdishka_websocket_only(ws_app_provider: WebSocketAppProvider):
-    """Test that FromDishka[WebSocket] works without plain WebSocket parameter.
+async def test_fromdishka_websocket_only(
+    ws_app_provider: WebSocketAppProvider,
+):
+    """Test FromDishka[WebSocket] without plain WebSocket parameter.
 
     This is a regression test for issue #575.
     """
-    async with dishka_app(get_with_fromdishka_websocket_only, ws_app_provider) as client:
+    async with dishka_app(
+        get_with_fromdishka_websocket_only, ws_app_provider,
+    ) as client:
         with client.websocket_connect("/") as connection:
             connection.send_text("...")
             assert connection.receive_text() == "passed"

@@ -72,7 +72,8 @@ else:
 
     def get_original_bases(cls: type, /) -> tuple[Any, ...]:
         try:
-            return cls.__dict__.get("__orig_bases__", cls.__bases__)
+            bases = cls.__dict__.get("__orig_bases__", cls.__bases__)
+            return typing.cast(tuple[Any, ...], bases)
         except AttributeError:
             msg = f"Expected an instance of type, not {type(cls).__name__!r}"
             raise TypeError(msg) from None

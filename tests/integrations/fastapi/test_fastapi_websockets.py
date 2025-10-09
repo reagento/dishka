@@ -117,3 +117,27 @@ async def test_websocket_dependency(ws_app_provider: WebSocketAppProvider):
 
         ws_app_provider.mock.assert_called_with(WS_DEP_VALUE)
         ws_app_provider.websocket_released.assert_called_once()
+
+
+async def get_with_fromdishka_websocket_only(
+    ws: FromDishka[WebSocket],
+    mock: FromDishka[Mock],
+) -> None:
+    await ws.accept()
+    await ws.receive()
+    mock("ok")
+    await ws.send_text("passed")
+
+
+@pytest.mark.asyncio
+async def test_fromdishka_websocket_only(ws_app_provider: WebSocketAppProvider):
+    """Test that FromDishka[WebSocket] works without plain WebSocket parameter.
+
+    This is a regression test for issue #575.
+    """
+    async with dishka_app(get_with_fromdishka_websocket_only, ws_app_provider) as client:
+        with client.websocket_connect("/") as connection:
+            connection.send_text("...")
+            assert connection.receive_text() == "passed"
+
+        ws_app_provider.mock.assert_called_with("ok")

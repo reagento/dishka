@@ -69,15 +69,24 @@ def _replace_depends(
 
 
 def _find_request_param(func: Callable[P, T]) -> str | None:
-    hints = get_type_hints(func)
-    request_hint = next(
-        (name for name, hint in hints.items() if hint is Request),
-        None,
-    )
-    websocket_hint = next(
-        (name for name, hint in hints.items() if hint is WebSocket),
-        None,
-    )
+    hints = get_type_hints(func, include_extras=True)
+    func_signature = signature(func)
+
+    request_hint = None
+    websocket_hint = None
+
+    for name, hint in hints.items():
+        param = func_signature.parameters.get(name)
+        if param is None:
+            continue
+        # Skip parameters marked with FromDishka
+        if default_parse_dependency(param, hint) is not None:
+            continue
+        if hint is Request:
+            request_hint = name
+        elif hint is WebSocket:
+            websocket_hint = name
+
     return request_hint or websocket_hint
 
 

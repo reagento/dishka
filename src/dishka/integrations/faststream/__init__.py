@@ -1,8 +1,18 @@
+import warnings
+
 from faststream.__about__ import (
     __version__ as FASTSTREAM_VERSION,  # noqa: N812
 )
 
 from dishka import FromDishka
+
+warnings.warn(
+    "The integration has been moved to the dishka-faststream package"
+    " and will be removed in future versions."
+    "\nhttps://github.com/faststream-community/dishka-faststream",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 FASTSTREAM_05 = FASTSTREAM_VERSION.startswith("0.5")
 FASTSTREAM_06 = FASTSTREAM_VERSION.startswith("0.6")

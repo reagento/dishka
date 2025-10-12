@@ -46,7 +46,7 @@ Some of the integrations are supported by a community, refer to their documentat
 
    * - :ref:`grpcio`
      - :ref:`Aiogram_dialog`
-     - :ref:`FastStream`
+     - `FastStream  <https://github.com/faststream-community/dishka-faststream>`_ (:abbr:`com (Community support)`)
      -
 
    * - :ref:`Fastapi`

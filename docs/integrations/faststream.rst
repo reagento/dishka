@@ -3,6 +3,10 @@
 FastStream
 ===========================================
 
+.. warning::
+   The integration has been moved to the `dishka-faststream <https://github.com/faststream-community/dishka-faststream>`_ package and will be removed in future versions.
+
+
 Though it is not required, you can use *dishka-faststream* integration. It features:
 
 * automatic *REQUEST* scope management using middleware

@@ -83,7 +83,7 @@ class UndefinedTypeAnalysisError(NameError, DishkaError):
         return (
             f"Failed to analyze `{name}`. \n"
             f"Type '{self.type_name}' is not defined. \n\n"
-            f"If your are using `if TYPE_CHECKING` "
+            f"If you are using `if TYPE_CHECKING` "
             f"to import '{self.type_name}' "
             f"then try removing it. \n"
             f"Or, create a separate factory with all types imported."

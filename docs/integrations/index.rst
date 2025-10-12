@@ -90,7 +90,7 @@ To use framework integration you mainly need to do 4 things:
 
 * call ``setup_dishka`` on your container and framework entity
 * add ``FromDishka[YourClass]`` on you framework handlers (or view-functions)
-* decorate your handlers with ``@inject`` before registering them in framework. Some integrations do not required it, see their details
+* decorate your handlers with ``@inject`` before registering them in framework. Some integrations do not require it, see their details
 * add additional provider to the container to access framework specific objects from your provider.
 
 .. note::

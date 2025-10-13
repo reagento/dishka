@@ -9,6 +9,7 @@ from dishka import FromDishka
 warnings.warn(
     "The integration has been moved to the dishka-faststream package"
     " and will be removed in future versions."
+    "\n`pip install dishka-faststream`"
     "\nhttps://github.com/faststream-community/dishka-faststream",
     DeprecationWarning,
     stacklevel=2,

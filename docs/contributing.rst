@@ -103,7 +103,7 @@ We use ``zizmor`` to audit our GitHub Actions workflows for security issues. To 
 
 .. code-block::
 
-    zizmor .github/workflows
+    zizmor .github
 
 Submitting changes
 ============================

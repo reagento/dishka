@@ -62,7 +62,7 @@ jobs:
         sphinx-build -M html docs docs-build -W
 
     - name: Run zizmor
-      run: zizmor .github/workflows
+      run: zizmor .github
 
     - name: Store coverage file
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

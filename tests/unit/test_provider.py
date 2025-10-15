@@ -47,10 +47,12 @@ from .sample_providers import (
     ClassA,
     async_func_a,
     async_gen_a,
+    async_gen_a_short,
     async_iter_a,
     async_iterator_a,
     sync_func_a,
     sync_gen_a,
+    sync_gen_a_short,
     sync_iter_a,
     sync_iterator_a,
 )
@@ -76,10 +78,12 @@ def test_provider_init():
         (sync_iter_a, FactoryType.GENERATOR, True),
         (sync_iterator_a, FactoryType.GENERATOR, True),
         (sync_gen_a, FactoryType.GENERATOR, True),
+        (sync_gen_a_short, FactoryType.GENERATOR, True),
         (async_func_a, FactoryType.ASYNC_FACTORY, True),
         (async_iter_a, FactoryType.ASYNC_GENERATOR, True),
         (async_iterator_a, FactoryType.ASYNC_GENERATOR, True),
         (async_gen_a, FactoryType.ASYNC_GENERATOR, True),
+        (async_gen_a_short, FactoryType.ASYNC_GENERATOR, True),
     ],
 )
 def test_parse_factory(source, provider_type, is_to_bound):

@@ -36,7 +36,13 @@ def sync_iterator_a(self, dep: int) -> Iterator[ClassA]:
     a.closed = True
 
 
-def sync_gen_a(self, dep: int) -> Generator[None, ClassA, None]:
+def sync_gen_a(self, dep: int) -> Generator[ClassA, None, None]:
+    a = ClassA(dep)
+    yield a
+    a.closed = True
+
+
+def sync_gen_a_short(self, dep: int) -> Generator[ClassA]:
     a = ClassA(dep)
     yield a
     a.closed = True
@@ -59,6 +65,12 @@ async def async_iterator_a(self, dep: int) -> AsyncIterator[ClassA]:
 
 
 async def async_gen_a(self, dep: int) -> AsyncGenerator[ClassA, None]:
+    a = ClassA(dep)
+    yield a
+    a.closed = True
+
+
+async def async_gen_a_short(self, dep: int) -> AsyncGenerator[ClassA]:
     a = ClassA(dep)
     yield a
     a.closed = True

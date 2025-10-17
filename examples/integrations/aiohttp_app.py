@@ -4,7 +4,6 @@ from aiohttp.web import run_app
 from aiohttp.web_app import Application
 from aiohttp.web_response import Response
 from aiohttp.web_routedef import RouteTableDef
-
 from dishka import (
     Provider,
     Scope,
@@ -36,13 +35,13 @@ class GatewayProvider(Provider):
 router = RouteTableDef()
 
 
-@router.get('/')
+@router.get("/")
 @inject
 async def endpoint(
         request: str, gateway: FromDishka[Gateway],
 ) -> Response:
     data = await gateway.get()
-    return Response(text=f'gateway data: {data}')
+    return Response(text=f"gateway data: {data}")
 
 
 async def on_shutdown(app: Application):

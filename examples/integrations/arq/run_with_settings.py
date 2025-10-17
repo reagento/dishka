@@ -30,7 +30,7 @@ async def get_content(
 
 
 class WorkerSettings:
-    functions = [get_content]
+    functions = [get_content]  # noqa: RUF012
 
 
 logging.basicConfig(

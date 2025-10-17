@@ -165,6 +165,9 @@ HAS_UNPACK = HAS_PY_311
 HAS_PY_312 = PythonVersionRequirement((3, 12))
 HAS_TV_SYNTAX = HAS_PY_312
 
+HAS_PY_313 = PythonVersionRequirement((3, 13))
+HAS_TV_DEFAULT = HAS_PY_313
+
 HAS_SUPPORTED_ATTRS_PKG = DistributionVersionRequirement("attrs", "21.3.0")
 HAS_ATTRS_PKG = DistributionRequirement("attrs")
 

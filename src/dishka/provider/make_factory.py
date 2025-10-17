@@ -145,12 +145,16 @@ def _type_repr(hint: Any) -> str:
 
 def _async_generator_result(hint: Any) -> Any:
     hint = unwrap_type_alias(hint)
-    origin = get_origin(hint)
-    if origin is ProvideMultiple:
+    if get_origin(hint) is ProvideMultiple:
         return ProvideMultiple[tuple(  # type: ignore[misc]
             _async_generator_result(x) for x in get_args(hint)
         )]
-    elif origin in (AsyncIterable, AsyncIterator, AsyncGenerator):
+    origin = get_origin(hint)
+    if origin is AsyncIterable:
+        return get_args(hint)[0]
+    elif origin is AsyncIterator:
+        return get_args(hint)[0]
+    elif origin is AsyncGenerator:
         return get_args(hint)[0]
     # errors
     name = _type_repr(hint)
@@ -172,12 +176,16 @@ def _async_generator_result(hint: Any) -> Any:
 
 def _generator_result(hint: Any) -> Any:
     hint = unwrap_type_alias(hint)
-    origin = get_origin(hint)
-    if origin is ProvideMultiple:
+    if get_origin(hint) is ProvideMultiple:
         return ProvideMultiple[tuple(  # type: ignore[misc]
             _generator_result(x) for x in get_args(hint)
         )]
-    elif origin in (Iterable, Iterator, Generator):
+    origin = get_origin(hint)
+    if origin is Iterable:
+        return get_args(hint)[0]
+    elif origin is Iterator:
+        return get_args(hint)[0]
+    elif origin is Generator:
         return get_args(hint)[0]
     # errors
     name = _type_repr(hint)

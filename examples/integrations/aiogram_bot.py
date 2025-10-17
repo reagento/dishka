@@ -15,8 +15,8 @@ from dishka.integrations.aiogram import (
     setup_dishka,
 )
 
-# app dependency logic
 
+# app dependency logic
 class MyProvider(Provider):
     @provide(scope=Scope.APP)
     async def get_int(self) -> AsyncIterator[int]:
@@ -36,7 +36,6 @@ class MyProvider(Provider):
 
 
 # app
-
 API_TOKEN = os.getenv("BOT_TOKEN")
 router = Router()
 

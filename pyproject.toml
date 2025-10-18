@@ -25,9 +25,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
     "Typing :: Typed",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
-
 ]
 dependencies = [
     'exceptiongroup>=1.1.3; python_version<"3.11"',

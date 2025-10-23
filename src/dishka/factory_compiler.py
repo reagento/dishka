@@ -1,5 +1,5 @@
 """
-Compile call of factory acctording to its type
+Compile call of factory according to its type
 
 For each template we expect global variables:
 * source - factory.source

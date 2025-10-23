@@ -18,7 +18,7 @@ from typing import (
     get_type_hints,
 )
 
-from faststream import BaseMiddleware, FastStream
+from faststream import BaseMiddleware, Context, FastStream
 from faststream._internal.basic_types import DecodedMessage
 from faststream._internal.broker import BrokerUsecase as BrokerType
 from faststream._internal.context import ContextRepo
@@ -37,17 +37,24 @@ class FastStreamProvider(Provider):
     message = from_context(StreamMessage, scope=Scope.REQUEST)
 
 
-Application: TypeAlias = FastStream | AsgiFastStream  # type: ignore[no-redef,misc]
+Application: TypeAlias = FastStream | AsgiFastStream
 
 try:
     # import works only if fastapi is installed
-    from faststream._internal.fastapi import Context, StreamRouter
+    from faststream._internal.fastapi import Context as FastAPIContext
+    from faststream._internal.fastapi import StreamRouter
 
 except ImportError:
-    from faststream import Context
+    ContextAnnotation: TypeAlias = Annotated[ContextRepo, Context("context")]
 
 else:
-    Application |= StreamRouter  # type: ignore[assignment]
+    ContextAnnotation = Annotated[  # type: ignore[misc,assignment]
+        ContextRepo,
+        FastAPIContext("context"),
+        Context("context"),
+    ]
+
+    Application |= StreamRouter
 
 
 class ApplicationLike(Protocol):
@@ -92,7 +99,7 @@ def setup_dishka(
                 stacklevel=2,
             )
 
-    broker: BrokerType = broker or getattr(app, "broker", None)
+    broker = broker or getattr(app, "broker", None)
     assert broker  # noqa: S101
 
     broker.insert_middleware(DishkaMiddleware(container))
@@ -129,7 +136,7 @@ class _DishkaMiddleware(BaseMiddleware):
         self.container = container
         super().__init__(*args, **kwargs)
 
-    async def consume_scope(  # type: ignore[misc]
+    async def consume_scope(
         self,
         call_next: Callable[[Any], Awaitable[Any]],
         msg: StreamMessage[Any],
@@ -173,7 +180,7 @@ def _find_context_param(func: Callable[_ParamsP, _ReturnT]) -> str | None:
 
 
 DISHKA_CONTEXT_PARAM = Parameter(
-    name="___dishka_context",
-    annotation=Annotated[ContextRepo, Context("context")],
+    name="dishka_context__",
+    annotation=ContextAnnotation,
     kind=Parameter.KEYWORD_ONLY,
 )

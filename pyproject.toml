@@ -1,18 +1,25 @@
 [build-system]
-requires = ["setuptools>=66.0"]
+requires = [
+    "setuptools==80.9.0",
+    "setuptools-scm[simple]==9.2.0",
+]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools_scm]
+version_file = "src/dishka/_version.py"
+
 [project]
 name = "dishka"
-version = "1.6.0"
+dynamic = ["version"]
 readme = "README.md"
 authors = [
     { name = "Andrey Tikhonov", email = "17@itishka.org" },
 ]
-license = { text = "Apache-2.0" }
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 description = "Cute DI framework with scopes and agreeable API"
 requires-python = ">=3.10"
 classifiers = [
@@ -24,7 +31,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
     "Typing :: Typed",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
 dependencies = [

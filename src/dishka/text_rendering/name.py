@@ -13,6 +13,12 @@ def _render_args(hint: Any) -> str:
 
 
 def get_name(hint: Any, *, include_module: bool) -> str:
+    if isinstance(hint, list):
+        res = ",".join(
+            get_name(item, include_module=include_module)
+            for item in hint
+        )
+        return f"[{res}]"
     if hint is ...:
         return "..."
     if func := getattr(object, "__func__", None):

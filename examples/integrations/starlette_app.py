@@ -3,13 +3,12 @@ from abc import abstractmethod
 from typing import Protocol
 
 import uvicorn
+from dishka import Provider, Scope, make_async_container, provide
+from dishka.integrations.starlette import FromDishka, inject, setup_dishka
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 from starlette.routing import Route
-
-from dishka import Provider, Scope, make_async_container, provide
-from dishka.integrations.starlette import FromDishka, inject, setup_dishka
 
 
 # app core

@@ -4,8 +4,6 @@ import random
 from collections.abc import Iterable
 
 import telebot
-from telebot.types import Message
-
 from dishka import Provider, Scope, make_container, provide
 from dishka.integrations.telebot import (
     FromDishka,
@@ -13,6 +11,7 @@ from dishka.integrations.telebot import (
     inject,
     setup_dishka,
 )
+from telebot.types import Message
 
 
 # app dependency logic

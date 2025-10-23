@@ -123,7 +123,7 @@ def test_error_in_sync_enter(provide_scope, start_scope, expected_scope):
         a = provide(sync_gen_a, scope=provide_scope)
 
         @provide(scope=provide_scope)
-        def get_int(self) -> Generator[None, int, None]:
+        def get_int(self) -> Generator[int, None, None]:
             caught_exc = yield 100
             mock(caught_exc)
 
@@ -194,7 +194,7 @@ async def test_error_in_async_enter(
         a = provide(sync_gen_a, scope=provide_scope)
 
         @provide(scope=provide_scope)
-        def get_int(self) -> Generator[None, int, None]:
+        def get_int(self) -> Generator[int, None, None]:
             caught_exc = yield 100
             mock(caught_exc)
 

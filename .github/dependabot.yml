@@ -5,3 +5,5 @@ updates:
     schedule:
       interval: "monthly"
     target-branch: develop
+    cooldown:
+      default-days: 4

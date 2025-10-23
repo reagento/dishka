@@ -186,7 +186,7 @@ def _generator_result(hint: Any) -> Any:
     elif origin is Iterator:
         return get_args(hint)[0]
     elif origin is Generator:
-        return get_args(hint)[1]
+        return get_args(hint)[0]
     # errors
     name = _type_repr(hint)
     if origin is AsyncIterable:

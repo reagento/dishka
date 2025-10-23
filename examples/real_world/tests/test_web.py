@@ -11,12 +11,11 @@ from unittest.mock import Mock
 import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
+from dishka import Provider, Scope, make_async_container, provide
+from dishka.integrations.fastapi import setup_dishka
 from fastapi.testclient import TestClient
 from main_web import create_fastapi_app
 from myapp.use_cases import AddProductsInteractor
-
-from dishka import Provider, Scope, make_async_container, provide
-from dishka.integrations.fastapi import setup_dishka
 
 
 class FakeInteractorProvider(Provider):

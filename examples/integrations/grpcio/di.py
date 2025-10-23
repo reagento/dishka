@@ -1,6 +1,5 @@
-from grpcio.services.uuid_service import UUIDService, UUIDServiceImpl
-
 from dishka import Provider, Scope
+from grpcio.services.uuid_service import UUIDService, UUIDServiceImpl
 
 
 def service_provider() -> Provider:

@@ -1,7 +1,5 @@
 from typing import Protocol
 
-from sanic import Blueprint, HTTPResponse, Request, Sanic
-
 from dishka import Provider, Scope, make_async_container, provide
 from dishka.integrations.sanic import (
     FromDishka,
@@ -9,6 +7,7 @@ from dishka.integrations.sanic import (
     inject,
     setup_dishka,
 )
+from sanic import Blueprint, HTTPResponse, Request, Sanic
 
 
 class DbGateway(Protocol):

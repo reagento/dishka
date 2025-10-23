@@ -14,6 +14,8 @@ Actually, everything can be done in your code: DI-framework is not a required th
 
 There might be errors in this comparison, some features are not well described while still exist in selected libraries. Some features can be implemented manually, but this topic is not about your code - it is about existing libraries.
 
+.. note:: The data is up to date as of **March 8, 2024**
+
 Overview
 ===========================
 

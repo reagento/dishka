@@ -1,4 +1,4 @@
-__all__ = ["CONTAINER_NAME", "inject"]
+__all__ = ["CONTAINER_NAME", "FromDishka", "inject"]
 
 from collections.abc import Awaitable, Callable
 from typing import (
@@ -16,7 +16,7 @@ from aiogram_dialog.api.entities import ChatEvent
 from aiogram_dialog.api.internal import Widget
 from aiogram_dialog.widgets.common import ManagedWidget
 
-from dishka import AsyncContainer
+from dishka import AsyncContainer, FromDishka
 from dishka.integrations.base import wrap_injection
 
 CONTAINER_NAME: Final = "dishka_container"

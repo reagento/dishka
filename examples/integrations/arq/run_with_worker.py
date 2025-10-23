@@ -3,7 +3,6 @@ import logging
 from typing import Any, Protocol
 
 from arq.worker import create_worker
-
 from dishka import FromDishka, Provider, Scope, make_async_container, provide
 from dishka.integrations.arq import inject, setup_dishka
 
@@ -33,7 +32,7 @@ async def get_content(
 
 
 class WorkerSettings:
-    functions = [get_content]
+    functions = [get_content]  # noqa: RUF012
 
 
 async def main():

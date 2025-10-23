@@ -16,6 +16,7 @@ How to use
 
 .. code-block:: python
 
+    from dishka import make_container
     from dishka.integrations.click import setup_dishka, inject
 
 2. Create container in group handler and setup it to click context. Pass ``auto_inject=True`` unless you want to use ``@inject`` decorator explicitly

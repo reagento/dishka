@@ -25,7 +25,6 @@ from dishka._adaptix.feature_requirement import HAS_PY_311, HAS_PY_312
 from dishka.entities.with_parents import (
     ParentsResolver,
     WithParents,
-    is_type_var_tuple,
 )
 from dishka.exceptions import NoFactoryError
 
@@ -42,14 +41,6 @@ if HAS_PY_312:
 
 T = TypeVar("T")
 B = TypeVar("B")
-
-
-@pytest.mark.skipif(
-    not HAS_PY_311,
-    reason="test for python >= 3.11",
-)
-def test_is_type_var_tuple() -> None:
-    assert is_type_var_tuple(Unpack[Ts])
 
 
 def test_simple_inheritance() -> None:

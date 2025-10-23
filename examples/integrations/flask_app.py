@@ -1,8 +1,6 @@
 from abc import abstractmethod
 from typing import Protocol
 
-from flask import Flask
-
 from dishka import (
     Provider,
     Scope,
@@ -15,6 +13,7 @@ from dishka.integrations.flask import (
     inject,
     setup_dishka,
 )
+from flask import Flask
 
 
 # app core
@@ -58,8 +57,7 @@ def index(
         *,
         interactor: FromDishka[Interactor],
 ) -> str:
-    result = interactor()
-    return result
+    return interactor()
 
 
 @app.get("/auto")
@@ -67,11 +65,14 @@ def auto(
         *,
         interactor: FromDishka[Interactor],
 ) -> str:
-    result = interactor()
-    return result
+    return interactor()
 
 
-container = make_container(AdaptersProvider(), InteractorProvider(), FlaskProvider())
+container = make_container(
+    AdaptersProvider(),
+    InteractorProvider(),
+    FlaskProvider(),
+)
 setup_dishka(container=container, app=app, auto_inject=True)
 try:
     app.run()

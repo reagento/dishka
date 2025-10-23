@@ -8,6 +8,7 @@ include = [
 ]
 exclude = [
     "src/dishka/_adaptix/**",
+    "src/dishka/_version.py",
 ]
 
 lint.select = [

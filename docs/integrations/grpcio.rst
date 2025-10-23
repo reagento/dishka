@@ -21,7 +21,7 @@ How to use
 .. code-block:: python
 
     from dishka.integrations.grpcio import (
-        inject, DishkaInterceptor, GrpcioProvider,
+        inject, DishkaInterceptor, GrpcioProvider, FromDishka
     )
 
 2. Create provider. You can use ``grpc.ServicerContext`` as a factory parameter to access request context in *SESSION* or *REQUEST* scopes.

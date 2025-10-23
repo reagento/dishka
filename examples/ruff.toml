@@ -1,0 +1,28 @@
+extend = "../.ruff.toml"
+include = ["**.py"]
+
+[lint]
+select = ["ALL"]
+ignore = [
+    "D",
+    "ANN",
+    "ARG",
+    "T201",
+    "S104",
+    "S311",
+    "INP001",
+    "SIM105",
+]
+
+[lint.isort]
+force-wrap-aliases = true
+combine-as-imports = true
+no-lines-before = ["local-folder"]
+
+[lint.per-file-ignores]
+"integrations/grpcio/pb2/**.py" = ["ALL"]
+"integrations/grpcio/grpc_server.py" = ["N802"]
+"real_world/tests/test_web.py" = [
+    "S101",
+    "PLR2004",
+]

@@ -4,8 +4,6 @@ from contextlib import asynccontextmanager
 from typing import Protocol
 
 import uvicorn
-from fastapi import APIRouter, FastAPI
-
 from dishka import (
     Provider,
     Scope,
@@ -19,6 +17,7 @@ from dishka.integrations.fastapi import (
     inject,
     setup_dishka,
 )
+from fastapi import APIRouter, FastAPI
 
 
 # app core
@@ -62,8 +61,7 @@ async def index(
         *,
         interactor: FromDishka[Interactor],
 ) -> str:
-    result = interactor()
-    return result
+    return interactor()
 
 
 # with this router you do not need `@inject` on each view
@@ -75,8 +73,7 @@ async def auto(
         *,
         interactor: FromDishka[Interactor],
 ) -> str:
-    result = interactor()
-    return result
+    return interactor()
 
 
 @asynccontextmanager
@@ -88,13 +85,17 @@ async def lifespan(app: FastAPI):
 def create_app():
     logging.basicConfig(
         level=logging.WARNING,
-        format='%(asctime)s  %(process)-7s %(module)-20s %(message)s',
+        format="%(asctime)s  %(process)-7s %(module)-20s %(message)s",
     )
 
     app = FastAPI(lifespan=lifespan)
     app.include_router(router)
     app.include_router(second_router)
-    container = make_async_container(AdaptersProvider(), InteractorProvider(), FastapiProvider())
+    container = make_async_container(
+        AdaptersProvider(),
+        InteractorProvider(),
+        FastapiProvider(),
+    )
     setup_dishka(container, app)
     return app
 

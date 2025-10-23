@@ -1,12 +1,11 @@
 import random
 
 from celery import Celery
-
 from dishka import Provider, Scope, make_container
 from dishka.integrations.celery import FromDishka, inject, setup_dishka
 
 provider = Provider(scope=Scope.REQUEST)
-provider.provide(lambda: random.random(), provides=float)  # noqa: S311
+provider.provide(lambda: random.random(), provides=float)
 
 
 app = Celery()
@@ -24,7 +23,7 @@ def main() -> None:
 
     result = random_task.apply()
 
-    print(result.get())  # noqa: T201
+    print(result.get())
 
     container.close()
 

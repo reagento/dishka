@@ -3,11 +3,10 @@ import logging
 import os
 
 from aiogram import Bot, Dispatcher
-from myapp.ioc import AdaptersProvider, InteractorProvider
-from myapp.presentation_bot import router
-
 from dishka import make_async_container
 from dishka.integrations.aiogram import setup_dishka
+from myapp.ioc import AdaptersProvider, InteractorProvider
+from myapp.presentation_bot import router
 
 
 async def main():
@@ -25,5 +24,5 @@ async def main():
         await bot.session.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

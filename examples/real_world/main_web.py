@@ -3,9 +3,7 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from dishka import make_async_container
-from dishka.integrations.fastapi import (
-    setup_dishka,
-)
+from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
 from myapp.ioc import AdaptersProvider, InteractorProvider
 from myapp.presentation_web import router

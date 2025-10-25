@@ -1,17 +1,12 @@
 extend = "../.ruff.toml"
-include = ["**.py"]
 
 [lint]
-select = ["ALL"]
 ignore = [
-    "D",
-    "ANN",
-    "ARG",
-    "T201",
-    "S104",
-    "S311",
+    "T201",   # many `print` in examples/
+    "S104",   # in case of examples, this is not so critical
+    "S311",   # `secrets` x1.75 slower that `random`
     "INP001",
-    "SIM105",
+    "SIM105", # `contextlib.suppress` x2 slower that `try-except-pass`
 ]
 
 [lint.isort]

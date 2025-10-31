@@ -8,9 +8,6 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[tool.setuptools_scm]
-version_file = "src/dishka/_version.py"
-
 [project]
 name = "dishka"
 dynamic = ["version"]
@@ -42,3 +39,21 @@ dependencies = [
 "Homepage" = "https://github.com/reagento/dishka"
 "Documentation" = "https://dishka.readthedocs.io/en/stable/"
 "Bug Tracker" = "https://github.com/reagento/dishka/issues"
+
+[tool.setuptools_scm]
+version_file = "src/dishka/_version.py"
+version_file_template = """\
+# This file auto generated!
+# DO NOT EDIT MANUALLY!
+
+version: str = "{version}"
+__version__: str = "{version}"
+
+commit_hash: str = "{scm_version.node}"
+version_timestamp: str = "{scm_version.time}"
+
+tag: str = "{scm_version.tag}"
+branch: str = "{scm_version.branch}"
+commit_date: str = "{scm_version.node_date}"
+commit_count_since_tag: int = {scm_version.distance}
+"""

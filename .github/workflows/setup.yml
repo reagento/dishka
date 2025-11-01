@@ -65,7 +65,7 @@ jobs:
       run: zizmor .github
 
     - name: Store coverage file
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
       if: ${{ github.event_name == 'pull_request' }}
       with:
         name: coverage-${{ matrix.python-version }}
@@ -103,7 +103,7 @@ jobs:
           MINIMUM_GREEN: 90
 
       - name: Store Pull Request comment to be posted (for external pr)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         if: steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
         with:
           name: python-coverage-comment-action

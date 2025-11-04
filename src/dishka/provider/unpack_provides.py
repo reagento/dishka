@@ -27,6 +27,7 @@ def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
             ).with_component(factory.provides.component),
             cache=factory.cache,
             override=factory.override,
+            when=factory.when,
         )
         for provides_other in provides_others
     ]
@@ -43,6 +44,7 @@ def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
             provides=hint_to_dependency_key(
                 provides_first,
             ).with_component(factory.provides.component),
+            when=factory.when,
         ),
     )
     return res
@@ -58,6 +60,7 @@ def unpack_decorator(decorator: Decorator) -> Sequence[DependencySource]:
             provides=hint_to_dependency_key(
                 provides,
             ).with_component(decorator.provides.component),
+            when=decorator.when,
         )
         for provides in get_args(decorator.provides.type_hint)
     ]
@@ -75,6 +78,7 @@ def unpack_alias(alias: Alias) -> Sequence[DependencySource]:
             source=alias.source,
             cache=alias.cache,
             override=alias.override,
+            when=alias.when,
         )
         for provides in get_args(alias.provides.type_hint)
     ]

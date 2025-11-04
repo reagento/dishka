@@ -79,7 +79,6 @@ def test_provider_init():
     assert len(provider.factories) == 1
     assert len(provider.aliases) == 1
 
-
 @pytest.mark.parametrize(
     ("source", "provider_type", "is_to_bound"),
     [
@@ -103,8 +102,9 @@ def test_provider_init():
         ),
     ],
 )
-def test_parse_factory(source, provider_type, is_to_bound):
-    composite = provide(source, scope=Scope.REQUEST)
+@pytest.mark.parametrize("when", [None, lambda x: bool(x)])
+def test_parse_factory(source, provider_type, is_to_bound, when):
+    composite = provide(source, scope=Scope.REQUEST, when=when)
     assert len(composite.dependency_sources) == 1
     factory = composite.dependency_sources[0]
 
@@ -117,6 +117,7 @@ def test_parse_factory(source, provider_type, is_to_bound):
     assert factory.scope == Scope.REQUEST
     assert factory.source == source
     assert factory.type == provider_type
+    assert factory.when == when
 
 
 def test_provide_no_scope():
@@ -158,7 +159,8 @@ def test_parse_factory_invalid_hint_async():
         (ClassA, FactoryType.FACTORY, False),
     ],
 )
-def test_parse_factory_cls(source, provider_type, is_to_bound):
+@pytest.mark.parametrize("when", [None, lambda x: bool(x)])
+def test_parse_factory_cls(source, provider_type, is_to_bound, when):
     factory = make_factory(
         provides=None,
         source=source,
@@ -166,6 +168,7 @@ def test_parse_factory_cls(source, provider_type, is_to_bound):
         scope=Scope.REQUEST,
         is_in_class=False,
         override=False,
+        when=when,
     )
     assert factory.provides == hint_to_dependency_key(ClassA)
     assert factory.dependencies == [hint_to_dependency_key(int)]
@@ -173,6 +176,7 @@ def test_parse_factory_cls(source, provider_type, is_to_bound):
     assert factory.scope == Scope.REQUEST
     assert factory.source == source
     assert factory.type == provider_type
+    assert factory.when == when
 
 
 def test_provider_class_scope():
@@ -451,6 +455,7 @@ make_factory_by_source = partial(
     cache=True,
     is_in_class=False,
     override=False,
+    when=None,
 )
 
 

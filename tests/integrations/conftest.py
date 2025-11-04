@@ -1,6 +1,11 @@
 import pytest
 
-from dishka import make_async_container, make_container
+from dishka import (
+    AsyncContainer,
+    Container,
+    make_async_container,
+    make_container,
+)
 from .common import AppProvider, WebSocketAppProvider
 
 
@@ -15,10 +20,10 @@ def ws_app_provider() -> WebSocketAppProvider:
 
 
 @pytest.fixture
-def async_container(app_provider: AppProvider) -> AppProvider:
+def async_container(app_provider: AppProvider) -> AsyncContainer:
     return make_async_container(app_provider)
 
 
 @pytest.fixture
-def container(app_provider: AppProvider) -> AppProvider:
+def container(app_provider: AppProvider) -> Container:
     return make_container(app_provider)

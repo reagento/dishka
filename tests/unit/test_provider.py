@@ -211,7 +211,9 @@ def test_provider_provide_scope():
     provider = MyProvider()
     assert len(provider.factories) == 1
     factory = provider.factories[0]
-    assert factory.scope == Scope.REQUEST
+    assert (
+        factory.scope == Scope.REQUEST
+    ), "Expected factory scope to match scope passed to provide()"
 
 
 def test_provider_provide_scope_overrides_instance_scope():
@@ -219,12 +221,14 @@ def test_provider_provide_scope_overrides_instance_scope():
         pass
 
     class MyProvider(Provider):
-        foo = provide(SomeClass, scope=Scope.APP)
+        foo = provide(SomeClass, scope=Scope.REQUEST)
 
-    provider = MyProvider(scope=Scope.REQUEST)
+    provider = MyProvider(scope=Scope.APP)
     assert len(provider.factories) == 1
     factory = provider.factories[0]
-    assert factory.scope == Scope.REQUEST
+    assert (
+        factory.scope == Scope.REQUEST
+    ), "Scope passed to provide() should override scope set on provider instance"
 
 
 def test_provider_provide_scope_overrides_class_scope():
@@ -239,7 +243,9 @@ def test_provider_provide_scope_overrides_class_scope():
     provider = MyProvider()
     assert len(provider.factories) == 1
     factory = provider.factories[0]
-    assert factory.scope == Scope.REQUEST
+    assert (
+        factory.scope == Scope.REQUEST
+    ), "Scope passed to provide method should override scope set on provider class"
 
 
 def test_provider_instance_scope_overrides_class_scope():
@@ -254,7 +260,9 @@ def test_provider_instance_scope_overrides_class_scope():
     provider = MyProvider(scope=Scope.REQUEST)
     assert len(provider.factories) == 1
     factory = provider.factories[0]
-    assert factory.scope == Scope.REQUEST
+    assert (
+        factory.scope == Scope.REQUEST
+    ), "Scope set on provider instance should override scope set on provider class"
 
 
 def test_provider_instance_braces():

@@ -54,7 +54,7 @@ class Provider(BaseProvider):
             component: Component | None = None,
     ):
         super().__init__(component)
-        self.scope = self.scope or scope
+        self.scope = scope or self.scope
         self._init_dependency_sources()
 
     def _init_dependency_sources(self) -> None:

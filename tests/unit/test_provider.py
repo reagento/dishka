@@ -201,6 +201,62 @@ def test_provider_instance_scope():
     assert factory.scope == Scope.REQUEST
 
 
+def test_provider_provide_scope():
+    class SomeClass:
+        pass
+
+    class MyProvider(Provider):
+        foo = provide(SomeClass, scope=Scope.REQUEST)
+
+    provider = MyProvider()
+    assert len(provider.factories) == 1
+    factory = provider.factories[0]
+    assert factory.scope == Scope.REQUEST
+
+
+def test_provider_provide_scope_overrides_instance_scope():
+    class SomeClass:
+        pass
+
+    class MyProvider(Provider):
+        foo = provide(SomeClass, scope=Scope.APP)
+
+    provider = MyProvider(scope=Scope.REQUEST)
+    assert len(provider.factories) == 1
+    factory = provider.factories[0]
+    assert factory.scope == Scope.REQUEST
+
+
+def test_provider_provide_scope_overrides_class_scope():
+    class SomeClass:
+        pass
+
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        foo = provide(SomeClass, scope=Scope.REQUEST)
+
+    provider = MyProvider()
+    assert len(provider.factories) == 1
+    factory = provider.factories[0]
+    assert factory.scope == Scope.REQUEST
+
+
+def test_provider_instance_scope_overrides_class_scope():
+    class SomeClass:
+        pass
+
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        foo = provide(SomeClass)
+
+    provider = MyProvider(scope=Scope.REQUEST)
+    assert len(provider.factories) == 1
+    factory = provider.factories[0]
+    assert factory.scope == Scope.REQUEST
+
+
 def test_provider_instance_braces():
     class MyProvider(Provider):
         @provide

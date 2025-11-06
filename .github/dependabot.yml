@@ -10,7 +10,7 @@ updates:
 
   - package-ecosystem: "pip"
     directory: "/"
-    file: "a.txt"
+    file: "requirements_dev.txt"
     schedule:
       interval: "weekly"
     target-branch: develop

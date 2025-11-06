@@ -61,6 +61,12 @@ jobs:
         uv pip install -r requirements_doc.txt --system
         sphinx-build -M html docs docs-build -W
 
+    - name: Spell Check
+      uses: crate-ci/typos@07d900b8fa1097806b8adb6391b0d3e0ac2fdea7 # v1.39.0
+      with:
+        config: _typos.toml
+        files: src tests examples
+
     - name: Run zizmor
       run: zizmor .github
 

@@ -1,0 +1,5 @@
+[default.extend-words]
+asend = "asend"
+mutiple = "mutiple"
+# Remove after dishka 2.0!!!
+settigs = "settigs"

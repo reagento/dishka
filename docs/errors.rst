@@ -168,7 +168,7 @@ NothingOverriddenError: Overriding factory found for ..., but there is nothing t
     * Check the order of providers
 
 This error can be seen only if you enabled ``nothing_overridden=True`` in validation settings.
-That means you set ``override=True``, but there is no second factory to be overriden or the order of providers is incorrect.
+That means you set ``override=True``, but there is no second factory to be overridden or the order of providers is incorrect.
 
 Check, that you have specified all expected providers in correct order or remove the flag.
 

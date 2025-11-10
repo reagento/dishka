@@ -1,0 +1,10 @@
+[pytest]
+minversion = "9.0" # config in toml only since v9.0.0
+addopts = [
+    "--cov=dishka",
+    "--cov-append",
+    "--cov-report=term-missing",
+    "--verbose",
+]
+# https://pytest-asyncio.readthedocs.io/en/latest/reference/configuration.html#asyncio-default-fixture-loop-scope
+asyncio_default_fixture_loop_scope = "function"

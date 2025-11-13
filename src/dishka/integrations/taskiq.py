@@ -13,11 +13,11 @@ from typing import Annotated, Any, Final, TypeVar, overload
 
 from taskiq import (
     AsyncBroker,
-    Context,
     TaskiqDepends,
     TaskiqMessage,
     TaskiqMiddleware,
     TaskiqResult,
+    TaskiqState,
 )
 
 from dishka import AsyncContainer, FromDishka, Provider, Scope, from_context
@@ -42,7 +42,7 @@ class ContainerMiddleware(TaskiqMiddleware):
         self,
         message: TaskiqMessage,
     ) -> TaskiqMessage:
-        message.labels[CONTAINER_NAME] = await self._container(
+        self.broker.state[CONTAINER_NAME] = await self._container(
             context={TaskiqMessage: message},
         ).__aenter__()
         return message
@@ -53,24 +53,24 @@ class ContainerMiddleware(TaskiqMiddleware):
         result: TaskiqResult[Any],
         exception: BaseException,
     ) -> None:
-        if CONTAINER_NAME in result.labels:
-            await result.labels[CONTAINER_NAME].close()
-            del result.labels[CONTAINER_NAME]
+        if CONTAINER_NAME in self.broker.state:
+            await self.broker.state[CONTAINER_NAME].close()
+            del self.broker.state[CONTAINER_NAME]
 
     async def post_execute(
         self,
         message: TaskiqMessage,
         result: TaskiqResult[Any],
     ) -> None:
-        if CONTAINER_NAME in result.labels:
-            await result.labels[CONTAINER_NAME].close()
-            del result.labels[CONTAINER_NAME]
+        if CONTAINER_NAME in self.broker.state:
+            await self.broker.state[CONTAINER_NAME].close()
+            del self.broker.state[CONTAINER_NAME]
 
 
 def _get_container(
-    context: Annotated[Context, TaskiqDepends()],
+    state: Annotated[TaskiqState, TaskiqDepends()],
 ) -> Generator[AsyncContainer, None, None]:
-    yield context.message.labels[CONTAINER_NAME]
+    yield state[CONTAINER_NAME]
 
 
 @overload

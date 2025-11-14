@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 import pytest
-from taskiq import AsyncBroker, InMemoryBroker, Context, TaskiqDepends
+from taskiq import AsyncBroker, Context, InMemoryBroker, TaskiqDepends
 
 from dishka import FromDishka, Provider, Scope, make_async_container
 from dishka.integrations.taskiq import inject, setup_dishka
@@ -27,7 +27,7 @@ async def task_with_kwargs(
 async def task_with_requeue(
     _: FromDishka[int], context: Annotated[Context, TaskiqDepends()],
 ) -> int:
-    requeue_count = context.message.labels.get("X-Taskiq-requeue", 0)
+    requeue_count = int(context.message.labels.get("X-Taskiq-requeue", 0))
     if requeue_count == 0:
         await context.requeue()
     return requeue_count

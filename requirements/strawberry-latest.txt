@@ -1,0 +1,2 @@
+-r fastapi-latest.txt
+strawberry-graphql

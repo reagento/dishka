@@ -26,6 +26,7 @@ Some of the integrations are supported by a community, refer to their documentat
    RQ <https://github.com/prepin/dishka-rq>
    sanic
    starlette
+   Strawberry <https://github.com/aryadovoy/dishka-strawberry>
    taskiq
    telebot
    Quart <https://github.com/hrimov/quart-dishka>
@@ -67,6 +68,10 @@ Some of the integrations are supported by a community, refer to their documentat
      -
      -
    * -  :ref:`Starlette`
+     -
+     -
+     -
+   * - `Strawberry <https://github.com/aryadovoy/dishka-strawberry>`_ (:abbr:`com (Community support)`)
      -
      -
      -
@@ -120,4 +125,3 @@ For ``FastAPI`` it will look like:
    app = FastAPI()
    container = make_async_container(your_provider, FastapiProvider())
    setup_dishka(container, app)
-

@@ -99,7 +99,7 @@ def _get_init_members(tp: type) -> MembersStorage[str, None]:
     return MembersStorage(
         meta=None,
         members=type_hints,
-        overriden=overridden,
+        overridden=overridden,
     )
 
 

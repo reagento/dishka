@@ -56,6 +56,10 @@ jobs:
         nox -t ci
         mv .coverage .coverage.${{ matrix.python-version }}
 
+    - name: Run spell check
+      run: |
+        typos src/ tests/ examples/ docs/ --config _typos.toml
+
     - name: Build doc
       run: |
         uv pip install -r requirements_doc.txt --system

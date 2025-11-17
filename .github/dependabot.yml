@@ -7,3 +7,16 @@ updates:
     target-branch: develop
     cooldown:
       default-days: 4
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    file: "requirements_dev.txt"
+    schedule:
+      interval: "weekly"
+    target-branch: develop
+    cooldown:
+      default-days: 4
+    groups:
+      python-packages:
+        patterns:
+          - "*"

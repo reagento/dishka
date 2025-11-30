@@ -58,7 +58,7 @@ jobs:
 
     - name: Run spell check
       run: |
-        typos src/ tests/ examples/ docs/ --config _typos.toml
+        typos src/ tests/ examples/ docs/ .github/ CONTRIBUTING.md README.md --config .typos.toml
 
     - name: Build doc
       run: |

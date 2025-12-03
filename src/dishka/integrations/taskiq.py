@@ -5,7 +5,6 @@ __all__ = [
     "setup_dishka",
 ]
 
-import uuid
 import warnings
 from collections.abc import Callable, Generator
 from functools import partial
@@ -49,14 +48,15 @@ class ContainerMiddleware(TaskiqMiddleware):
         if CONTAINER_REGISTRY not in self.broker.state:
             self.broker.state[CONTAINER_REGISTRY] = {}
 
-        container_id = self._generate_container_id()
-        container_registry = self.broker.state[CONTAINER_REGISTRY]
-
-        message.labels[CONTAINER_ID] = container_id
-        container_registry[container_id] = await self._container(
+        container = await self._container(
             context={TaskiqMessage: message},
         ).__aenter__()
 
+        container_id = id(container)
+        container_registry = self.broker.state[CONTAINER_REGISTRY]
+        container_registry[container_id] = container
+
+        message.labels[CONTAINER_ID] = container_id
         return message
 
     async def on_error(
@@ -93,12 +93,6 @@ class ContainerMiddleware(TaskiqMiddleware):
         await container_registry[container_id].close()
         del container_registry[container_id]
         del message.labels[CONTAINER_ID]
-
-    def _generate_container_id(self) -> str:
-        container_id = str(uuid.uuid4())
-        while container_id in self.broker.state[CONTAINER_REGISTRY]:
-            container_id = str(uuid.uuid4())
-        return container_id
 
 
 def _get_container(

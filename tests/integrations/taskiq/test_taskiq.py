@@ -1,8 +1,9 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Annotated
 
 import pytest
-from taskiq import AsyncBroker, InMemoryBroker
+from taskiq import AsyncBroker, Context, InMemoryBroker, TaskiqDepends
 
 from dishka import FromDishka, Provider, Scope, make_async_container
 from dishka.integrations.taskiq import inject, setup_dishka
@@ -21,6 +22,15 @@ async def task_with_kwargs(
     **kwargs: str,
 ) -> dict[str, str]:
     return kwargs
+
+
+async def task_with_requeue(
+    _: FromDishka[int], context: Annotated[Context, TaskiqDepends()],
+) -> int:
+    requeue_count = int(context.message.labels.get("X-Taskiq-requeue", 0))
+    if requeue_count == 0:
+        await context.requeue()
+    return requeue_count
 
 
 @asynccontextmanager
@@ -90,3 +100,19 @@ async def test_task_default_name(task_func, default_name) -> None:
     async with create_broker() as broker:
         task = broker.task(task_func)
         assert task.task_name == default_name
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "task_func",
+    [
+        (inject(task_with_requeue)),
+        (inject(patch_module=True)(task_with_requeue)),
+    ],
+)
+async def test_task_with_requeue(task_func):
+    async with create_broker() as broker:
+        task = broker.task(task_func)
+        kiq = await task.kiq()
+        result = await kiq.wait_result()
+        assert result.return_value >= 1

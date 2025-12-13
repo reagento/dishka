@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any, TypeVar, get_args, get_origin
 
 from dishka.entities.component import Component
@@ -67,6 +65,7 @@ class Decorator:
             type_=self.factory.type,
             cache=cache,
             override=False,
+            when=self.factory.when,
         )
 
     def _replace_dep(
@@ -91,7 +90,7 @@ class Decorator:
             )
         return old_key
 
-    def __get__(self, instance: Any, owner: Any) -> Decorator:
+    def __get__(self, instance: Any, owner: Any) -> "Decorator":
         return Decorator(
             self.factory.__get__(instance, owner),
             scope=self.scope,

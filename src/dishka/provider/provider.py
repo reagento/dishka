@@ -3,6 +3,7 @@ from collections.abc import Callable, Sequence
 from typing import Any, TypeGuard
 
 from dishka.dependency_source import (
+    Activation,
     Alias,
     CompositeDependencySource,
     ContextVariable,
@@ -118,6 +119,8 @@ class Provider(BaseProvider):
                         self._name(),
                     )
                 self.context_vars.append(source)
+            if isinstance(source, Activation):
+                self.activations.append(source)
 
     def provide(
             self,

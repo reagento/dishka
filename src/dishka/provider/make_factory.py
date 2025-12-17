@@ -471,7 +471,7 @@ def make_factory(
         cache: bool,
         is_in_class: bool,
         override: bool,
-        when: Marker | None,
+        when: Marker | None = None,
 ) -> Factory:
     provides, source = _extract_source(provides, source)
 

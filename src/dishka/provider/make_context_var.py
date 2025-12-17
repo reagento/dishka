@@ -41,6 +41,7 @@ def from_context(
                 provides=DependencyKey(base_type, DEFAULT_COMPONENT),
                 cache=True,
                 override=override,
+                when=None,
             ),
         )
     return composite

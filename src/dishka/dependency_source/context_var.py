@@ -41,6 +41,7 @@ class ContextVariable:
                 type_=FactoryType.CONTEXT,
                 cache=False,
                 override=self.override,
+                when=None,
             )
         else:
             aliased = Alias(
@@ -51,6 +52,7 @@ class ContextVariable:
                     component=component,
                     type_hint=self.provides.type_hint,
                 ),
+                when=None,
             )
             return aliased.as_factory(scope=self.scope, component=component)
 

@@ -9,10 +9,13 @@ __all__ = [
     "DependencyKey",
     "FromComponent",
     "FromDishka",
+    "Has",
+    "Marker",
     "Provider",
     "Scope",
     "ValidationSettings",
     "WithParents",
+    "activation",
     "alias",
     "decorate",
     "from_context",
@@ -25,6 +28,7 @@ __all__ = [
 
 from .async_container import AsyncContainer, make_async_container
 from .container import Container, make_container
+from .entities.activation import Has, Marker
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.depends_marker import FromDishka
 from .entities.key import DependencyKey, FromComponent
@@ -34,6 +38,7 @@ from .entities.validation_settings import STRICT_VALIDATION, ValidationSettings
 from .entities.with_parents import WithParents
 from .provider import (
     Provider,
+    activation,
     alias,
     decorate,
     from_context,

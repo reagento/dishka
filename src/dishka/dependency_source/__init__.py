@@ -1,4 +1,5 @@
 __all__ = [
+    "Activation",
     "Alias",
     "CompositeDependencySource",
     "ContextVariable",
@@ -9,6 +10,7 @@ __all__ = [
     "ensure_composite",
 ]
 
+from .activation import Activation
 from .alias import Alias
 from .composite import (
     CompositeDependencySource,

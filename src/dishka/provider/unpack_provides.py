@@ -27,6 +27,7 @@ def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
             ).with_component(factory.provides.component),
             cache=factory.cache,
             override=factory.override,
+            when=factory.when,
         )
         for provides_other in provides_others
     ]
@@ -43,6 +44,7 @@ def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
             provides=hint_to_dependency_key(
                 provides_first,
             ).with_component(factory.provides.component),
+            when=factory.when,
         ),
     )
     return res

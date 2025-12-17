@@ -28,6 +28,7 @@ def _decorate(
             cache=False,
             is_in_class=is_in_class,
             override=False,
+            when=None,
         ),
         scope=scope,
     )

@@ -48,7 +48,7 @@ Some of the integrations are supported by a community, refer to their documentat
    * - :ref:`grpcio`
      - :ref:`Aiogram_dialog`
      - :ref:`FastStream`
-     -
+     - `Flet <https://github.com/C3EQUALZz/dishka-flet>`_ (:abbr:`com (Community support)`)
 
    * - :ref:`Fastapi`
      - :ref:`pyTelegramBotAPI<telebot>`

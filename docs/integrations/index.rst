@@ -21,6 +21,7 @@ Some of the integrations are supported by a community, refer to their documentat
    fastapi
    faststream
    flask
+   flet <https://github.com/C3EQUALZz/dishka-flet>
    grpcio
    litestar
    RQ <https://github.com/prepin/dishka-rq>
@@ -30,7 +31,6 @@ Some of the integrations are supported by a community, refer to their documentat
    taskiq
    telebot
    Quart <https://github.com/hrimov/quart-dishka>
-   Flet <https://github.com/C3EQUALZz/dishka-flet>
    adding_new
 
 .. list-table:: Built-in frameworks integrations

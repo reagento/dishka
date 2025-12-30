@@ -34,14 +34,15 @@ class RegistryBuilder:
         self.container_key = container_key
         self.skip_validation = skip_validation
         self.validation_settings = validation_settings
-        self.factories: list[Factory] = []
+        self.factory_groups: dict[DependencyKey, list[Factory]] = defaultdict(list)
 
     def _process_alias(self, provider: BaseProvider, src: Alias) -> None:
         factory = src.as_factory(None, provider.component)
-        self.factories.append(factory)
+        self.factory_groups[factory.provides].append(factory)
 
     def _process_factory(self, provider: BaseProvider, src: Factory) -> None:
-        self.factories.append(src.with_component(provider.component))
+        factory = src.with_component(provider.component)
+        self.factory_groups[factory.provides].append(factory)
 
     def _process_decorator(self, provider: BaseProvider,
                            src: Decorator) -> None:
@@ -50,6 +51,7 @@ class RegistryBuilder:
             if factory.provides.component != provides.component:
                 continue
             if src.match_type(factory.provides.type_hint):
+                # TODO: move original factory if scope changed
                 factory.connected_factories.append(src.as_factory(
                     scope=factory.scope,
                     new_dependency=factory.provides,
@@ -60,7 +62,7 @@ class RegistryBuilder:
     def _process_context_var(self, provider: BaseProvider,
                              src: ContextVariable) -> None:
         factory = src.as_factory(provider.component)
-        self.factories.append(factory)
+        self.factory_groups[factory.provides].append(factory)
 
     def _process_activation(self, provider: BaseProvider,
                             src: Activation) -> None:
@@ -68,20 +70,42 @@ class RegistryBuilder:
             factory = src.as_factory(
                 provider.scope, provider.component, marker,
             )
-            self.factories.append(factory)
+            self.factory_groups[factory.provides].append(factory)
 
-    def _unite_selectors(self):
-        factory_groups: dict[DependencyKey, list[Factory]] = defaultdict(list)
-        for factory in self.factories:
-            factory_groups[factory.provides].append(factory)
+    def _fill_factory_scope(self, factory: Factory) -> Factory:
+        if factory.scope is not None:
+            return factory
+
+        possible_scopes = []
+        for dependency in factory.dependencies:
+            self._fill_group_scopes(dependency)
+            possible_scopes.extend(d.scope for d in self.factory_groups[dependency])
+        for dependency in factory.kw_dependencies.values():
+            self._fill_group_scopes(dependency)
+            possible_scopes.extend(d.scope for d in self.factory_groups[dependency])
+
+        return factory.with_scope(max(possible_scopes))
+
+
+    def _fill_group_scopes(self, key: DependencyKey):
+        group = self.factory_groups[key]
+        self.factory_groups[key] = [
+            self._fill_factory_scope(factory) for factory in group
+        ]
+
+    def _fill_scopes(self):
+        for key in self.factory_groups:
+            self._fill_group_scopes(key)
+
+    def _unite_selectors(self) -> list[Factory]:
         new_factories: list[Factory] = []
-        for provides, group in factory_groups.items():
+        for provides, group in self.factory_groups.items():
             if len(group) == 1:
                 new_factories.append(group[0])
             else:
                 factory = Factory(
                     cache=False,
-                    scope=group[0].scope,  # TODO
+                    scope=group[0].scope,  # TODO check scopes
                     when=None,
                     override=False,
                     provides=provides,
@@ -93,16 +117,16 @@ class RegistryBuilder:
                 )
                 factory.connected_factories.extend(group)
                 new_factories.append(factory)
-        self.factories = new_factories
+        return new_factories
 
-    def _make_registries(self) -> tuple[Registry, ...]:
+    def _make_registries(self, factories: list[Factory]) -> tuple[Registry, ...]:
         registries: dict[BaseScope, Registry] = {}
         has_fallback = True
         for scope in self.scopes:
             registry = Registry(scope, has_fallback=has_fallback)
             registries[scope] = registry
             has_fallback = False
-        for factory in self.factories:
+        for factory in factories:
             scope = cast(BaseScope, factory.scope)
             registries[scope].add_factory(factory, factory.provides)
         return tuple(registries.values())
@@ -125,6 +149,7 @@ class RegistryBuilder:
                         msg = f"Unsupported dependency source {type(src)}"
                         raise ValueError(msg)
 
-        self._unite_selectors()
-        registries = self._make_registries()
+        self._fill_scopes()
+        factories = self._unite_selectors()
+        registries = self._make_registries(factories)
         return registries

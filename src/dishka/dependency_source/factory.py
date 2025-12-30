@@ -93,3 +93,17 @@ class Factory(FactoryData):
             override=self.override,
             when=self.when,
         )
+
+    def with_scope(self, scope: BaseScope) -> Factory:
+        return Factory(
+            dependencies=tuple(self.dependencies),
+            kw_dependencies=dict(self.kw_dependencies),
+            source=self.source,
+            provides=self.provides,
+            scope=self.scope or scope,
+            is_to_bind=self.is_to_bind,
+            cache=self.cache,
+            type_=self.type,
+            override=self.override,
+            when=self.when,
+        )

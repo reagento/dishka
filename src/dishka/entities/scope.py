@@ -1,24 +1,46 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
+from threading import Lock
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class _ScopeValue:
     name: str
     skip: bool
+    order: int
+
+
+global_order_lock = Lock()
+global_order = 0
 
 
 def new_scope(value: str, *, skip: bool = False) -> _ScopeValue:
-    return _ScopeValue(value, skip)
+    global global_order
+    with global_order_lock:
+        global_order += 1
+        return _ScopeValue(value, skip, global_order)
 
 
 class BaseScope(Enum):
-    __slots__ = ("name", "skip")
+    __slots__ = ("name", "skip", "order")
 
     def __init__(self, value: _ScopeValue) -> None:
         self.name = value.name  # type: ignore[misc]
         self.skip = value.skip
+        self.order = value.order
+
+    def __lt__(self, other):
+        return self.order < other.order
+
+    def __gt__(self, other):
+        return self.order > other.order
+
+    def __le__(self, other):
+        return self.order <= other.order
+
+    def __ge__(self, other):
+        return self.order >= other.order
 
 
 class Scope(BaseScope):

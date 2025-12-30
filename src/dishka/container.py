@@ -27,7 +27,7 @@ from .exceptions import (
 )
 from .provider import BaseProvider, make_root_context_provider
 from .registry import Registry
-from .registry_builder import RegistryBuilder
+from .new_builder import RegistryBuilder
 
 T = TypeVar("T")
 

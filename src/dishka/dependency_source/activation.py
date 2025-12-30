@@ -15,7 +15,7 @@ class Activation:
     def __init__(
         self,
         factory: Factory,
-        markers: tuple[BaseMarker, ...] = (),
+        markers: tuple[Marker, ...] = (),
     ) -> None:
         self.factory = factory
         self.markers = markers

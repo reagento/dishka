@@ -1,14 +1,12 @@
-from dataclasses import dataclass
 from inspect import iscoroutinefunction
-from typing import Any, TypeVar, get_args, get_origin, Generic
+from typing import Any
 
-from dishka.entities.activation import Marker, BaseMarker, EvaluatedMarker
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
+from dishka.entities.marker import BaseMarker, Marker
 from dishka.entities.scope import BaseScope
-from .factory import Factory
-from .type_match import get_typevar_replacement, is_broader_or_same_type
 from ..entities.factory_type import FactoryType
+from .factory import Factory
 
 
 class Activation:
@@ -42,7 +40,7 @@ class Activation:
             is_to_bind=factory.is_to_bind,
             dependencies=factory.dependencies,
             kw_dependencies=factory.kw_dependencies,
-            type_=factory.type_,
+            type_=factory.type,
             cache=factory.cache,
             override=factory.override,
             when=factory.when,
@@ -72,11 +70,11 @@ class Activation:
             return False
         if iscoroutinefunction(self.factory.source):
             return False
-        
+
         # Must be a regular factory
         if self.factory.type is not FactoryType.FACTORY:
             return False
-        
+
         # No dependencies = static
         if not self.factory.dependencies and not self.factory.kw_dependencies:
             return True
@@ -92,7 +90,7 @@ class Activation:
         """Check if this activation provides a result for the given marker."""
         if not isinstance(marker, Marker):
             return False
-        
+
         for m in self.markers:
             if isinstance(m, type) and isinstance(marker, m):
                 # Generic marker type match

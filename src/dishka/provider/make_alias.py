@@ -5,9 +5,9 @@ from dishka.dependency_source import (
     CompositeDependencySource,
     ensure_composite,
 )
-from dishka.entities.activation import Marker
 from dishka.entities.component import Component
 from dishka.entities.key import hint_to_dependency_key
+from dishka.entities.marker import Marker
 from .unpack_provides import unpack_alias
 
 

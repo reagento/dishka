@@ -14,8 +14,9 @@ from .dependency_source.type_match import (
 )
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
+from .entities.marker import Marker
 from .entities.scope import BaseScope
-from .factory_compiler import compile_factory
+from .new_compiler import FactoryCompiler
 
 IGNORE_TYPES: Final = (
     type,
@@ -64,7 +65,7 @@ class Registry:
             factory = self.get_factory(dependency)
             if not factory:
                 return None
-            compiled = compile_factory(factory=factory, is_async=False)
+            compiled = FactoryCompiler(async_container=False).compile(factory)
             self.compiled[dependency] = compiled
             return compiled
 
@@ -77,7 +78,7 @@ class Registry:
             factory = self.get_factory(dependency)
             if not factory:
                 return None
-            compiled = compile_factory(factory=factory, is_async=True)
+            compiled = FactoryCompiler(async_container=True).compile(factory)
             self.compiled[dependency] = compiled
             return compiled
 
@@ -85,13 +86,16 @@ class Registry:
         try:
             return self.factories[dependency]
         except KeyError:
-            origin = get_origin(dependency.type_hint)
+            if isinstance(dependency.type_hint, Marker):
+                origin = type(dependency.type_hint)
+            else:
+                origin = get_origin(dependency.type_hint)
             if not origin:
                 return None
             if origin is type and self.has_fallback:
                 return self._get_type_var_factory(dependency)
-
             origin_key = DependencyKey(origin, dependency.component)
+
             factory = self.factories.get(origin_key)
             if not factory:
                 return None
@@ -169,6 +173,7 @@ class Registry:
             cache=False,
             override=False,
             source=lambda: typevar,
+            when=None,
         )
 
     def _specialize_generic(
@@ -214,4 +219,5 @@ class Registry:
             scope=factory.scope,
             cache=factory.cache,
             override=factory.override,
+            when=factory.when,
         )

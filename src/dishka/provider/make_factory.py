@@ -58,6 +58,7 @@ from dishka.entities.key import (
     dependency_key_to_hint,
     hint_to_dependency_key,
 )
+from dishka.entities.marker import BaseMarker
 from dishka.entities.provides_marker import AnyOf, ProvideMultiple
 from dishka.entities.scope import BaseScope
 from dishka.entities.type_alias_type import (
@@ -74,7 +75,6 @@ from .exceptions import (
     UnsupportedGeneratorReturnTypeError,
 )
 from .unpack_provides import unpack_factory
-from ..entities.activation import Marker
 
 _empty = signature(lambda a: 0).parameters["a"].annotation
 _protocol_init = type("_stub_proto", (Protocol,), {}).__init__  # type: ignore[misc, arg-type]
@@ -249,7 +249,7 @@ def _make_factory_by_class(
         source: type,
         cache: bool,
         override: bool,
-        when: Marker | None,
+        when: BaseMarker | None,
 ) -> Factory:
     if not provides:
         provides = source
@@ -309,7 +309,7 @@ def _make_factory_by_function(
         is_in_class: bool,
         override: bool,
         check_self_name: bool,
-        when: Marker | None,
+        when: BaseMarker | None,
 ) -> Factory:
     # typing.cast is applied as unwrap takes a Callable object
     raw_source = unwrap(cast(Callable[..., Any], source))
@@ -363,7 +363,7 @@ def _make_factory_by_static_method(
         source: staticmethod,  # type: ignore[type-arg]
         cache: bool,
         override: bool,
-        when: Marker | None,
+        when: BaseMarker | None,
 ) -> Factory:
     if missing_hints := _params_without_hints(source, skip_self=False):
         raise MissingHintsError(source, missing_hints)
@@ -405,7 +405,7 @@ def _make_factory_by_other_callable(
         source: Callable[..., Any],
         cache: bool,
         override: bool,
-        when: Marker | None,
+        when: BaseMarker | None,
 ) -> Factory:
     if _is_bound_method(source):
         to_check = source.__func__  # type: ignore[attr-defined]
@@ -471,7 +471,7 @@ def make_factory(
         cache: bool,
         is_in_class: bool,
         override: bool,
-        when: Marker | None = None,
+        when: BaseMarker | None = None,
 ) -> Factory:
     provides, source = _extract_source(provides, source)
 
@@ -545,7 +545,7 @@ def _provide(
         is_in_class: bool = True,
         recursive: bool = False,
         override: bool = False,
-        when: Marker | None = None,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
     composite = ensure_composite(source)
     factory = make_factory(
@@ -585,7 +585,7 @@ def provide_on_instance(
         cache: bool = True,
         recursive: bool = False,
         override: bool = False,
-        when: Marker | None = None,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
     return _provide(
         provides=provides, scope=scope, source=source, cache=cache,
@@ -603,7 +603,7 @@ def provide(
         cache: bool = True,
         recursive: bool = False,
         override: bool = False,
-        when: Marker | None = None,
+        when: BaseMarker | None = None,
 ) -> Callable[[Callable[..., Any]], CompositeDependencySource]:
     ...
 
@@ -617,7 +617,7 @@ def provide(
         cache: bool = True,
         recursive: bool = False,
         override: bool = False,
-        when: Marker | None = None,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
     ...
 
@@ -630,7 +630,7 @@ def provide(
         cache: bool = True,
         recursive: bool = False,
         override: bool = False,
-        when: Marker | None = None,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource | Callable[
     [Callable[..., Any]], CompositeDependencySource,
 ]:
@@ -681,7 +681,7 @@ def _provide_all(
         is_in_class: bool,
         recursive: bool,
         override: bool = False,
-        when: Marker | None = None,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
     composite = CompositeDependencySource(None)
     for single_provides in provides:
@@ -705,7 +705,7 @@ def provide_all(
         cache: bool = True,
         recursive: bool = False,
         override: bool = False,
-        when: Marker | None = None,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,
@@ -721,7 +721,7 @@ def provide_all_on_instance(
         cache: bool = True,
         recursive: bool = False,
         override: bool = False,
-        when: Marker | None = None,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,

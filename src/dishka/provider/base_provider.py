@@ -3,7 +3,7 @@ from dishka.dependency_source import (
     Alias,
     ContextVariable,
     Decorator,
-    Factory,
+    Factory, DependencySource,
 )
 from dishka.entities.component import Component
 
@@ -17,6 +17,7 @@ class BaseProvider:
         self.decorators: list[Decorator] = []
         self.context_vars: list[ContextVariable] = []
         self.activations: list[Activation] = []
+        self.dependency_sources: list[DependencySource] = []
 
 
 class ProviderWrapper(BaseProvider):
@@ -26,3 +27,4 @@ class ProviderWrapper(BaseProvider):
         self.aliases.extend(provider.aliases)
         self.decorators.extend(provider.decorators)
         self.activations.extend(provider.activations)
+        self.dependency_sources.extend(provider.dependency_sources)

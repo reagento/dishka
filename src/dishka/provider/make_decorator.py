@@ -6,6 +6,7 @@ from dishka.dependency_source import (
     Decorator,
     ensure_composite,
 )
+from dishka.entities.marker import BaseMarker
 from dishka.entities.scope import BaseScope
 from .exceptions import IndependentDecoratorError
 from .make_factory import make_factory
@@ -18,6 +19,7 @@ def _decorate(
         scope: BaseScope | None,
         *,
         is_in_class: bool = True,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
     composite = ensure_composite(source)
     decorator = Decorator(
@@ -28,7 +30,7 @@ def _decorate(
             cache=False,
             is_in_class=is_in_class,
             override=False,
-            when=None,
+            when=when,
         ),
         scope=scope,
     )
@@ -67,14 +69,15 @@ def decorate(
         source: Callable[..., Any] | type | None = None,
         provides: Any = None,
         scope: BaseScope | None = None,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource | Callable[
     [Callable[..., Any]], CompositeDependencySource,
 ]:
     if source is not None:
-        return _decorate(source, provides, scope=scope, is_in_class=True)
+        return _decorate(source, provides, scope=scope, is_in_class=True, when=when)
 
     def scoped(func: Callable[..., Any]) -> CompositeDependencySource:
-        return _decorate(func, provides, scope=scope, is_in_class=True)
+        return _decorate(func, provides, scope=scope, is_in_class=True, when=when)
 
     return scoped
 

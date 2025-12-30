@@ -1,9 +1,9 @@
 from collections.abc import Callable
 from typing import Any
 
+from ..entities.activation import AndMarker, BaseMarker, NotMarker, OrMarker
 from ..entities.component import DEFAULT_COMPONENT
 from ..entities.key import DependencyKey
-from ..entities.activation import BaseMarker, AndMarker, OrMarker, NotMarker
 from ..exceptions import NoFactoryError
 
 

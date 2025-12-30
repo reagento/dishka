@@ -17,6 +17,7 @@ When formatting substituted:
 * cache - expression to save cache
 """
 import linecache
+import textwrap
 from typing import cast
 
 from dishka.entities.factory_type import FactoryType
@@ -34,52 +35,34 @@ def make_args(args: list[str], kwargs: dict[str, str]) -> str:
 
 
 GENERATOR = """
-{async}def get(getter, exits, context):
-    generator = source({args})
-    solved = next(generator)
-    exits.append(Exit(factory_type, generator))
-    {cache}
-    return solved
+generator = source({args})
+solved = next(generator)
+exits.append(Exit(factory_type, generator))
 """
 ASYNC_GENERATOR = """
-{async}def get(getter, exits, context):
-    generator = source({args})
-    solved = await anext(generator)
-    exits.append(Exit(factory_type, generator))
-    {cache}
-    return solved
+generator = source({args})
+solved = await anext(generator)
+exits.append(Exit(factory_type, generator))
 """
 FACTORY = """
-{async}def get(getter, exits, context):
-    solved = source({args})
-    {cache}
-    return solved
+solved = source({args})
 """
 ASYNC_FACTORY = """
-{async}def get(getter, exits, context):
-    solved = await source({args})
-    {cache}
-    return solved
+solved = await source({args})
 """
 VALUE = """
-{async}def get(getter, exits, context):
-    return source
+solved=source
 """
 ALIAS = """
-{async}def get(getter, exits, context):
-    solved = {args}
-    {cache}
-    return solved
+solved = {args}
 """
 CONTEXT = """
-{async}def get(getter, exits, context):
-    raise NoContextValueError(provides.type_hint)
+raise NoContextValueError(provides.type_hint)
 """
 INVALID = """
-{async}def get(getter, exits, context):
-    raise UnsupportedFactoryError(
-        f"Unsupported factory type {{factory_type}}.",
-    )
+raise UnsupportedFactoryError(
+    f"Unsupported factory type {{factory_type}}.",
+)
 """
 
 ASYNC_BODIES = {
@@ -99,7 +82,16 @@ SYNC_BODIES = {
     FactoryType.ALIAS: ALIAS,
 }
 
-CACHE = "context[provides] = solved"
+CACHE = """
+context[provides] = solved
+"""
+
+FUNC = """
+{async}def get(getter, exits, context):
+    {body}
+    {cache}
+    return solved
+"""
 
 
 def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
@@ -126,14 +118,18 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
         body_template = SYNC_BODIES.get(factory.type, INVALID)
 
     args_str = make_args(list(args), kwargs_to_globals).format_map({
-        "await": await_,
-    })
-    body = body_template.format_map({
         "async": async_,
         "await": await_,
-        "args": args_str,
-        "cache": CACHE if factory.cache else "",
     })
+    body_str = body_template.format(args=args_str)
+    cache_str = CACHE if factory.cache else ""
+    function_str = FUNC.format({
+        "async": async_,
+        "await": await_,
+        "body": textwrap.indent(body_str, "    "),
+        "cache": textwrap.indent(cache_str, "    "),
+    })
+
     func_globals = {
         "source": factory.source,
         "provides": factory.provides,
@@ -148,11 +144,11 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
     source_file_name = f"__dishka_factory_{id(factory)}"
     if is_async:
         source_file_name += "_async"
-    lines = body.splitlines(keepends=True)
+    lines = function_str.splitlines(keepends=True)
     linecache.cache[source_file_name] = (
-        len(body), None, lines, source_file_name,
+        len(function_str), None, lines, source_file_name,
     )
-    compiled = compile(body, source_file_name, "exec")
+    compiled = compile(function_str, source_file_name, "exec")
     exec(compiled, func_globals)  # noqa: S102
     # typing.cast is called because func_globals["get"] is not typed
     return cast(CompiledFactory, func_globals["get"])

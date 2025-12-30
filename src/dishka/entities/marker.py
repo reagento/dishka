@@ -1,7 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, ClassVar, TYPE_CHECKING
-
-from nuitka.build.inline_copy.jinja2.jinja2.nodes import EvalContext
+from typing import Any, ClassVar
 
 
 class BaseMarker:
@@ -26,6 +24,9 @@ class BaseMarker:
 @dataclass(frozen=True, slots=True)
 class Marker(BaseMarker):
     value: Any
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.value!r})"
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,7 +72,7 @@ class BinOpMarker(BaseMarker):
         return f"({self.left!r} {self.op} {self.right!r})"
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, repr=False)
 class OrMarker(BinOpMarker):
     op: ClassVar[str] = "|"
 
@@ -80,7 +81,7 @@ class OrMarker(BinOpMarker):
         return AndMarker(~self.left, ~self.right)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, repr=False)
 class AndMarker(BinOpMarker):
     op: ClassVar[str] = "&"
 
@@ -96,4 +97,4 @@ class Has(Marker):
     Used to check if a dependency can be created or is registered.
     """
     def __repr__(self) -> str:
-        return f"Has({self.type_.__name__})"
+        return f"Has({self.value.__name__})"

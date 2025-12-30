@@ -4,6 +4,7 @@ from typing import Any, TypeVar, cast, get_origin
 
 from ._adaptix.type_tools.basic_utils import is_generic
 from .dependency_source import (
+    Activation,
     Alias,
     ContextVariable,
     Decorator,
@@ -15,11 +16,9 @@ from .entities.key import DependencyKey
 from .entities.scope import BaseScope, InvalidScopes
 from .entities.validation_settings import ValidationSettings
 from .exceptions import (
-    AliasedFactoryNotFoundError,
     CycleDependenciesError,
     GraphMissingFactoryError,
     ImplicitOverrideDetectedError,
-    InvalidGraphError,
     NoFactoryError,
     NothingOverriddenError,
     UnknownScopeError,
@@ -229,6 +228,15 @@ class RegistryBuilder:
 
         self.processed_factories[provides] = factory
 
+    def _process_activation(
+            self, provider: BaseProvider, activation: Activation,
+    ) -> None:
+        for marker in activation.markers:
+            factory = activation.as_factory(
+                provider.scope, provider.component, marker,
+            )
+            self._process_factory(provider, factory)
+
     def _process_alias(
             self, provider: BaseProvider, alias: Alias,
     ) -> None:
@@ -342,17 +350,6 @@ class RegistryBuilder:
             old_factory=old_factory,
         )
 
-    def _is_alias_decorated(
-        self,
-        decorator: Decorator,
-        alias: Factory,
-    ) -> bool:
-        dependency = alias.dependencies[0]
-        factory = self.processed_factories.get(dependency)
-        if factory is None:
-            raise AliasedFactoryNotFoundError(dependency, alias)
-        return factory.source is decorator.factory.source
-
     def _decorate_factory(
         self,
         decorator: Decorator,
@@ -363,36 +360,13 @@ class RegistryBuilder:
             raise ValueError(  # noqa: TRY003
                 f"Unexpected empty component for {provides}",
             )
-        if (
-            old_factory.type is FactoryType.ALIAS
-                and self._is_alias_decorated(decorator, old_factory)
-        ):
-            return
-        depth = self.decorator_depth[provides]
-        decorated_component = (f"{DECORATED_COMPONENT_PREFIX}{depth}_"
-                               f"{provides.component}")
-        self.decorator_depth[provides] += 1
-        if old_factory is None:
-            raise InvalidGraphError(  # noqa: TRY003
-                "Cannot apply decorator because there is"
-                f"no factory for {provides}",
-            )
-        if old_factory.type is FactoryType.CONTEXT:
-            raise InvalidGraphError(  # noqa: TRY003
-                f"Cannot apply decorator to context data {provides}",
-            )
-        old_factory.provides = DependencyKey(
-            old_factory.provides.type_hint, decorated_component,
-        )
         new_factory = decorator.as_factory(
             scope=cast(BaseScope, old_factory.scope),  # all scopes validated
             new_dependency=old_factory.provides,
             cache=old_factory.cache,
             component=provides.component,
         )
-        new_factory.provides = provides
-        self.processed_factories[old_factory.provides] = old_factory
-        self.processed_factories[new_factory.provides] = new_factory
+        old_factory.connected_factories.append(new_factory)
 
     def _process_context_var(
             self, provider: BaseProvider, context_var: ContextVariable,
@@ -444,6 +418,8 @@ class RegistryBuilder:
                 ] = cast(BaseScope, factory.scope)
 
         for provider in self.providers:
+            for activation in provider.activations:
+                self._process_activation(provider, activation)
             for factory in provider.factories:
                 self._process_factory(provider, factory)
             for alias in provider.aliases:

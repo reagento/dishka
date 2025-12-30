@@ -13,6 +13,7 @@ class FactoryType(Enum):
     VALUE = "value"
     ALIAS = "alias"
     CONTEXT = "context"
+    SELECTOR = "selector"
 
 
 class FactoryData:

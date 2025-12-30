@@ -6,16 +6,17 @@ from collections.abc import (
 )
 from typing import Any
 
-from dishka.entities.activation import Marker
 from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryData, FactoryType
 from dishka.entities.key import DependencyKey
+from dishka.entities.marker import Marker
 from dishka.entities.scope import BaseScope
 
 
 class Factory(FactoryData):
     __slots__ = (
         "cache",
+        "connected_factories",
         "dependencies",
         "is_to_bind",
         "kw_dependencies",
@@ -49,6 +50,7 @@ class Factory(FactoryData):
         self.cache = cache
         self.override = override
         self.when = when
+        self.connected_factories: list[Factory] = []
 
     def __get__(self, instance: Any, owner: Any) -> Factory:
         scope = self.scope or instance.scope

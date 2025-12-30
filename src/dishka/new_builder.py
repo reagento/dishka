@@ -47,10 +47,12 @@ class RegistryBuilder:
     def _process_decorator(self, provider: BaseProvider,
                            src: Decorator) -> None:
         provides = src.provides.with_component(provider.component)
-        for factory in self.factories:
-            if factory.provides.component != provides.component:
+        for factory_provides, group in self.factory_groups.items():
+            if factory_provides.component != provides.component:
                 continue
-            if src.match_type(factory.provides.type_hint):
+            if not src.match_type(factory_provides.type_hint):
+                continue
+            for factory in group:
                 # TODO: move original factory if scope changed
                 factory.connected_factories.append(src.as_factory(
                     scope=factory.scope,

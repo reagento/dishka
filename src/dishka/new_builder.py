@@ -2,6 +2,7 @@ from collections import defaultdict
 from collections.abc import Sequence
 from typing import cast
 
+
 from .dependency_source import (
     Activation,
     Alias,
@@ -14,8 +15,12 @@ from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope
 from .entities.validation_settings import ValidationSettings
+from .exceptions import CycleDependenciesError
 from .provider import BaseProvider
 from .registry import Registry
+
+
+DECORATED_COMPONENT_PREFIX = "__Dishka_decorate_"
 
 
 class RegistryBuilder:
@@ -47,19 +52,36 @@ class RegistryBuilder:
     def _process_decorator(self, provider: BaseProvider,
                            src: Decorator) -> None:
         provides = src.provides.with_component(provider.component)
+        new_groups: dict[DependencyKey, list[Factory]] = {}
         for factory_provides, group in self.factory_groups.items():
             if factory_provides.component != provides.component:
                 continue
             if not src.match_type(factory_provides.type_hint):
                 continue
+
+            group_replacement = []
+            new_group = []
+            decorated_component = "_".join([
+                DECORATED_COMPONENT_PREFIX,
+                str(factory_provides.component),
+                str(id(src)),
+            ])
+            new_key = DependencyKey(
+                type_hint=factory_provides.type_hint,
+                component=decorated_component,
+            )
+            # TODO check alias already decorated
             for factory in group:
-                # TODO: move original factory if scope changed
-                factory.connected_factories.append(src.as_factory(
+                new_group.append(factory.replace(provides=new_key))
+                group_replacement.append(src.as_factory(
                     scope=factory.scope,
-                    new_dependency=factory.provides,
+                    new_dependency=new_key,
                     cache=factory.cache,
                     component=factory.provides.component,
-                ))
+                ).replace(provides=factory_provides))
+            self.factory_groups[factory_provides] = group_replacement
+            new_groups[new_key] = new_group
+        self.factory_groups.update(new_groups)
 
     def _process_context_var(self, provider: BaseProvider,
                              src: ContextVariable) -> None:
@@ -74,30 +96,33 @@ class RegistryBuilder:
             )
             self.factory_groups[factory.provides].append(factory)
 
-    def _fill_factory_scope(self, factory: Factory) -> Factory:
+    def _fill_factory_scope(self, factory: Factory, keys_stack: Sequence[DependencyKey]) -> Factory:
         if factory.scope is not None:
             return factory
-
         possible_scopes = []
         for dependency in factory.dependencies:
-            self._fill_group_scopes(dependency)
+            self._fill_group_scopes(dependency, keys_stack)
             possible_scopes.extend(d.scope for d in self.factory_groups[dependency])
         for dependency in factory.kw_dependencies.values():
-            self._fill_group_scopes(dependency)
+            self._fill_group_scopes(dependency, keys_stack)
             possible_scopes.extend(d.scope for d in self.factory_groups[dependency])
 
+        if not possible_scopes:
+            raise ValueError(f"No available to calculate scope for {factory.provides} {factory.source}")
         return factory.with_scope(max(possible_scopes))
 
 
-    def _fill_group_scopes(self, key: DependencyKey):
+    def _fill_group_scopes(self, key: DependencyKey, keys_stack: Sequence[DependencyKey]):
+        if key in keys_stack:
+            raise CycleDependenciesError([])  # TODO save factory data
         group = self.factory_groups[key]
         self.factory_groups[key] = [
-            self._fill_factory_scope(factory) for factory in group
+            self._fill_factory_scope(factory, (key, *keys_stack)) for factory in group
         ]
 
     def _fill_scopes(self):
         for key in self.factory_groups:
-            self._fill_group_scopes(key)
+            self._fill_group_scopes(key, ())
 
     def _unite_selectors(self) -> list[Factory]:
         new_factories: list[Factory] = []

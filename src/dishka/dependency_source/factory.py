@@ -107,3 +107,20 @@ class Factory(FactoryData):
             override=self.override,
             when=self.when,
         )
+
+    def replace(
+        self,
+        provides: DependencyKey | None = None,
+    ) -> Factory:
+        return Factory(
+            dependencies=self.dependencies,
+            kw_dependencies=self.kw_dependencies,
+            source=self.source,
+            provides=provides or self.provides,
+            scope=self.scope,
+            is_to_bind=self.is_to_bind,
+            cache=self.cache,
+            type_=self.type,
+            override=self.override,
+            when=self.when,
+        )

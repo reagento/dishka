@@ -22,6 +22,7 @@ class Factory(FactoryData):
         "kw_dependencies",
         "override",
         "when",
+        "when_dependencies",
     )
 
     def __init__(
@@ -50,7 +51,8 @@ class Factory(FactoryData):
         self.cache = cache
         self.override = override
         self.when = when
-        self.connected_factories: list[Factory] = []
+        # dependency -> condition
+        self.when_dependencies: dict[DependencyKey, DependencyKey] = {}
 
     def __get__(self, instance: Any, owner: Any) -> Factory:
         scope = self.scope or instance.scope

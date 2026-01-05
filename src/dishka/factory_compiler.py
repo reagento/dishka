@@ -18,9 +18,11 @@ When formatting substituted:
 """
 import linecache
 import textwrap
-from typing import cast
+from typing import cast, Any
 
 from dishka.entities.factory_type import FactoryType
+from dishka.entities.marker import Marker
+from dishka.entities.key import DependencyKey
 from .container_objects import CompiledFactory, Exit
 from .dependency_source import Factory
 from .exceptions import NoContextValueError, UnsupportedFactoryError
@@ -34,30 +36,29 @@ def make_args(args: list[str], kwargs: dict[str, str]) -> str:
     )
 
 
-GENERATOR = """
-<<<<<<< HEAD
+GENERATOR = """\
 generator = source({args})
 solved = next(generator)
 exits.append(Exit(factory_type, generator))
 """
-ASYNC_GENERATOR = """
+ASYNC_GENERATOR = """\
 generator = source({args})
 solved = await anext(generator)
 exits.append(Exit(factory_type, generator))
 """
-FACTORY = """
+FACTORY = """\
 solved = source({args})
 """
-ASYNC_FACTORY = """
+ASYNC_FACTORY = """\
 solved = await source({args})
 """
-VALUE = """
+VALUE = """\
 solved=source
 """
-ALIAS = """
+ALIAS = """\
 solved = {args}
 """
-CONTEXT = """
+CONTEXT = """\
 try:
     solved = context[provides.type_hint]
 except KeyError:
@@ -66,11 +67,13 @@ else:
     {cache}
     return solved
 """
-INVALID = """
+INVALID = """\
 raise UnsupportedFactoryError(
     f"Unsupported factory type {{factory_type}}.",
 )
 """
+SELECTOR = """"""
+
 
 ASYNC_BODIES = {
     FactoryType.ASYNC_FACTORY: ASYNC_FACTORY,
@@ -80,6 +83,7 @@ ASYNC_BODIES = {
     FactoryType.VALUE: VALUE,
     FactoryType.CONTEXT: CONTEXT,
     FactoryType.ALIAS: ALIAS,
+    FactoryType.SELECTOR: SELECTOR,
 }
 SYNC_BODIES = {
     FactoryType.FACTORY: FACTORY,
@@ -87,19 +91,39 @@ SYNC_BODIES = {
     FactoryType.VALUE: VALUE,
     FactoryType.CONTEXT: CONTEXT,
     FactoryType.ALIAS: ALIAS,
+    FactoryType.SELECTOR: SELECTOR,
 }
 
-CACHE = """
+CACHE = """\
 context[provides] = solved
 """
 
 FUNC = """
 {async}def get(getter, exits, cache, context):
-    {body}
-    {cache}
+{body}
+{when_body}
+{cache}
     return solved
 """
 
+def _render_when_depends(
+    await_: str,
+    global_objects: dict[Any, str],
+    when_depends: dict[DependencyKey, Marker],
+) -> str:
+    res = ""
+    for key, marker in when_depends.items():
+        if not res:
+            keyword = "if"
+        else:
+            keyword = "elif"
+        # TODO expand markers
+        key_name = global_objects[key]
+        marker_name = global_objects[marker]
+        res += f"{keyword} {await_}getter({marker_name}):\n"
+        res += f"    solved = {await_} source({key_name})\n"
+
+    return res
 
 
 def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
@@ -115,6 +139,20 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
         kwargs_to_globals[name]: dep
         for name, dep in factory.kw_dependencies.items()
     }
+    marked_deps = {
+        f"_dishka_when{i}": dep
+        for i, dep in enumerate(factory.when_dependencies)
+    }
+    marked_globals: dict[Any, str] = {
+        marked_deps[name]: name
+        for name in marked_deps
+    }
+    markers = {
+        f"_dishka_marker{i}": marker
+        for i, marker in enumerate(factory.when_dependencies.values())
+    }
+    for name, marker in markers.items():
+        marked_globals[marker] = name
 
     if is_async:
         async_ = "async "
@@ -130,11 +168,17 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
         "await": await_,
     })
     body_str = body_template.format(args=args_str)
+    when_body_str = _render_when_depends(
+        await_,
+        marked_globals,
+        factory.when_dependencies,
+    )
     cache_str = CACHE if factory.cache else ""
-    function_str = FUNC.format({
+    function_str = FUNC.format_map({
         "async": async_,
         "await": await_,
         "body": textwrap.indent(body_str, "    "),
+        "when_body": textwrap.indent(when_body_str, "    "),
         "cache": textwrap.indent(cache_str, "    "),
     })
 
@@ -147,6 +191,8 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
         "UnsupportedFactoryError": UnsupportedFactoryError,
         **args,
         **kwargs,
+        **marked_deps,
+        **markers,
     }
 
     source_file_name = f"__dishka_factory_{id(factory)}"

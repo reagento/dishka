@@ -227,21 +227,62 @@ class RegistryBuilder:
             registries[scope].add_factory(factory, key)
         return tuple(registries.values())
 
+    def _unite_selectors(self) -> list[Factory]:
+        new_groups = {}
+        for provides, group in self.processed_factories.items():
+            if len(group) == 1:
+                continue
+            when_dependencies = {}
+            for factory in group:
+                depth = self.decorator_depth[provides]
+                self.decorator_depth[provides] += 1
+                new_component = (f"{DECORATED_COMPONENT_PREFIX}{depth}_"
+                               f"{provides.component}")
+                new_provides = DependencyKey(
+                    type_hint=provides.type_hint,
+                    component=new_component,
+                )
+                new_factory = factory.replace(provides=new_provides)
+                new_groups[new_provides] = [new_factory]
+                when_dependencies[new_provides] = DependencyKey(
+                    factory.when,
+                    factory.provides.component,
+                )
+
+            factory = Factory(
+                cache=False,
+                scope=group[0].scope,  # TODO check scopes
+                when=None,
+                override=False,
+                provides=provides,
+                is_to_bind=False,
+                dependencies=(),
+                type_=FactoryType.SELECTOR,
+                kw_dependencies={},
+                source=None,
+            )
+            factory.when_dependencies = when_dependencies
+            self.processed_factories[provides] = [factory]
+        self.processed_factories.update(new_groups)
+
+    def _process_activation(self, provider: BaseProvider,
+                            src: Activation) -> None:
+        for marker in src.markers:
+            # TODO scope?
+            factory = src.as_factory(
+                provider.scope, provider.component, marker,
+            )
+            lst = self.processed_factories.setdefault(factory.provides, [])
+            lst.append(factory)
+
     def _process_factory(
-            self, provider: BaseProvider, factory: Factory,
+        self,
+        provider: BaseProvider,
+        factory: Factory,
     ) -> None:
         factory = factory.with_component(provider.component)
         lst = self.processed_factories.setdefault(factory.provides, [])
         lst.append(factory)
-
-    def _process_activation(
-            self, provider: BaseProvider, activation: Activation,
-    ) -> None:
-        for marker in activation.markers:
-            factory = activation.as_factory(
-                provider.scope, provider.component, marker,
-            )
-            self._process_factory(provider, factory)
 
     def _process_alias(
             self, provider: BaseProvider, alias: Alias,
@@ -440,7 +481,7 @@ class RegistryBuilder:
                 else:
                     self._process_normal_decorator(provider, decorator)
         self._post_process_generic_factories()
-
+        self._unite_selectors()
         registries = self._make_registries()
         if not self.skip_validation:
             GraphValidator(registries).validate()

@@ -16,7 +16,7 @@ from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.marker import Marker
 from .entities.scope import BaseScope
-from .new_compiler import FactoryCompiler
+from .factory_compiler import compile_factory
 
 IGNORE_TYPES: Final = (
     type,
@@ -65,7 +65,7 @@ class Registry:
             factory = self.get_factory(dependency)
             if not factory:
                 return None
-            compiled = FactoryCompiler(async_container=False).compile(factory)
+            compiled = compile_factory(factory=factory, is_async=False)
             self.compiled[dependency] = compiled
             return compiled
 
@@ -78,7 +78,7 @@ class Registry:
             factory = self.get_factory(dependency)
             if not factory:
                 return None
-            compiled = FactoryCompiler(async_container=True).compile(factory)
+            compiled = compile_factory(factory=factory, is_async=True)
             self.compiled_async[dependency] = compiled
             return compiled
 

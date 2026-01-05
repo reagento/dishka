@@ -37,7 +37,8 @@ class Container:
         "_cache",
         "_context",
         "_exits",
-        "child_registries",
+        "_scope",
+        "_child_scopes",
         "close_parent",
         "lock",
         "parent_container",
@@ -47,7 +48,8 @@ class Container:
     def __init__(
             self,
             registry: Registry,
-            *child_registries: Registry,
+            scope: BaseScope,
+            *child_scopes: BaseScope,
             parent_container: Container | None = None,
             context: dict[Any, Any] | None = None,
             lock_factory: Callable[
@@ -56,7 +58,8 @@ class Container:
             close_parent: bool = False,
     ):
         self.registry = registry
-        self.child_registries = child_registries
+        self._scope = scope
+        self._child_scopes = child_scopes
         self._context = {CONTAINER_KEY: self}
         if context:
             for key, value in context.items():
@@ -79,7 +82,7 @@ class Container:
 
     @property
     def scope(self) -> BaseScope:
-        return self.registry.scope
+        return self._scope
 
     @property
     def context(self) -> MutableMapping[DependencyKey, Any]:
@@ -105,31 +108,34 @@ class Container:
         :param scope: target scope or None to enter next non-skipped scope
         :return: context manager for inner scope
         """
-        if not self.child_registries:
+        if not self._child_scopes:
             raise NoChildScopesError
         child = Container(
-            *self.child_registries,
+            self.registry,
+            *self._child_scopes,
             parent_container=self,
             context=context,
             lock_factory=lock_factory,
         )
         if scope is None:
-            while child.registry.scope.skip:
-                if not child.child_registries:
+            while child.scope.skip:
+                if not child._child_scopes:
                     raise NoNonSkippedScopesError
                 child = Container(
-                    *child.child_registries,
+                    self.registry,
+                    *child._child_scopes,
                     parent_container=child,
                     context=context,
                     lock_factory=lock_factory,
                     close_parent=True,
                 )
         else:
-            while child.registry.scope is not scope:
-                if not child.child_registries:
-                    raise ChildScopeNotFoundError(scope, self.registry.scope)
+            while child.scope is not scope:
+                if not child._child_scopes:
+                    raise ChildScopeNotFoundError(scope, self.scope)
                 child = Container(
-                    *child.child_registries,
+                    self.registry,
+                    *child._child_scopes,
                     parent_container=child,
                     context=context,
                     lock_factory=lock_factory,
@@ -181,41 +187,38 @@ class Container:
             return self._cache[key]
         compiled = self.registry.get_compiled(key)
         if not compiled:
-            if not self.parent_container:
-                abstract_dependencies = (
-                    self.registry.get_more_abstract_factories(key)
-                )
-                concrete_dependencies = (
-                    self.registry.get_more_concrete_factories(key)
-                )
+            abstract_dependencies = (
+                self.registry.get_more_abstract_factories(key)
+            )
+            concrete_dependencies = (
+                self.registry.get_more_concrete_factories(key)
+            )
 
-                raise NoFactoryError(
-                    key,
-                    suggest_abstract_factories=abstract_dependencies,
-                    suggest_concrete_factories=concrete_dependencies,
-                )
+            raise NoFactoryError(
+                key,
+                suggest_abstract_factories=abstract_dependencies,
+                suggest_concrete_factories=concrete_dependencies,
+            )
+
+        if compiled.scope == self.scope:
             try:
-                return self.parent_container._get(key)  # noqa: SLF001
-            except NoFactoryError as ex:
-                abstract_dependencies = (
-                    self.registry.get_more_abstract_factories(key)
-                )
-                concrete_dependencies = (
-                    self.registry.get_more_concrete_factories(key)
-                )
-                ex.suggest_abstract_factories.extend(abstract_dependencies)
-                ex.suggest_concrete_factories.extend(concrete_dependencies)
+                return compiled(self._get_unlocked, self._exits, self._cache)
+            except NoFactoryError as e:
+                # cast is needed because registry.get_factory will always
+                # return Factory. This happens because registry.get_compiled
+                # uses the same method and returns None if the factory is not found
+                # If None is returned, then go to the parent container
+                e.add_path(cast(Factory, self.registry.get_factory(key)))
                 raise
+        else:
+            parent = self.parent_container
+            while parent.scope != compiled.scope:
+                if not parent.parent_container:
+                    raise NoFactoryError(key)
+                parent = parent.parent_container
 
-        try:
-            return compiled(self._get_unlocked, self._exits, self._cache)
-        except NoFactoryError as e:
-            # cast is needed because registry.get_factory will always
-            # return Factory. This happens because registry.get_compiled
-            # uses the same method and returns None if the factory is not found
-            # If None is returned, then go to the parent container
-            e.add_path(cast(Factory, self.registry.get_factory(key)))
-            raise
+            return parent._get(key)
+
 
     def close(self, exception: BaseException | None = None) -> None:
         errors = []
@@ -266,7 +269,7 @@ def make_container(
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,
 ) -> Container:
     context_provider = make_root_context_provider(providers, context, scopes)
-    registries = RegistryBuilder(
+    registry = RegistryBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,
         providers=(*providers, context_provider),
@@ -274,23 +277,26 @@ def make_container(
         validation_settings=validation_settings,
     ).build()
     container = Container(
-        *registries,
+        registry,
+        *scopes,
         context=context,
         lock_factory=lock_factory,
     )
     if start_scope is None:
-        while container.registry.scope.skip:
+        while container.scope.skip:
             container = Container(
-                *container.child_registries,
+                registry,
+                *container._child_scopes,
                 parent_container=container,
                 context=context,
                 lock_factory=lock_factory,
                 close_parent=True,
             )
     else:
-        while container.registry.scope is not start_scope:
+        while container.scope is not start_scope:
             container = Container(
-                *container.child_registries,
+                registry,
+                *container._child_scopes,
                 parent_container=container,
                 context=context,
                 lock_factory=lock_factory,

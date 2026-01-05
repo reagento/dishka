@@ -73,13 +73,13 @@ class Registry:
             self, dependency: DependencyKey,
     ) -> CompiledFactory | None:
         try:
-            return self.compiled[dependency]
+            return self.compiled_async[dependency]
         except KeyError:
             factory = self.get_factory(dependency)
             if not factory:
                 return None
             compiled = FactoryCompiler(async_container=True).compile(factory)
-            self.compiled[dependency] = compiled
+            self.compiled_async[dependency] = compiled
             return compiled
 
     def get_factory(self, dependency: DependencyKey) -> Factory | None:

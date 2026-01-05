@@ -40,6 +40,7 @@ def python_version_less(*version: int) -> Constraint:
 INTEGRATIONS = [
     IntegrationEnv("aiogram", "330", python_version_less(3, 13)),
     IntegrationEnv("aiogram", "3140", python_version_less(3, 14)),
+    IntegrationEnv("aiogram", "3230"),
     IntegrationEnv("aiogram", "latest"),
     IntegrationEnv("aiogram_dialog", "210", python_version_less(3, 14)),
     IntegrationEnv("aiogram_dialog", "latest"),
@@ -114,8 +115,6 @@ def unit(session: nox.Session) -> None:
 
 @nox.session(tags=["ci"])
 def real_world(session: nox.Session) -> None:
-    if sys.version_info >= (3, 14):
-        session.skip("Skipping tests on python >=3.14 due to requirements limitations")
     session.install(
         *EDITABLE_INSTALL,
         "-r", "examples/real_world/requirements_test.txt",

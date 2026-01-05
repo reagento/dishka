@@ -59,14 +59,8 @@ class Container:
         self.child_registries = child_registries
         self._context = {CONTAINER_KEY: self}
         if context:
-            for key, value in context.items():
-                if not isinstance(key, DependencyKey):
-                    key = DependencyKey(  # noqa: PLW2901
-                        key,
-                        DEFAULT_COMPONENT,
-                    )
-                self._context[key] = value
-        self._cache = {**self._context}
+            self._context.update(context)
+        self._cache = {CONTAINER_KEY: self}
         self.parent_container = parent_container
 
         self.lock: AbstractContextManager[Any] | None
@@ -208,7 +202,12 @@ class Container:
                 raise
 
         try:
-            return compiled(self._get_unlocked, self._exits, self._cache)
+            return compiled(
+                self._get_unlocked,
+                self._exits,
+                self._cache,
+                self._context,
+            )
         except NoFactoryError as e:
             # cast is needed because registry.get_factory will always
             # return Factory. This happens because registry.get_compiled
@@ -227,7 +226,7 @@ class Container:
                 pass
             except Exception as err:  # noqa: BLE001
                 errors.append(err)
-        self._cache = {**self._context}
+        self._cache = {CONTAINER_KEY: self}
         if self.close_parent and self.parent_container:
             try:
                 self.parent_container.close(exception)

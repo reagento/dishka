@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 
 from dishka import AsyncContainer, make_async_container
 from dishka.integrations.fastapi import (
+    FastapiProvider,
     FromDishka,
     inject,
     setup_dishka,
@@ -28,7 +29,7 @@ from tests.integrations.common import (
 @asynccontextmanager
 async def dishka_app(view, provider) -> AsyncGenerator[TestClient, None]:
     app = FastAPI(routes=[APIWebSocketRoute("/", inject(view))])
-    container = make_async_container(provider)
+    container = make_async_container(FastapiProvider(), provider)
     setup_dishka(container, app)
     async with LifespanManager(app):
         yield TestClient(app)

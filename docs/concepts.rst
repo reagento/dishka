@@ -43,7 +43,7 @@ You decide when to enter and exit each scope, but this is done one by one.
 If you enter the *APP*-scope, then the next step deeper is to enter the *REQUEST*-scope.
 
 .. note::
-    *APP*-scope can be used for lazy initialization of singletons, while *REQUEST*-scope is good for processing events like HTTP requests or messenger updates. It is unlikely that you will need other scopes
+    *APP*-scope can be used for lazy initialization of singletons, while *REQUEST*-scope is good for processing events like HTTP requests or messenger updates. It is unlikely that you will need other scopes.
 
 
 In ``dishka`` dependencies are lazy — they are created when you first request them.

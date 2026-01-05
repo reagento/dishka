@@ -113,8 +113,8 @@ class Factory(FactoryData):
         provides: DependencyKey | None = None,
     ) -> Factory:
         return Factory(
-            dependencies=self.dependencies,
-            kw_dependencies=self.kw_dependencies,
+            dependencies=list(self.dependencies),
+            kw_dependencies=dict(self.kw_dependencies),
             source=self.source,
             provides=provides or self.provides,
             scope=self.scope,
@@ -124,3 +124,4 @@ class Factory(FactoryData):
             override=self.override,
             when=self.when,
         )
+

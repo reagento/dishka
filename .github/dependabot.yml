@@ -1,21 +1,17 @@
 version: 2
 updates:
-  - package-ecosystem: "github-actions"
+  - package-ecosystem: "github-actions" # zizmor: ignore[dependabot-cooldown]
     directory: "/"
     schedule:
       interval: "monthly"
     target-branch: develop
-    cooldown:
-      default-days: 4
 
-  - package-ecosystem: "pip"
+  - package-ecosystem: "pip" # zizmor: ignore[dependabot-cooldown]
     directory: "/"
     file: "requirements_dev.txt"
     schedule:
       interval: "weekly"
     target-branch: develop
-    cooldown:
-      default-days: 4
     groups:
       python-packages:
         patterns:

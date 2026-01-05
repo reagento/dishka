@@ -18,12 +18,15 @@ from taskiq import (
     TaskiqMessage,
     TaskiqMiddleware,
     TaskiqResult,
+    TaskiqState,
 )
 
 from dishka import AsyncContainer, FromDishka, Provider, Scope, from_context
 from dishka.integrations.base import wrap_injection
 
 CONTAINER_NAME: Final = "dishka_container"
+CONTAINER_REGISTRY: Final = "dishka_container_registry"
+CONTAINER_ID: Final = "dishka_container_id"
 
 
 _F = TypeVar("_F", bound=Callable[..., Any])
@@ -42,9 +45,18 @@ class ContainerMiddleware(TaskiqMiddleware):
         self,
         message: TaskiqMessage,
     ) -> TaskiqMessage:
-        message.labels[CONTAINER_NAME] = await self._container(
+        if CONTAINER_REGISTRY not in self.broker.state:
+            self.broker.state[CONTAINER_REGISTRY] = {}
+
+        container = await self._container(
             context={TaskiqMessage: message},
         ).__aenter__()
+
+        container_id = id(container)
+        container_registry = self.broker.state[CONTAINER_REGISTRY]
+        container_registry[container_id] = container
+
+        message.labels[CONTAINER_ID] = container_id
         return message
 
     async def on_error(
@@ -53,24 +65,42 @@ class ContainerMiddleware(TaskiqMiddleware):
         result: TaskiqResult[Any],
         exception: BaseException,
     ) -> None:
-        if CONTAINER_NAME in result.labels:
-            await result.labels[CONTAINER_NAME].close()
-            del result.labels[CONTAINER_NAME]
+        if CONTAINER_ID not in message.labels:
+            return
+
+        container_id = message.labels[CONTAINER_ID]
+        container_registry = self.broker.state[CONTAINER_REGISTRY]
+        if container_id not in container_registry:
+            return
+
+        await container_registry[container_id].close()
+        del container_registry[container_id]
+        del message.labels[CONTAINER_ID]
 
     async def post_execute(
         self,
         message: TaskiqMessage,
         result: TaskiqResult[Any],
     ) -> None:
-        if CONTAINER_NAME in result.labels:
-            await result.labels[CONTAINER_NAME].close()
-            del result.labels[CONTAINER_NAME]
+        if CONTAINER_ID not in message.labels:
+            return
+
+        container_id = message.labels[CONTAINER_ID]
+        container_registry = self.broker.state[CONTAINER_REGISTRY]
+        if container_id not in container_registry:
+            return
+
+        await container_registry[container_id].close()
+        del container_registry[container_id]
+        del message.labels[CONTAINER_ID]
 
 
 def _get_container(
+    state: Annotated[TaskiqState, TaskiqDepends()],
     context: Annotated[Context, TaskiqDepends()],
 ) -> Generator[AsyncContainer, None, None]:
-    yield context.message.labels[CONTAINER_NAME]
+    container_id = context.message.labels[CONTAINER_ID]
+    yield state[CONTAINER_REGISTRY][container_id]
 
 
 @overload

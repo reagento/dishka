@@ -35,6 +35,7 @@ def make_args(args: list[str], kwargs: dict[str, str]) -> str:
 
 
 GENERATOR = """
+<<<<<<< HEAD
 generator = source({args})
 solved = next(generator)
 exits.append(Exit(factory_type, generator))
@@ -57,7 +58,13 @@ ALIAS = """
 solved = {args}
 """
 CONTEXT = """
-raise NoContextValueError(provides.type_hint)
+try:
+    solved = context[provides.type_hint]
+except KeyError:
+    raise NoContextValueError(provides.type_hint)
+else:
+    {cache}
+    return solved
 """
 INVALID = """
 raise UnsupportedFactoryError(
@@ -87,11 +94,12 @@ context[provides] = solved
 """
 
 FUNC = """
-{async}def get(getter, exits, context):
+{async}def get(getter, exits, cache, context):
     {body}
     {cache}
     return solved
 """
+
 
 
 def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:

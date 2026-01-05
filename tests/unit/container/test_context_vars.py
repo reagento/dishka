@@ -1,9 +1,7 @@
 import pytest
 
 from dishka import (
-    DEFAULT_COMPONENT,
     STRICT_VALIDATION,
-    DependencyKey,
     Provider,
     Scope,
     decorate,
@@ -12,7 +10,7 @@ from dishka import (
     make_container,
     provide,
 )
-from dishka.exceptions import InvalidGraphError, NoContextValueError
+from dishka.exceptions import NoContextValueError
 
 
 def test_simple():

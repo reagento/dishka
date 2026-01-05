@@ -202,7 +202,12 @@ class AsyncContainer:
                 raise
 
         try:
-            return await compiled(self._get_unlocked, self._exits, self._cache, self._context)
+            return await compiled(
+                self._get_unlocked,
+                self._exits,
+                self._cache,
+                self._context,
+            )
         except NoFactoryError as e:
             # cast is needed because registry.get_factory will always
             # return Factory. This happens because registry.get_compiled

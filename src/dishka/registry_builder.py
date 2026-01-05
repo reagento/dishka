@@ -184,6 +184,24 @@ class RegistryBuilder:
                 self.alias_sources[provides] = alias_source
                 self.aliases[provides] = alias
 
+    def _validate_override(self, factory_list: list[Factory]) -> None:
+        if self.skip_validation:
+            return
+
+        first_factory, *others = factory_list
+        if (
+            self.validation_settings.nothing_overridden and
+            first_factory.override
+        ):
+            raise NothingOverriddenError(first_factory)
+        if self.validation_settings.implicit_override:
+            for other_factory in others:
+                if not other_factory.override:
+                    raise ImplicitOverrideDetectedError(
+                        first_factory,
+                        other_factory,
+                    )
+
     def _make_registries(self) -> tuple[Registry, ...]:
         registries: dict[BaseScope, Registry] = {}
         has_fallback = True
@@ -202,16 +220,7 @@ class RegistryBuilder:
         for key, factory_list in self.processed_factories.items():
             if not factory_list:
                 continue
-            first_factory, *others = factory_list
-            if not self.skip_validation:
-                if self.validation_settings.nothing_overridden:
-                    if first_factory.override:
-                        raise NothingOverriddenError(first_factory)
-                if self.validation_settings.implicit_override:
-                    for other_factory in others:
-                        if not other_factory.override:
-                            raise ImplicitOverrideDetectedError(first_factory, other_factory)
-
+            self._validate_override(factory_list)
             factory = factory_list[-1]
             scope = cast(BaseScope, factory.scope)
             registries[scope].add_factory(factory, key)
@@ -269,7 +278,7 @@ class RegistryBuilder:
     ) -> None:
         found = []
         provides = decorator.provides.with_component(provider.component)
-        for factory_provides, factory_list in self.processed_factories.items():
+        for factory_provides in self.processed_factories:
             if factory_provides.component != provides.component:
                 continue
             if not decorator.match_type(factory_provides.type_hint):
@@ -280,7 +289,7 @@ class RegistryBuilder:
             for factory_provides in found:
                 self._decorate_factory(
                     decorator=decorator,
-                    provides=factory_provides
+                    provides=factory_provides,
                 )
         else:
             if not self.validation_settings.nothing_decorated:
@@ -365,9 +374,10 @@ class RegistryBuilder:
             ):
                 return
 
-            decorated_group.append(old_factory.replace(provides=decorated_provides))
+            new_factory = old_factory.replace(provides=decorated_provides)
+            decorated_group.append(new_factory)
             group_replacement.append(decorator.as_factory(
-                scope=cast(BaseScope, old_factory.scope),  # all scopes validated
+                scope=cast(BaseScope, old_factory.scope),
                 new_dependency=decorated_provides,
                 cache=old_factory.cache,
                 component=provides.component,
@@ -427,7 +437,7 @@ class RegistryBuilder:
         for factory_list in self.processed_factories.values():
             for factory in factory_list:
                 if is_generic(factory.provides.type_hint):
-                    found.append(factory)
+                    found.append(factory)  # noqa: PERF401
         for factory in found:
             origin = get_origin(factory.provides.type_hint)
             origin_key = DependencyKey(origin, factory.provides.component)

@@ -18,6 +18,7 @@ class CompiledFactory(Protocol):
             self,
             getter: Callable[..., Any],
             exits: list[Exit],
+            cache: Any,
             context: Any,
     ) -> Any:
         raise NotImplementedError

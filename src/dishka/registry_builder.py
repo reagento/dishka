@@ -153,7 +153,7 @@ class RegistryBuilder:
         self.decorator_depth: dict[DependencyKey, int] = defaultdict(int)
         self.skip_validation = skip_validation
         self.validation_settings = validation_settings
-        self.processed_factories: dict[DependencyKey, Factory] = {}
+        self.processed_factories: dict[DependencyKey, list[Factory]] = {}
 
     def _collect_components(self) -> None:
         for provider in self.providers:
@@ -184,6 +184,24 @@ class RegistryBuilder:
                 self.alias_sources[provides] = alias_source
                 self.aliases[provides] = alias
 
+    def _validate_override(self, factory_list: list[Factory]) -> None:
+        if self.skip_validation:
+            return
+
+        first_factory, *others = factory_list
+        if (
+            self.validation_settings.nothing_overridden and
+            first_factory.override
+        ):
+            raise NothingOverriddenError(first_factory)
+        if self.validation_settings.implicit_override:
+            for other_factory in others:
+                if not other_factory.override:
+                    raise ImplicitOverrideDetectedError(
+                        first_factory,
+                        other_factory,
+                    )
+
     def _make_registries(self) -> tuple[Registry, ...]:
         registries: dict[BaseScope, Registry] = {}
         has_fallback = True
@@ -198,7 +216,12 @@ class RegistryBuilder:
                 registry.add_factory(context_var.as_factory(component))
             registries[scope] = registry
             has_fallback = False
-        for key, factory in self.processed_factories.items():
+
+        for key, factory_list in self.processed_factories.items():
+            if not factory_list:
+                continue
+            self._validate_override(factory_list)
+            factory = factory_list[-1]
             scope = cast(BaseScope, factory.scope)
             registries[scope].add_factory(factory, key)
         return tuple(registries.values())
@@ -207,27 +230,8 @@ class RegistryBuilder:
             self, provider: BaseProvider, factory: Factory,
     ) -> None:
         factory = factory.with_component(provider.component)
-        provides = factory.provides
-        if (
-            self.validation_settings.nothing_overridden
-            and not self.skip_validation
-            and factory.override
-            and provides not in self.processed_factories
-        ):
-            raise NothingOverriddenError(factory)
-
-        if (
-            self.validation_settings.implicit_override
-            and not self.skip_validation
-            and not factory.override
-            and provides in self.processed_factories
-        ):
-            raise ImplicitOverrideDetectedError(
-                factory,
-                self.processed_factories[provides],
-            )
-
-        self.processed_factories[provides] = factory
+        lst = self.processed_factories.setdefault(factory.provides, [])
+        lst.append(factory)
 
     def _process_alias(
             self, provider: BaseProvider, alias: Alias,
@@ -263,45 +267,29 @@ class RegistryBuilder:
         scope = self.dependency_scopes[alias_source]
 
         factory = alias.as_factory(scope, component)
-        if (
-            self.validation_settings.nothing_overridden
-            and not self.skip_validation
-            and factory.override
-            and factory.provides not in self.processed_factories
-        ):
-            raise NothingOverriddenError(factory)
-
-        if (
-            self.validation_settings.implicit_override
-            and not self.skip_validation
-            and not factory.override
-            and factory.provides in self.processed_factories
-        ):
-            raise ImplicitOverrideDetectedError(
-                factory,
-                self.processed_factories[factory.provides],
-            )
-
         self.dependency_scopes[factory.provides] = scope
-        self.processed_factories[factory.provides] = factory
+        lst = self.processed_factories.setdefault(factory.provides, [])
+        lst.append(factory)
 
     def _process_generic_decorator(
-            self, provider: BaseProvider, decorator: Decorator,
+        self,
+        provider: BaseProvider,
+        decorator: Decorator,
     ) -> None:
         found = []
         provides = decorator.provides.with_component(provider.component)
-        for factory in self.processed_factories.values():
-            if factory.provides.component != provides.component:
+        for factory_provides in self.processed_factories:
+            if factory_provides.component != provides.component:
                 continue
-            if factory.type is FactoryType.CONTEXT:
+            if not decorator.match_type(factory_provides.type_hint):
                 continue
-            if decorator.match_type(factory.provides.type_hint):
-                found.append(factory)
+            found.append(factory_provides)
+
         if found:
-            for factory in found:
+            for factory_provides in found:
                 self._decorate_factory(
                     decorator=decorator,
-                    old_factory=factory,
+                    provides=factory_provides,
                 )
         else:
             if not self.validation_settings.nothing_decorated:
@@ -336,10 +324,9 @@ class RegistryBuilder:
                     component=provider.component,
                 )],
             )
-        old_factory = self.processed_factories[provides]
         self._decorate_factory(
             decorator=decorator,
-            old_factory=old_factory,
+            provides=provides,
         )
 
     def _is_alias_decorated(
@@ -348,51 +335,56 @@ class RegistryBuilder:
         alias: Factory,
     ) -> bool:
         dependency = alias.dependencies[0]
-        factory = self.processed_factories.get(dependency)
-        if factory is None:
+        factory_list = self.processed_factories.get(dependency)
+        if not factory_list:
             raise AliasedFactoryNotFoundError(dependency, alias)
+        factory = factory_list[-1]
         return factory.source is decorator.factory.source
 
     def _decorate_factory(
         self,
         decorator: Decorator,
-        old_factory: Factory,
+        provides: DependencyKey,
     ) -> None:
-        provides = old_factory.provides
         if provides.component is None:
             raise ValueError(  # noqa: TRY003
                 f"Unexpected empty component for {provides}",
             )
-        if (
-            old_factory.type is FactoryType.ALIAS
-                and self._is_alias_decorated(decorator, old_factory)
-        ):
-            return
+        group_replacement = []
+        decorated_group = []
+
         depth = self.decorator_depth[provides]
+        self.decorator_depth[provides] += 1
         decorated_component = (f"{DECORATED_COMPONENT_PREFIX}{depth}_"
                                f"{provides.component}")
-        self.decorator_depth[provides] += 1
-        if old_factory is None:
+        decorated_provides = DependencyKey(
+            provides.type_hint, decorated_component,
+        )
+
+        old_group = self.processed_factories[provides]
+        if not old_group:
             raise InvalidGraphError(  # noqa: TRY003
                 "Cannot apply decorator because there is"
                 f"no factory for {provides}",
             )
-        if old_factory.type is FactoryType.CONTEXT:
-            raise InvalidGraphError(  # noqa: TRY003
-                f"Cannot apply decorator to context data {provides}",
-            )
-        old_factory.provides = DependencyKey(
-            old_factory.provides.type_hint, decorated_component,
-        )
-        new_factory = decorator.as_factory(
-            scope=cast(BaseScope, old_factory.scope),  # all scopes validated
-            new_dependency=old_factory.provides,
-            cache=old_factory.cache,
-            component=provides.component,
-        )
-        new_factory.provides = provides
-        self.processed_factories[old_factory.provides] = old_factory
-        self.processed_factories[new_factory.provides] = new_factory
+        for old_factory in old_group:
+            if (
+                old_factory.type is FactoryType.ALIAS
+                    and self._is_alias_decorated(decorator, old_factory)
+            ):
+                return
+
+            new_factory = old_factory.replace(provides=decorated_provides)
+            decorated_group.append(new_factory)
+            group_replacement.append(decorator.as_factory(
+                scope=cast(BaseScope, old_factory.scope),
+                new_dependency=decorated_provides,
+                cache=old_factory.cache,
+                component=provides.component,
+            ).replace(provides=provides))
+
+        self.processed_factories[provides] = group_replacement
+        self.processed_factories[decorated_provides] = decorated_group
 
     def _process_context_var(
             self, provider: BaseProvider, context_var: ContextVariable,
@@ -406,31 +398,9 @@ class RegistryBuilder:
                 ),
             )
         factory = context_var.as_factory(provider.component)
-        if (
-            self.validation_settings.nothing_overridden
-            and not self.skip_validation
-            and factory.override
-            and factory.provides not in self.processed_factories
-        ):
-            raise NothingOverriddenError(factory)
-
-        if (
-            self.validation_settings.implicit_override
-            and not self.skip_validation
-            and not factory.override
-            and factory.provides in self.processed_factories
-        ):
-            old_factory = self.processed_factories[factory.provides]
-            # it's Ok to override context->context with the same params
-            if (
-                old_factory.type is not FactoryType.CONTEXT or
-                old_factory.scope != context_var.scope
-            ):
-                raise ImplicitOverrideDetectedError(
-                    factory,
-                    self.processed_factories[factory.provides],
-                )
-        self.processed_factories[factory.provides] = factory
+        # append context factory to processed list
+        lst = self.processed_factories.setdefault(factory.provides, [])
+        lst.append(factory)
 
     def build(self) -> tuple[Registry, ...]:
         self._collect_components()
@@ -463,12 +433,13 @@ class RegistryBuilder:
         return registries
 
     def _post_process_generic_factories(self) -> None:
-        found = [
-            factory
-            for factory in self.processed_factories.values()
-            if is_generic(factory.provides.type_hint)
-        ]
+        found: list[Factory] = []
+        for factory_list in self.processed_factories.values():
+            for factory in factory_list:
+                if is_generic(factory.provides.type_hint):
+                    found.append(factory)  # noqa: PERF401
         for factory in found:
             origin = get_origin(factory.provides.type_hint)
             origin_key = DependencyKey(origin, factory.provides.component)
-            self.processed_factories[origin_key] = factory
+            lst = self.processed_factories.setdefault(origin_key, [])
+            lst.append(factory)

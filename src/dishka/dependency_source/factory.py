@@ -85,3 +85,16 @@ class Factory(FactoryData):
             type_=self.type,
             override=self.override,
         )
+
+    def replace(self, provides: DependencyKey) -> Factory:
+        return Factory(
+            dependencies=list(self.dependencies),
+            kw_dependencies=dict(self.kw_dependencies),
+            source=self.source,
+            provides=provides,
+            scope=self.scope,
+            is_to_bind=self.is_to_bind,
+            cache=self.cache,
+            type_=self.type,
+            override=self.override,
+        )

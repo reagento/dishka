@@ -1,5 +1,5 @@
 from dishka.dependency_source import (
-    Activation,
+    Activator,
     Alias,
     ContextVariable,
     Decorator,
@@ -16,7 +16,7 @@ class BaseProvider:
         self.aliases: list[Alias] = []
         self.decorators: list[Decorator] = []
         self.context_vars: list[ContextVariable] = []
-        self.activations: list[Activation] = []
+        self.activators: list[Activator] = []
         self.dependency_sources: list[DependencySource] = []
 
 
@@ -26,5 +26,5 @@ class ProviderWrapper(BaseProvider):
         self.factories.extend(provider.factories)
         self.aliases.extend(provider.aliases)
         self.decorators.extend(provider.decorators)
-        self.activations.extend(provider.activations)
+        self.activators.extend(provider.activators)
         self.dependency_sources.extend(provider.dependency_sources)

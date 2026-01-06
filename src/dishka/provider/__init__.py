@@ -2,7 +2,7 @@ __all__ = [
     "BaseProvider",
     "Provider",
     "ProviderWrapper",
-    "activation",
+    "activator",
     "alias",
     "decorate",
     "from_context",
@@ -12,7 +12,7 @@ __all__ = [
 ]
 
 from .base_provider import BaseProvider, ProviderWrapper
-from .make_activation import activation
+from .make_activator import activator
 from .make_alias import alias
 from .make_context_var import from_context
 from .make_decorator import decorate

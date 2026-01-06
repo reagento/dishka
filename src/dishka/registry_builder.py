@@ -1,10 +1,11 @@
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import Any, TypeVar, cast, get_origin
+from typing import Any, TypeVar, cast, get_origin, Iterator
 
+from .entities.marker import Marker, BaseMarker, NotMarker, BinOpMarker
 from ._adaptix.type_tools.basic_utils import is_generic
 from .dependency_source import (
-    Activation,
+    Activator,
     Alias,
     ContextVariable,
     Decorator,
@@ -155,6 +156,8 @@ class RegistryBuilder:
         self.skip_validation = skip_validation
         self.validation_settings = validation_settings
         self.processed_factories: dict[DependencyKey, list[Factory]] = {}
+        self.activators: dict[Marker|type[Marker], Activator] = {}
+        self.requested_markers: set[Marker] = set()
 
     def _collect_components(self) -> None:
         for provider in self.providers:
@@ -233,6 +236,8 @@ class RegistryBuilder:
             if len(group) == 1:
                 continue
             when_dependencies = {}
+            if len(set(factory.scope for factory in group)) != 1:
+                raise ValueError(f"Found different scopes for factories providing {provides}")
             for factory in group:
                 depth = self.decorator_depth[provides]
                 self.decorator_depth[provides] += 1
@@ -244,10 +249,7 @@ class RegistryBuilder:
                 )
                 new_factory = factory.replace(provides=new_provides)
                 new_groups[new_provides] = [new_factory]
-                when_dependencies[new_provides] = DependencyKey(
-                    factory.when,
-                    factory.provides.component,
-                )
+                when_dependencies[new_provides] = factory.when
 
             factory = Factory(
                 cache=False,
@@ -265,15 +267,15 @@ class RegistryBuilder:
             self.processed_factories[provides] = [factory]
         self.processed_factories.update(new_groups)
 
-    def _process_activation(self, provider: BaseProvider,
-                            src: Activation) -> None:
+    def _process_activation(
+            self,
+            provider: BaseProvider,
+            src: Activator,
+    ) -> None:
         for marker in src.markers:
-            # TODO scope?
-            factory = src.as_factory(
-                provider.scope, provider.component, marker,
-            )
-            lst = self.processed_factories.setdefault(factory.provides, [])
-            lst.append(factory)
+            if marker in self.activators:
+                raise InvalidGraphError("CAnnot have multiple activators for same marker")
+            self.activators[marker] = src
 
     def _process_factory(
         self,
@@ -283,6 +285,7 @@ class RegistryBuilder:
         factory = factory.with_component(provider.component)
         lst = self.processed_factories.setdefault(factory.provides, [])
         lst.append(factory)
+        self.requested_markers.update(self._unpack_marker(factory.when))
 
     def _process_alias(
             self, provider: BaseProvider, alias: Alias,
@@ -321,6 +324,7 @@ class RegistryBuilder:
         self.dependency_scopes[factory.provides] = scope
         lst = self.processed_factories.setdefault(factory.provides, [])
         lst.append(factory)
+        self.requested_markers.update(self._unpack_marker(factory.when))
 
     def _process_generic_decorator(
         self,
@@ -438,9 +442,12 @@ class RegistryBuilder:
 
         self.processed_factories[provides] = group_replacement
         self.processed_factories[decorated_provides] = decorated_group
+        self.requested_markers.update(self._unpack_marker(decorator.factory.when))
 
     def _process_context_var(
-            self, provider: BaseProvider, context_var: ContextVariable,
+        self,
+        provider: BaseProvider,
+        context_var: ContextVariable,
     ) -> None:
         if context_var.scope is None:
             raise UnknownScopeError(
@@ -467,7 +474,7 @@ class RegistryBuilder:
                 ] = cast(BaseScope, factory.scope)
 
         for provider in self.providers:
-            for activation in provider.activations:
+            for activation in provider.activators:
                 self._process_activation(provider, activation)
             for factory in provider.factories:
                 self._process_factory(provider, factory)
@@ -482,6 +489,7 @@ class RegistryBuilder:
                     self._process_normal_decorator(provider, decorator)
         self._post_process_generic_factories()
         self._unite_selectors()
+        self._register_activators()
         registries = self._make_registries()
         if not self.skip_validation:
             GraphValidator(registries).validate()
@@ -498,3 +506,40 @@ class RegistryBuilder:
             origin_key = DependencyKey(origin, factory.provides.component)
             lst = self.processed_factories.setdefault(origin_key, [])
             lst.append(factory)
+
+    def _unpack_marker(self, marker: BaseMarker) -> Iterator[Marker]:
+        match marker:
+            case Marker():
+                yield marker
+            case NotMarker():
+                yield from self._unpack_marker(marker.marker)
+            case BinOpMarker():
+                yield from self._unpack_marker(marker.left)
+                yield from self._unpack_marker(marker.right)
+            case None:
+                return
+            case _:
+                raise ValueError("Unknown marker type")
+
+    def _register_activators(self):
+        for marker in self.requested_markers:
+            dependency = DependencyKey(marker, DEFAULT_COMPONENT)
+            if marker in self.activators:
+                activator = self.activators[marker]
+            elif type(marker) in self.activators:
+                activator = self.activators[type(marker)]
+            else:
+                raise ValueError(f"No activator registered for {marker}")
+            factory = activator.as_factory(None, DEFAULT_COMPONENT, marker)
+            factory = factory.with_scope(self._calculate_scope(factory))
+            self.processed_factories[dependency] = [factory]
+
+    def _calculate_scope(self, factory: Factory) -> BaseScope:
+        possible_scopes = []
+        for dependency in factory.dependencies:
+            possible_scopes.append(self.dependency_scopes[dependency])
+        for dependency in factory.kw_dependencies.values():
+            possible_scopes.append(self.dependency_scopes[dependency])
+        if not possible_scopes:
+            return min(self.scopes)
+        return max(possible_scopes)

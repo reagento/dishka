@@ -18,11 +18,14 @@ When formatting substituted:
 """
 import linecache
 import textwrap
+from collections.abc import Iterator
 from typing import cast, Any
 
 from dishka.entities.factory_type import FactoryType
-from dishka.entities.marker import Marker
+from dishka.entities.marker import Marker, BaseMarker, AndMarker, OrMarker, \
+    NotMarker
 from dishka.entities.key import DependencyKey
+from dishka.entities.component import DEFAULT_COMPONENT
 from .container_objects import CompiledFactory, Exit
 from .dependency_source import Factory
 from .exceptions import NoContextValueError, UnsupportedFactoryError
@@ -117,14 +120,45 @@ def _render_when_depends(
             keyword = "if"
         else:
             keyword = "elif"
-        # TODO expand markers
         key_name = global_objects[key]
-        marker_name = global_objects[marker]
-        res += f"{keyword} {await_}getter({marker_name}):\n"
-        res += f"    solved = {await_} source({key_name})\n"
+        condition = when(marker, await_, global_objects)
+        res += f"{keyword} {condition}:\n"
+        res += f"    solved = {await_} getter({key_name})\n"
 
     return res
 
+def when(marker: BaseMarker | None, await_: str, global_objects: dict[Any, str]):
+    match marker:
+        case None:
+            return ""
+        case AndMarker():
+            left = when(marker.left, await_, global_objects)
+            right = when(marker.right, await_, global_objects)
+            return f"({left} and {right})"
+        case OrMarker():
+            left = when(marker.left, await_, global_objects)
+            right = when(marker.right, await_, global_objects)
+            return f"({left} or {right})"
+        case NotMarker():
+            nested = when(marker.marker, await_, global_objects)
+            return f"not ({nested})"
+        case _:
+            marker_name = global_objects[marker]
+            return f"{await_}getter({marker_name})"
+
+def _unpack_marker(marker: BaseMarker) -> Iterator[Marker]:
+    match marker:
+        case Marker():
+            yield marker
+        case NotMarker():
+            yield from _unpack_marker(marker.marker)
+        case AndMarker() | OrMarker():
+            yield from _unpack_marker(marker.left)
+            yield from _unpack_marker(marker.right)
+        case None:
+            return
+        case _:
+            raise ValueError(f"Unknown marker type {marker}")
 
 def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
     args = {
@@ -147,12 +181,12 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
         marked_deps[name]: name
         for name in marked_deps
     }
-    markers = {
-        f"_dishka_marker{i}": marker
-        for i, marker in enumerate(factory.when_dependencies.values())
-    }
-    for name, marker in markers.items():
-        marked_globals[marker] = name
+    markers = {}
+    for cond in factory.when_dependencies.values():
+        for marker in _unpack_marker(cond):
+            name = f"_dishka_marker{len(markers)}"
+            markers[name] = DependencyKey(marker, DEFAULT_COMPONENT)
+            marked_globals[marker] = name
 
     if is_async:
         async_ = "async "

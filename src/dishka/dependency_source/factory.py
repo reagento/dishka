@@ -9,7 +9,7 @@ from typing import Any
 from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryData, FactoryType
 from dishka.entities.key import DependencyKey
-from dishka.entities.marker import Marker
+from dishka.entities.marker import Marker, BaseMarker
 from dishka.entities.scope import BaseScope
 
 
@@ -37,7 +37,7 @@ class Factory(FactoryData):
             is_to_bind: bool,
             cache: bool,
             override: bool,
-            when: Marker | None,
+            when: BaseMarker | None,
     ) -> None:
         super().__init__(
             source=source,
@@ -52,7 +52,7 @@ class Factory(FactoryData):
         self.override = override
         self.when = when
         # dependency -> condition
-        self.when_dependencies: dict[DependencyKey, DependencyKey] = {}
+        self.when_dependencies: dict[DependencyKey, BaseMarker] = {}
 
     def __get__(self, instance: Any, owner: Any) -> Factory:
         scope = self.scope or instance.scope

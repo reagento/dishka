@@ -4,7 +4,7 @@ from typing import cast
 
 
 from .dependency_source import (
-    Activation,
+    Activator,
     Alias,
     ContextVariable,
     Decorator,
@@ -89,7 +89,7 @@ class RegistryBuilder:
         self.factory_groups[factory.provides].append(factory)
 
     def _process_activation(self, provider: BaseProvider,
-                            src: Activation) -> None:
+                            src: Activator) -> None:
         for marker in src.markers:
             factory = src.as_factory(
                 provider.scope, provider.component, marker,
@@ -170,7 +170,7 @@ class RegistryBuilder:
                         self._process_decorator(provider, src)
                     case ContextVariable():
                         self._process_context_var(provider, src)
-                    case Activation():
+                    case Activator():
                         self._process_activation(provider, src)
                     case _:
                         msg = f"Unsupported dependency source {type(src)}"

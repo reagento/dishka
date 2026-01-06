@@ -9,7 +9,7 @@ from ..entities.factory_type import FactoryType
 from .factory import Factory
 
 
-class Activation:
+class Activator:
     __slots__ = ("factory", "markers")
 
     def __init__(
@@ -20,8 +20,8 @@ class Activation:
         self.factory = factory
         self.markers = markers
 
-    def __get__(self, instance: Any, owner: Any) -> "Activation":
-        return Activation(
+    def __get__(self, instance: Any, owner: Any) -> "Activator":
+        return Activator(
             factory=self.factory.__get__(instance, owner),
             markers=self.markers,
         )

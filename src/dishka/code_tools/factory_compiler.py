@@ -105,7 +105,7 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
                 builder.assign_solved(builder.global_(factory.source))
 
             case FactoryType.ALIAS:
-                builder.assign_solved(builder.global_(factory.dependencies[0]))
+                builder.assign_solved(builder.getter(factory.dependencies[0]))
             case FactoryType.CONTEXT:
                 provides_hint = builder.global_(factory.provides.type_hint)
                 with builder.try_():

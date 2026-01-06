@@ -108,9 +108,9 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
                 builder.assign_solved(builder.global_(factory.dependencies[0]))
             case FactoryType.CONTEXT:
                 provides_hint = builder.global_(factory.provides.type_hint)
-                with builder.block("try:"):
+                with builder.try_():
                     builder.assign_solved(f"context[{provides_hint}]")
-                with builder.block("except KeyError:"):
+                with builder.except_(KeyError):
                     builder.raise_(
                         builder.call(
                             builder.global_(NoContextValueError),

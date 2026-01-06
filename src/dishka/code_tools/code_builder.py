@@ -1,7 +1,7 @@
 import linecache
 import re
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, AbstractContextManager
 from typing import Any
 
 from dishka.text_rendering import get_name
@@ -124,6 +124,15 @@ class CodeBuilder:
         with self.block():
             yield None
         self.locals = locals
+
+    def try_(self) -> AbstractContextManager:
+        self.statement("try:")
+        return self.block()
+
+    def except_(self, exception: Exception) -> AbstractContextManager:
+        name = self.global_(exception)
+        self.statement(f"except {name}:")
+        return self.block()
 
     def raise_(self, expr: str) -> None:
         self.statement(f"raise {expr}")

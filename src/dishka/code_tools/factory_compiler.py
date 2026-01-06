@@ -1,0 +1,139 @@
+from contextlib import AbstractContextManager
+from typing import Any
+
+from dishka.code_tools.code_builder import CodeBuilder
+from dishka.entities.key import DependencyKey
+from dishka.entities.component import DEFAULT_COMPONENT
+from dishka.container_objects import CompiledFactory, Exit
+from dishka.dependency_source import Factory
+from dishka.entities.factory_type import FactoryType
+from dishka.entities.marker import BaseMarker, AndMarker, OrMarker, NotMarker
+from dishka.exceptions import NoContextValueError, UnsupportedFactoryError
+from dishka.text_rendering import get_name
+
+
+class FactoryBuilder(CodeBuilder):
+    def __init__(self, is_async: bool):
+        super().__init__(is_async)
+        self.provides_name = ""
+        self.getter_name = ""
+
+    def global_(self, obj: Any, preferred_name: str | None = None) -> str:
+        if preferred_name is None and isinstance(obj, DependencyKey):
+            type_name = get_name(obj.type_hint, include_module=False)
+            preferred_name = f"{type_name}"
+            if obj.component:
+                preferred_name += f"_{obj.component}"
+        return super().global_(obj, preferred_name)
+
+    def register_provides(self, provides: DependencyKey) -> None:
+        self.provides_name = self.global_(provides)
+
+    def make_getter(self) -> AbstractContextManager:
+        self.getter_name = "get_"+self.provides_name
+        return self.def_(self.getter_name, ["getter", "exits", "cache", "context"])
+
+    def getter(self, obj: DependencyKey) -> str:
+        return self.await_(self.call("getter", self.global_(obj)))
+
+    def cache(self) -> None:
+        self.assign_expr(f"cache[{self.provides_name}]", "solved")
+
+    def assign_solved(self, expr: str) -> None:
+        self.assign_local("solved", expr)
+
+    def when(self, marker: BaseMarker) -> str:
+        match marker:
+            case None:
+                return ""
+            case AndMarker():
+                return self.and_(self.when(marker.left), self.when(marker.right))
+            case OrMarker():
+                return self.or_(self.when(marker.left), self.when(marker.right))
+            case NotMarker():
+                return self.not_(self.when(marker.marker))
+            case _:
+                return self.getter(DependencyKey(marker, DEFAULT_COMPONENT))
+
+    def build_getter(self) -> CompiledFactory:
+        name = f"<{self.getter_name}{'_async' if self.async_str else ''}>"
+        return self.compile(name)[self.getter_name]
+
+
+def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
+    builder = FactoryBuilder(is_async=is_async)
+    builder.register_provides(factory.provides)
+
+    with builder.make_getter():
+        source_call = builder.call(
+            builder.global_(factory.source),
+            *(builder.getter(dep) for dep in factory.dependencies),
+            **{name: builder.getter(dep) for name, dep in
+               factory.kw_dependencies.items()}
+        )
+
+        match factory.type:
+            case FactoryType.FACTORY:
+                builder.assign_solved(source_call)
+            case FactoryType.ASYNC_FACTORY:
+                builder.assign_solved(builder.await_(source_call))
+            case FactoryType.GENERATOR:
+                builder.assign_local("generator", source_call)
+                builder.assign_solved(builder.call("next", "generator"))
+                builder.statement(builder.call(
+                    "exits.append",
+                    builder.call(
+                        builder.global_(Exit),
+                        builder.global_(factory.type, "factory_type"),
+                        "generator",
+                    )
+                ))
+            case FactoryType.ASYNC_GENERATOR:
+                builder.assign_local("generator", source_call)
+                builder.assign_solved(
+                    builder.await_(builder.call("anext", "generator"))
+                )
+                builder.statement(builder.call(
+                    "exits.append",
+                    builder.call(
+                        builder.global_(Exit),
+                        builder.global_(factory.type, "factory_type"),
+                        "generator",
+                    )
+                ))
+            case FactoryType.VALUE:
+                builder.assign_solved(builder.global_(factory.source))
+
+            case FactoryType.ALIAS:
+                builder.assign_solved(builder.global_(factory.dependencies[0]))
+            case FactoryType.CONTEXT:
+                provides_hint = builder.global_(factory.provides.type_hint)
+                with builder.block("try:"):
+                    builder.assign_solved(f"context[{provides_hint}]")
+                with builder.block("except KeyError:"):
+                    builder.raise_(
+                        builder.call(
+                            builder.global_(NoContextValueError),
+                            provides_hint,
+                        )
+                    )
+            case FactoryType.SELECTOR:
+                first = True
+                for key, marker in factory.when_dependencies.items():
+                    condition = builder.when(marker)
+                    if first:
+                        with builder.if_(condition):
+                            builder.assign_solved(builder.getter(key))
+                    else:
+                        with builder.elif_(condition):
+                            builder.assign_solved(builder.getter(key))
+                    first = False
+            case _:
+                raise UnsupportedFactoryError(f"Unsupported factory type {factory.type}.")
+        if factory.cache:
+            builder.cache()
+        builder.return_("solved")
+
+    print("="*20)
+    print(builder.code)
+    return builder.build_getter()

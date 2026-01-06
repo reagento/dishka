@@ -16,7 +16,7 @@ from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.marker import Marker
 from .entities.scope import BaseScope
-from .factory_compiler import compile_factory
+from .code_tools.factory_compiler import compile_factory
 
 IGNORE_TYPES: Final = (
     type,

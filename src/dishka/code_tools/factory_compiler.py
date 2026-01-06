@@ -21,7 +21,7 @@ class FactoryBuilder(CodeBuilder):
     def global_(self, obj: Any, preferred_name: str | None = None) -> str:
         if preferred_name is None and isinstance(obj, DependencyKey):
             type_name = get_name(obj.type_hint, include_module=False)
-            preferred_name = f"{type_name}"
+            preferred_name = f"key_{type_name}"
             if obj.component:
                 preferred_name += f"_{obj.component}"
         return super().global_(obj, preferred_name)
@@ -30,7 +30,7 @@ class FactoryBuilder(CodeBuilder):
         self.provides_name = self.global_(provides)
 
     def make_getter(self) -> AbstractContextManager:
-        self.getter_name = "get_"+self.provides_name
+        self.getter_name = "get_"+self.provides_name.removeprefix("key_")
         return self.def_(self.getter_name, ["getter", "exits", "cache", "context"])
 
     def getter(self, obj: DependencyKey) -> str:
@@ -134,6 +134,4 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
             builder.cache()
         builder.return_("solved")
 
-    print("="*20)
-    print(builder.code)
     return builder.build_getter()

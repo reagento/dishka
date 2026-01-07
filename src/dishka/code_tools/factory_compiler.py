@@ -121,13 +121,21 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
                 first = True
                 for key, marker in factory.when_dependencies.items():
                     condition = builder.when(marker)
-                    if first:
+                    solved_value = builder.getter(key)
+                    if first and not condition:
+                        builder.assign_solved(solved_value)
+                    elif first:
                         with builder.if_(condition):
-                            builder.assign_solved(builder.getter(key))
+                            builder.assign_solved(solved_value)
+                        first = False
+                    elif not condition:
+                        with builder.else_():
+                            builder.assign_solved(solved_value)
+                        first = True
                     else:
                         with builder.elif_(condition):
-                            builder.assign_solved(builder.getter(key))
-                    first = False
+                            builder.assign_solved(solved_value)
+
             case _:
                 raise UnsupportedFactoryError(f"Unsupported factory type {factory.type}.")
         if factory.cache:

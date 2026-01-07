@@ -96,6 +96,12 @@ class CodeBuilder:
         with self.block():
             yield None
 
+    @contextmanager
+    def else_(self) -> Iterator[None]:
+        self.statement("else:")
+        with self.block():
+            yield None
+
     def call(self, func: str, *args: str, **kwargs: str) -> str:
         if IDENTIFIER.fullmatch(func) and func not in self.globals and func not in self.locals and func not in __builtins__:
             raise ValueError(f"Function {func} is not defined")

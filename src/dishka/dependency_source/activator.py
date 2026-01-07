@@ -3,7 +3,7 @@ from typing import Any
 
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
-from dishka.entities.marker import BaseMarker, Marker
+from dishka.entities.marker import Marker
 from dishka.entities.scope import BaseScope
 from ..entities.factory_type import FactoryType
 from .factory import Factory

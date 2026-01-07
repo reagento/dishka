@@ -1,8 +1,7 @@
 from collections import defaultdict
-from collections.abc import Sequence
-from typing import Any, TypeVar, cast, get_origin, Iterator
+from collections.abc import Iterator, Sequence
+from typing import Any, TypeVar, cast, get_origin
 
-from .entities.marker import Marker, BaseMarker, NotMarker, BinOpMarker
 from ._adaptix.type_tools.basic_utils import is_generic
 from .dependency_source import (
     Activator,
@@ -14,6 +13,7 @@ from .dependency_source import (
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
+from .entities.marker import BaseMarker, BinOpMarker, Marker, NotMarker
 from .entities.scope import BaseScope, InvalidScopes
 from .entities.validation_settings import ValidationSettings
 from .exceptions import (
@@ -188,24 +188,6 @@ class RegistryBuilder:
                 self.alias_sources[provides] = alias_source
                 self.aliases[provides] = alias
 
-    def _validate_override(self, factory_list: list[Factory]) -> None:
-        if self.skip_validation:
-            return
-
-        first_factory, *others = factory_list
-        if (
-            self.validation_settings.nothing_overridden and
-            first_factory.override
-        ):
-            raise NothingOverriddenError(first_factory)
-        if self.validation_settings.implicit_override:
-            for other_factory in others:
-                if not other_factory.override:
-                    raise ImplicitOverrideDetectedError(
-                        first_factory,
-                        other_factory,
-                    )
-
     def _make_registries(self) -> tuple[Registry, ...]:
         registries: dict[BaseScope, Registry] = {}
         has_fallback = True
@@ -224,21 +206,39 @@ class RegistryBuilder:
         for key, factory_list in self.processed_factories.items():
             if not factory_list:
                 continue
-            self._validate_override(factory_list)
             factory = factory_list[-1]
             scope = cast(BaseScope, factory.scope)
             registries[scope].add_factory(factory, key)
         return tuple(registries.values())
 
-    def _unite_selectors(self) -> list[Factory]:
+    def _unite_selectors(self) -> None:
         new_groups = {}
         for provides, group in self.processed_factories.items():
             if len(group) == 1:
                 continue
             when_dependencies = {}
-            if len(set(factory.scope for factory in group)) != 1:
-                raise ValueError(f"Found different scopes for factories providing {provides}")
+            moved_factories = {}
             for factory in group:
+                if not factory.when:
+                    need_override = bool(when_dependencies)
+                    if (
+                            self.validation_settings.nothing_overridden and
+                            factory.override and not need_override
+                    ):
+                        raise NothingOverriddenError(factory)
+                    if (
+                        self.validation_settings.implicit_override and
+                        need_override and
+                        not factory.override
+                    ):
+                        raise ImplicitOverrideDetectedError(
+                            next(iter(when_dependencies.values())),
+                            factory,
+                        )
+                    when_dependencies = {}
+                    moved_factories = {}
+
+
                 depth = self.decorator_depth[provides]
                 self.decorator_depth[provides] += 1
                 new_component = (f"{DECORATED_COMPONENT_PREFIX}{depth}_"
@@ -248,12 +248,14 @@ class RegistryBuilder:
                     component=new_component,
                 )
                 new_factory = factory.replace(provides=new_provides)
-                new_groups[new_provides] = [new_factory]
+                moved_factories[new_provides] = [new_factory]
                 when_dependencies[new_provides] = factory.when
 
+            new_groups.update(moved_factories)
+            scope = max(factory.scope for group in moved_factories.values() for factory in group)
             factory = Factory(
                 cache=False,
-                scope=group[0].scope,  # TODO check scopes
+                scope=scope,
                 when=None,
                 override=False,
                 provides=provides,
@@ -263,7 +265,8 @@ class RegistryBuilder:
                 kw_dependencies={},
                 source=None,
             )
-            factory.when_dependencies = when_dependencies
+            # reverse dict, so last wins
+            factory.when_dependencies = dict(reversed(when_dependencies.items()))
             self.processed_factories[provides] = [factory]
         self.processed_factories.update(new_groups)
 

@@ -547,6 +547,8 @@ def _provide(
         override: bool = False,
         when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
+    if when and override:
+        raise ValueError("Cannot provide both `when` and `override`")
     composite = ensure_composite(source)
     factory = make_factory(
         provides=provides, scope=scope,

@@ -2,12 +2,12 @@ from contextlib import AbstractContextManager
 from typing import Any
 
 from dishka.code_tools.code_builder import CodeBuilder
-from dishka.entities.key import DependencyKey
-from dishka.entities.component import DEFAULT_COMPONENT
 from dishka.container_objects import CompiledFactory, Exit
 from dishka.dependency_source import Factory
+from dishka.entities.component import DEFAULT_COMPONENT
 from dishka.entities.factory_type import FactoryType
-from dishka.entities.marker import BaseMarker, AndMarker, OrMarker, NotMarker
+from dishka.entities.key import DependencyKey
+from dishka.entities.marker import AndMarker, BaseMarker, NotMarker, OrMarker
 from dishka.exceptions import NoContextValueError, UnsupportedFactoryError
 from dishka.text_rendering import get_name
 
@@ -69,7 +69,7 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
             builder.global_(factory.source),
             *(builder.getter(dep) for dep in factory.dependencies),
             **{name: builder.getter(dep) for name, dep in
-               factory.kw_dependencies.items()}
+               factory.kw_dependencies.items()},
         )
 
         match factory.type:
@@ -86,12 +86,12 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
                         builder.global_(Exit),
                         builder.global_(factory.type, "factory_type"),
                         "generator",
-                    )
+                    ),
                 ))
             case FactoryType.ASYNC_GENERATOR:
                 builder.assign_local("generator", source_call)
                 builder.assign_solved(
-                    builder.await_(builder.call("anext", "generator"))
+                    builder.await_(builder.call("anext", "generator")),
                 )
                 builder.statement(builder.call(
                     "exits.append",
@@ -99,7 +99,7 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
                         builder.global_(Exit),
                         builder.global_(factory.type, "factory_type"),
                         "generator",
-                    )
+                    ),
                 ))
             case FactoryType.VALUE:
                 builder.assign_solved(builder.global_(factory.source))
@@ -115,7 +115,7 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
                         builder.call(
                             builder.global_(NoContextValueError),
                             provides_hint,
-                        )
+                        ),
                     )
             case FactoryType.SELECTOR:
                 first = True

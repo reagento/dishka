@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any, Final, Generic, Protocol, TypeVar, get_args, get_origin
 
 from ._adaptix.type_tools.fundamentals import get_type_vars
+from .code_tools.factory_compiler import compile_factory
 from .container_objects import CompiledFactory
 from .dependency_source import (
     Factory,
@@ -16,7 +17,6 @@ from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.marker import Marker
 from .entities.scope import BaseScope
-from .code_tools.factory_compiler import compile_factory
 
 IGNORE_TYPES: Final = (
     type,

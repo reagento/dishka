@@ -2,7 +2,6 @@ from collections import defaultdict
 from collections.abc import Sequence
 from typing import cast
 
-
 from .dependency_source import (
     Activator,
     Alias,
@@ -18,7 +17,6 @@ from .entities.validation_settings import ValidationSettings
 from .exceptions import CycleDependenciesError
 from .provider import BaseProvider
 from .registry import Registry
-
 
 DECORATED_COMPONENT_PREFIX = "__Dishka_decorate_"
 

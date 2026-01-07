@@ -667,7 +667,7 @@ def test_protocol_cannot_be_source_in_provide(provide_func, proto):
         Union[str, int],  # noqa: UP007
         Final[str],
         ClassVar[str],
-        Optional[str],
+        Optional[str],  # noqa: UP045
         Literal["5"],
         str | None,
     ],

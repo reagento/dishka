@@ -19,13 +19,18 @@ When formatting substituted:
 import linecache
 import textwrap
 from collections.abc import Iterator
-from typing import cast, Any
+from typing import Any, cast
 
-from dishka.entities.factory_type import FactoryType
-from dishka.entities.marker import Marker, BaseMarker, AndMarker, OrMarker, \
-    NotMarker
-from dishka.entities.key import DependencyKey
 from dishka.entities.component import DEFAULT_COMPONENT
+from dishka.entities.factory_type import FactoryType
+from dishka.entities.key import DependencyKey
+from dishka.entities.marker import (
+    AndMarker,
+    BaseMarker,
+    Marker,
+    NotMarker,
+    OrMarker,
+)
 from .container_objects import CompiledFactory, Exit
 from .dependency_source import Factory
 from .exceptions import NoContextValueError, UnsupportedFactoryError

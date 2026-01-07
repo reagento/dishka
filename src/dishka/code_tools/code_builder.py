@@ -1,7 +1,7 @@
 import linecache
 import re
 from collections.abc import Iterator
-from contextlib import contextmanager, AbstractContextManager
+from contextlib import AbstractContextManager, contextmanager
 from typing import Any
 
 from dishka.text_rendering import get_name

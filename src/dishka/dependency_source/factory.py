@@ -9,7 +9,7 @@ from typing import Any
 from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryData, FactoryType
 from dishka.entities.key import DependencyKey
-from dishka.entities.marker import Marker, BaseMarker
+from dishka.entities.marker import BaseMarker
 from dishka.entities.scope import BaseScope
 
 

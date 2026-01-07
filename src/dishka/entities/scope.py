@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
 from threading import Lock
+from typing import Any
 
 
 @dataclass(slots=True, frozen=True)
@@ -23,7 +23,7 @@ def new_scope(value: str, *, skip: bool = False) -> _ScopeValue:
 
 
 class BaseScope(Enum):
-    __slots__ = ("name", "skip", "order")
+    __slots__ = ("name", "order", "skip")
 
     def __init__(self, value: _ScopeValue) -> None:
         self.name = value.name  # type: ignore[misc]

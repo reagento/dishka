@@ -99,7 +99,6 @@ class Provider(BaseProvider):
     def _add_dependency_sources(
             self, name: str, sources: Sequence[DependencySource],
     ) -> None:
-        self.dependency_sources.extend(sources)
         for source in sources:
             if isinstance(source, Alias):
                 self.aliases.append(source)

@@ -18,7 +18,6 @@ class BaseProvider:
         self.decorators: list[Decorator] = []
         self.context_vars: list[ContextVariable] = []
         self.activators: list[Activator] = []
-        self.dependency_sources: list[DependencySource] = []
 
 
 class ProviderWrapper(BaseProvider):
@@ -28,4 +27,3 @@ class ProviderWrapper(BaseProvider):
         self.aliases.extend(provider.aliases)
         self.decorators.extend(provider.decorators)
         self.activators.extend(provider.activators)
-        self.dependency_sources.extend(provider.dependency_sources)

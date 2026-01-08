@@ -34,6 +34,8 @@ class FactoryBuilder(CodeBuilder):
         return self.def_(self.getter_name, ["getter", "exits", "cache", "context"])
 
     def getter(self, obj: DependencyKey) -> str:
+        if obj.is_const():
+            return self.global_(obj.get_const_value())
         return self.await_(self.call("getter", self.global_(obj)))
 
     def cache(self) -> None:

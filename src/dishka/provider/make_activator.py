@@ -29,11 +29,22 @@ def _activator(
         override=False,
         when=None,
     )
+    if factory.provides.type_hint is not bool:
+        raise ValueError("Activator must return bool")
 
-    composite.dependency_sources.append(Activator(
-        factory=factory,
-        markers=tuple(markers),
-    ))
+    for marker in markers:
+        if isinstance(marker, type):
+            composite.dependency_sources.append(Activator(
+                factory=factory,
+                marker=None,
+                marker_type=marker,
+            ))
+        else:
+            composite.dependency_sources.append(Activator(
+                factory=factory,
+                marker=marker,
+                marker_type=type(marker),
+            ))
     return composite
 
 

@@ -2,7 +2,7 @@ from inspect import iscoroutinefunction
 from typing import Any
 
 from dishka.entities.component import Component
-from dishka.entities.key import DependencyKey
+from dishka.entities.key import DependencyKey, const_dependency_key
 from dishka.entities.marker import Marker
 from dishka.entities.scope import BaseScope
 from ..entities.factory_type import FactoryType
@@ -10,21 +10,29 @@ from .factory import Factory
 
 
 class Activator:
-    __slots__ = ("factory", "markers")
+    __slots__ = ("factory", "marker", "marker_type")
 
     def __init__(
         self,
         factory: Factory,
-        markers: tuple[Marker, ...] = (),
+        marker: Marker | None,
+        marker_type: type[Marker] | None,
     ) -> None:
         self.factory = factory
-        self.markers = markers
+        self.marker = marker
+        self.marker_type = marker_type
 
     def __get__(self, instance: Any, owner: Any) -> "Activator":
         return Activator(
             factory=self.factory.__get__(instance, owner),
-            markers=self.markers,
+            marker=self.marker,
+            marker_type=self.marker_type,
         )
+
+    def _replace_dep(self, dependency: DependencyKey, marker: Marker) -> DependencyKey:
+        if dependency.type_hint is self.marker_type or dependency.type_hint is Marker:
+            return const_dependency_key(marker)
+        return dependency
 
     def as_factory(
         self,
@@ -38,8 +46,8 @@ class Activator:
             source=factory.source,
             provides=DependencyKey(type_hint=marker, component=component),
             is_to_bind=factory.is_to_bind,
-            dependencies=factory.dependencies,
-            kw_dependencies=factory.kw_dependencies,
+            dependencies=[self._replace_dep(d, marker) for d in factory.dependencies],
+            kw_dependencies={name: self._replace_dep(d, marker) for name, d in factory.kw_dependencies.items()},
             type_=factory.type,
             cache=factory.cache,
             override=factory.override,
@@ -84,18 +92,4 @@ class Activator:
         # - Graph of other activators
         # - Whether dependencies are registered or not
         # For now, return False for any dependencies
-        return False
-
-    def provides_for_marker(self, marker: Marker | Any) -> bool:
-        """Check if this activation provides a result for the given marker."""
-        if not isinstance(marker, Marker):
-            return False
-
-        for m in self.markers:
-            if isinstance(m, type) and isinstance(marker, m):
-                # Generic marker type match
-                return True
-            elif m == marker:
-                # Exact marker match
-                return True
         return False

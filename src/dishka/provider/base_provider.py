@@ -3,7 +3,6 @@ from dishka.dependency_source import (
     Alias,
     ContextVariable,
     Decorator,
-    DependencySource,
     Factory,
 )
 from dishka.entities.component import Component

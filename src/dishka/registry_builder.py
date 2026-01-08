@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Iterator, Sequence
-from typing import Any, TypeVar, cast, get_origin
+from typing import Any, cast, get_origin
 
 from ._adaptix.type_tools.basic_utils import is_generic
 from .dependency_source import (
@@ -81,12 +81,12 @@ class GraphValidator:
             raise CycleDependenciesError([factory])
         try:
             for dep in factory.dependencies:
-                # ignore TypeVar parameters
-                if not isinstance(dep.type_hint, TypeVar):
+                # ignore TypeVar and const parameters
+                if not dep.is_type_var and not dep.is_const():
                     self._validate_key(dep, registry_index)
             for dep in factory.kw_dependencies.values():
-                # ignore TypeVar parameters
-                if not isinstance(dep.type_hint, TypeVar):
+                # ignore TypeVar and const parameters
+                if not dep.is_type_var and not dep.is_const():
                     self._validate_key(dep, registry_index)
 
         except NoFactoryError as e:
@@ -275,10 +275,10 @@ class RegistryBuilder:
             provider: BaseProvider,
             src: Activator,
     ) -> None:
-        for marker in src.markers:
-            if marker in self.activators:
-                raise InvalidGraphError("CAnnot have multiple activators for same marker")
-            self.activators[marker] = src
+        marker = src.marker or src.marker_type
+        if marker in self.activators:
+            raise InvalidGraphError("Cannot have multiple activators for same marker")
+        self.activators[marker] = src
 
     def _process_factory(
         self,
@@ -540,8 +540,12 @@ class RegistryBuilder:
     def _calculate_scope(self, factory: Factory) -> BaseScope:
         possible_scopes = []
         for dependency in factory.dependencies:
+            if dependency.is_const():
+                continue
             possible_scopes.append(self.dependency_scopes[dependency])
         for dependency in factory.kw_dependencies.values():
+            if dependency.is_const():
+                continue
             possible_scopes.append(self.dependency_scopes[dependency])
         if not possible_scopes:
             return min(self.scopes)

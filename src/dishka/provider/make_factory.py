@@ -279,6 +279,8 @@ def _make_factory_by_class(
         cache=cache,
         override=override,
         when=when,
+        when_component=None,
+        when_dependencies={},
     )
 
 
@@ -353,6 +355,8 @@ def _make_factory_by_function(
         cache=cache,
         override=override,
         when=when,
+        when_component=None,
+        when_dependencies={},
     )
 
 
@@ -395,6 +399,8 @@ def _make_factory_by_static_method(
         cache=cache,
         override=override,
         when=when,
+        when_component=None,
+        when_dependencies={},
     )
 
 
@@ -443,6 +449,8 @@ def _make_factory_by_other_callable(
         cache=cache,
         override=override,
         when=when,
+        when_component=None,
+        when_dependencies={},
     )
 
 

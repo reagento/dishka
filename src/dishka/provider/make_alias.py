@@ -34,6 +34,7 @@ def alias(
         cache=cache,
         override=override,
         when=when,
+        when_component=None,
     )
     composite.dependency_sources.extend(unpack_alias(alias_instance))
     return composite

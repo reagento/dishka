@@ -42,6 +42,7 @@ def from_context(
                 cache=True,
                 override=override,
                 when=None,
+                when_component=None,
             ),
         )
     return composite

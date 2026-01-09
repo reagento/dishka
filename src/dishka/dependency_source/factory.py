@@ -22,6 +22,7 @@ class Factory(FactoryData):
         "kw_dependencies",
         "override",
         "when",
+        "when_component",
         "when_dependencies",
     )
 
@@ -38,6 +39,8 @@ class Factory(FactoryData):
             cache: bool,
             override: bool,
             when: BaseMarker | None,
+            when_component: Component | None,
+            when_dependencies: dict[DependencyKey, BaseMarker],
     ) -> None:
         super().__init__(
             source=source,
@@ -51,8 +54,8 @@ class Factory(FactoryData):
         self.cache = cache
         self.override = override
         self.when = when
-        # dependency -> condition
-        self.when_dependencies: dict[DependencyKey, BaseMarker] = {}
+        self.when_component = when_component
+        self.when_dependencies: dict[DependencyKey, BaseMarker] = when_dependencies
 
     def __get__(self, instance: Any, owner: Any) -> Factory:
         scope = self.scope or instance.scope
@@ -75,6 +78,8 @@ class Factory(FactoryData):
             cache=self.cache,
             override=self.override,
             when=self.when,
+            when_component=self.when_component,
+            when_dependencies=self.when_dependencies,
         )
 
     def with_component(self, component: Component) -> Factory:
@@ -94,6 +99,8 @@ class Factory(FactoryData):
             type_=self.type,
             override=self.override,
             when=self.when,
+            when_component=(component if self.when_component is None else self.when_component),
+            when_dependencies=self.when_dependencies,
         )
 
     def with_scope(self, scope: BaseScope) -> Factory:
@@ -108,6 +115,8 @@ class Factory(FactoryData):
             type_=self.type,
             override=self.override,
             when=self.when,
+            when_component=self.when_component,
+            when_dependencies=self.when_dependencies,
         )
 
     def replace(
@@ -125,5 +134,7 @@ class Factory(FactoryData):
             type_=self.type,
             override=self.override,
             when=self.when,
+            when_component=self.when_component,
+            when_dependencies=self.when_dependencies,
         )
 

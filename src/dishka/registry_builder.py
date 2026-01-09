@@ -156,8 +156,8 @@ class RegistryBuilder:
         self.skip_validation = skip_validation
         self.validation_settings = validation_settings
         self.processed_factories: dict[DependencyKey, list[Factory]] = {}
-        self.activators: dict[Marker|type[Marker], Activator] = {}
-        self.requested_markers: set[Marker] = set()
+        self.activators: dict[DependencyKey, Activator] = {}
+        self.requested_markers: set[DependencyKey] = set()
 
     def _collect_components(self) -> None:
         for provider in self.providers:
@@ -256,7 +256,6 @@ class RegistryBuilder:
             factory = Factory(
                 cache=False,
                 scope=scope,
-                when=None,
                 override=False,
                 provides=provides,
                 is_to_bind=False,
@@ -264,9 +263,11 @@ class RegistryBuilder:
                 type_=FactoryType.SELECTOR,
                 kw_dependencies={},
                 source=None,
+                when=None,
+                when_component=None,
+                # reverse dict, so last wins
+                when_dependencies=dict(reversed(when_dependencies.items())),
             )
-            # reverse dict, so last wins
-            factory.when_dependencies = dict(reversed(when_dependencies.items()))
             self.processed_factories[provides] = [factory]
         self.processed_factories.update(new_groups)
 
@@ -275,10 +276,17 @@ class RegistryBuilder:
             provider: BaseProvider,
             src: Activator,
     ) -> None:
+        src = src.with_component(provider.component)
         marker = src.marker or src.marker_type
+        key = DependencyKey(marker, src.factory.when_component)
         if marker in self.activators:
             raise InvalidGraphError("Cannot have multiple activators for same marker")
-        self.activators[marker] = src
+        self.activators[key] = src
+
+    def _register_when(self, factory: Factory) -> None:
+        for marker in self._unpack_marker(factory.when):
+            marker_key = DependencyKey(marker, factory.when_component)
+            self.requested_markers.add(marker_key)
 
     def _process_factory(
         self,
@@ -288,7 +296,7 @@ class RegistryBuilder:
         factory = factory.with_component(provider.component)
         lst = self.processed_factories.setdefault(factory.provides, [])
         lst.append(factory)
-        self.requested_markers.update(self._unpack_marker(factory.when))
+        self._register_when(factory)
 
     def _process_alias(
             self, provider: BaseProvider, alias: Alias,
@@ -327,7 +335,7 @@ class RegistryBuilder:
         self.dependency_scopes[factory.provides] = scope
         lst = self.processed_factories.setdefault(factory.provides, [])
         lst.append(factory)
-        self.requested_markers.update(self._unpack_marker(factory.when))
+        self._register_when(factory)
 
     def _process_generic_decorator(
         self,
@@ -445,7 +453,8 @@ class RegistryBuilder:
 
         self.processed_factories[provides] = group_replacement
         self.processed_factories[decorated_provides] = decorated_group
-        self.requested_markers.update(self._unpack_marker(decorator.factory.when))
+        # TODO process when in decorators
+        self._register_when(decorator.factory)
 
     def _process_context_var(
         self,
@@ -525,15 +534,16 @@ class RegistryBuilder:
                 raise ValueError("Unknown marker type")
 
     def _register_activators(self):
-        for marker in self.requested_markers:
-            dependency = DependencyKey(marker, DEFAULT_COMPONENT)
-            if marker in self.activators:
-                activator = self.activators[marker]
-            elif type(marker) in self.activators:
-                activator = self.activators[type(marker)]
+        # TODO process aliases
+        for dependency in self.requested_markers:
+            type_dependency = DependencyKey(type(dependency.type_hint), dependency.component)
+            if dependency in self.activators:
+                activator = self.activators[dependency]
+            elif type_dependency in self.activators:
+                activator = self.activators[type_dependency]
             else:
-                raise ValueError(f"No activator registered for {marker}")
-            factory = activator.as_factory(None, DEFAULT_COMPONENT, marker)
+                raise ValueError(f"No activator registered for {dependency}")
+            factory = activator.as_factory(None, DEFAULT_COMPONENT, dependency)
             factory = factory.with_scope(self._calculate_scope(factory))
             self.processed_factories[dependency] = [factory]
 

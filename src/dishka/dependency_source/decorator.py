@@ -67,6 +67,8 @@ class Decorator:
             cache=cache,
             override=False,
             when=self.factory.when,
+            when_component=self.factory.when_component,
+            when_dependencies={},
         )
 
     def _replace_dep(

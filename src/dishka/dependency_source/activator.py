@@ -34,17 +34,25 @@ class Activator:
             return const_dependency_key(marker)
         return dependency
 
+    def with_component(self, component: Component) -> "Activator":
+        return Activator(
+            factory=self.factory.with_component(component),
+            marker=self.marker,
+            marker_type=self.marker_type,
+        )
+
     def as_factory(
         self,
         scope: BaseScope | None,
         component: Component | None,
-        marker: Marker,
+        marker_key: DependencyKey,
     ) -> Factory:
         factory = self.factory.with_component(component)
+        marker = marker_key.type_hint
         return Factory(
             scope=scope,
             source=factory.source,
-            provides=DependencyKey(type_hint=marker, component=component),
+            provides=marker_key,
             is_to_bind=factory.is_to_bind,
             dependencies=[self._replace_dep(d, marker) for d in factory.dependencies],
             kw_dependencies={name: self._replace_dep(d, marker) for name, d in factory.kw_dependencies.items()},
@@ -52,6 +60,8 @@ class Activator:
             cache=factory.cache,
             override=factory.override,
             when=factory.when,
+            when_component=factory.when_component,
+            when_dependencies=factory.when_dependencies,
         )
 
     def is_static_evaluated(self) -> bool:

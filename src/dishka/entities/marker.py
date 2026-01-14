@@ -98,3 +98,12 @@ class Has(Marker):
     """
     def __repr__(self) -> str:
         return f"Has({self.value.__name__})"
+
+
+@dataclass(frozen=True, slots=True)
+class HasContext(Marker):
+    """
+    Special marker for checking if a type is available in current context.
+    """
+    def __repr__(self) -> str:
+        return f"HasContext({self.value.__name__})"

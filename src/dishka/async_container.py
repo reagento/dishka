@@ -10,7 +10,9 @@ from typing import Any, TypeVar, cast, overload
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
+from dishka.entities.marker import Has, HasContext
 from dishka.entities.scope import BaseScope, Scope
+from dishka.provider import Provider, activator
 from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .dependency_source import Factory
@@ -239,6 +241,20 @@ class AsyncContainer:
         if errors:
             raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
+    async def has(self, marker: Any) -> bool:
+        factory = self.registry.get_factory(DependencyKey(marker, DEFAULT_COMPONENT))
+        if not factory:
+            if not self.parent_container:
+                return False
+            return await self.parent_container.has(marker)
+        if factory.when is None:
+            return True
+        # TODO: eval expression
+        return await self._get_unlocked(DependencyKey(factory.when, factory.when_component))
+
+    async def has_context(self, marker: Any) -> bool:
+        return marker in self._context
+
 
 class AsyncContextWrapper:
     def __init__(self, container: AsyncContainer):
@@ -254,6 +270,17 @@ class AsyncContextWrapper:
         exc_tb: TracebackType | None = None,
     ) -> None:
         await self.container.close(exception=exc_val)
+
+
+class HasProvider(Provider):
+    # TODO components
+    @activator(Has)
+    async def has(self, marker: Has, container: AsyncContainer) -> bool:
+        return await container.has(marker.value)
+
+    @activator(HasContext)
+    async def has_context(self, marker: Has, container: AsyncContainer) -> bool:
+        return await container.has_context(marker.value)
 
 
 def make_async_container(

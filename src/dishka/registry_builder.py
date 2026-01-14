@@ -157,7 +157,7 @@ class RegistryBuilder:
         self.validation_settings = validation_settings
         self.processed_factories: dict[DependencyKey, list[Factory]] = {}
         self.activators: dict[DependencyKey, Activator] = {}
-        self.requested_markers: set[DependencyKey] = set()
+        self.requested_markers: set[tuple[DependencyKey, BaseScope]] = set()
 
     def _collect_components(self) -> None:
         for provider in self.providers:
@@ -286,7 +286,7 @@ class RegistryBuilder:
     def _register_when(self, factory: Factory) -> None:
         for marker in self._unpack_marker(factory.when):
             marker_key = DependencyKey(marker, factory.when_component)
-            self.requested_markers.add(marker_key)
+            self.requested_markers.add((marker_key, factory.scope))
 
     def _process_factory(
         self,
@@ -473,6 +473,7 @@ class RegistryBuilder:
         # append context factory to processed list
         lst = self.processed_factories.setdefault(factory.provides, [])
         lst.append(factory)
+        self._register_when(factory)
 
     def build(self) -> tuple[Registry, ...]:
         self._collect_components()
@@ -535,7 +536,7 @@ class RegistryBuilder:
 
     def _register_activators(self):
         # TODO process aliases
-        for dependency in self.requested_markers:
+        for dependency, scope in self.requested_markers:
             type_dependency = DependencyKey(type(dependency.type_hint), dependency.component)
             if dependency in self.activators:
                 activator = self.activators[dependency]
@@ -544,19 +545,5 @@ class RegistryBuilder:
             else:
                 raise ValueError(f"No activator registered for {dependency}")
             factory = activator.as_factory(None, DEFAULT_COMPONENT, dependency)
-            factory = factory.with_scope(self._calculate_scope(factory))
-            self.processed_factories[dependency] = [factory]
-
-    def _calculate_scope(self, factory: Factory) -> BaseScope:
-        possible_scopes = []
-        for dependency in factory.dependencies:
-            if dependency.is_const():
-                continue
-            possible_scopes.append(self.dependency_scopes[dependency])
-        for dependency in factory.kw_dependencies.values():
-            if dependency.is_const():
-                continue
-            possible_scopes.append(self.dependency_scopes[dependency])
-        if not possible_scopes:
-            return min(self.scopes)
-        return max(possible_scopes)
+            factory = factory.with_scope(scope)
+            self.processed_factories.setdefault(dependency, []).append(factory)

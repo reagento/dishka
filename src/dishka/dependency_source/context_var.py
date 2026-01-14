@@ -6,6 +6,7 @@ from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
+from ..entities.marker import HasContext
 from .alias import Alias
 from .factory import Factory
 
@@ -41,8 +42,8 @@ class ContextVariable:
                 type_=FactoryType.CONTEXT,
                 cache=False,
                 override=self.override,
-                when=None,
-                when_component=None,
+                when=HasContext(self.provides.type_hint),
+                when_component=component,
                 when_dependencies={},
             )
         else:
@@ -54,8 +55,8 @@ class ContextVariable:
                     component=component,
                     type_hint=self.provides.type_hint,
                 ),
-                when=None,
-                when_component=None,
+                when=HasContext(self.provides.type_hint),
+                when_component=component,
             )
             return aliased.as_factory(scope=self.scope, component=component)
 

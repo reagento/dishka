@@ -10,7 +10,9 @@ from typing import Any, TypeVar, cast, overload
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
+from dishka.entities.marker import Has, HasContext
 from dishka.entities.scope import BaseScope, Scope
+from dishka.provider import Provider, activator
 from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .dependency_source import Factory
@@ -236,6 +238,20 @@ class Container:
         if errors:
             raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
+    def has(self, marker: Any) -> bool:
+        factory = self.registry.get_factory(DependencyKey(marker, DEFAULT_COMPONENT))
+        if factory is None:
+            if not self.parent_container:
+                return False
+            return self.parent_container.has(marker)
+        if factory.when is None:
+            return True
+        # TODO: eval expression
+        return self._get_unlocked(DependencyKey(factory.when, factory.when_component))
+
+    def has_context(self, marker: Any) -> bool:
+        return marker in self._context
+
 
 class ContextWrapper:
     __slots__ = ("container",)
@@ -255,6 +271,17 @@ class ContextWrapper:
         self.container.close(exception=exc_val)
 
 
+class HasProvider(Provider):
+    # TODO components
+    @activator(Has)
+    def has(self, marker: Has, container: Container) -> bool:
+        return container.has(marker.value)
+
+    @activator(HasContext)
+    def has_context(self, marker: HasContext, container: Container) -> bool:
+        return container.has_context(marker.value)
+
+
 def make_container(
         *providers: BaseProvider,
         scopes: type[BaseScope] = Scope,
@@ -265,10 +292,11 @@ def make_container(
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,
 ) -> Container:
     context_provider = make_root_context_provider(providers, context, scopes)
+    has_provider = HasProvider()
     registries = RegistryBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,
-        providers=(*providers, context_provider),
+        providers=(*providers, context_provider, has_provider),
         skip_validation=skip_validation,
         validation_settings=validation_settings,
     ).build()

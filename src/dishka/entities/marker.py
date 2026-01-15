@@ -15,9 +15,13 @@ class BaseMarker:
         return NotMarker(self)
 
     def __or__(self, other: "BaseMarker") -> "BaseMarker":
+        if other == self:
+            return self
         return OrMarker(self, other)
 
     def __and__(self, other: "BaseMarker") -> "BaseMarker":
+        if other == self:
+            return self
         return AndMarker(self, other)
 
 
@@ -38,12 +42,6 @@ class NotMarker(BaseMarker):
         if isinstance(self.marker, NotMarker):
             return self.marker.marker
         return self.marker
-
-    def __or__(self, other: "BaseMarker") -> "BaseMarker":
-        return OrMarker(self, other)
-
-    def __and__(self, other: "BaseMarker") -> "BaseMarker":
-        return AndMarker(self, other)
 
     def __repr__(self) -> str:
         return f"~{self.marker!r}"
@@ -88,6 +86,18 @@ class AndMarker(BinOpMarker):
     def __invert__(self) -> Any:
         # De Morgan's law: ~(A & B) = ~A | ~B
         return OrMarker(~self.left, ~self.right)
+
+
+def or_markers(*markers: BaseMarker | None) -> BaseMarker | None:
+    if not markers:
+        return None
+    current_marker = markers[0]
+    for marker in markers:
+        if not marker:
+            return None
+        current_marker |= marker
+    return current_marker
+
 
 
 @dataclass(frozen=True, slots=True)

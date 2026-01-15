@@ -13,7 +13,13 @@ from .dependency_source import (
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
-from .entities.marker import BaseMarker, BinOpMarker, Marker, NotMarker
+from .entities.marker import (
+    BaseMarker,
+    BinOpMarker,
+    Marker,
+    NotMarker,
+    or_markers,
+)
 from .entities.scope import BaseScope, InvalidScopes
 from .entities.validation_settings import ValidationSettings
 from .exceptions import (
@@ -216,7 +222,7 @@ class RegistryBuilder:
         for provides, group in self.processed_factories.items():
             if len(group) == 1:
                 continue
-            when_dependencies = {}
+            when_dependencies: dict[DependencyKey, BaseMarker] = {}
             moved_factories = {}
             for factory in group:
                 if not factory.when:
@@ -232,12 +238,11 @@ class RegistryBuilder:
                         not factory.override
                     ):
                         raise ImplicitOverrideDetectedError(
-                            next(iter(when_dependencies.values())),
+                            next(iter(when_dependencies)),
                             factory,
                         )
                     when_dependencies = {}
                     moved_factories = {}
-
 
                 depth = self.decorator_depth[provides]
                 self.decorator_depth[provides] += 1
@@ -263,7 +268,7 @@ class RegistryBuilder:
                 type_=FactoryType.SELECTOR,
                 kw_dependencies={},
                 source=None,
-                when=None,
+                when=or_markers(*when_dependencies.values()),
                 when_component=provides.component,
                 # reverse dict, so last wins
                 when_dependencies=dict(reversed(when_dependencies.items())),

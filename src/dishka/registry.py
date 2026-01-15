@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, Final, Generic, Protocol, TypeVar, get_args, get_origin
 
 from ._adaptix.type_tools.fundamentals import get_type_vars
-from .code_tools.factory_compiler import compile_factory, compile_activation
+from .code_tools.factory_compiler import compile_activation, compile_factory
 from .container_objects import CompiledFactory
 from .dependency_source import (
     Factory,
@@ -34,9 +34,9 @@ IGNORE_TYPES: Final = (
 class Registry:
     __slots__ = (
         "compiled",
-        "compiled_async",
         "compiled_activation",
         "compiled_activation_async",
+        "compiled_async",
         "factories",
         "has_fallback",
         "scope",

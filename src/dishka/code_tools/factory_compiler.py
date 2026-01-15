@@ -4,7 +4,7 @@ from typing import Any
 from dishka.code_tools.code_builder import CodeBuilder
 from dishka.container_objects import CompiledFactory, Exit
 from dishka.dependency_source import Factory
-from dishka.entities.component import DEFAULT_COMPONENT
+from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.marker import AndMarker, BaseMarker, NotMarker, OrMarker
@@ -13,10 +13,11 @@ from dishka.text_rendering import get_name
 
 
 class FactoryBuilder(CodeBuilder):
-    def __init__(self, is_async: bool):
+    def __init__(self, is_async: bool, getter_prefix: str):
         super().__init__(is_async)
         self.provides_name = ""
         self.getter_name = ""
+        self.getter_prefix = getter_prefix
 
     def global_(self, obj: Any, preferred_name: str | None = None) -> str:
         if preferred_name is None and isinstance(obj, DependencyKey):
@@ -30,7 +31,7 @@ class FactoryBuilder(CodeBuilder):
         self.provides_name = self.global_(provides)
 
     def make_getter(self) -> AbstractContextManager:
-        self.getter_name = "get_"+self.provides_name.removeprefix("key_")
+        self.getter_name = self.getter_prefix+self.provides_name.removeprefix("key_")
         return self.def_(self.getter_name, ["getter", "exits", "cache", "context"])
 
     def getter(self, obj: DependencyKey) -> str:
@@ -44,18 +45,19 @@ class FactoryBuilder(CodeBuilder):
     def assign_solved(self, expr: str) -> None:
         self.assign_local("solved", expr)
 
-    def when(self, marker: BaseMarker) -> str:
+    def when(self, marker: BaseMarker, component: Component) -> str:
         match marker:
             case None:
                 return ""
             case AndMarker():
-                return self.and_(self.when(marker.left), self.when(marker.right))
+                return self.and_(self.when(marker.left, component), self.when(marker.right, component))
             case OrMarker():
-                return self.or_(self.when(marker.left), self.when(marker.right))
+                return self.or_(self.when(marker.left, component), self.when(marker.right, component))
             case NotMarker():
-                return self.not_(self.when(marker.marker))
+                return self.not_(self.when(marker.marker, component))
             case _:
-                return self.getter(DependencyKey(marker, DEFAULT_COMPONENT))
+                # TODO component
+                return self.getter(DependencyKey(marker, component))
 
     def build_getter(self) -> CompiledFactory:
         name = f"<{self.getter_name}{'_async' if self.async_str else ''}>"
@@ -63,7 +65,7 @@ class FactoryBuilder(CodeBuilder):
 
 
 def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
-    builder = FactoryBuilder(is_async=is_async)
+    builder = FactoryBuilder(is_async=is_async, getter_prefix="get_")
     builder.register_provides(factory.provides)
 
     with builder.make_getter():
@@ -122,7 +124,8 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
             case FactoryType.SELECTOR:
                 first = True
                 for key, marker in factory.when_dependencies.items():
-                    condition = builder.when(marker)
+                    # TODO what component?
+                    condition = builder.when(marker, factory.when_component)
                     solved_value = builder.getter(key)
                     if first and not condition:
                         builder.assign_solved(solved_value)
@@ -143,5 +146,20 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
         if factory.cache:
             builder.cache()
         builder.return_("solved")
+
+    return builder.build_getter()
+
+
+def compile_activation(*, factory: Factory, is_async: bool) -> CompiledFactory:
+    builder = FactoryBuilder(is_async=is_async, getter_prefix="is_active_")
+    builder.register_provides(factory.provides)
+    with builder.make_getter():
+        condition = builder.when(factory.when, factory.when_component)
+        if not condition:
+            builder.return_(builder.global_(True))
+        else:
+            with builder.if_(condition):
+                builder.return_(builder.global_(True))
+            builder.return_(builder.global_(False))
 
     return builder.build_getter()

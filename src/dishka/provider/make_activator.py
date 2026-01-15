@@ -24,7 +24,7 @@ def _activator(
         provides=bool,
         scope=None,
         source=source,
-        cache=False,
+        cache=True,
         is_in_class=is_in_class,
         override=False,
         when=None,

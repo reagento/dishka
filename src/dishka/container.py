@@ -238,18 +238,22 @@ class Container:
         if errors:
             raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
-    def has(self, marker: Any) -> bool:
-        factory = self.registry.get_factory(DependencyKey(marker, DEFAULT_COMPONENT))
-        if factory is None:
+    def _has(self, marker: Any) -> bool:
+        key = DependencyKey(marker, DEFAULT_COMPONENT)
+        compiled = self.registry.get_compiled_activation(key)
+        if not compiled:
             if not self.parent_container:
                 return False
-            return self.parent_container.has(marker)
-        if factory.when is None:
-            return True
-        # TODO: eval expression
-        return self._get_unlocked(DependencyKey(factory.when, factory.when_component))
+            return self.parent_container._has(marker)
 
-    def has_context(self, marker: Any) -> bool:
+        return compiled(
+            self._get_unlocked,
+            self._exits,
+            self._cache,
+            self._context,
+        )
+
+    def _has_context(self, marker: Any) -> bool:
         return marker in self._context
 
 

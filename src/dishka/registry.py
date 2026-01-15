@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, Final, Generic, Protocol, TypeVar, get_args, get_origin
 
 from ._adaptix.type_tools.fundamentals import get_type_vars
-from .code_tools.factory_compiler import compile_factory
+from .code_tools.factory_compiler import compile_factory, compile_activation
 from .container_objects import CompiledFactory
 from .dependency_source import (
     Factory,
@@ -35,6 +35,8 @@ class Registry:
     __slots__ = (
         "compiled",
         "compiled_async",
+        "compiled_activation",
+        "compiled_activation_async",
         "factories",
         "has_fallback",
         "scope",
@@ -45,6 +47,8 @@ class Registry:
         self.factories: dict[DependencyKey, Factory] = {}
         self.compiled: dict[DependencyKey, Callable[..., Any]] = {}
         self.compiled_async: dict[DependencyKey, Callable[..., Any]] = {}
+        self.compiled_activation: dict[DependencyKey, Callable[..., Any]] = {}
+        self.compiled_activation_async: dict[DependencyKey, Callable[..., Any]] = {}
         self.has_fallback = has_fallback
 
     def add_factory(
@@ -80,6 +84,32 @@ class Registry:
                 return None
             compiled = compile_factory(factory=factory, is_async=True)
             self.compiled_async[dependency] = compiled
+            return compiled
+
+    def get_compiled_activation(
+            self, dependency: DependencyKey,
+    ) -> CompiledFactory | None:
+        try:
+            return self.compiled_activation[dependency]
+        except KeyError:
+            factory = self.get_factory(dependency)
+            if not factory:
+                return None
+            compiled = compile_activation(factory=factory, is_async=False)
+            self.compiled_activation[dependency] = compiled
+            return compiled
+
+    def get_compiled_activation_async(
+            self, dependency: DependencyKey,
+    ) -> CompiledFactory | None:
+        try:
+            return self.compiled_activation_async[dependency]
+        except KeyError:
+            factory = self.get_factory(dependency)
+            if not factory:
+                return None
+            compiled = compile_activation(factory=factory, is_async=True)
+            self.compiled_activation_async[dependency] = compiled
             return compiled
 
     def get_factory(self, dependency: DependencyKey) -> Factory | None:

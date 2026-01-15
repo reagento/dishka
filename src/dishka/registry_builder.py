@@ -264,7 +264,7 @@ class RegistryBuilder:
                 kw_dependencies={},
                 source=None,
                 when=None,
-                when_component=None,
+                when_component=provides.component,
                 # reverse dict, so last wins
                 when_dependencies=dict(reversed(when_dependencies.items())),
             )

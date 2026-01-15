@@ -52,12 +52,10 @@ class CodeBuilder:
         self.statement(f"{name} = {value}")
 
     def global_(self, obj: Any, preferred_name: str | None = None) -> str:
-        if type(obj) is str:
-            return obj
-        if type(obj) is int:
-            return str(obj)
-        if obj in (None, True, False):
-            return str(obj)
+        if type(obj) in (str, int, bool):
+            return repr(obj)
+        if obj in (None, ()):
+            return repr(obj)
         if obj is ...:
             return "..."
 

@@ -127,5 +127,7 @@ value_factory = Factory(
     cache=False,
     override=False,
     when=None,
+    when_component=None,
+    when_dependencies={},
 )
 value_source = CompositeDependencySource(lambda: None, [value_factory])

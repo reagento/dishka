@@ -224,6 +224,7 @@ class RegistryBuilder:
                 continue
             when_dependencies: dict[DependencyKey, BaseMarker] = {}
             moved_factories = {}
+            prev_factory = None
             for factory in group:
                 if not factory.when:
                     need_override = bool(when_dependencies)
@@ -238,7 +239,7 @@ class RegistryBuilder:
                         not factory.override
                     ):
                         raise ImplicitOverrideDetectedError(
-                            next(iter(when_dependencies)),
+                            prev_factory,
                             factory,
                         )
                     when_dependencies = {}
@@ -252,6 +253,7 @@ class RegistryBuilder:
                     type_hint=provides.type_hint,
                     component=new_component,
                 )
+                prev_factory = factory
                 new_factory = factory.replace(provides=new_provides)
                 moved_factories[new_provides] = [new_factory]
                 when_dependencies[new_provides] = factory.when

@@ -241,7 +241,7 @@ class AsyncContainer:
         if errors:
             raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
-    async def has(self, marker: Any) -> bool:
+    async def _has(self, marker: Any) -> bool:
         factory = self.registry.get_factory(DependencyKey(marker, DEFAULT_COMPONENT))
         if not factory:
             if not self.parent_container:
@@ -252,7 +252,7 @@ class AsyncContainer:
         # TODO: eval expression
         return await self._get_unlocked(DependencyKey(factory.when, factory.when_component))
 
-    async def has_context(self, marker: Any) -> bool:
+    async def _has_context(self, marker: Any) -> bool:
         return marker in self._context
 
 
@@ -276,11 +276,11 @@ class HasProvider(Provider):
     # TODO components
     @activator(Has)
     async def has(self, marker: Has, container: AsyncContainer) -> bool:
-        return await container.has(marker.value)
+        return await container._has(marker.value)  # noqa: SLF001
 
     @activator(HasContext)
     async def has_context(self, marker: Has, container: AsyncContainer) -> bool:
-        return await container.has_context(marker.value)
+        return await container._has_context(marker.value)  # noqa: SLF001
 
 
 def make_async_container(

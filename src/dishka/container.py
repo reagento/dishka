@@ -275,11 +275,11 @@ class HasProvider(Provider):
     # TODO components
     @activator(Has)
     def has(self, marker: Has, container: Container) -> bool:
-        return container.has(marker.value)
+        return container._has(marker.value)  # noqa: SLF001
 
     @activator(HasContext)
     def has_context(self, marker: HasContext, container: Container) -> bool:
-        return container.has_context(marker.value)
+        return container._has_context(marker.value)   # noqa: SLF001
 
 
 def make_container(

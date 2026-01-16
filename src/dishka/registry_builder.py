@@ -221,6 +221,12 @@ class RegistryBuilder:
         new_groups = {}
         for provides, group in self.processed_factories.items():
             if len(group) == 1:
+                factory = group[0]
+                if (
+                    self.validation_settings.nothing_overridden and
+                    factory.override
+                ):
+                    raise NothingOverriddenError(factory)
                 continue
             when_dependencies: dict[DependencyKey, BaseMarker] = {}
             moved_factories = {}
@@ -229,8 +235,8 @@ class RegistryBuilder:
                 if not factory.when:
                     need_override = bool(when_dependencies)
                     if (
-                            self.validation_settings.nothing_overridden and
-                            factory.override and not need_override
+                        self.validation_settings.nothing_overridden and
+                        factory.override and not need_override
                     ):
                         raise NothingOverriddenError(factory)
                     if (

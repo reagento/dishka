@@ -299,10 +299,11 @@ def make_async_container(
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,
 ) -> AsyncContainer:
     context_provider = make_root_context_provider(providers, context, scopes)
+    has_provider = HasProvider()
     registries = RegistryBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,
-        providers=(*providers, context_provider),
+        providers=(*providers, context_provider, has_provider),
         skip_validation=skip_validation,
         validation_settings=validation_settings,
     ).build()

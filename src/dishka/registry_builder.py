@@ -88,11 +88,11 @@ class GraphValidator:
         try:
             for dep in factory.dependencies:
                 # ignore TypeVar and const parameters
-                if not dep.is_type_var and not dep.is_const():
+                if not dep.is_type_var() and not dep.is_const():
                     self._validate_key(dep, registry_index)
             for dep in factory.kw_dependencies.values():
                 # ignore TypeVar and const parameters
-                if not dep.is_type_var and not dep.is_const():
+                if not dep.is_type_var() and not dep.is_const():
                     self._validate_key(dep, registry_index)
 
         except NoFactoryError as e:

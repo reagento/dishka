@@ -13,11 +13,13 @@ from dishka.dependency_source import (
 )
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.scope import BaseScope
+from ..entities.marker import BaseMarker, Marker
 from .base_provider import BaseProvider, ProviderWrapper
 from .exceptions import (
     NoScopeSetInContextError,
     NoScopeSetInProvideError,
 )
+from .make_activator import activator_on_instance
 from .make_alias import alias
 from .make_context_var import from_context
 from .make_decorator import decorate_on_instance
@@ -122,6 +124,14 @@ class Provider(BaseProvider):
             if isinstance(source, Activator):
                 self.activators.append(source)
 
+    def activator(self,
+        source: Callable[..., Any] | type,
+        *markers: Marker | type[Marker],
+    ):
+        composite = activator_on_instance(source,*markers)
+        self._add_dependency_sources(str(source), composite.dependency_sources)
+
+
     def provide(
             self,
             source: Callable[..., Any] | type,
@@ -131,6 +141,7 @@ class Provider(BaseProvider):
             cache: bool = True,
             recursive: bool = False,
             override: bool = False,
+            when: BaseMarker | None = None,
     ) -> CompositeDependencySource:
         if scope is None:
             scope = self.scope
@@ -141,6 +152,7 @@ class Provider(BaseProvider):
             cache=cache,
             recursive=recursive,
             override=override,
+            when=when,
         )
         self._add_dependency_sources(str(source), composite.dependency_sources)
         return composite
@@ -152,6 +164,7 @@ class Provider(BaseProvider):
             cache: bool = True,
             recursive: bool = False,
             override: bool = False,
+            when: BaseMarker | None = None,
     ) -> CompositeDependencySource:
         if scope is None:
             scope = self.scope
@@ -161,6 +174,7 @@ class Provider(BaseProvider):
             cache=cache,
             recursive=recursive,
             override=override,
+            when=when,
         )
         self._add_dependency_sources("?", composite.dependency_sources)
         return composite

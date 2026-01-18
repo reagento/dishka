@@ -64,7 +64,7 @@ def activator(
     graph compilation or resolution depending on whether they are static
     or dynamic.
     """
-    if isinstance(source, Marker) or issubclass(source, Marker):
+    if isinstance(source, Marker) or (isinstance(source, type) and issubclass(source, Marker)):
         def decorator(func: Callable[..., Any]) -> CompositeDependencySource:
             return _activator(func, source, *markers, is_in_class=True)
         return decorator
@@ -80,7 +80,7 @@ def activator_on_instance(
     [Callable[..., Any]], CompositeDependencySource,
 ]:
     """Register an activation function on a provider instance."""
-    if isinstance(source, Marker) or issubclass(source, Marker):
+    if isinstance(source, Marker) or (isinstance(source, type) and issubclass(source, Marker)):
         def decorator(func: Callable[..., Any]) -> CompositeDependencySource:
             return _activator(func, source, *markers, is_in_class=False)
         return decorator

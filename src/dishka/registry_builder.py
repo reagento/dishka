@@ -469,6 +469,9 @@ class RegistryBuilder:
                 "Cannot apply decorator because there is"
                 f"no factory for {provides}",
             )
+
+        if decorator.when not in (None, BoolMarker(True)):
+            group_replacement.extend(old_group)
         for old_factory in old_group:
             if (
                 old_factory.type is FactoryType.ALIAS
@@ -478,17 +481,17 @@ class RegistryBuilder:
 
             new_factory = old_factory.replace(provides=decorated_provides)
             decorated_group.append(new_factory)
-            group_replacement.append(decorator.as_factory(
+            decorated_factory = decorator.as_factory(
                 scope=cast(BaseScope, old_factory.scope),
                 new_dependency=decorated_provides,
                 cache=old_factory.cache,
                 component=provides.component,
-            ).replace(provides=provides))
+            ).replace(provides=provides)
+            group_replacement.append(decorated_factory)
+            self._register_when(decorated_factory)
 
         self.processed_factories[provides] = group_replacement
         self.processed_factories[decorated_provides] = decorated_group
-        # TODO process when in decorators
-        self._register_when(decorator.factory)
 
     def _process_context_var(
         self,

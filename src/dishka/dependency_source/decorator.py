@@ -71,8 +71,8 @@ class Decorator:
             type_=self.factory.type,
             cache=cache,
             when_override=when,
-            when_active=when | self.factory.when_active,
-            when_component=self.factory.when_component,
+            when_active=when,
+            when_component=self.factory.when_component or component,
             when_dependencies={},
         )
 
@@ -102,4 +102,5 @@ class Decorator:
         return Decorator(
             self.factory.__get__(instance, owner),
             scope=self.scope,
+            when=self.when,
         )

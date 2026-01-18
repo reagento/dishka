@@ -30,9 +30,10 @@ def _decorate(
             cache=False,
             is_in_class=is_in_class,
             override=False,
-            when=when,
+            when=None,
         ),
         scope=scope,
+        when=when,
     )
     if (
         decorator.provides not in decorator.factory.kw_dependencies.values()
@@ -49,6 +50,7 @@ def decorate(
         *,
         provides: Any = None,
         scope: BaseScope | None = None,
+        when: BaseMarker | None = None,
 ) -> Callable[
     [Callable[..., Any]], CompositeDependencySource,
 ]:
@@ -61,6 +63,7 @@ def decorate(
         *,
         provides: Any = None,
         scope: BaseScope | None = None,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
     ...
 

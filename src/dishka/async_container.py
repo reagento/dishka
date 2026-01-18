@@ -303,7 +303,8 @@ def make_async_container(
     registries = RegistryBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,
-        providers=(*providers, context_provider, has_provider),
+        multicomponent_providers=[has_provider],
+        providers=(*providers, context_provider),
         skip_validation=skip_validation,
         validation_settings=validation_settings,
     ).build()

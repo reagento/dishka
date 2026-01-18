@@ -33,7 +33,7 @@ from .exceptions import (
     NothingOverriddenError,
     UnknownScopeError,
 )
-from .provider import BaseProvider
+from .provider import BaseProvider, ProviderWrapper
 from .registry import Registry
 
 DECORATED_COMPONENT_PREFIX = "__Dishka_decorate_"
@@ -147,12 +147,14 @@ class RegistryBuilder:
             self,
             *,
             scopes: type[BaseScope],
+            multicomponent_providers: Sequence[BaseProvider],
             providers: Sequence[BaseProvider],
             container_key: DependencyKey,
             skip_validation: bool,
             validation_settings: ValidationSettings,
     ) -> None:
         self.scopes = scopes
+        self.multicomponent_providers = multicomponent_providers
         self.providers = providers
         self.dependency_scopes: dict[DependencyKey, BaseScope] = {}
         self.components: set[Component] = {DEFAULT_COMPONENT}
@@ -512,13 +514,20 @@ class RegistryBuilder:
         self._collect_provided_scopes()
         self._collect_aliases()
 
-        for provider in self.providers:
+        providers = []
+        for component in self.components:
+            for provider in self.multicomponent_providers:
+                providers.append(ProviderWrapper(component, provider))
+        providers.extend(self.providers)
+
+
+        for provider in providers:
             for factory in provider.factories:
                 self.dependency_scopes[
                     factory.provides.with_component(provider.component)
                 ] = cast(BaseScope, factory.scope)
 
-        for provider in self.providers:
+        for provider in providers:
             for activation in provider.activators:
                 self._process_activation(provider, activation)
             for factory in provider.factories:

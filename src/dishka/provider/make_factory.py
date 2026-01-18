@@ -65,6 +65,7 @@ from dishka.entities.type_alias_type import (
     is_type_alias_type,
     unwrap_type_alias,
 )
+from dishka.exceptions import WhenOverrideConflictError
 from dishka.text_rendering import get_name
 from .exceptions import (
     CannotUseProtocolError,
@@ -277,7 +278,7 @@ def _make_factory_by_class(
         provides=hint_to_dependency_key(provides),
         is_to_bind=False,
         cache=cache,
-        when_override=calc_override(when, override),
+        when_override=calc_override(when=when, override=override),
         when_active=when,
         when_component=None,
         when_dependencies={},
@@ -353,7 +354,7 @@ def _make_factory_by_function(
         provides=hint_to_dependency_key(provides),
         is_to_bind=is_in_class,
         cache=cache,
-        when_override=calc_override(when, override),
+        when_override=calc_override(when=when, override=override),
         when_active=when,
         when_component=None,
         when_dependencies={},
@@ -397,14 +398,18 @@ def _make_factory_by_static_method(
         provides=hint_to_dependency_key(provides),
         is_to_bind=False,
         cache=cache,
-        when_override=calc_override(when, override),
+        when_override=calc_override(when=when, override=override),
         when_active=when,
         when_component=None,
         when_dependencies={},
     )
 
 
-def calc_override(when: BoolMarker | None, override: bool) -> BaseMarker | None:
+def calc_override(
+    *,
+    when: BoolMarker | None,
+    override: bool,
+) -> BaseMarker | None:
     if when is not None:
         return when
     if override:
@@ -456,7 +461,7 @@ def _make_factory_by_other_callable(
         provides=factory.provides,
         is_to_bind=False,
         cache=cache,
-        when_override=calc_override(when, override),
+        when_override=calc_override(when=when, override=override),
         when_active=when,
         when_component=None,
         when_dependencies={},
@@ -565,7 +570,7 @@ def _provide(
         when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
     if when and override:
-        raise ValueError("Cannot provide both `when` and `override`")
+        raise WhenOverrideConflictError
     composite = ensure_composite(source)
     factory = make_factory(
         provides=provides, scope=scope,

@@ -1,7 +1,15 @@
 from abc import ABC, ABCMeta
-from collections.abc import Callable
 from enum import Enum
-from typing import Any, Final, Generic, Protocol, TypeVar, get_args, get_origin
+from typing import (
+    Any,
+    Final,
+    Generic,
+    Protocol,
+    TypeAlias,
+    TypeVar,
+    get_args,
+    get_origin,
+)
 
 from ._adaptix.type_tools.fundamentals import get_type_vars
 from .code_tools.factory_compiler import compile_activation, compile_factory
@@ -30,6 +38,7 @@ IGNORE_TYPES: Final = (
     BaseException,
 )
 
+CompiledFactories: TypeAlias = dict[DependencyKey, CompiledFactory]
 
 class Registry:
     __slots__ = (
@@ -45,10 +54,10 @@ class Registry:
     def __init__(self, scope: BaseScope, *, has_fallback: bool) -> None:
         self.scope = scope
         self.factories: dict[DependencyKey, Factory] = {}
-        self.compiled: dict[DependencyKey, Callable[..., Any]] = {}
-        self.compiled_async: dict[DependencyKey, Callable[..., Any]] = {}
-        self.compiled_activation: dict[DependencyKey, Callable[..., Any]] = {}
-        self.compiled_activation_async: dict[DependencyKey, Callable[..., Any]] = {}
+        self.compiled: CompiledFactories = {}
+        self.compiled_async: CompiledFactories = {}
+        self.compiled_activation: CompiledFactories = {}
+        self.compiled_activation_async: CompiledFactories = {}
         self.has_fallback = has_fallback
 
     def add_factory(

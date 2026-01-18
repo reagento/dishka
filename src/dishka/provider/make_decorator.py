@@ -77,10 +77,22 @@ def decorate(
     [Callable[..., Any]], CompositeDependencySource,
 ]:
     if source is not None:
-        return _decorate(source, provides, scope=scope, is_in_class=True, when=when)
+        return _decorate(
+            source,
+            provides,
+            scope=scope,
+            is_in_class=True,
+            when=when,
+        )
 
     def scoped(func: Callable[..., Any]) -> CompositeDependencySource:
-        return _decorate(func, provides, scope=scope, is_in_class=True, when=when)
+        return _decorate(
+            func,
+            provides,
+            scope=scope,
+            is_in_class=True,
+            when=when,
+        )
 
     return scoped
 

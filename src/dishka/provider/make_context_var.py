@@ -41,7 +41,7 @@ def from_context(
                 source=DependencyKey(provides, DEFAULT_COMPONENT),
                 provides=DependencyKey(base_type, DEFAULT_COMPONENT),
                 cache=True,
-                when_override=calc_override(None, override),
+                when_override=calc_override(when=None, override=override),
                 when_active=None,
                 when_component=None,
             ),

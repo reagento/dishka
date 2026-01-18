@@ -1,7 +1,12 @@
 import pytest
 
 from dishka import Marker, Provider, Scope, make_container
-from dishka.exceptions import InvalidMarkerError, NoActivatorError
+from dishka.exceptions import (
+    ActivatorOverrideError,
+    InvalidMarkerError,
+    NoActivatorError,
+    WhenOverrideConflictError,
+)
 
 
 @pytest.mark.parametrize(("value", "b_is_active"), [
@@ -65,6 +70,12 @@ def test_when_dependencies():
         assert request_c.get(str) == "b"
 
 
+def test_when_and_override():
+    provider = Provider(scope=Scope.REQUEST)
+    with pytest.raises(WhenOverrideConflictError):
+        provider.provide(str, when=Marker("a"), override=True)
+
+
 def test_unregistered_activator():
     provider = Provider(scope=Scope.APP)
     provider.provide(lambda: "x", provides=str, when=Marker("1"))
@@ -76,4 +87,12 @@ def test_invalid_marker():
     provider = Provider(scope=Scope.APP)
     provider.provide(lambda: "x", provides=str, when="Hello")
     with pytest.raises(InvalidMarkerError):
+        make_container(provider)
+
+
+def test_activator_override():
+    provider = Provider(scope=Scope.APP)
+    provider.activator(lambda: True, Marker("B"))
+    provider.activator(lambda: True, Marker("B"))
+    with pytest.raises(ActivatorOverrideError):
         make_container(provider)

@@ -10,6 +10,7 @@ from dishka.text_rendering.path import PathRenderer
 from dishka.text_rendering.suggestion import render_suggestions_for_missing
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope
+from .text_rendering.name import get_source_name
 
 try:
     from builtins import (  # type: ignore[attr-defined, unused-ignore]
@@ -60,6 +61,23 @@ class NoActivatorError(DishkaError):
     def __str__(self) -> str:
         return (f"Cannot find activator for {self.marker}"
                 f" at component {self.component!r}.")
+
+
+class ActivatorOverrideError(DishkaError):
+    def __init__(self, marker: Marker, activators: Sequence[FactoryData]) -> None:
+        self.marker = marker
+        self.activators = activators
+
+    def __str__(self):
+        return (
+            f"Multiple activators found for {self.marker}: "
+            f"{', '.join(map(get_source_name, self.activators))}"
+        )
+
+
+class WhenOverrideConflictError(DishkaError):
+    def __str__(self):
+        return "Cannot have both `when` and `override` set. "
 
 
 class NoFactoryError(DishkaError):

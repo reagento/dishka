@@ -12,8 +12,8 @@ from dishka.dependency_source import (
     Factory,
 )
 from dishka.entities.component import DEFAULT_COMPONENT, Component
+from dishka.entities.marker import BaseMarker, Marker
 from dishka.entities.scope import BaseScope
-from ..entities.marker import BaseMarker, Marker
 from .base_provider import BaseProvider, ProviderWrapper
 from .exceptions import (
     NoScopeSetInContextError,

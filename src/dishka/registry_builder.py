@@ -24,6 +24,7 @@ from .entities.marker import (
 from .entities.scope import BaseScope, InvalidScopes
 from .entities.validation_settings import ValidationSettings
 from .exceptions import (
+    ActivatorOverrideError,
     AliasedFactoryNotFoundError,
     CycleDependenciesError,
     GraphMissingFactoryError,
@@ -279,7 +280,11 @@ class RegistryBuilder:
                 continue
 
             new_groups.update(moved_factories)
-            scope = max(factory.scope for group in moved_factories.values() for factory in group)
+            scope = max(
+                factory.scope
+                for group in moved_factories.values()
+                for factory in group
+            )
             factory = Factory(
                 cache=False,
                 scope=scope,
@@ -306,8 +311,11 @@ class RegistryBuilder:
         src = src.with_component(provider.component)
         marker = src.marker or src.marker_type
         key = DependencyKey(marker, src.factory.when_component)
-        if marker in self.activators:
-            raise InvalidGraphError("Cannot have multiple activators for same marker")
+        if key in self.activators:
+            raise ActivatorOverrideError(
+                marker,
+                [src.factory, self.activators[key].factory],
+            )
         self.activators[key] = src
 
     def _register_when(self, factory: Factory) -> None:
@@ -559,7 +567,7 @@ class RegistryBuilder:
         for factory_list in self.processed_factories.values():
             for factory in factory_list:
                 if is_generic(factory.provides.type_hint):
-                    found.append(factory)  # noqa: PERF401
+                    found.append(factory)
         for factory in found:
             origin = get_origin(factory.provides.type_hint)
             origin_key = DependencyKey(origin, factory.provides.component)
@@ -583,15 +591,22 @@ class RegistryBuilder:
                 raise InvalidMarkerError(marker)
 
     def _register_activators(self):
-        # TODO process aliases
+        # TODO: process aliases
         for dependency, scope in self.requested_markers:
-            type_dependency = DependencyKey(type(dependency.type_hint), dependency.component)
+            type_dependency = DependencyKey(
+                type(dependency.type_hint),
+                dependency.component,
+            )
             if dependency in self.activators:
                 activator = self.activators[dependency]
             elif type_dependency in self.activators:
                 activator = self.activators[type_dependency]
             else:
-                raise NoActivatorError(dependency.type_hint, dependency.component)
+                raise NoActivatorError(
+                    dependency.type_hint,
+                    dependency.component,
+                )
             factory = activator.as_factory(None, DEFAULT_COMPONENT, dependency)
             factory = factory.with_scope(scope)
-            self.processed_factories.setdefault(dependency, []).append(factory)
+            group = self.processed_factories.setdefault(dependency, [])
+            group.append(factory)

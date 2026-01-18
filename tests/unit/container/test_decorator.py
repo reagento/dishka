@@ -5,6 +5,7 @@ import pytest
 from dishka import (
     DEFAULT_COMPONENT,
     DependencyKey,
+    Has,
     Provider,
     Scope,
     alias,
@@ -179,6 +180,22 @@ def test_expected_decorator():
             return A()
 
         @provide(override=True)
+        def foo(self, a: A) -> A:
+            return a
+
+    with pytest.raises(CycleDependenciesError):
+        make_container(MyProvider())
+
+
+def test_expected_decorator_when():
+    class MyProvider(Provider):
+        scope = Scope.REQUEST
+
+        @provide(scope=Scope.APP, when=Has(int))
+        def bar(self) -> A:
+            return A()
+
+        @provide(when=~Has(int))
         def foo(self, a: A) -> A:
             return a
 

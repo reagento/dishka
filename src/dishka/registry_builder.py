@@ -213,11 +213,9 @@ class RegistryBuilder:
         for key, factory_list in self.processed_factories.items():
             if not factory_list:
                 continue
-            if len(factory_list) > 1:
-                raise ValueError(f"Factories were not united for key {key}")
-            factory = factory_list[-1]
-            scope = cast(BaseScope, factory.scope)
-            registries[scope].add_factory(factory, key)
+            for factory in factory_list:
+                scope = cast(BaseScope, factory.scope)
+                registries[scope].add_factory(factory, key)
         return tuple(registries.values())
 
     def _unite_selectors(self) -> None:
@@ -227,7 +225,7 @@ class RegistryBuilder:
                 factory = group[0]
                 if (
                     self.validation_settings.nothing_overridden and
-                    factory.when_override
+                    factory.when_override==BoolMarker(True)
                 ):
                     raise NothingOverriddenError(factory)
                 continue
@@ -235,22 +233,28 @@ class RegistryBuilder:
             moved_factories = {}
             prev_factory = None
             for factory in group:
-                if not factory.when_override:
-                    need_override = bool(when_dependencies)
+                need_override = bool(when_dependencies)
+                if factory.when_override is None:
+                    # implicit override
                     if (
-                        self.validation_settings.nothing_overridden and
-                        factory.when_override and not need_override
-                    ):
-                        raise NothingOverriddenError(factory)
-                    if (
-                        self.validation_settings.implicit_override and
-                        need_override and
-                        not factory.when_override
+                            self.validation_settings.implicit_override and
+                            need_override
                     ):
                         raise ImplicitOverrideDetectedError(
                             prev_factory,
                             factory,
                         )
+
+                    when_dependencies = {}
+                    moved_factories = {}
+                elif factory.when_override == BoolMarker(True):
+                    # explicit override
+                    if (
+                        self.validation_settings.nothing_overridden and
+                        factory.when_override==BoolMarker(True) and
+                        not need_override
+                    ):
+                        raise NothingOverriddenError(factory)
                     when_dependencies = {}
                     moved_factories = {}
 
@@ -266,6 +270,9 @@ class RegistryBuilder:
                 new_factory = factory.replace(provides=new_provides)
                 moved_factories[new_provides] = [new_factory]
                 when_dependencies[new_provides] = factory.when_override
+            if len(moved_factories) == 1:
+                self.processed_factories[provides] = [prev_factory]
+                continue
 
             new_groups.update(moved_factories)
             scope = max(factory.scope for group in moved_factories.values() for factory in group)
@@ -315,6 +322,12 @@ class RegistryBuilder:
         factory = factory.with_component(provider.component)
         lst = self.processed_factories.setdefault(factory.provides, [])
         lst.append(factory)
+        for dep in factory.dependencies:
+            if dep == factory.provides:
+                raise CycleDependenciesError([factory])
+        for dep in factory.kw_dependencies.values():
+            if dep == factory.provides:
+                raise CycleDependenciesError([factory])
         self._register_when(factory)
 
     def _process_alias(

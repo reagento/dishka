@@ -7,7 +7,7 @@ from dishka import Has, Provider, Scope, make_container
     (True, "b"),
     (False, "a"),
 ])
-def test_has(register: bool, value: str):
+def test_has(*, register: bool, value: str):
     provider = Provider(scope=Scope.APP)
     if register:
         provider.provide(lambda: 42, provides=int)
@@ -22,7 +22,7 @@ def test_has(register: bool, value: str):
     (True, "b"),
     (False, "a"),
 ])
-def test_has_chained(register: bool, value: str):
+def test_has_chained(*, register: bool, value: str):
     provider = Provider(scope=Scope.APP)
     if register:
         provider.provide(lambda: 42, provides=int)

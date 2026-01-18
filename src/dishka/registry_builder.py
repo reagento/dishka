@@ -29,6 +29,8 @@ from .exceptions import (
     GraphMissingFactoryError,
     ImplicitOverrideDetectedError,
     InvalidGraphError,
+    InvalidMarkerError,
+    NoActivatorError,
     NoFactoryError,
     NothingOverriddenError,
     UnknownScopeError,
@@ -578,7 +580,7 @@ class RegistryBuilder:
             case BoolMarker():
                 return
             case _:
-                raise ValueError("Unknown marker type")
+                raise InvalidMarkerError(marker)
 
     def _register_activators(self):
         # TODO process aliases
@@ -589,7 +591,7 @@ class RegistryBuilder:
             elif type_dependency in self.activators:
                 activator = self.activators[type_dependency]
             else:
-                raise ValueError(f"No activator registered for {dependency}")
+                raise NoActivatorError(dependency.type_hint, dependency.component)
             factory = activator.as_factory(None, DEFAULT_COMPONENT, dependency)
             factory = factory.with_scope(scope)
             self.processed_factories.setdefault(dependency, []).append(factory)

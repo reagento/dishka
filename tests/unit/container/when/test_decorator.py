@@ -15,7 +15,7 @@ from dishka import (
     (True, "ad"),
     (False, "a"),
 ])
-def test_decorate(active, value):
+def test_decorate(*, active: bool, value: str):
     class MyProvider(Provider):
         @activator(Marker("A"))
         def is_active(self):

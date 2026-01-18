@@ -1,6 +1,9 @@
 from collections.abc import Sequence
+from typing import Any
 
+from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryData
+from dishka.entities.marker import Marker
 from dishka.exception_base import DishkaError
 from dishka.text_rendering import get_name
 from dishka.text_rendering.path import PathRenderer
@@ -39,6 +42,24 @@ class UnsupportedFactoryError(DishkaError):
 
 class InvalidGraphError(DishkaError):
     pass
+
+
+class InvalidMarkerError(DishkaError):
+    def __init__(self, marker: Any) -> None:
+        self.marker = marker
+
+    def __str__(self):
+        return f"Cannot use {self.marker!r} as marker."
+
+
+class NoActivatorError(DishkaError):
+    def __init__(self, marker: Marker, component: Component) -> None:
+        self.marker = marker
+        self.component = component
+
+    def __str__(self) -> str:
+        return (f"Cannot find activator for {self.marker}"
+                f" at component {self.component!r}.")
 
 
 class NoFactoryError(DishkaError):

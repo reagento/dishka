@@ -88,6 +88,8 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
             case FactoryType.FACTORY:
                 builder.assign_solved(source_call)
             case FactoryType.ASYNC_FACTORY:
+                if not is_async:
+                    raise UnsupportedFactoryError(factory.type)
                 builder.assign_solved(builder.await_(source_call))
             case FactoryType.GENERATOR:
                 builder.assign_local("generator", source_call)
@@ -101,6 +103,8 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
                     ),
                 ))
             case FactoryType.ASYNC_GENERATOR:
+                if not is_async:
+                    raise UnsupportedFactoryError(factory.type)
                 builder.assign_local("generator", source_call)
                 builder.assign_solved(
                     builder.await_(builder.call("anext", "generator")),

@@ -20,10 +20,10 @@ class Factory(FactoryData):
         "dependencies",
         "is_to_bind",
         "kw_dependencies",
-        "override",
-        "when",
+        "when_active",
         "when_component",
         "when_dependencies",
+        "when_override",
     )
 
     def __init__(
@@ -37,10 +37,10 @@ class Factory(FactoryData):
             type_: FactoryType,
             is_to_bind: bool,
             cache: bool,
-            override: bool,
-            when: BaseMarker | None,
-            when_component: Component | None,
-            when_dependencies: dict[DependencyKey, BaseMarker],
+            when_override: BaseMarker | None,  # condition to override
+            when_active: BaseMarker | None,  # condition to check availability
+            when_component: Component | None,  # component of conditions
+            when_dependencies: dict[DependencyKey, BaseMarker],  # conditional creation
     ) -> None:
         super().__init__(
             source=source,
@@ -52,8 +52,8 @@ class Factory(FactoryData):
         self.kw_dependencies = kw_dependencies
         self.is_to_bind = is_to_bind
         self.cache = cache
-        self.override = override
-        self.when = when
+        self.when_override = when_override
+        self.when_active = when_active
         self.when_component = when_component
         self.when_dependencies: dict[DependencyKey, BaseMarker] = when_dependencies
 
@@ -76,8 +76,8 @@ class Factory(FactoryData):
             type_=self.type,
             is_to_bind=False,
             cache=self.cache,
-            override=self.override,
-            when=self.when,
+            when_override=self.when_override,
+            when_active=self.when_active,
             when_component=self.when_component,
             when_dependencies=self.when_dependencies,
         )
@@ -97,8 +97,8 @@ class Factory(FactoryData):
             is_to_bind=self.is_to_bind,
             cache=self.cache,
             type_=self.type,
-            override=self.override,
-            when=self.when,
+            when_override=self.when_override,
+            when_active=self.when_active,
             when_component=(component if self.when_component is None else self.when_component),
             when_dependencies=self.when_dependencies,
         )
@@ -113,8 +113,8 @@ class Factory(FactoryData):
             is_to_bind=self.is_to_bind,
             cache=self.cache,
             type_=self.type,
-            override=self.override,
-            when=self.when,
+            when_override=self.when_override,
+            when_active=self.when_active,
             when_component=self.when_component,
             when_dependencies=self.when_dependencies,
         )
@@ -132,8 +132,8 @@ class Factory(FactoryData):
             is_to_bind=self.is_to_bind,
             cache=self.cache,
             type_=self.type,
-            override=self.override,
-            when=self.when,
+            when_override=self.when_override,
+            when_active=self.when_active,
             when_component=self.when_component,
             when_dependencies=self.when_dependencies,
         )

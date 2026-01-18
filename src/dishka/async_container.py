@@ -283,7 +283,7 @@ class HasProvider(Provider):
         return await container._has(marker.value)  # noqa: SLF001
 
     @activator(HasContext)
-    async def has_context(self, marker: Has, container: AsyncContainer) -> bool:
+    async def has_context(self, marker: HasContext, container: AsyncContainer) -> bool:
         return await container._has_context(marker.value)  # noqa: SLF001
 
 

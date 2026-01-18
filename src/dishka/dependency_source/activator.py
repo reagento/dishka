@@ -58,8 +58,8 @@ class Activator:
             kw_dependencies={name: self._replace_dep(d, marker) for name, d in factory.kw_dependencies.items()},
             type_=factory.type,
             cache=factory.cache,
-            override=factory.override,
-            when=factory.when,
+            when_override=factory.when_override,
+            when_active=factory.when_active,
             when_component=factory.when_component,
             when_dependencies=factory.when_dependencies,
         )

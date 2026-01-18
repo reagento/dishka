@@ -6,7 +6,7 @@ from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
-from ..entities.marker import HasContext
+from ..entities.marker import BoolMarker, HasContext
 from .alias import Alias
 from .factory import Factory
 
@@ -31,6 +31,8 @@ class ContextVariable:
     def as_factory(
             self, component: Component,
     ) -> Factory:
+        override = (BoolMarker(True) if self.override else None)
+
         if component == DEFAULT_COMPONENT:
             return Factory(
                 scope=self.scope,
@@ -41,8 +43,8 @@ class ContextVariable:
                 kw_dependencies={},
                 type_=FactoryType.CONTEXT,
                 cache=False,
-                override=self.override,
-                when=HasContext(self.provides.type_hint),
+                when_override=override,
+                when_active=HasContext(self.provides.type_hint),
                 when_component=component,
                 when_dependencies={},
             )
@@ -50,12 +52,12 @@ class ContextVariable:
             aliased = Alias(
                 source=self.provides.with_component(DEFAULT_COMPONENT),
                 cache=False,
-                override=self.override,
                 provides=DependencyKey(
                     component=component,
                     type_hint=self.provides.type_hint,
                 ),
-                when=HasContext(self.provides.type_hint),
+                when_override=override,
+                when_active=HasContext(self.provides.type_hint),
                 when_component=component,
             )
             return aliased.as_factory(scope=self.scope, component=component)

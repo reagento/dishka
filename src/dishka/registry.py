@@ -201,9 +201,9 @@ class Registry:
             type_=FactoryType.FACTORY,
             is_to_bind=False,
             cache=False,
-            override=False,
             source=lambda: typevar,
-            when=None,
+            when_override=None,
+            when_active=None,
             when_component=None,
             when_dependencies={},
         )
@@ -250,8 +250,8 @@ class Registry:
             type_=factory.type,
             scope=factory.scope,
             cache=factory.cache,
-            override=factory.override,
-            when=factory.when,
+            when_override=factory.when_override,
+            when_active=factory.when_active,
             when_component=factory.when_component,
             when_dependencies=factory.when_dependencies,
         )

@@ -16,8 +16,14 @@ def _identity(x: Any) -> Any:
 
 class Alias:
     __slots__ = (
-        "cache", "component", "override", "provides", "source", "when",
+        "cache",
+        "component",
+        "override",
+        "provides",
+        "source",
+        "when_active",
         "when_component",
+        "when_override",
     )
 
     def __init__(
@@ -25,15 +31,15 @@ class Alias:
             source: DependencyKey,
             provides: DependencyKey,
             cache: bool,
-            override: bool,
-            when: Marker | None = None,
+            when_active: Marker | None = None,
+            when_override: Marker | None = None,
             when_component: Component | None,
     ) -> None:
         self.source = source
         self.provides = provides
         self.cache = cache
-        self.override = override
-        self.when = when
+        self.when_override = when_override
+        self.when_active = when_active
         self.when_component = when_component
 
     def as_factory(
@@ -48,8 +54,8 @@ class Alias:
             kw_dependencies={},
             type_=FactoryType.ALIAS,
             cache=self.cache,
-            override=self.override,
-            when=self.when,
+            when_override=self.when_override,
+            when_active=self.when_active,
             when_component=self.when_component,
             when_dependencies={},
         )

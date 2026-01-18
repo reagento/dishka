@@ -24,13 +24,30 @@ class BaseMarker:
             return self
         return AndMarker(self, other)
 
-
 @dataclass(frozen=True, slots=True)
 class Marker(BaseMarker):
     value: Any
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.value!r})"
+
+
+@dataclass(frozen=True, slots=True)
+class BoolMarker(BaseMarker):
+    value: bool
+
+    def __invert__(self) -> Any:
+        return BoolMarker(not self.value)
+
+    def __and__(self, other: "BaseMarker") -> "BaseMarker":
+        if self.value:
+            return other
+        return BoolMarker(False)
+
+    def __or__(self, other: "BaseMarker") -> "BaseMarker":
+        if self.value:
+            return BoolMarker(True)
+        return other
 
 
 @dataclass(frozen=True, slots=True)

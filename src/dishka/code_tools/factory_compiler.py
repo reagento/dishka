@@ -7,7 +7,13 @@ from dishka.dependency_source import Factory
 from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
-from dishka.entities.marker import AndMarker, BaseMarker, NotMarker, OrMarker
+from dishka.entities.marker import (
+    AndMarker,
+    BaseMarker,
+    BoolMarker,
+    NotMarker,
+    OrMarker,
+)
 from dishka.exceptions import NoContextValueError, UnsupportedFactoryError
 from dishka.text_rendering import get_name
 
@@ -47,7 +53,7 @@ class FactoryBuilder(CodeBuilder):
 
     def when(self, marker: BaseMarker, component: Component) -> str:
         match marker:
-            case None:
+            case None | BoolMarker(True):
                 return ""
             case AndMarker():
                 return self.and_(self.when(marker.left, component), self.when(marker.right, component))
@@ -55,6 +61,8 @@ class FactoryBuilder(CodeBuilder):
                 return self.or_(self.when(marker.left, component), self.when(marker.right, component))
             case NotMarker():
                 return self.not_(self.when(marker.marker, component))
+            case BoolMarker(False):
+                return self.global_(marker.value)
             case _:
                 # TODO component
                 return self.getter(DependencyKey(marker, component))
@@ -154,7 +162,7 @@ def compile_activation(*, factory: Factory, is_async: bool) -> CompiledFactory:
     builder = FactoryBuilder(is_async=is_async, getter_prefix="is_active_")
     builder.register_provides(factory.provides)
     with builder.make_getter():
-        condition = builder.when(factory.when, factory.when_component)
+        condition = builder.when(factory.when_active, factory.when_component)
         if not condition:
             builder.return_(builder.global_(True))
         else:

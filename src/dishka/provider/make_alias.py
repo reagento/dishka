@@ -8,6 +8,7 @@ from dishka.dependency_source import (
 from dishka.entities.component import Component
 from dishka.entities.key import hint_to_dependency_key
 from dishka.entities.marker import Marker
+from .make_factory import calc_override
 from .unpack_provides import unpack_alias
 
 
@@ -32,8 +33,8 @@ def alias(
         source=hint_to_dependency_key(source).with_component(component),
         provides=hint_to_dependency_key(provides),
         cache=cache,
-        override=override,
-        when=when,
+        when_override=calc_override(when, override),
+        when_active=when,
         when_component=None,
     )
     composite.dependency_sources.extend(unpack_alias(alias_instance))

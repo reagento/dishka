@@ -16,6 +16,7 @@ from .entities.key import DependencyKey
 from .entities.marker import (
     BaseMarker,
     BinOpMarker,
+    BoolMarker,
     Marker,
     NotMarker,
     or_markers,
@@ -212,6 +213,8 @@ class RegistryBuilder:
         for key, factory_list in self.processed_factories.items():
             if not factory_list:
                 continue
+            if len(factory_list) > 1:
+                raise ValueError(f"Factories were not united for key {key}")
             factory = factory_list[-1]
             scope = cast(BaseScope, factory.scope)
             registries[scope].add_factory(factory, key)
@@ -224,7 +227,7 @@ class RegistryBuilder:
                 factory = group[0]
                 if (
                     self.validation_settings.nothing_overridden and
-                    factory.override
+                    factory.when_override
                 ):
                     raise NothingOverriddenError(factory)
                 continue
@@ -232,17 +235,17 @@ class RegistryBuilder:
             moved_factories = {}
             prev_factory = None
             for factory in group:
-                if not factory.when:
+                if not factory.when_override:
                     need_override = bool(when_dependencies)
                     if (
                         self.validation_settings.nothing_overridden and
-                        factory.override and not need_override
+                        factory.when_override and not need_override
                     ):
                         raise NothingOverriddenError(factory)
                     if (
                         self.validation_settings.implicit_override and
                         need_override and
-                        not factory.override
+                        not factory.when_override
                     ):
                         raise ImplicitOverrideDetectedError(
                             prev_factory,
@@ -262,21 +265,21 @@ class RegistryBuilder:
                 prev_factory = factory
                 new_factory = factory.replace(provides=new_provides)
                 moved_factories[new_provides] = [new_factory]
-                when_dependencies[new_provides] = factory.when
+                when_dependencies[new_provides] = factory.when_override
 
             new_groups.update(moved_factories)
             scope = max(factory.scope for group in moved_factories.values() for factory in group)
             factory = Factory(
                 cache=False,
                 scope=scope,
-                override=False,
                 provides=provides,
                 is_to_bind=False,
                 dependencies=(),
                 type_=FactoryType.SELECTOR,
                 kw_dependencies={},
                 source=None,
-                when=or_markers(*when_dependencies.values()),
+                when_override=BoolMarker(False),
+                when_active=or_markers(*when_dependencies.values()),  # TODO check when active
                 when_component=provides.component,
                 # reverse dict, so last wins
                 when_dependencies=dict(reversed(when_dependencies.items())),
@@ -297,7 +300,10 @@ class RegistryBuilder:
         self.activators[key] = src
 
     def _register_when(self, factory: Factory) -> None:
-        for marker in self._unpack_marker(factory.when):
+        for marker in self._unpack_marker(factory.when_active):
+            marker_key = DependencyKey(marker, factory.when_component)
+            self.requested_markers.add((marker_key, factory.scope))
+        for marker in self._unpack_marker(factory.when_override):
             marker_key = DependencyKey(marker, factory.when_component)
             self.requested_markers.add((marker_key, factory.scope))
 
@@ -543,6 +549,8 @@ class RegistryBuilder:
                 yield from self._unpack_marker(marker.left)
                 yield from self._unpack_marker(marker.right)
             case None:
+                return
+            case BoolMarker():
                 return
             case _:
                 raise ValueError("Unknown marker type")

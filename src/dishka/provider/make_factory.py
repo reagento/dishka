@@ -58,7 +58,7 @@ from dishka.entities.key import (
     dependency_key_to_hint,
     hint_to_dependency_key,
 )
-from dishka.entities.marker import BaseMarker
+from dishka.entities.marker import BaseMarker, BoolMarker
 from dishka.entities.provides_marker import AnyOf, ProvideMultiple
 from dishka.entities.scope import BaseScope
 from dishka.entities.type_alias_type import (
@@ -277,8 +277,8 @@ def _make_factory_by_class(
         provides=hint_to_dependency_key(provides),
         is_to_bind=False,
         cache=cache,
-        override=override,
-        when=when,
+        when_override=calc_override(when, override),
+        when_active=when,
         when_component=None,
         when_dependencies={},
     )
@@ -353,8 +353,8 @@ def _make_factory_by_function(
         provides=hint_to_dependency_key(provides),
         is_to_bind=is_in_class,
         cache=cache,
-        override=override,
-        when=when,
+        when_override=calc_override(when, override),
+        when_active=when,
         when_component=None,
         when_dependencies={},
     )
@@ -397,11 +397,19 @@ def _make_factory_by_static_method(
         provides=hint_to_dependency_key(provides),
         is_to_bind=False,
         cache=cache,
-        override=override,
-        when=when,
+        when_override=calc_override(when, override),
+        when_active=when,
         when_component=None,
         when_dependencies={},
     )
+
+
+def calc_override(when: BoolMarker | None, override: bool) -> BaseMarker | None:
+    if when is not None:
+        return when
+    if override:
+        return BoolMarker(True)
+    return None
 
 
 def _make_factory_by_other_callable(
@@ -438,6 +446,7 @@ def _make_factory_by_other_callable(
         dependencies = factory.dependencies[1:]  # remove `self`
     else:
         dependencies = factory.dependencies
+
     return Factory(
         dependencies=dependencies,
         kw_dependencies=factory.kw_dependencies,
@@ -447,8 +456,8 @@ def _make_factory_by_other_callable(
         provides=factory.provides,
         is_to_bind=False,
         cache=cache,
-        override=override,
-        when=when,
+        when_override=calc_override(when, override),
+        when_active=when,
         when_component=None,
         when_dependencies={},
     )

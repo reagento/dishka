@@ -5,10 +5,10 @@ from typing import Any, ClassVar
 class BaseMarker:
     """
     A marker used to conditionally activate dependencies.
-    
+
     BaseMarkers can be combined using logical operators:
     - ~marker (NOT)
-    - marker1 | marker2 (OR)  
+    - marker1 | marker2 (OR)
     - marker1 & marker2 (AND)
     """
     def __invert__(self) -> Any:
@@ -76,7 +76,7 @@ class BinOpMarker(BaseMarker):
         return self.right, self.left
 
     def __eq__(self, other: object) -> bool:
-        if type(self) != type(other):
+        if type(self) is not type(other):
             return NotImplemented
         return self._ordered_values() == self._ordered_values()
 
@@ -119,8 +119,9 @@ def or_markers(*markers: BaseMarker | None) -> BaseMarker | None:
 
 @dataclass(frozen=True, slots=True)
 class Has(Marker):
-    """Special marker for checking if a type is available in the graph.
-    
+    """
+    Special marker for checking if a type is available in the graph.
+
     Used to check if a dependency can be created or is registered.
     """
     def __repr__(self) -> str:

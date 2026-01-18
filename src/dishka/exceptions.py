@@ -64,7 +64,11 @@ class NoActivatorError(DishkaError):
 
 
 class ActivatorOverrideError(DishkaError):
-    def __init__(self, marker: Marker, activators: Sequence[FactoryData]) -> None:
+    def __init__(
+        self,
+        marker: Marker,
+        activators: Sequence[FactoryData],
+    ) -> None:
         self.marker = marker
         self.activators = activators
 

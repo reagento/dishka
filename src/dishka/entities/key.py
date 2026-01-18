@@ -39,7 +39,10 @@ class DependencyKey(NamedTuple):
         return f"({self.type_hint}, component={self.component!r})"
 
     def is_const(self):
-        return get_origin(self.type_hint) is Literal and len(get_args(self.type_hint)) == 1
+        return (
+            get_origin(self.type_hint) is Literal and
+            len(get_args(self.type_hint)) == 1
+        )
 
     def is_type_var(self):
         return isinstance(self.type_hint, TypeVar)

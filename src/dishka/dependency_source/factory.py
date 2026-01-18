@@ -55,7 +55,7 @@ class Factory(FactoryData):
         self.when_override = when_override
         self.when_active = when_active
         self.when_component = when_component
-        self.when_dependencies: dict[DependencyKey, BaseMarker] = when_dependencies
+        self.when_dependencies = when_dependencies
 
     def __get__(self, instance: Any, owner: Any) -> Factory:
         scope = self.scope or instance.scope
@@ -99,7 +99,11 @@ class Factory(FactoryData):
             type_=self.type,
             when_override=self.when_override,
             when_active=self.when_active,
-            when_component=(component if self.when_component is None else self.when_component),
+            when_component=(
+                component
+                if self.when_component is None
+                else self.when_component
+            ),
             when_dependencies=self.when_dependencies,
         )
 

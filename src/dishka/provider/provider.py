@@ -181,7 +181,7 @@ class Provider(BaseProvider):
 
     def alias(
             self,
-            source: type,
+            source: type | Marker,
             *,
             provides: Any = None,
             cache: bool = True,

@@ -8,10 +8,23 @@ from dishka.dependency_source import (
 from dishka.entities.component import Component
 from dishka.entities.key import hint_to_dependency_key
 from dishka.entities.marker import Marker
+from dishka.exception_base import DishkaError
 from dishka.exceptions import WhenOverrideConflictError
 from .make_factory import calc_override
 from .unpack_provides import unpack_alias
 
+
+class InvalidMarkerAliasError(DishkaError):
+    def __init__(self, source: Any, provides: Any) -> None:
+        self.source = source
+        self.provides = provides
+
+    def __str__(self):
+        raise ValueError(
+            f"Cannot make alias between {self.source!r} and {self.provides!r}."
+            " When aliasing activation markers you can use"
+            " instances or the same marker type.",
+        )
 
 def alias(
         source: Any,
@@ -28,6 +41,14 @@ def alias(
         )
     if provides is None:
         provides = source
+    elif (
+        isinstance(source, type) and
+        issubclass(source, Marker) and
+        source is not provides
+    ) or (
+        isinstance(source, Marker) and not isinstance(provides, Marker)
+    ):
+        raise InvalidMarkerAliasError(source, provides)
 
     if when and override:
         raise WhenOverrideConflictError

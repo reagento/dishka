@@ -11,6 +11,7 @@ from typing import (
 )
 
 from .component import DEFAULT_COMPONENT, Component
+from .marker import Marker
 
 
 class _FromComponent(NamedTuple):
@@ -49,6 +50,12 @@ class DependencyKey(NamedTuple):
 
     def get_const_value(self):
         return get_args(self.type_hint)[0]
+
+    def is_marker(self):
+        return isinstance(self.type_hint, Marker) or (
+            isinstance(self.type_hint, type) and
+            issubclass(self.type_hint, Marker)
+        )
 
 
 def const_dependency_key(value: Any) -> DependencyKey:

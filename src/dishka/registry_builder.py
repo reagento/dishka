@@ -163,6 +163,7 @@ class RegistryBuilder:
         self.components: set[Component] = {DEFAULT_COMPONENT}
         self.alias_sources: dict[DependencyKey, Any] = {}
         self.aliases: dict[DependencyKey, Alias] = {}
+        self.marker_aliases_to: dict[DependencyKey, DependencyKey] = {}
         self.container_key = container_key
         self.decorator_depth: dict[DependencyKey, int] = defaultdict(int)
         self.skip_validation = skip_validation
@@ -347,6 +348,11 @@ class RegistryBuilder:
     ) -> None:
         component = provider.component
         alias_source = alias.source.with_component(component)
+        if alias.provides.is_marker():
+            provides = alias.provides.with_component(component)
+            self.marker_aliases_to[provides] = alias_source
+            return
+
         visited_keys: list[DependencyKey] = []
         while alias_source not in self.dependency_scopes:
             if alias_source not in self.alias_sources:
@@ -590,22 +596,36 @@ class RegistryBuilder:
             case _:
                 raise InvalidMarkerError(marker)
 
-    def _register_activators(self):
-        # TODO: process aliases
-        for dependency, scope in self.requested_markers:
-            type_dependency = DependencyKey(
-                type(dependency.type_hint),
-                dependency.component,
+    def _find_activator(
+        self,
+        original_key: DependencyKey,
+        key: DependencyKey,
+    ) -> Activator:
+        if key in self.activators:
+            return self.activators[key]
+        if key in self.marker_aliases_to:
+            return self._find_activator(
+                original_key,
+                self.marker_aliases_to[key],
             )
-            if dependency in self.activators:
-                activator = self.activators[dependency]
-            elif type_dependency in self.activators:
-                activator = self.activators[type_dependency]
-            else:
-                raise NoActivatorError(
-                    dependency.type_hint,
-                    dependency.component,
+        if isinstance(key.type_hint, Marker):
+            type_key = DependencyKey(type(key.type_hint), key.component)
+            if type_key in self.activators:
+                return self.activators[type_key]
+            if type_key in self.marker_aliases_to:
+                return self._find_activator(
+                    original_key,
+                    self.marker_aliases_to[type_key],
                 )
+
+        raise NoActivatorError(
+            original_key.type_hint,
+            original_key.component,
+        )
+
+    def _register_activators(self):
+        for dependency, scope in self.requested_markers:
+            activator = self._find_activator(dependency, dependency)
             factory = activator.as_factory(None, DEFAULT_COMPONENT, dependency)
             factory = factory.with_scope(scope)
             group = self.processed_factories.setdefault(dependency, [])

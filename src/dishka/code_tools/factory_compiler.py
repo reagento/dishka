@@ -74,7 +74,6 @@ class FactoryBuilder(CodeBuilder):
             case BoolMarker(False):
                 return self.global_(marker.value)
             case _:
-                # TODO component
                 return self.getter(DependencyKey(marker, component))
 
     def build_getter(self) -> CompiledFactory:

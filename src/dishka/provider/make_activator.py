@@ -36,7 +36,7 @@ def _activator(
         when=None,
     )
     if factory.provides.type_hint is not bool:
-        raise ValueError("Activator must return bool")
+        raise ValueError("Activator must return bool")  # noqa: TRY003
 
     for marker in markers:
         if isinstance(marker, type):

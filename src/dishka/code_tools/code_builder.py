@@ -1,9 +1,9 @@
+import builtins
 import linecache
 import re
 from collections.abc import Iterator
 from contextlib import AbstractContextManager, contextmanager
 from typing import Any
-import builtins
 
 from dishka.text_rendering import get_name
 
@@ -48,14 +48,20 @@ class CodeBuilder:
 
     def assign_expr(self, target: str, value: str) -> None:
         if IDENTIFIER.fullmatch(target):
-            raise ValueError(f"Name {target} is a valid identifier, use `assign_local`")
+            raise ValueError( # noqa: TRY003
+                f"Name {target} is a valid identifier, use `assign_local`",
+            )
         self.statement(f"{target} = {value}")
 
     def assign_local(self, name: str, value: str) -> None:
         if not IDENTIFIER.fullmatch(name):
-            raise ValueError(f"Name {name} is not a valid identifier")
+            raise ValueError( # noqa: TRY003
+                f"Name {name} is not a valid identifier",
+            )
         if name in self.globals:
-            raise ValueError(f"Name {name} is already defined as global")
+            raise ValueError( # noqa: TRY003
+                f"Name {name} is already defined as global",
+            )
         self.locals.add(name)
         self.statement(f"{name} = {value}")
 
@@ -115,7 +121,7 @@ class CodeBuilder:
             func not in self.locals and
             (func.startswith("_") or not hasattr(builtins, func))
         ):
-            raise ValueError(f"Function {func} is not defined")
+            raise ValueError(f"Function {func} is not defined") # noqa: TRY003
         args_list = [*args]
         args_list.extend(f"{name}={value}" for name, value in kwargs.items())
         args_str = ", ".join(args_list)
@@ -130,8 +136,9 @@ class CodeBuilder:
     @contextmanager
     def def_(self, name: str, args: list[str]) -> Iterator[None]:
         if name in self.globals:
-            raise ValueError(
-                f"Name {name} already defined as {self.globals[name]}")
+            raise ValueError(  # noqa: TRY003
+                f"Name {name} already defined as {self.globals[name]}",
+            )
         self.globals[name] = object()  # stub to detect conflicts
         args_str = ", ".join(args)
         self.statement(f"{self.async_str}def {name}({args_str}):")

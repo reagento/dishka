@@ -19,7 +19,7 @@ class InvalidMarkerAliasError(DishkaError):
         self.source = source
         self.provides = provides
 
-    def __str__(self):
+    def __str__(self) -> str:
         raise ValueError(
             f"Cannot make alias between {self.source!r} and {self.provides!r}."
             " When aliasing activation markers you can use"

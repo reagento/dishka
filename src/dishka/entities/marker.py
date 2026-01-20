@@ -28,7 +28,7 @@ class BaseMarker:
 class Marker(BaseMarker):
     value: Any
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.value!r})"
 
 
@@ -70,7 +70,7 @@ class BinOpMarker(BaseMarker):
     right: BaseMarker
     op: ClassVar[str]
 
-    def _ordered_values(self):
+    def _ordered_values(self) -> tuple[BaseMarker, BaseMarker]:
         if id(self.left) < id(self.right):
             return self.left, self.right
         return self.right, self.left
@@ -91,7 +91,7 @@ class BinOpMarker(BaseMarker):
 class OrMarker(BinOpMarker):
     op: ClassVar[str] = "|"
 
-    def __invert__(self) -> Any:
+    def __invert__(self) -> BaseMarker:
         # De Morgan's law: ~(A | B) = ~A & ~B
         return AndMarker(~self.left, ~self.right)
 
@@ -100,7 +100,7 @@ class OrMarker(BinOpMarker):
 class AndMarker(BinOpMarker):
     op: ClassVar[str] = "&"
 
-    def __invert__(self) -> Any:
+    def __invert__(self) -> BaseMarker:
         # De Morgan's law: ~(A & B) = ~A | ~B
         return OrMarker(~self.left, ~self.right)
 
@@ -109,6 +109,8 @@ def or_markers(*markers: BaseMarker | None) -> BaseMarker | None:
     if not markers:
         return None
     current_marker = markers[0]
+    if current_marker is None:
+        return None
     for marker in markers:
         if not marker:
             return None

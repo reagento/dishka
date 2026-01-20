@@ -127,10 +127,10 @@ class Provider(BaseProvider):
     def activator(self,
         source: Callable[..., Any] | type,
         *markers: Marker | type[Marker],
-    ):
+    ) -> CompositeDependencySource:
         composite = activator_on_instance(source,*markers)
         self._add_dependency_sources(str(source), composite.dependency_sources)
-
+        return composite
 
     def provide(
             self,

@@ -39,19 +39,19 @@ class DependencyKey(NamedTuple):
     def __str__(self) -> str:
         return f"({self.type_hint}, component={self.component!r})"
 
-    def is_const(self):
+    def is_const(self) -> bool:
         return (
             get_origin(self.type_hint) is Literal and
             len(get_args(self.type_hint)) == 1
         )
 
-    def is_type_var(self):
+    def is_type_var(self) -> bool:
         return isinstance(self.type_hint, TypeVar)
 
-    def get_const_value(self):
+    def get_const_value(self) -> Any:
         return get_args(self.type_hint)[0]
 
-    def is_marker(self):
+    def is_marker(self) -> bool:
         return isinstance(self.type_hint, Marker) or (
             isinstance(self.type_hint, type) and
             issubclass(self.type_hint, Marker)

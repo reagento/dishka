@@ -2,10 +2,10 @@ from inspect import iscoroutinefunction
 from typing import Any
 
 from dishka.entities.component import Component
+from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey, const_dependency_key
 from dishka.entities.marker import Marker
 from dishka.entities.scope import BaseScope
-from ..entities.factory_type import FactoryType
 from .factory import Factory
 
 

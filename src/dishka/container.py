@@ -244,14 +244,14 @@ class Container:
         if not compiled:
             if not self.parent_container:
                 return False
-            return self.parent_container._has(marker)
+            return self.parent_container._has(marker)  # noqa: SLF001
 
-        return compiled(
+        return bool(compiled(
             self._get_unlocked,
             self._exits,
             self._cache,
             self._context,
-        )
+        ))
 
     def _has_context(self, marker: Any) -> bool:
         return marker in self._context
@@ -277,11 +277,19 @@ class ContextWrapper:
 
 class HasProvider(Provider):
     @activator(Has)
-    def has(self, marker: Has, container: Container) -> bool:
+    def has(
+        self,
+        marker: Has,
+        container: Container,
+    ) -> bool:
         return container._has(marker.value)  # noqa: SLF001
 
     @activator(HasContext)
-    def has_context(self, marker: HasContext, container: Container) -> bool:
+    def has_context(
+        self,
+        marker: HasContext,
+        container: Container,
+    ) -> bool:
         return container._has_context(marker.value)   # noqa: SLF001
 
 

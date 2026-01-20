@@ -3,6 +3,7 @@ import re
 from collections.abc import Iterator
 from contextlib import AbstractContextManager, contextmanager
 from typing import Any
+import builtins
 
 from dishka.text_rendering import get_name
 
@@ -11,7 +12,7 @@ IDENTIFIER = re.compile("[a-zA-Z_][a-zA-Z_0-9]*")
 
 
 class CodeBuilder:
-    def __init__(self, is_async: bool) -> None:
+    def __init__(self, *, is_async: bool) -> None:
         self.globals: dict[str, Any] = {}
         self.locals: set[str] = set()
         self.reverse_globals: dict[Any, str] = {}
@@ -108,7 +109,12 @@ class CodeBuilder:
             yield None
 
     def call(self, func: str, *args: str, **kwargs: str) -> str:
-        if IDENTIFIER.fullmatch(func) and func not in self.globals and func not in self.locals and func not in __builtins__:
+        if (
+            IDENTIFIER.fullmatch(func) and
+            func not in self.globals and
+            func not in self.locals and
+            (func.startswith("_") or not hasattr(builtins, func))
+        ):
             raise ValueError(f"Function {func} is not defined")
         args_list = [*args]
         args_list.extend(f"{name}={value}" for name, value in kwargs.items())
@@ -136,11 +142,14 @@ class CodeBuilder:
             yield None
         self.locals = old_locals
 
-    def try_(self) -> AbstractContextManager:
+    def try_(self) -> AbstractContextManager[None]:
         self.statement("try:")
         return self.block()
 
-    def except_(self, exception: Exception) -> AbstractContextManager:
+    def except_(
+        self,
+        exception: type[Exception],
+    ) -> AbstractContextManager[None]:
         name = self.global_(exception)
         self.statement(f"except {name}:")
         return self.block()
@@ -148,13 +157,13 @@ class CodeBuilder:
     def raise_(self, expr: str) -> None:
         self.statement(f"raise {expr}")
 
-    def or_(self, left: str, right: str):
+    def or_(self, left: str, right: str) -> str:
         return f"({left} or {right})"
 
-    def and_(self, left: str, right: str):
+    def and_(self, left: str, right: str) -> str:
         return f"({left} and {right})"
 
-    def not_(self, expr: str):
+    def not_(self, expr: str) -> str:
         return f"not ({expr})"
 
     def compile(self, source_file_name: str) -> dict[str, Any]:

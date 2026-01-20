@@ -13,9 +13,15 @@ def test_marker_alias():
     c = make_container(provider)
     assert c.get(int) == 2
 
+
+def activator_x(activator_dep: int, marker: Marker) -> bool:
+    return activator_dep == 42 and marker == Marker("A")
+
+
 def test_marker_alias_component():
     provider_x = Provider(scope=Scope.APP, component="X")
-    provider_x.activator(lambda: True, Marker("A"))
+    provider_x.provide(lambda: 42, provides=int)
+    provider_x.activator(activator_x, Marker("A"))
 
     provider = Provider(scope=Scope.APP)
     provider.alias(source=Marker("A"), provides=Marker("B"), component="X")
@@ -31,9 +37,14 @@ class MyMarker(Marker):
     pass
 
 
+def myactivator_x(activator_dep: int, marker: MyMarker) -> bool:
+    return activator_dep == 42 and marker == MyMarker("B")
+
+
 def test_marker_type_alias_component():
     provider_x = Provider(scope=Scope.APP, component="X")
-    provider_x.activator(lambda: True, MyMarker)
+    provider_x.provide(lambda: 42, provides=int)
+    provider_x.activator(myactivator_x, MyMarker)
 
     provider = Provider(scope=Scope.APP)
     provider.alias(source=MyMarker, component="X")

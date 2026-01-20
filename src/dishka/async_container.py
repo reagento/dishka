@@ -247,14 +247,14 @@ class AsyncContainer:
         if not compiled:
             if not self.parent_container:
                 return False
-            return await self.parent_container.has(marker)
+            return await self.parent_container._has(marker)  # noqa: SLF001
 
-        return await compiled(
+        return bool(await compiled(
             self._get_unlocked,
             self._exits,
             self._cache,
             self._context,
-        )
+        ))
 
     async def _has_context(self, marker: Any) -> bool:
         return marker in self._context
@@ -278,11 +278,19 @@ class AsyncContextWrapper:
 
 class HasProvider(Provider):
     @activator(Has)
-    async def has(self, marker: Has, container: AsyncContainer) -> bool:
+    async def has(
+        self,
+        marker: Has,
+        container: AsyncContainer,
+    ) -> bool:
         return await container._has(marker.value)  # noqa: SLF001
 
     @activator(HasContext)
-    async def has_context(self, marker: HasContext, container: AsyncContainer) -> bool:
+    async def has_context(
+        self,
+        marker: HasContext,
+        container: AsyncContainer,
+    ) -> bool:
         return await container._has_context(marker.value)  # noqa: SLF001
 
 

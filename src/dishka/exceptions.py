@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 from typing import Any
 
-from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryData
 from dishka.entities.marker import Marker
 from dishka.exception_base import DishkaError
@@ -53,18 +52,17 @@ class InvalidMarkerError(DishkaError):
     def __init__(self, marker: Any) -> None:
         self.marker = marker
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Cannot use {self.marker!r} as marker."
 
 
 class NoActivatorError(DishkaError):
-    def __init__(self, marker: Marker, component: Component) -> None:
-        self.marker = marker
-        self.component = component
+    def __init__(self, marker_key: DependencyKey) -> None:
+        self.marker_key = marker_key
 
     def __str__(self) -> str:
-        return (f"Cannot find activator for {self.marker}"
-                f" at component {self.component!r}.")
+        return (f"Cannot find activator for {self.marker_key.type_hint}"
+                f" at component {self.marker_key.component!r}.")
 
 
 class ActivatorOverrideError(DishkaError):
@@ -76,7 +74,7 @@ class ActivatorOverrideError(DishkaError):
         self.marker = marker
         self.activators = activators
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"Multiple activators found for {self.marker}: "
             f"{', '.join(map(get_source_name, self.activators))}"
@@ -84,7 +82,7 @@ class ActivatorOverrideError(DishkaError):
 
 
 class WhenOverrideConflictError(DishkaError):
-    def __str__(self):
+    def __str__(self) -> str:
         return "Cannot have both `when` and `override` set. "
 
 

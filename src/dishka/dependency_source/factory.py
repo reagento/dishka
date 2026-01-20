@@ -27,21 +27,36 @@ class Factory(FactoryData):
     )
 
     def __init__(
-            self,
-            *,
-            dependencies: Sequence[DependencyKey],
-            kw_dependencies: Mapping[str, DependencyKey],
-            source: Any,
-            provides: DependencyKey,
-            scope: BaseScope | None,
-            type_: FactoryType,
-            is_to_bind: bool,
-            cache: bool,
-            when_override: BaseMarker | None,  # condition to override
-            when_active: BaseMarker | None,  # condition to check availability
-            when_component: Component | None,  # component of conditions
-            when_dependencies: dict[DependencyKey, BaseMarker],  # conditional creation
+        self,
+        *,
+        dependencies: Sequence[DependencyKey],
+        kw_dependencies: Mapping[str, DependencyKey],
+        source: Any,
+        provides: DependencyKey,
+        scope: BaseScope | None,
+        type_: FactoryType,
+        is_to_bind: bool,
+        cache: bool,
+        when_override: BaseMarker | None,
+        when_active: BaseMarker | None,
+        when_component: Component | None,
+        when_dependencies: dict[DependencyKey, BaseMarker],
     ) -> None:
+        """
+
+        :param dependencies: args of source
+        :param kw_dependencies: kwargs of source
+        :param source: callable to produce result
+        :param provides:
+        :param scope:
+        :param type_:
+        :param is_to_bind: use first dependency as class instance on __get__
+        :param cache: add result to container cache
+        :param when_override:  condition to override
+        :param when_active: condition to check availability
+        :param when_component: component of conditions
+        :param when_dependencies: deps for conditional creation
+        """
         super().__init__(
             source=source,
             provides=provides,

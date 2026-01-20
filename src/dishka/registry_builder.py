@@ -295,8 +295,12 @@ class RegistryBuilder:
                 type_=FactoryType.SELECTOR,
                 kw_dependencies={},
                 source=None,
-                when_override=BoolMarker(False),
-                when_active=or_markers(*when_dependencies.values()),  # TODO check when active
+                when_override=None,
+                when_active=or_markers(*(
+                    factory.when_active
+                    for group in moved_factories.values()
+                    for factory in group
+                )),
                 when_component=provides.component,
                 # reverse dict, so last wins
                 when_dependencies=dict(reversed(when_dependencies.items())),
@@ -528,46 +532,6 @@ class RegistryBuilder:
         lst.append(factory)
         self._register_when(factory)
 
-    def build(self) -> tuple[Registry, ...]:
-        self._collect_components()
-        self._collect_provided_scopes()
-        self._collect_aliases()
-
-        providers = []
-        for component in self.components:
-            for provider in self.multicomponent_providers:
-                providers.append(ProviderWrapper(component, provider))
-        providers.extend(self.providers)
-
-
-        for provider in providers:
-            for factory in provider.factories:
-                self.dependency_scopes[
-                    factory.provides.with_component(provider.component)
-                ] = cast(BaseScope, factory.scope)
-
-        for provider in providers:
-            for activation in provider.activators:
-                self._process_activation(provider, activation)
-            for factory in provider.factories:
-                self._process_factory(provider, factory)
-            for alias in provider.aliases:
-                self._process_alias(provider, alias)
-            for context_var in provider.context_vars:
-                self._process_context_var(provider, context_var)
-            for decorator in provider.decorators:
-                if decorator.is_generic():
-                    self._process_generic_decorator(provider, decorator)
-                else:
-                    self._process_normal_decorator(provider, decorator)
-        self._post_process_generic_factories()
-        self._unite_selectors()
-        self._register_activators()
-        registries = self._make_registries()
-        if not self.skip_validation:
-            GraphValidator(registries).validate()
-        return registries
-
     def _post_process_generic_factories(self) -> None:
         found: list[Factory] = []
         for factory_list in self.processed_factories.values():
@@ -598,35 +562,81 @@ class RegistryBuilder:
 
     def _find_activator(
         self,
-        original_key: DependencyKey,
         key: DependencyKey,
-    ) -> Activator:
+    ) -> tuple[DependencyKey, Activator | None]:
         if key in self.activators:
-            return self.activators[key]
+            return key, self.activators[key]
+
         if key in self.marker_aliases_to:
             return self._find_activator(
-                original_key,
                 self.marker_aliases_to[key],
             )
-        if isinstance(key.type_hint, Marker):
-            type_key = DependencyKey(type(key.type_hint), key.component)
-            if type_key in self.activators:
-                return self.activators[type_key]
-            if type_key in self.marker_aliases_to:
-                return self._find_activator(
-                    original_key,
-                    self.marker_aliases_to[type_key],
-                )
 
-        raise NoActivatorError(
-            original_key.type_hint,
-            original_key.component,
-        )
+        type_key = DependencyKey(type(key.type_hint), key.component)
+        if type_key in self.activators:
+            return key, self.activators[type_key]
+        if type_key in self.marker_aliases_to:
+            # type aliases for markers always keep type, but change component
+            new_key = DependencyKey(
+                key.type_hint,
+                self.marker_aliases_to[type_key].component,
+            )
+            return self._find_activator(new_key)
 
-    def _register_activators(self):
+        return key, None
+
+    def _register_activators(self) -> None:
         for dependency, scope in self.requested_markers:
-            activator = self._find_activator(dependency, dependency)
-            factory = activator.as_factory(None, DEFAULT_COMPONENT, dependency)
+            new_key, activator = self._find_activator(dependency)
+            if not activator:
+                raise NoActivatorError(dependency)
+            factory = activator.as_factory(None, new_key.component, new_key)
             factory = factory.with_scope(scope)
             group = self.processed_factories.setdefault(dependency, [])
             group.append(factory)
+
+    def _collect_factory_scopes(self, providers: list[BaseProvider]) -> None:
+        for provider in providers:
+            for factory in provider.factories:
+                self.dependency_scopes[
+                    factory.provides.with_component(provider.component)
+                ] = cast(BaseScope, factory.scope)
+
+    def _duplicate_multicomponent_providers(self) -> Iterator[BaseProvider]:
+        for component in self.components:
+            for provider in self.multicomponent_providers:
+                yield ProviderWrapper(component, provider)
+
+    def build(self) -> tuple[Registry, ...]:
+        self._collect_components()
+        self._collect_provided_scopes()
+        self._collect_aliases()
+
+        providers = [
+            *self._duplicate_multicomponent_providers(),
+            *self.providers,
+        ]
+        self._collect_factory_scopes(providers)
+
+        for provider in providers:
+            for activation in provider.activators:
+                self._process_activation(provider, activation)
+            for factory in provider.factories:
+                self._process_factory(provider, factory)
+            for alias in provider.aliases:
+                self._process_alias(provider, alias)
+            for context_var in provider.context_vars:
+                self._process_context_var(provider, context_var)
+            for decorator in provider.decorators:
+                if decorator.is_generic():
+                    self._process_generic_decorator(provider, decorator)
+                else:
+                    self._process_normal_decorator(provider, decorator)
+
+        self._post_process_generic_factories()
+        self._unite_selectors()
+        self._register_activators()
+        registries = self._make_registries()
+        if not self.skip_validation:
+            GraphValidator(registries).validate()
+        return registries

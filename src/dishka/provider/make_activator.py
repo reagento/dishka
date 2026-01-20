@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, TypeGuard
+from typing import Any, TypeGuard, overload
 
 from dishka.dependency_source import (
     Activator,
@@ -12,7 +12,7 @@ from .make_factory import make_factory
 
 
 class NoMarkerError(DishkaError):
-    def __str__(self):
+    def __str__(self) -> str:
         return "At least one marker must be specified"
 
 
@@ -61,8 +61,25 @@ def _is_marker(source: Any) -> TypeGuard[Marker | type[Marker]]:
     )
 
 
+@overload
 def activator(
-    source: Callable[..., Any] | type[Marker] | None | Marker = None,
+    source: None | Marker | type[Marker] = None,
+    *markers: Marker | type[Marker],
+) -> Callable[
+    [Callable[..., Any]], CompositeDependencySource,
+]:
+    pass
+
+
+@overload
+def activator(
+    source: Callable[..., Any],
+    *markers: Marker | type[Marker],
+) -> CompositeDependencySource:
+    pass
+
+def activator(
+    source: Callable[..., Any] | type[Marker]  | Marker | None = None,
     *markers: Marker | type[Marker],
 ) -> CompositeDependencySource | Callable[
     [Callable[..., Any]], CompositeDependencySource,

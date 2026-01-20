@@ -30,16 +30,16 @@ class BaseScope(Enum):
         self.skip = value.skip
         self.order = value.order
 
-    def __lt__(self, other):
+    def __lt__(self, other: "BaseScope") -> bool:
         return self.order < other.order
 
-    def __gt__(self, other):
+    def __gt__(self, other: "BaseScope") -> bool:
         return self.order > other.order
 
-    def __le__(self, other):
+    def __le__(self, other: "BaseScope") -> bool:
         return self.order <= other.order
 
-    def __ge__(self, other):
+    def __ge__(self, other: "BaseScope") -> bool:
         return self.order >= other.order
 
 

@@ -29,12 +29,19 @@ class CodeBuilder:
         if name is None:
             name = get_name(obj, include_module=False)
         name = NOT_ALLOWED_SYMBOLS.sub("_", name)
-        if name not in self.locals and (name not in self.globals or self.globals[name] == obj):
+        if (
+            name not in self.locals and
+            (name not in self.globals or self.globals[name] == obj)
+        ):
             return name
+
         i = 0
         while True:
             new_name = f"{name}_{i}"
-            if new_name not in self.locals and (new_name not in self.globals or self.globals[new_name] == obj):
+            if (
+                new_name not in self.locals and
+                (new_name not in self.globals or self.globals[new_name] == obj)
+            ):
                 return new_name
             i += 1
 
@@ -122,12 +129,12 @@ class CodeBuilder:
         self.globals[name] = object()  # stub to detect conflicts
         args_str = ", ".join(args)
         self.statement(f"{self.async_str}def {name}({args_str}):")
-        locals = self.locals
+        old_locals = self.locals
         self.locals = set()
         self.locals.update(args)
         with self.block():
             yield None
-        self.locals = locals
+        self.locals = old_locals
 
     def try_(self) -> AbstractContextManager:
         self.statement("try:")

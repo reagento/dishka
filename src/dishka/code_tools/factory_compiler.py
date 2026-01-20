@@ -37,8 +37,12 @@ class FactoryBuilder(CodeBuilder):
         self.provides_name = self.global_(provides)
 
     def make_getter(self) -> AbstractContextManager:
-        self.getter_name = self.getter_prefix+self.provides_name.removeprefix("key_")
-        return self.def_(self.getter_name, ["getter", "exits", "cache", "context"])
+        raw_provides_name = self.provides_name.removeprefix("key_")
+        self.getter_name = self.getter_prefix + raw_provides_name
+        return self.def_(
+            self.getter_name,
+            ["getter", "exits", "cache", "context"],
+        )
 
     def getter(self, obj: DependencyKey) -> str:
         if obj.is_const():
@@ -56,9 +60,15 @@ class FactoryBuilder(CodeBuilder):
             case None | BoolMarker(True):
                 return ""
             case AndMarker():
-                return self.and_(self.when(marker.left, component), self.when(marker.right, component))
+                return self.and_(
+                    self.when(marker.left, component),
+                    self.when(marker.right, component),
+                )
             case OrMarker():
-                return self.or_(self.when(marker.left, component), self.when(marker.right, component))
+                return self.or_(
+                    self.when(marker.left, component),
+                    self.when(marker.right, component),
+                )
             case NotMarker():
                 return self.not_(self.when(marker.marker, component))
             case BoolMarker(False):
@@ -93,7 +103,9 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
                 builder.assign_solved(builder.await_(source_call))
             case FactoryType.GENERATOR:
                 builder.assign_local("generator", source_call)
-                builder.assign_solved(builder.call("next", "generator"))
+                builder.assign_solved(
+                    builder.call("next", "generator"),
+                )
                 builder.statement(builder.call(
                     "exits.append",
                     builder.call(
@@ -154,7 +166,7 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
                             builder.assign_solved(solved_value)
 
             case _:
-                raise UnsupportedFactoryError(f"Unsupported factory type {factory.type}.")
+                raise UnsupportedFactoryError(factory.type)
         if factory.cache:
             builder.cache()
         builder.return_("solved")

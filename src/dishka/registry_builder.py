@@ -589,9 +589,9 @@ class RegistryBuilder:
             case BinOpMarker():
                 yield from self._unpack_marker(marker.left)
                 yield from self._unpack_marker(marker.right)
-            case None:
-                return
             case BoolMarker():
+                return
+            case None:
                 return
             case _:
                 raise InvalidMarkerError(marker)

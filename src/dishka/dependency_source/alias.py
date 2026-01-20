@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any
 
 from dishka.entities.component import Component
@@ -60,5 +58,5 @@ class Alias:
             when_dependencies={},
         )
 
-    def __get__(self, instance: Any, owner: Any) -> Alias:
+    def __get__(self, instance: Any, owner: Any) -> "Alias":
         return self

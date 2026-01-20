@@ -38,7 +38,11 @@ class NoContextValueError(DishkaError):
 
 
 class UnsupportedFactoryError(DishkaError):
-    pass
+    def __init__(self, factory_type: FactoryData) -> None:
+        self.factory_type = factory_type
+
+    def __str__(self) -> str:
+        return f"Unsupported factory type {self.factory_type}."
 
 
 class InvalidGraphError(DishkaError):

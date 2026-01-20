@@ -277,7 +277,6 @@ class AsyncContextWrapper:
 
 
 class HasProvider(Provider):
-    # TODO components
     @activator(Has)
     async def has(self, marker: Has, container: AsyncContainer) -> bool:
         return await container._has(marker.value)  # noqa: SLF001

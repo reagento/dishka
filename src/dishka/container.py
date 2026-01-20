@@ -276,7 +276,6 @@ class ContextWrapper:
 
 
 class HasProvider(Provider):
-    # TODO components
     @activator(Has)
     def has(self, marker: Has, container: Container) -> bool:
         return container._has(marker.value)  # noqa: SLF001

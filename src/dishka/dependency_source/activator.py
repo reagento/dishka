@@ -29,8 +29,16 @@ class Activator:
             marker_type=self.marker_type,
         )
 
-    def _replace_dep(self, dependency: DependencyKey, marker: Marker) -> DependencyKey:
-        if dependency.type_hint is self.marker_type or dependency.type_hint is Marker:
+    def _replace_dep(
+        self,
+        dependency: DependencyKey,
+        marker: Marker,
+    ) -> DependencyKey:
+        if (
+            dependency.type_hint is self.marker_type or
+            dependency.type_hint is Marker or
+            dependency.type_hint is Marker
+        ):
             return const_dependency_key(marker)
         return dependency
 
@@ -54,8 +62,14 @@ class Activator:
             source=factory.source,
             provides=marker_key,
             is_to_bind=factory.is_to_bind,
-            dependencies=[self._replace_dep(d, marker) for d in factory.dependencies],
-            kw_dependencies={name: self._replace_dep(d, marker) for name, d in factory.kw_dependencies.items()},
+            dependencies=[
+                self._replace_dep(d, marker)
+                for d in factory.dependencies
+            ],
+            kw_dependencies={
+                name: self._replace_dep(d, marker)
+                for name, d in factory.kw_dependencies.items()
+            },
             type_=factory.type,
             cache=factory.cache,
             when_override=factory.when_override,
@@ -65,19 +79,20 @@ class Activator:
         )
 
     def is_static_evaluated(self) -> bool:
-        """Check if this activator can be statically evaluated.
-        
+        """
+        Check if this activator can be statically evaluated.
+
         Static rules (activator is static if):
         - Must be a regular (non-async) factory
         - No dependencies OR
         - Only depends on context variables with root scope OR
         - Only depends on objects not registered in graph OR
         - Only depends on result of other static activators
-        
+
         Dynamic rules (activator is dynamic if):
         - Async functions are always dynamic
         - Functions depending on graph objects that are not static
-        
+
         Note: Full implementation requires access to the entire graph
         during compilation. This is a simplified version.
         """

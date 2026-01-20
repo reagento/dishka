@@ -5,8 +5,8 @@ from typing import Any, NoReturn
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
+from dishka.entities.marker import BoolMarker, HasContext
 from dishka.entities.scope import BaseScope
-from ..entities.marker import BoolMarker, HasContext
 from .alias import Alias
 from .factory import Factory
 

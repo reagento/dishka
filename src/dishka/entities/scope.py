@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from threading import Lock
+from itertools import count
 from typing import Any
 
 
@@ -11,15 +11,11 @@ class _ScopeValue:
     order: int
 
 
-global_order_lock = Lock()
-global_order = 0
+global_order_counter = count()
 
 
 def new_scope(value: str, *, skip: bool = False) -> _ScopeValue:
-    global global_order
-    with global_order_lock:
-        global_order += 1
-        return _ScopeValue(value, skip, global_order)
+    return _ScopeValue(value, skip, next(global_order_counter))
 
 
 class BaseScope(Enum):

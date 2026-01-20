@@ -1,8 +1,6 @@
-from inspect import iscoroutinefunction
 from typing import Any
 
 from dishka.entities.component import Component
-from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey, const_dependency_key
 from dishka.entities.marker import Marker
 from dishka.entities.scope import BaseScope
@@ -77,44 +75,3 @@ class Activator:
             when_component=factory.when_component,
             when_dependencies=factory.when_dependencies,
         )
-
-    def is_static_evaluated(self) -> bool:
-        """
-        Check if this activator can be statically evaluated.
-
-        Static rules (activator is static if):
-        - Must be a regular (non-async) factory
-        - No dependencies OR
-        - Only depends on context variables with root scope OR
-        - Only depends on objects not registered in graph OR
-        - Only depends on result of other static activators
-
-        Dynamic rules (activator is dynamic if):
-        - Async functions are always dynamic
-        - Functions depending on graph objects that are not static
-
-        Note: Full implementation requires access to the entire graph
-        during compilation. This is a simplified version.
-        """
-        # Async factories are always dynamic
-        if self.factory.type is FactoryType.ASYNC_FACTORY:
-            return False
-        if self.factory.type is FactoryType.ASYNC_GENERATOR:
-            return False
-        if iscoroutinefunction(self.factory.source):
-            return False
-
-        # Must be a regular factory
-        if self.factory.type is not FactoryType.FACTORY:
-            return False
-
-        # No dependencies = static
-        if not self.factory.dependencies and not self.factory.kw_dependencies:
-            return True
-
-        # TODO: Full static detection requires access to:
-        # - Root context scope information
-        # - Graph of other activators
-        # - Whether dependencies are registered or not
-        # For now, return False for any dependencies
-        return False

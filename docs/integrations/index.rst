@@ -23,6 +23,7 @@ Some of the integrations are supported by a community, refer to their documentat
    flask
    flet <https://github.com/C3EQUALZz/dishka-flet>
    grpcio
+   jobify <https://github.com/C3EQUALZz/dishka-jobify>
    litestar
    RQ <https://github.com/prepin/dishka-rq>
    sanic
@@ -66,7 +67,7 @@ Some of the integrations are supported by a community, refer to their documentat
      -
    * -  :ref:`Sanic`
      -
-     -
+     - `Jobify <https://github.com/C3EQUALZz/dishka-jobify>`_ (:abbr:`com (Community support)`)
      -
    * -  :ref:`Starlette`
      -

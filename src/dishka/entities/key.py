@@ -25,7 +25,7 @@ def FromComponent(  # noqa: N802
 
 
 class DependencyKey(NamedTuple):
-    type_hint: Any
+    type_hint: Any  # type hint or marker instance
     component: Component | None
 
     def with_component(self, component: Component | None) -> DependencyKey:

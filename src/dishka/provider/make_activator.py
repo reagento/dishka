@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, TypeGuard, overload
+from typing import Any, overload
 
 from dishka.dependency_source import (
     Activator,
@@ -54,13 +54,6 @@ def _activator(
     return composite
 
 
-def _is_marker(source: Any) -> TypeGuard[Marker | type[Marker]]:
-    return (
-        isinstance(source, Marker) or
-        (isinstance(source, type) and issubclass(source, Marker))
-    )
-
-
 @overload
 def activator(
     source: None | Marker | type[Marker] = None,
@@ -77,6 +70,7 @@ def activator(
     *markers: Marker | type[Marker],
 ) -> CompositeDependencySource:
     pass
+
 
 def activator(
     source: Callable[..., Any] | type[Marker]  | Marker | None = None,
@@ -96,7 +90,10 @@ def activator(
     graph compilation or resolution depending on whether they are static
     or dynamic.
     """
-    if _is_marker(source):
+    if (
+        isinstance(source, Marker) or
+        (isinstance(source, type) and issubclass(source, Marker))
+    ):
         def decorator(func: Callable[..., Any]) -> CompositeDependencySource:
             return _activator(func, source, *markers, is_in_class=True)
         return decorator
@@ -106,16 +103,8 @@ def activator(
 
 
 def activator_on_instance(
-    source: Callable[..., Any] | type[Marker] | None | Marker = None,
+    source: Callable[..., Any],
     *markers: Marker | type,
-) -> CompositeDependencySource | Callable[
-    [Callable[..., Any]], CompositeDependencySource,
-]:
+) -> CompositeDependencySource:
     """Register an activation function on a provider instance."""
-    if _is_marker(source):
-        def decorator(func: Callable[..., Any]) -> CompositeDependencySource:
-            return _activator(func, source, *markers, is_in_class=False)
-        return decorator
-    if source is None:
-        raise NoMarkerError
     return _activator(source, *markers, is_in_class=False)

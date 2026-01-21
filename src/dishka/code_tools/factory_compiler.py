@@ -55,7 +55,11 @@ class FactoryBuilder(CodeBuilder):
     def assign_solved(self, expr: str) -> None:
         self.assign_local("solved", expr)
 
-    def when(self, marker: BaseMarker, component: Component) -> str:
+    def when(
+        self,
+        marker: BaseMarker | None,
+        component: Component | None,
+    ) -> str:
         match marker:
             case None | BoolMarker(True):
                 return ""
@@ -74,6 +78,11 @@ class FactoryBuilder(CodeBuilder):
             case BoolMarker(False):
                 return self.global_(marker.value)
             case _:
+                if component is None:
+                    raise TypeError(  # noqa: TRY003
+                        f"Component is None, cannot generate when condition"
+                        f" with marker {marker}",
+                    )
                 return self.getter(DependencyKey(marker, component))
 
     def build_getter(self) -> CompiledFactory:

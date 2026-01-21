@@ -40,7 +40,7 @@ class Factory(FactoryData):
         when_override: BaseMarker | None,
         when_active: BaseMarker | None,
         when_component: Component | None,
-        when_dependencies: dict[DependencyKey, BaseMarker],
+        when_dependencies: dict[DependencyKey, BaseMarker | None],
     ) -> None:
         """
 

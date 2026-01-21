@@ -235,16 +235,15 @@ class RegistryBuilder:
                 ):
                     raise NothingOverriddenError(factory)
                 continue
-            when_dependencies: dict[DependencyKey, BaseMarker] = {}
-            moved_factories = {}
-            prev_factory = None
+            when_dependencies: dict[DependencyKey, BaseMarker | None] = {}
+            moved_factories: dict[DependencyKey, list[Factory]] = {}
+            prev_factory: Factory | None = None
             for factory in group:
-                need_override = bool(when_dependencies)
                 if factory.when_override is None:
                     # implicit override
                     if (
-                            self.validation_settings.implicit_override and
-                            need_override
+                        self.validation_settings.implicit_override and
+                        prev_factory
                     ):
                         raise ImplicitOverrideDetectedError(
                             prev_factory,
@@ -258,7 +257,7 @@ class RegistryBuilder:
                     if (
                         self.validation_settings.nothing_overridden and
                         factory.when_override==BoolMarker(True) and
-                        not need_override
+                        not prev_factory
                     ):
                         raise NothingOverriddenError(factory)
                     when_dependencies = {}
@@ -277,12 +276,14 @@ class RegistryBuilder:
                 moved_factories[new_provides] = [new_factory]
                 when_dependencies[new_provides] = factory.when_override
             if len(moved_factories) == 1:
-                self.processed_factories[provides] = [prev_factory]
+                self.processed_factories[provides] = [
+                    cast(Factory, prev_factory),  # at least one factory found
+                ]
                 continue
 
             new_groups.update(moved_factories)
             scope = max(
-                factory.scope
+                cast(BaseScope, factory.scope)  # scopes already validated
                 for group in moved_factories.values()
                 for factory in group
             )
@@ -314,7 +315,8 @@ class RegistryBuilder:
             src: Activator,
     ) -> None:
         src = src.with_component(provider.component)
-        marker = src.marker or src.marker_type
+        # at least one is set
+        marker = cast(Marker | type[Marker], src.marker or src.marker_type)
         key = DependencyKey(marker, src.factory.when_component)
         if key in self.activators:
             raise ActivatorOverrideError(
@@ -324,12 +326,13 @@ class RegistryBuilder:
         self.activators[key] = src
 
     def _register_when(self, factory: Factory) -> None:
+        scope = cast(BaseScope, factory.scope)  # already validated
         for marker in self._unpack_marker(factory.when_active):
             marker_key = DependencyKey(marker, factory.when_component)
-            self.requested_markers.add((marker_key, factory.scope))
+            self.requested_markers.add((marker_key, scope))
         for marker in self._unpack_marker(factory.when_override):
             marker_key = DependencyKey(marker, factory.when_component)
-            self.requested_markers.add((marker_key, factory.scope))
+            self.requested_markers.add((marker_key, scope))
 
     def _process_factory(
         self,
@@ -544,7 +547,7 @@ class RegistryBuilder:
             lst = self.processed_factories.setdefault(origin_key, [])
             lst.append(factory)
 
-    def _unpack_marker(self, marker: BaseMarker) -> Iterator[Marker]:
+    def _unpack_marker(self, marker: BaseMarker | None) -> Iterator[Marker]:
         match marker:
             case Marker():
                 yield marker

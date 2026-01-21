@@ -125,7 +125,7 @@ class Provider(BaseProvider):
                 self.activators.append(source)
 
     def activator(self,
-        source: Callable[..., Any] | type,
+        source: Callable[..., Any],
         *markers: Marker | type[Marker],
     ) -> CompositeDependencySource:
         composite = activator_on_instance(source,*markers)

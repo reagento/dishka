@@ -3,7 +3,7 @@ from typing import Any
 from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
-from dishka.entities.marker import Marker
+from dishka.entities.marker import BaseMarker
 from dishka.entities.scope import BaseScope
 from .factory import Factory
 
@@ -29,8 +29,8 @@ class Alias:
             source: DependencyKey,
             provides: DependencyKey,
             cache: bool,
-            when_active: Marker | None = None,
-            when_override: Marker | None = None,
+            when_active: BaseMarker | None = None,
+            when_override: BaseMarker | None = None,
             when_component: Component | None,
     ) -> None:
         self.source = source

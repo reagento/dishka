@@ -126,21 +126,24 @@ class Registry:
             return self.factories[dependency]
         except KeyError:
             if isinstance(dependency.type_hint, Marker):
-                origin = type(dependency.type_hint)
-            else:
-                origin = get_origin(dependency.type_hint)
+                return None
+
+            origin = get_origin(dependency.type_hint)
             if not origin:
                 return None
-            if origin is type and self.has_fallback:
-                return self._get_type_var_factory(dependency)
-            origin_key = DependencyKey(origin, dependency.component)
 
+            if (origin is type) and self.has_fallback:
+                return self._get_type_var_factory(dependency)
+
+            origin_key = DependencyKey(origin, dependency.component)
             factory = self.factories.get(origin_key)
-            if not factory:
-                return None
-            if not is_broader_or_same_type(
+
+            if (
+                not factory or
+                not is_broader_or_same_type(
                     factory.provides.type_hint,
                     dependency.type_hint,
+                )
             ):
                 return None
             factory = self._specialize_generic(factory, dependency)

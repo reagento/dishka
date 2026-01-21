@@ -407,7 +407,7 @@ def _make_factory_by_static_method(
 
 def calc_override(
     *,
-    when: BoolMarker | None,
+    when: BaseMarker | None,
     override: bool,
 ) -> BaseMarker | None:
     if when is not None:

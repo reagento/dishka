@@ -53,7 +53,10 @@ class Activator:
         component: Component | None,
         marker_key: DependencyKey,
     ) -> Factory:
-        factory = self.factory.with_component(component)
+        if component is None:
+            factory = self.factory
+        else:
+            factory = self.factory.with_component(component)
         marker = marker_key.type_hint
         return Factory(
             scope=scope,

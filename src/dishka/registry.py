@@ -40,6 +40,7 @@ IGNORE_TYPES: Final = (
 
 CompiledFactories: TypeAlias = dict[DependencyKey, CompiledFactory]
 
+
 class Registry:
     __slots__ = (
         "compiled",

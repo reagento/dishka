@@ -56,12 +56,12 @@ def _activator(
 
 @overload
 def activator(
-    source: None | Marker | type[Marker] = None,
+    source: Marker | type[Marker] | None = None,
     *markers: Marker | type[Marker],
 ) -> Callable[
     [Callable[..., Any]], CompositeDependencySource,
 ]:
-    pass
+    ...
 
 
 @overload
@@ -69,11 +69,11 @@ def activator(
     source: Callable[..., Any],
     *markers: Marker | type[Marker],
 ) -> CompositeDependencySource:
-    pass
+    ...
 
 
 def activator(
-    source: Callable[..., Any] | type[Marker]  | Marker | None = None,
+    source: Callable[..., Any] | type[Marker] | Marker | None = None,
     *markers: Marker | type[Marker],
 ) -> CompositeDependencySource | Callable[
     [Callable[..., Any]], CompositeDependencySource,

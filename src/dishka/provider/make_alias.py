@@ -26,6 +26,7 @@ class InvalidMarkerAliasError(DishkaError):
             " instances or the same marker type."
         )
 
+
 def alias(
         source: Any,
         *,

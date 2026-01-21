@@ -583,6 +583,7 @@ def _provide(
     if not recursive:
         return composite
 
+    additional = []
     for src in composite.dependency_sources:
         if not isinstance(src, Factory):
             # we expect Factory and Alias here
@@ -597,7 +598,8 @@ def _provide(
                 override=override,
                 when=when,
             )
-            composite.dependency_sources.extend(additional.dependency_sources)
+            additional.extend(additional.dependency_sources)
+    composite.dependency_sources.extend(additional)
     return composite
 
 

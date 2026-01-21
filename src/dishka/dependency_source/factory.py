@@ -156,4 +156,3 @@ class Factory(FactoryData):
             when_component=self.when_component,
             when_dependencies=self.when_dependencies,
         )
-

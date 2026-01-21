@@ -24,6 +24,7 @@ class BaseMarker:
             return self
         return AndMarker(self, other)
 
+
 @dataclass(frozen=True, slots=True)
 class Marker(BaseMarker):
     value: Any
@@ -116,7 +117,6 @@ def or_markers(*markers: BaseMarker | None) -> BaseMarker | None:
             return None
         current_marker |= marker
     return current_marker
-
 
 
 @dataclass(frozen=True, slots=True)

@@ -68,6 +68,7 @@ def inject(
 ]:
     ...
 
+
 # overload for callback with 3 arguments
 @overload
 def inject(
@@ -82,6 +83,7 @@ def inject(
     ],
 ) -> Callable[[_EventT, _WidgetT, _DialogManagerT], _ReturnT]:
     ...
+
 
 # overload for on result event
 # `type: ignore[overload-overlap]` is used because mypy is dumb
@@ -101,6 +103,7 @@ def inject(  # type: ignore[overload-overlap]
     _ReturnT,
 ]:
     ...
+
 
 # overload for on dialog event
 @overload

@@ -256,7 +256,7 @@ class AsyncContainer:
             self._context,
         ))
 
-    async def _has_context(self, marker: Any) -> bool:
+    def _has_context(self, marker: Any) -> bool:
         return marker in self._context
 
 
@@ -286,12 +286,12 @@ class HasProvider(Provider):
         return await container._has(marker.value)  # noqa: SLF001
 
     @activator(HasContext)
-    async def has_context(
+    def has_context(
         self,
         marker: HasContext,
         container: AsyncContainer,
     ) -> bool:
-        return await container._has_context(marker.value)  # noqa: SLF001
+        return container._has_context(marker.value)  # noqa: SLF001
 
 
 def make_async_container(

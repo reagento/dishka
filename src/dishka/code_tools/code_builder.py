@@ -7,8 +7,7 @@ from typing import Any
 
 from dishka.text_rendering import get_name
 
-NOT_ALLOWED_SYMBOLS = re.compile("[^a-zA-Z0-9_]")
-IDENTIFIER = re.compile("[a-zA-Z_][a-zA-Z_0-9]*")
+NOT_ALLOWED_SYMBOLS = re.compile(r"\W", flags=re.ASCII)
 
 
 class CodeBuilder:
@@ -29,7 +28,8 @@ class CodeBuilder:
     def _make_global_name(self, obj: Any, name: str | None = None) -> str:
         if name is None:
             name = get_name(obj, include_module=False)
-        name = NOT_ALLOWED_SYMBOLS.sub("_", name)
+        if not name.isidentifier():
+            name = "_" + NOT_ALLOWED_SYMBOLS.sub("_", name)
         if (
             name not in self.locals and
             (name not in self.globals or self.globals[name] == obj)
@@ -47,19 +47,19 @@ class CodeBuilder:
             i += 1
 
     def assign_expr(self, target: str, value: str) -> None:
-        if IDENTIFIER.fullmatch(target):
-            raise ValueError( # noqa: TRY003
+        if target.isidentifier():
+            raise ValueError(  # noqa: TRY003
                 f"Name {target} is a valid identifier, use `assign_local`",
             )
         self.statement(f"{target} = {value}")
 
     def assign_local(self, name: str, value: str) -> None:
-        if not IDENTIFIER.fullmatch(name):
-            raise ValueError( # noqa: TRY003
+        if not name.isidentifier():
+            raise ValueError(  # noqa: TRY003
                 f"Name {name} is not a valid identifier",
             )
         if name in self.globals:
-            raise ValueError( # noqa: TRY003
+            raise ValueError(  # noqa: TRY003
                 f"Name {name} is already defined as global",
             )
         self.locals.add(name)
@@ -102,6 +102,7 @@ class CodeBuilder:
         self.statement("if " + expr + ":")
         with self.block():
             yield None
+
     @contextmanager
     def elif_(self, expr: str) -> Iterator[None]:
         self.statement("elif " + expr + ":")
@@ -116,12 +117,12 @@ class CodeBuilder:
 
     def call(self, func: str, *args: str, **kwargs: str) -> str:
         if (
-            IDENTIFIER.fullmatch(func) and
+            func.isidentifier() and
             func not in self.globals and
             func not in self.locals and
             (func.startswith("_") or not hasattr(builtins, func))
         ):
-            raise ValueError(f"Function {func} is not defined") # noqa: TRY003
+            raise ValueError(f"Function {func} is not defined")  # noqa: TRY003
         args_list = [*args]
         args_list.extend(f"{name}={value}" for name, value in kwargs.items())
         args_str = ", ".join(args_list)

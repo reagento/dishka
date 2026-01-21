@@ -57,7 +57,7 @@ class GraphValidator:
             return
         if key in self.path:
             keys = list(self.path)
-            factories = list(self.path.values())[keys.index(key) :]
+            factories = list(self.path.values())[keys.index(key):]
             raise CycleDependenciesError(factories)
 
         suggest_abstract_factories = []
@@ -224,89 +224,100 @@ class RegistryBuilder:
                 registries[scope].add_factory(factory, key)
         return tuple(registries.values())
 
+    def _ensure_override_flags(
+            self,
+            factory: Factory,
+            prev_factory: Factory | None,
+    ) -> None:
+        if self.skip_validation:
+            return
+
+        if (
+            not prev_factory and
+            self.validation_settings.nothing_overridden and
+            factory.when_override == BoolMarker(True)
+        ):
+            raise NothingOverriddenError(factory)
+
+        if (
+            prev_factory and
+            self.validation_settings.implicit_override and
+            factory.when_override is None
+        ):
+            raise ImplicitOverrideDetectedError(
+                prev_factory,
+                factory,
+            )
+
+    def _unite_factories_group(
+        self,
+        provides: DependencyKey,
+        group: list[Factory],
+    ) -> dict[DependencyKey, list[Factory]]:
+        if len(group) == 1:
+            self._ensure_override_flags(group[0], None)
+            return {}
+
+        when_dependencies: dict[DependencyKey, BaseMarker | None] = {}
+        moved_factories: dict[DependencyKey, list[Factory]] = {}
+        prev_factory: Factory | None = None
+
+        for factory in group:
+            self._ensure_override_flags(factory, prev_factory)
+            # implicit and explicit override
+            if factory.when_override in (None, BoolMarker(True)):
+                when_dependencies = {}
+                moved_factories = {}
+
+            depth = self.decorator_depth[provides]
+            self.decorator_depth[provides] += 1
+            new_component = (f"{DECORATED_COMPONENT_PREFIX}{depth}_"
+                             f"{provides.component}")
+            new_provides = DependencyKey(
+                type_hint=provides.type_hint,
+                component=new_component,
+            )
+            prev_factory = factory
+            new_factory = factory.replace(provides=new_provides)
+            moved_factories[new_provides] = [new_factory]
+            when_dependencies[new_provides] = factory.when_override
+        if len(moved_factories) == 1:
+            self.processed_factories[provides] = [
+                cast(Factory, prev_factory),  # at least one factory found
+            ]
+            return {}
+
+        scope = max(
+            cast(BaseScope, factory.scope)  # scopes already validated
+            for group in moved_factories.values()
+            for factory in group
+        )
+        factory = Factory(
+            cache=False,
+            scope=scope,
+            provides=provides,
+            is_to_bind=False,
+            dependencies=(),
+            type_=FactoryType.SELECTOR,
+            kw_dependencies={},
+            source=None,
+            when_override=None,
+            when_active=or_markers(*(
+                factory.when_active
+                for group in moved_factories.values()
+                for factory in group
+            )),
+            when_component=provides.component,
+            # reverse dict, so last wins
+            when_dependencies=dict(reversed(when_dependencies.items())),
+        )
+        moved_factories[provides] = [factory]
+        return moved_factories
+
     def _unite_selectors(self) -> None:
         new_groups = {}
         for provides, group in self.processed_factories.items():
-            if len(group) == 1:
-                factory = group[0]
-                if (
-                    self.validation_settings.nothing_overridden and
-                    factory.when_override==BoolMarker(True)
-                ):
-                    raise NothingOverriddenError(factory)
-                continue
-            when_dependencies: dict[DependencyKey, BaseMarker | None] = {}
-            moved_factories: dict[DependencyKey, list[Factory]] = {}
-            prev_factory: Factory | None = None
-            for factory in group:
-                if factory.when_override is None:
-                    # implicit override
-                    if (
-                        self.validation_settings.implicit_override and
-                        prev_factory
-                    ):
-                        raise ImplicitOverrideDetectedError(
-                            prev_factory,
-                            factory,
-                        )
-
-                    when_dependencies = {}
-                    moved_factories = {}
-                elif factory.when_override == BoolMarker(True):
-                    # explicit override
-                    if (
-                        self.validation_settings.nothing_overridden and
-                        factory.when_override==BoolMarker(True) and
-                        not prev_factory
-                    ):
-                        raise NothingOverriddenError(factory)
-                    when_dependencies = {}
-                    moved_factories = {}
-
-                depth = self.decorator_depth[provides]
-                self.decorator_depth[provides] += 1
-                new_component = (f"{DECORATED_COMPONENT_PREFIX}{depth}_"
-                               f"{provides.component}")
-                new_provides = DependencyKey(
-                    type_hint=provides.type_hint,
-                    component=new_component,
-                )
-                prev_factory = factory
-                new_factory = factory.replace(provides=new_provides)
-                moved_factories[new_provides] = [new_factory]
-                when_dependencies[new_provides] = factory.when_override
-            if len(moved_factories) == 1:
-                self.processed_factories[provides] = [
-                    cast(Factory, prev_factory),  # at least one factory found
-                ]
-                continue
-
-            new_groups.update(moved_factories)
-            scope = max(
-                cast(BaseScope, factory.scope)  # scopes already validated
-                for group in moved_factories.values()
-                for factory in group
-            )
-            factory = Factory(
-                cache=False,
-                scope=scope,
-                provides=provides,
-                is_to_bind=False,
-                dependencies=(),
-                type_=FactoryType.SELECTOR,
-                kw_dependencies={},
-                source=None,
-                when_override=None,
-                when_active=or_markers(*(
-                    factory.when_active
-                    for group in moved_factories.values()
-                    for factory in group
-                )),
-                when_component=provides.component,
-                # reverse dict, so last wins
-                when_dependencies=dict(reversed(when_dependencies.items())),
-            )
-            self.processed_factories[provides] = [factory]
+            new_groups |= self._unite_factories_group(provides, group)
         self.processed_factories.update(new_groups)
 
     def _process_activation(
@@ -451,7 +462,6 @@ class RegistryBuilder:
             decorator=decorator,
             provides=provides,
         )
-
 
     def _is_alias_decorated(
         self,

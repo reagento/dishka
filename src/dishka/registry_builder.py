@@ -315,7 +315,7 @@ class RegistryBuilder:
         return moved_factories
 
     def _unite_selectors(self) -> None:
-        new_groups = {}
+        new_groups: dict[DependencyKey, list[Factory]] = {}
         for provides, group in self.processed_factories.items():
             new_groups |= self._unite_factories_group(provides, group)
         self.processed_factories.update(new_groups)

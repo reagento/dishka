@@ -50,6 +50,7 @@ from dishka._adaptix.type_tools.generic_resolver import (
 )
 from dishka.dependency_source import (
     CompositeDependencySource,
+    DependencySource,
     Factory,
     ensure_composite,
 )
@@ -583,7 +584,7 @@ def _provide(
     if not recursive:
         return composite
 
-    additional = []
+    additional_sources: list[DependencySource] = []
     for src in composite.dependency_sources:
         if not isinstance(src, Factory):
             # we expect Factory and Alias here
@@ -598,8 +599,8 @@ def _provide(
                 override=override,
                 when=when,
             )
-            additional.extend(additional.dependency_sources)
-    composite.dependency_sources.extend(additional)
+            additional_sources.extend(additional.dependency_sources)
+    composite.dependency_sources.extend(additional_sources)
     return composite
 
 

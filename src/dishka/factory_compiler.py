@@ -1,5 +1,5 @@
 """
-Compile call of factory acctording to its type
+Compile call of factory according to its type
 
 For each template we expect global variables:
 * source - factory.source
@@ -34,7 +34,7 @@ def make_args(args: list[str], kwargs: dict[str, str]) -> str:
 
 
 GENERATOR = """
-{async}def get(getter, exits, context):
+{async}def get(getter, exits, cache, context):
     generator = source({args})
     solved = next(generator)
     exits.append(Exit(factory_type, generator))
@@ -42,7 +42,7 @@ GENERATOR = """
     return solved
 """
 ASYNC_GENERATOR = """
-{async}def get(getter, exits, context):
+{async}def get(getter, exits, cache, context):
     generator = source({args})
     solved = await anext(generator)
     exits.append(Exit(factory_type, generator))
@@ -50,33 +50,39 @@ ASYNC_GENERATOR = """
     return solved
 """
 FACTORY = """
-{async}def get(getter, exits, context):
+{async}def get(getter, exits, cache, context):
     solved = source({args})
     {cache}
     return solved
 """
 ASYNC_FACTORY = """
-{async}def get(getter, exits, context):
+{async}def get(getter, exits, cache, context):
     solved = await source({args})
     {cache}
     return solved
 """
 VALUE = """
-{async}def get(getter, exits, context):
+{async}def get(getter, exits, cache, context):
     return source
 """
 ALIAS = """
-{async}def get(getter, exits, context):
+{async}def get(getter, exits, cache, context):
     solved = {args}
     {cache}
     return solved
 """
 CONTEXT = """
-{async}def get(getter, exits, context):
-    raise NoContextValueError(provides.type_hint)
+{async}def get(getter, exits, cache, context):
+    try:
+        solved = context[provides.type_hint]
+    except KeyError:
+        raise NoContextValueError(provides.type_hint)
+    else:
+        {cache}
+        return solved
 """
 INVALID = """
-{async}def get(getter, exits, context):
+{async}def get(getter, exits, cache, context):
     raise UnsupportedFactoryError(
         f"Unsupported factory type {{factory_type}}.",
     )
@@ -99,7 +105,7 @@ SYNC_BODIES = {
     FactoryType.ALIAS: ALIAS,
 }
 
-CACHE = "context[provides] = solved"
+CACHE = "cache[provides] = solved"
 
 
 def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:

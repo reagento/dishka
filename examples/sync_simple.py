@@ -68,5 +68,5 @@ def main():
     container.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -12,7 +12,9 @@ def run():
         print("UnaryUnary response:", response.message)
 
         # Unary-Stream
-        responses = stub.UnaryStream(RequestMessage(message="Hello UnaryStream"))
+        responses = stub.UnaryStream(RequestMessage(
+            message="Hello UnaryStream",
+        ))
         for response in responses:
             print("UnaryStream response:", response.message)
 

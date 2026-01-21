@@ -3,11 +3,10 @@ from abc import abstractmethod
 from typing import Protocol
 
 import uvicorn
-from litestar import Controller, Litestar, get
-
 from dishka import Provider, Scope, make_async_container, provide
 from dishka.integrations.base import FromDishka
 from dishka.integrations.litestar import LitestarProvider, inject, setup_dishka
+from litestar import Controller, Litestar, get
 
 
 # app core
@@ -42,24 +41,27 @@ class InteractorProvider(Provider):
 
 
 class MainController(Controller):
-    path = '/'
+    path = "/"
 
     @get()
     @inject
     async def index(
             self, *, interactor: FromDishka[Interactor],
     ) -> str:
-        result = interactor()
-        return result
+        return interactor()
 
 
 def create_app():
     logging.basicConfig(
         level=logging.WARNING,
-        format='%(asctime)s  %(process)-7s %(module)-20s %(message)s',
+        format="%(asctime)s  %(process)-7s %(module)-20s %(message)s",
     )
     app = Litestar(route_handlers=[MainController])
-    container = make_async_container(InteractorProvider(), AdaptersProvider(), LitestarProvider())
+    container = make_async_container(
+        InteractorProvider(),
+        AdaptersProvider(),
+        LitestarProvider(),
+    )
     setup_dishka(container, app)
     return app
 

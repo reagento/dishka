@@ -24,6 +24,7 @@ from typing import (
 import pytest
 
 from dishka import Provider, Scope, alias, decorate, make_container, provide
+from dishka._adaptix.feature_requirement import HAS_TV_DEFAULT
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import (
     hint_to_dependency_key,
@@ -47,13 +48,23 @@ from .sample_providers import (
     ClassA,
     async_func_a,
     async_gen_a,
+    async_gen_a_short,
     async_iter_a,
     async_iterator_a,
+    async_typing_gen_a,
     sync_func_a,
     sync_gen_a,
+    sync_gen_a_short,
     sync_iter_a,
     sync_iterator_a,
+    sync_typing_gen_a,
 )
+
+if HAS_TV_DEFAULT:
+    from .sample_providers import (
+        async_typing_gen_a_short,
+        sync_typing_gen_a_short,
+    )
 
 
 def test_provider_init():
@@ -76,10 +87,20 @@ def test_provider_init():
         (sync_iter_a, FactoryType.GENERATOR, True),
         (sync_iterator_a, FactoryType.GENERATOR, True),
         (sync_gen_a, FactoryType.GENERATOR, True),
+        (sync_gen_a_short, FactoryType.GENERATOR, True),
+        (sync_typing_gen_a, FactoryType.GENERATOR, True),
         (async_func_a, FactoryType.ASYNC_FACTORY, True),
         (async_iter_a, FactoryType.ASYNC_GENERATOR, True),
         (async_iterator_a, FactoryType.ASYNC_GENERATOR, True),
         (async_gen_a, FactoryType.ASYNC_GENERATOR, True),
+        (async_gen_a_short, FactoryType.ASYNC_GENERATOR, True),
+        (async_typing_gen_a, FactoryType.ASYNC_GENERATOR, True),
+        *(
+            [
+                (sync_typing_gen_a_short, FactoryType.GENERATOR, True),
+                (async_typing_gen_a_short, FactoryType.ASYNC_GENERATOR, True),
+            ] if HAS_TV_DEFAULT else []
+        ),
     ],
 )
 def test_parse_factory(source, provider_type, is_to_bound):
@@ -178,6 +199,74 @@ def test_provider_instance_scope():
     assert len(provider.factories) == 1
     factory = provider.factories[0]
     assert factory.scope == Scope.REQUEST
+
+
+def test_provider_provide_scope():
+    class SomeClass:
+        pass
+
+    class MyProvider(Provider):
+        foo = provide(SomeClass, scope=Scope.REQUEST)
+
+    provider = MyProvider()
+    assert len(provider.factories) == 1
+    factory = provider.factories[0]
+    assert (
+        factory.scope == Scope.REQUEST
+    ), "Expected factory scope to match scope passed to provide()"
+
+
+def test_provider_provide_scope_overrides_instance_scope():
+    class SomeClass:
+        pass
+
+    class MyProvider(Provider):
+        foo = provide(SomeClass, scope=Scope.REQUEST)
+
+    provider = MyProvider(scope=Scope.APP)
+    assert len(provider.factories) == 1
+    factory = provider.factories[0]
+    assert (
+        factory.scope == Scope.REQUEST
+    ), "Scope passed to provide() should override scope set on provider "
+    "instance"
+    "instance"
+
+
+def test_provider_provide_scope_overrides_class_scope():
+    class SomeClass:
+        pass
+
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        foo = provide(SomeClass, scope=Scope.REQUEST)
+
+    provider = MyProvider()
+    assert len(provider.factories) == 1
+    factory = provider.factories[0]
+    assert (
+        factory.scope == Scope.REQUEST
+    ), "Scope passed to provide method should override scope set on "
+    "provider class"
+
+
+def test_provider_instance_scope_overrides_class_scope():
+    class SomeClass:
+        pass
+
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        foo = provide(SomeClass)
+
+    provider = MyProvider(scope=Scope.REQUEST)
+    assert len(provider.factories) == 1
+    factory = provider.factories[0]
+    assert (
+        factory.scope == Scope.REQUEST
+    ), "Scope set on provider instance should override scope set on "
+    "provider class"
 
 
 def test_provider_instance_braces():

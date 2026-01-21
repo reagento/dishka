@@ -4,7 +4,6 @@ from functools import wraps
 from typing import Protocol
 
 import click
-
 from dishka import (
     FromDishka,
     Provider,
@@ -66,7 +65,7 @@ def main(context: click.Context):
 @async_command
 async def hello(count: int, name: str, interactor: FromDishka[Interactor]):
     """Simple program that greets NAME for a total of COUNT times."""
-    for x in range(count):
+    for _ in range(count):
         click.echo(f"Hello {name}!")
         click.echo(await interactor())
 

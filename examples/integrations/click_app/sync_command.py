@@ -2,7 +2,6 @@ from abc import abstractmethod
 from typing import Protocol
 
 import click
-
 from dishka import FromDishka, Provider, Scope, make_container, provide
 from dishka.integrations.click import setup_dishka
 
@@ -48,7 +47,7 @@ def main(context: click.Context):
 @click.option("--name", prompt="Your name", help="The person to greet.")
 def hello(count: int, name: str, interactor: FromDishka[Interactor]):
     """Simple program that greets NAME for a total of COUNT times."""
-    for x in range(count):
+    for _ in range(count):
         click.echo(f"Hello {name}!")
         click.echo(interactor())
 

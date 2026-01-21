@@ -99,7 +99,7 @@ def _get_init_members(tp: type) -> MembersStorage[str, None]:
     return MembersStorage(
         meta=None,
         members=type_hints,
-        overriden=overridden,
+        overridden=overridden,
     )
 
 
@@ -186,7 +186,7 @@ def _generator_result(hint: Any) -> Any:
     elif origin is Iterator:
         return get_args(hint)[0]
     elif origin is Generator:
-        return get_args(hint)[1]
+        return get_args(hint)[0]
     # errors
     name = _type_repr(hint)
     if origin is AsyncIterable:
@@ -261,7 +261,7 @@ def _make_factory_by_class(
     try:
         hints = dict(res.get_resolved_members(source).members)
     except NameError as e:
-        raise UndefinedTypeAnalysisError(source, e.name) from e
+        raise UndefinedTypeAnalysisError(source, str(e.name)) from e
 
     hints.pop("return", _empty)
     params = signature(init).parameters
@@ -319,7 +319,7 @@ def _make_factory_by_function(
     try:
         hints = get_type_hints(source, include_extras=True)
     except NameError as e:
-        raise UndefinedTypeAnalysisError(source, e.name) from e
+        raise UndefinedTypeAnalysisError(source, str(e.name)) from e
     if is_in_class:
         self = next(iter(params.values()), None)
         if self and self.name not in hints:
@@ -365,7 +365,7 @@ def _make_factory_by_static_method(
     try:
         hints = get_type_hints(source, include_extras=True)
     except NameError as e:
-        raise UndefinedTypeAnalysisError(source, e.name) from e
+        raise UndefinedTypeAnalysisError(source, str(e.name)) from e
 
     params = signature(source).parameters
     possible_dependency = hints.pop("return", _empty)

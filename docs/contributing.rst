@@ -103,7 +103,16 @@ We use ``zizmor`` to audit our GitHub Actions workflows for security issues. To 
 
 .. code-block::
 
-    zizmor .github/workflows
+    zizmor .github/
+
+Running spell check for code and documentation
+==============================================
+
+We use ``typos`` to check our code and documentation for spelling mistakes. To run it locally:
+
+.. code-block::
+
+    typos src/ tests/ examples/ docs/ .github/ CONTRIBUTING.md README.md
 
 Submitting changes
 ============================

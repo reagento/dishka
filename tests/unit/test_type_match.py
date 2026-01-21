@@ -20,7 +20,7 @@ class SubAGeneric(AGeneric[T], Generic[T]): ...
 class BGeneric(Generic[T]): ...
 
 
-class Mutiple(Generic[T, T2, T3]): ...
+class Multiple(Generic[T, T2, T3]): ...
 
 
 class C: ...
@@ -56,18 +56,18 @@ TSubCCD = TypeVar("TSubCCD", "C", SubC, D)
         (AGeneric[TC], AGeneric[SubC], True),
         (AGeneric[C], BGeneric[C], False),
         (
-            Mutiple[AGeneric[T], AGeneric[AGeneric[T2]], T3],
-            Mutiple[AGeneric[int], AGeneric[AGeneric[T]], T2],
+            Multiple[AGeneric[T], AGeneric[AGeneric[T2]], T3],
+            Multiple[AGeneric[int], AGeneric[AGeneric[T]], T2],
             True,
         ),
         (
-            Mutiple[AGeneric[T], AGeneric[AGeneric[T]], T3],
-            Mutiple[AGeneric[int], AGeneric[AGeneric[int]], T2],
+            Multiple[AGeneric[T], AGeneric[AGeneric[T]], T3],
+            Multiple[AGeneric[int], AGeneric[AGeneric[int]], T2],
             True,
         ),
         (
-            Mutiple[AGeneric[T], AGeneric[AGeneric[T]], T3],
-            Mutiple[AGeneric[int], AGeneric[AGeneric[str]], T2],
+            Multiple[AGeneric[T], AGeneric[AGeneric[T]], T3],
+            Multiple[AGeneric[int], AGeneric[AGeneric[str]], T2],
             False,
         ),
         (CGeneric[T4], CGeneric[Literal["a"]], True),

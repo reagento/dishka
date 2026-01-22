@@ -72,21 +72,23 @@ class BinOpMarker(BaseMarker):
     op: ClassVar[str]
 
     def __eq__(self, other: object) -> bool:
-        if type(self) is not type(other):
+        if not isinstance(other, BinOpMarker):
             return NotImplemented
-        return (
+        if type(self) is not type(other):
+            return False
+        return bool(
             (self.left == other.left and self.right == other.right) or
-            (self.right == other.left and self.left == other.right)
+            (self.right == other.left and self.left == other.right),
         )
 
-    def __ne__(self, other):
+    def __ne__(self, other: object) -> bool:
         eq = self.__eq__(other)
         if eq is NotImplemented:
             return NotImplemented
         return not eq
 
     def __hash__(self) -> int:
-        return hash(self._ordered_values())
+        return hash(self.left) + hash(self.right)
 
     def __repr__(self) -> str:
         return f"({self.left!r} {self.op} {self.right!r})"

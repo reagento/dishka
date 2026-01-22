@@ -1,6 +1,6 @@
 import pytest
 
-from dishka import Marker, Has
+from dishka import Has, Marker
 from dishka.entities.marker import BoolMarker
 
 
@@ -47,14 +47,15 @@ def test_bool():
 
 
 @pytest.mark.parametrize(
-    ("marker, repr_value"), [
+    ("marker", "repr_value"),
+    [
         (Marker("a"), "Marker('a')"),
         (Child("a"), "Child('a')"),
         (~Marker("a"), "~Marker('a')"),
         (Marker("a") | Marker("b"), "(Marker('a') | Marker('b'))"),
         (Marker("a") & Marker("b"), "(Marker('a') & Marker('b'))"),
-        (Has(int), "Has(<class 'int'>)")
-    ]
+        (Has(int), "Has(<class 'int'>)"),
+    ],
 )
 def test_repr(marker, repr_value):
     assert repr(marker) == repr_value

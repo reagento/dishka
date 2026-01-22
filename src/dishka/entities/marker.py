@@ -71,15 +71,19 @@ class BinOpMarker(BaseMarker):
     right: BaseMarker
     op: ClassVar[str]
 
-    def _ordered_values(self) -> tuple[BaseMarker, BaseMarker]:
-        if id(self.left) < id(self.right):
-            return self.left, self.right
-        return self.right, self.left
-
     def __eq__(self, other: object) -> bool:
         if type(self) is not type(other):
             return NotImplemented
-        return self._ordered_values() == self._ordered_values()
+        return (
+            (self.left == other.left and self.right == other.right) or
+            (self.right == other.left and self.left == other.right)
+        )
+
+    def __ne__(self, other):
+        eq = self.__eq__(other)
+        if eq is NotImplemented:
+            return NotImplemented
+        return not eq
 
     def __hash__(self) -> int:
         return hash(self._ordered_values())
@@ -88,7 +92,7 @@ class BinOpMarker(BaseMarker):
         return f"({self.left!r} {self.op} {self.right!r})"
 
 
-@dataclass(frozen=True, slots=True, repr=False)
+@dataclass(frozen=True, slots=True, repr=False, eq=False)
 class OrMarker(BinOpMarker):
     op: ClassVar[str] = "|"
 
@@ -97,7 +101,7 @@ class OrMarker(BinOpMarker):
         return AndMarker(~self.left, ~self.right)
 
 
-@dataclass(frozen=True, slots=True, repr=False)
+@dataclass(frozen=True, slots=True, repr=False, eq=False)
 class AndMarker(BinOpMarker):
     op: ClassVar[str] = "&"
 
@@ -127,7 +131,7 @@ class Has(Marker):
     Used to check if a dependency can be created or is registered.
     """
     def __repr__(self) -> str:
-        return f"Has({self.value.__name__})"
+        return f"Has({self.value})"
 
 
 @dataclass(frozen=True, slots=True)

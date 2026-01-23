@@ -106,7 +106,7 @@ Checking graph elements
 
 In case you want to activate some features when specific objects are available you can use ``Has`` marker. It checks whether
 
-* requested class is registered in container with approriate scope
+* requested class is registered in container with appropriate scope
 * it is activated
 * if it actually presents in context while being registered as ``from_context``
 
@@ -137,6 +137,7 @@ For example:
 
 
 In this case,
+
 * ``memcached_impl`` is not used because no factory for ``MemcachedConfig`` is provided
 * ``redis_impl`` is not used while it is registered as ``from_context`` but no real value is provided.
 * ``base_impl`` is used as a default one, because none of later is active

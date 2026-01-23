@@ -25,6 +25,7 @@ Some of the integrations are supported by a community, refer to their documentat
    grpcio
    jobify <https://github.com/C3EQUALZz/dishka-jobify>
    litestar
+   pyramid
    RQ <https://github.com/prepin/dishka-rq>
    sanic
    starlette
@@ -78,6 +79,10 @@ Some of the integrations are supported by a community, refer to their documentat
      -
      -
    * -  `Quart <https://github.com/hrimov/quart-dishka>`_ (:abbr:`com (Community support)`)
+     -
+     -
+     -
+   * -  :ref:`Pyramid`
      -
      -
      -

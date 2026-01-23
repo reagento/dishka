@@ -77,6 +77,8 @@ INTEGRATIONS = [
     IntegrationEnv("telebot", "latest"),
     IntegrationEnv("celery", "540"),
     IntegrationEnv("celery", "latest"),
+    IntegrationEnv("pyramid", "202"),
+    IntegrationEnv("pyramid", "latest"),
 ]
 
 

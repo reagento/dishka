@@ -1,0 +1,2 @@
+-r test.txt
+pyramid==2.0.2

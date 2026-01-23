@@ -4,7 +4,7 @@ from dishka import (
     Marker,
     Provider,
     Scope,
-    activator,
+    activate,
     decorate,
     make_container,
     provide,
@@ -17,7 +17,7 @@ from dishka import (
 ])
 def test_decorate(*, active: bool, value: str):
     class MyProvider(Provider):
-        @activator(Marker("A"))
+        @activate(Marker("A"))
         def is_active(self):
             return active
 

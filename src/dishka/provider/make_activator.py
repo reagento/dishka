@@ -16,7 +16,7 @@ class NoMarkerError(DishkaError):
         return "At least one marker must be specified"
 
 
-def _activator(
+def _activate(
     source: Callable[..., Any],
     *markers: Marker | type[Marker],
     is_in_class: bool = True,
@@ -55,7 +55,7 @@ def _activator(
 
 
 @overload
-def activator(
+def activate(
     source: Marker | type[Marker] | None = None,
     *markers: Marker | type[Marker],
 ) -> Callable[
@@ -65,14 +65,14 @@ def activator(
 
 
 @overload
-def activator(
+def activate(
     source: Callable[..., Any],
     *markers: Marker | type[Marker],
 ) -> CompositeDependencySource:
     ...
 
 
-def activator(
+def activate(
     source: Callable[..., Any] | type[Marker] | Marker | None = None,
     *markers: Marker | type[Marker],
 ) -> CompositeDependencySource | Callable[
@@ -95,16 +95,16 @@ def activator(
         (isinstance(source, type) and issubclass(source, Marker))
     ):
         def decorator(func: Callable[..., Any]) -> CompositeDependencySource:
-            return _activator(func, source, *markers, is_in_class=True)
+            return _activate(func, source, *markers, is_in_class=True)
         return decorator
     if source is None:
         raise NoMarkerError
-    return _activator(source, *markers, is_in_class=True)
+    return _activate(source, *markers, is_in_class=True)
 
 
-def activator_on_instance(
+def activate_on_instance(
     source: Callable[..., Any],
     *markers: Marker | type,
 ) -> CompositeDependencySource:
     """Register an activation function on a provider instance."""
-    return _activator(source, *markers, is_in_class=False)
+    return _activate(source, *markers, is_in_class=False)

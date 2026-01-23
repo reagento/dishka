@@ -12,7 +12,7 @@ from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.marker import Has, HasContext
 from dishka.entities.scope import BaseScope, Scope
-from dishka.provider import Provider, activator
+from dishka.provider import Provider, activate
 from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .dependency_source import Factory
@@ -276,7 +276,7 @@ class ContextWrapper:
 
 
 class HasProvider(Provider):
-    @activator(Has)
+    @activate(Has)
     def has(
         self,
         marker: Has,
@@ -284,7 +284,7 @@ class HasProvider(Provider):
     ) -> bool:
         return container._has(marker.value)  # noqa: SLF001
 
-    @activator(HasContext)
+    @activate(HasContext)
     def has_context(
         self,
         marker: HasContext,

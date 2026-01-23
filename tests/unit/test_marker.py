@@ -19,6 +19,11 @@ def test_equal():
     assert a != c
 
 
+def test_child_comparison():
+    assert Child("a") == Child("a")
+    assert Child("a") != Child("b")
+
+
 def test_operations():
     a = Marker("a")
     b = Marker("b")

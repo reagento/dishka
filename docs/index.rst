@@ -48,6 +48,7 @@ Key features:
    advanced/context
    advanced/generics
    advanced/scopes
+   advanced/when
    advanced/testing/index
    advanced/plotter
 

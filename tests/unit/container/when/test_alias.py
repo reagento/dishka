@@ -5,7 +5,7 @@ from dishka import Marker, Provider, Scope, make_container
 
 def test_marker_alias():
     provider = Provider(scope=Scope.APP)
-    provider.activator(lambda: True, Marker("A"))
+    provider.activate(lambda: True, Marker("A"))
     provider.alias(source=Marker("A"), provides=Marker("B"))
     provider.provide(lambda: 1, provides=int)
     provider.provide(lambda: 2, provides=int, when=Marker("B"))
@@ -21,7 +21,7 @@ def activator_x(activator_dep: int, marker: Marker) -> bool:
 def test_marker_alias_component():
     provider_x = Provider(scope=Scope.APP, component="X")
     provider_x.provide(lambda: 42, provides=int)
-    provider_x.activator(activator_x, Marker("A"))
+    provider_x.activate(activator_x, Marker("A"))
 
     provider = Provider(scope=Scope.APP)
     provider.alias(source=Marker("A"), provides=Marker("B"), component="X")
@@ -44,7 +44,7 @@ def myactivator_x(activator_dep: int, marker: MyMarker) -> bool:
 def test_marker_type_alias_component():
     provider_x = Provider(scope=Scope.APP, component="X")
     provider_x.provide(lambda: 42, provides=int)
-    provider_x.activator(myactivator_x, MyMarker)
+    provider_x.activate(myactivator_x, MyMarker)
 
     provider = Provider(scope=Scope.APP)
     provider.alias(source=MyMarker, component="X")

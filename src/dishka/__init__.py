@@ -15,7 +15,7 @@ __all__ = [
     "Scope",
     "ValidationSettings",
     "WithParents",
-    "activator",
+    "activate",
     "alias",
     "decorate",
     "from_context",
@@ -38,7 +38,7 @@ from .entities.validation_settings import STRICT_VALIDATION, ValidationSettings
 from .entities.with_parents import WithParents
 from .provider import (
     Provider,
-    activator,
+    activate,
     alias,
     decorate,
     from_context,

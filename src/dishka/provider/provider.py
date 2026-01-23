@@ -19,7 +19,7 @@ from .exceptions import (
     NoScopeSetInContextError,
     NoScopeSetInProvideError,
 )
-from .make_activator import activator_on_instance
+from .make_activator import activate_on_instance
 from .make_alias import alias
 from .make_context_var import from_context
 from .make_decorator import decorate_on_instance
@@ -130,12 +130,12 @@ class Provider(BaseProvider):
                         f"Unsupported dependency source type {source}",
                     )
 
-    def activator(
+    def activate(
             self,
             source: Callable[..., Any],
             *markers: Marker | type[Marker],
     ) -> CompositeDependencySource:
-        composite = activator_on_instance(source, *markers)
+        composite = activate_on_instance(source, *markers)
         self._add_dependency_sources(composite.dependency_sources)
         return composite
 

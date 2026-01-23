@@ -17,7 +17,7 @@ def test_when_active(*, value: str, b_is_active: bool):
     provider = Provider(scope=Scope.APP)
     provider.provide(lambda: "a", provides=str)  # default
     provider.provide(lambda: "b", provides=str, when=Marker("B"))
-    provider.activator(lambda: b_is_active, Marker("B"))
+    provider.activate(lambda: b_is_active, Marker("B"))
 
     c = make_container(provider)
     assert c.get(str) == value
@@ -32,7 +32,7 @@ def test_when_type(value: str):
     def activator(marker: Marker) -> bool:
         return marker.value == value
 
-    provider.activator(activator, Marker)
+    provider.activate(activator, Marker)
 
     c = make_container(provider)
     assert c.get(str) == value
@@ -47,7 +47,7 @@ def test_when_type_nested_scope(value: str):
     def activator(marker: Marker) -> bool:
         return marker.value == value
 
-    provider.activator(activator, Marker)
+    provider.activate(activator, Marker)
 
     c = make_container(provider)
     with c() as request_c:
@@ -63,7 +63,7 @@ def test_when_dependencies():
     def activator(marker: Marker, number: int) -> bool:
         return marker.value == str(number)
 
-    provider.activator(activator, Marker)
+    provider.activate(activator, Marker)
 
     c = make_container(provider)
     with c() as request_c:
@@ -92,7 +92,7 @@ def test_invalid_marker():
 
 def test_activator_override():
     provider = Provider(scope=Scope.APP)
-    provider.activator(lambda: True, Marker("B"))
-    provider.activator(lambda: True, Marker("B"))
+    provider.activate(lambda: True, Marker("B"))
+    provider.activate(lambda: True, Marker("B"))
     with pytest.raises(ActivatorOverrideError):
         make_container(provider)

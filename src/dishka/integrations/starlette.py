@@ -14,8 +14,13 @@ from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.websockets import WebSocket
 
-from dishka import AsyncContainer, FromDishka, Provider, from_context
-from dishka import Scope as DIScope
+from dishka import (
+    AsyncContainer,
+    FromDishka,
+    Provider,
+    Scope as DIScope,
+    from_context,
+)
 from .base import wrap_injection
 
 T = TypeVar("T")

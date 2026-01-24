@@ -1,7 +1,7 @@
 import pytest
 
 from dishka import Has, Marker
-from dishka.entities.marker import BoolMarker
+from dishka.entities.marker import BoolMarker, combine_when
 
 
 class Child(Marker):
@@ -64,3 +64,17 @@ def test_bool():
 )
 def test_repr(marker, repr_value):
     assert repr(marker) == repr_value
+
+
+@pytest.mark.parametrize(
+    ("provider_when", "source_when", "expected"),
+    [
+        (None, None, None),
+        (Marker("a"), None, Marker("a")),
+        (None, Marker("b"), Marker("b")),
+        (Marker("a"), Marker("b"), Marker("a") & Marker("b")),
+    ],
+)
+def test_combine_when(provider_when, source_when, expected):
+    result = combine_when(provider_when, source_when)
+    assert result == expected

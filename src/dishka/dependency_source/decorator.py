@@ -2,7 +2,7 @@ from typing import Any, TypeVar, get_args, get_origin
 
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
-from dishka.entities.marker import BaseMarker, BoolMarker
+from dishka.entities.marker import BaseMarker, BoolMarker, combine_when
 from dishka.entities.scope import BaseScope
 from .factory import Factory
 from .type_match import get_typevar_replacement, is_broader_or_same_type
@@ -99,8 +99,10 @@ class Decorator:
         return old_key
 
     def __get__(self, instance: Any, owner: Any) -> "Decorator":
+        provider_when = getattr(instance, "when", None)
+        combined_when = combine_when(provider_when, self.when)
         return Decorator(
             self.factory.__get__(instance, owner),
             scope=self.scope,
-            when=self.when,
+            when=combined_when,
         )

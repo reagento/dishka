@@ -66,7 +66,7 @@ Some of the integrations are supported by a community, refer to their documentat
      -
      -
      -
-   * -  :ref:`Starlette`
+   * -  `Starlette <https://github.com/reagento/starlette-dishka>`_ (:abbr:`com (Community support)`)
      -
      -
      -

@@ -23,7 +23,14 @@ from typing import (
 
 import pytest
 
-from dishka import Provider, Scope, alias, decorate, make_container, provide
+from dishka import (
+    Provider,
+    Scope,
+    alias,
+    decorate,
+    make_container,
+    provide,
+)
 from dishka._adaptix.feature_requirement import HAS_TV_DEFAULT
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import (

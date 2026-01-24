@@ -50,14 +50,17 @@ class Provider(BaseProvider):
     """
     scope: BaseScope | None = None
     component: Component = DEFAULT_COMPONENT
+    when: BaseMarker | None = None
 
     def __init__(
             self,
             scope: BaseScope | None = None,
             component: Component | None = None,
+            when: BaseMarker | None = None,
     ):
         super().__init__(component)
         self.scope = scope or self.scope
+        self.when = when or self.when
         self._init_dependency_sources()
 
     def _init_dependency_sources(self) -> None:

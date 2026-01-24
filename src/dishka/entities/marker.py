@@ -125,6 +125,17 @@ def or_markers(*markers: BaseMarker | None) -> BaseMarker | None:
     return current_marker
 
 
+def combine_when(
+    provider_when: BaseMarker | None,
+    source_when: BaseMarker | None,
+) -> BaseMarker | None:
+    if provider_when is None:
+        return source_when
+    if source_when is None:
+        return provider_when
+    return provider_when & source_when
+
+
 @dataclass(frozen=True, slots=True)
 class Has(Marker):
     """

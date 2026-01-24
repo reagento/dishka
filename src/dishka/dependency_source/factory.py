@@ -9,7 +9,7 @@ from typing import Any
 from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryData, FactoryType
 from dishka.entities.key import DependencyKey
-from dishka.entities.marker import BaseMarker
+from dishka.entities.marker import BaseMarker, combine_when
 from dishka.entities.scope import BaseScope
 
 
@@ -76,6 +76,9 @@ class Factory(FactoryData):
         scope = self.scope or instance.scope
         if instance is None:
             return self
+        provider_when = getattr(instance, "when", None)
+        when_active = combine_when(provider_when, self.when_active)
+        when_override = combine_when(provider_when, self.when_override)
         if self.is_to_bind:
             source = self.source.__get__(instance, owner)
             dependencies = self.dependencies[1:]
@@ -91,8 +94,8 @@ class Factory(FactoryData):
             type_=self.type,
             is_to_bind=False,
             cache=self.cache,
-            when_override=self.when_override,
-            when_active=self.when_active,
+            when_override=when_override,
+            when_active=when_active,
             when_component=self.when_component,
             when_dependencies=self.when_dependencies,
         )

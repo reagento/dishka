@@ -101,6 +101,48 @@ Markers support simple combination logic when used in ``when=`` using ``|`` (or)
             return TestCacheImpl()
 
 
+Provider-level activation
+-------------------------
+
+You can set ``when=`` on the entire provider to apply a condition to all factories, aliases, and decorators within it. This reduces boilerplate when all dependencies in a provider share the same activation condition.
+
+.. code-block:: python
+
+    from dishka import Marker, Provider, Scope, provide
+
+    class DebugProvider(Provider):
+        when = Marker("debug")
+        scope = Scope.APP
+
+        @provide
+        def debug_cache(self) -> Cache:
+            return DebugCacheImpl()
+
+        @provide
+        def debug_logger(self) -> Logger:
+            return VerboseLogger()
+
+The provider's ``when`` can also be set via constructor:
+
+.. code-block:: python
+
+    provider = DebugProvider(when=Marker("debug"))
+
+When both provider and individual source have ``when=``, conditions are combined with AND logic:
+
+.. code-block:: python
+
+    class FeatureProvider(Provider):
+        when = Marker("prod")  # prerequisite
+        scope = Scope.APP
+
+        @provide(when=Has(RedisConfig))  # additional condition
+        def redis_cache(self, config: RedisConfig) -> Cache:
+            return RedisCache(config)
+        # Effective: Marker("prod") & Has(RedisConfig)
+
+The provider's ``when`` acts as a prerequisite; individual sources add further constraints. If a factory shouldn't inherit the provider's condition, move it to a different provider.
+
 Checking graph elements
 ---------------------------------------
 

@@ -1,10 +1,9 @@
-from __future__ import annotations
-
 from typing import Any
 
 from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
+from dishka.entities.marker import BaseMarker
 from dishka.entities.scope import BaseScope
 from .factory import Factory
 
@@ -14,19 +13,32 @@ def _identity(x: Any) -> Any:
 
 
 class Alias:
-    __slots__ = ("cache", "component", "override", "provides", "source")
+    __slots__ = (
+        "cache",
+        "component",
+        "override",
+        "provides",
+        "source",
+        "when_active",
+        "when_component",
+        "when_override",
+    )
 
     def __init__(
             self, *,
             source: DependencyKey,
             provides: DependencyKey,
             cache: bool,
-            override: bool,
+            when_active: BaseMarker | None = None,
+            when_override: BaseMarker | None = None,
+            when_component: Component | None,
     ) -> None:
         self.source = source
         self.provides = provides
         self.cache = cache
-        self.override = override
+        self.when_override = when_override
+        self.when_active = when_active
+        self.when_component = when_component
 
     def as_factory(
             self, scope: BaseScope | None, component: Component | None,
@@ -40,8 +52,11 @@ class Alias:
             kw_dependencies={},
             type_=FactoryType.ALIAS,
             cache=self.cache,
-            override=self.override,
+            when_override=self.when_override,
+            when_active=self.when_active,
+            when_component=self.when_component,
+            when_dependencies={},
         )
 
-    def __get__(self, instance: Any, owner: Any) -> Alias:
+    def __get__(self, instance: Any, owner: Any) -> "Alias":
         return self

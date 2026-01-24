@@ -10,7 +10,9 @@ from typing import Any, TypeVar, cast, overload
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
+from dishka.entities.marker import Has, HasContext
 from dishka.entities.scope import BaseScope, Scope
+from dishka.provider import Provider, activate
 from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .dependency_source import Factory
@@ -236,6 +238,24 @@ class Container:
         if errors:
             raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
+    def _has(self, marker: Any) -> bool:
+        key = DependencyKey(marker, DEFAULT_COMPONENT)
+        compiled = self.registry.get_compiled_activation(key)
+        if not compiled:
+            if not self.parent_container:
+                return False
+            return self.parent_container._has(marker)  # noqa: SLF001
+
+        return bool(compiled(
+            self._get_unlocked,
+            self._exits,
+            self._cache,
+            self._context,
+        ))
+
+    def _has_context(self, marker: Any) -> bool:
+        return marker in self._context
+
 
 class ContextWrapper:
     __slots__ = ("container",)
@@ -255,6 +275,24 @@ class ContextWrapper:
         self.container.close(exception=exc_val)
 
 
+class HasProvider(Provider):
+    @activate(Has)
+    def has(
+        self,
+        marker: Has,
+        container: Container,
+    ) -> bool:
+        return container._has(marker.value)  # noqa: SLF001
+
+    @activate(HasContext)
+    def has_context(
+        self,
+        marker: HasContext,
+        container: Container,
+    ) -> bool:
+        return container._has_context(marker.value)   # noqa: SLF001
+
+
 def make_container(
         *providers: BaseProvider,
         scopes: type[BaseScope] = Scope,
@@ -265,9 +303,11 @@ def make_container(
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,
 ) -> Container:
     context_provider = make_root_context_provider(providers, context, scopes)
+    has_provider = HasProvider()
     registries = RegistryBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,
+        multicomponent_providers=[has_provider],
         providers=(*providers, context_provider),
         skip_validation=skip_validation,
         validation_settings=validation_settings,

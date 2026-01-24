@@ -1,8 +1,17 @@
 from __future__ import annotations
 
-from typing import Annotated, Any, NamedTuple, get_args, get_origin
+from typing import (
+    Annotated,
+    Any,
+    Literal,
+    NamedTuple,
+    TypeVar,
+    get_args,
+    get_origin,
+)
 
 from .component import DEFAULT_COMPONENT, Component
+from .marker import Marker
 
 
 class _FromComponent(NamedTuple):
@@ -16,7 +25,7 @@ def FromComponent(  # noqa: N802
 
 
 class DependencyKey(NamedTuple):
-    type_hint: Any
+    type_hint: Any  # type hint or marker instance
     component: Component | None
 
     def with_component(self, component: Component | None) -> DependencyKey:
@@ -29,6 +38,28 @@ class DependencyKey(NamedTuple):
 
     def __str__(self) -> str:
         return f"({self.type_hint}, component={self.component!r})"
+
+    def is_const(self) -> bool:
+        return (
+            get_origin(self.type_hint) is Literal and
+            len(get_args(self.type_hint)) == 1
+        )
+
+    def is_type_var(self) -> bool:
+        return isinstance(self.type_hint, TypeVar)
+
+    def get_const_value(self) -> Any:
+        return get_args(self.type_hint)[0]
+
+    def is_marker(self) -> bool:
+        return isinstance(self.type_hint, Marker) or (
+            isinstance(self.type_hint, type) and
+            issubclass(self.type_hint, Marker)
+        )
+
+
+def const_dependency_key(value: Any) -> DependencyKey:
+    return DependencyKey(Literal[value], DEFAULT_COMPONENT)
 
 
 def dependency_key_to_hint(key: DependencyKey) -> Any:

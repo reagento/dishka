@@ -26,6 +26,8 @@ lint.ignore = [
     "PLR0913",
     "SIM103",
     "ISC003",
+    "PERF401",
+    "FBT003",
 
     # identical by code != identical by meaning
     "SIM114",

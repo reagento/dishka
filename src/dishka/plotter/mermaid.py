@@ -30,6 +30,7 @@ MERMAID_SYMBOLS_SUBST = str.maketrans({
     ">": "&gt",
 })
 
+
 class MermaidRenderer(Renderer):
     def __init__(self) -> None:
         self.nodes: dict[str, Node] = {}

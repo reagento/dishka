@@ -13,6 +13,7 @@ from dishka.entities.type_alias_type import (
     is_type_alias_type,
     unwrap_type_alias,
 )
+from dishka.provider.make_factory import calc_override
 
 
 def from_context(
@@ -40,7 +41,9 @@ def from_context(
                 source=DependencyKey(provides, DEFAULT_COMPONENT),
                 provides=DependencyKey(base_type, DEFAULT_COMPONENT),
                 cache=True,
-                override=override,
+                when_override=calc_override(when=None, override=override),
+                when_active=None,
+                when_component=None,
             ),
         )
     return composite

@@ -1,22 +1,22 @@
-from __future__ import annotations
-
 from typing import Any, TypeVar, get_args, get_origin
 
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
+from dishka.entities.marker import BaseMarker, BoolMarker
 from dishka.entities.scope import BaseScope
 from .factory import Factory
 from .type_match import get_typevar_replacement, is_broader_or_same_type
 
 
 class Decorator:
-    __slots__ = ("factory", "provides", "scope")
+    __slots__ = ("factory", "generic", "provides", "scope", "when")
 
     def __init__(
             self,
             factory: Factory,
             provides: DependencyKey | None = None,
             scope: BaseScope | None = None,
+            when: BaseMarker | None = None,
     ) -> None:
         self.factory = factory
         if provides:
@@ -24,6 +24,8 @@ class Decorator:
         else:
             self.provides = factory.provides
         self.scope = scope
+        self.generic = self.is_generic()
+        self.when = when
 
     def is_generic(self) -> bool:
         return (
@@ -47,6 +49,8 @@ class Decorator:
         )
         if self.scope is not None:
             scope = self.scope
+
+        when = self.when or BoolMarker(False)
         return Factory(
             scope=scope,
             source=self.factory.source,
@@ -66,7 +70,10 @@ class Decorator:
             },
             type_=self.factory.type,
             cache=cache,
-            override=False,
+            when_override=when,
+            when_active=when,
+            when_component=self.factory.when_component or component,
+            when_dependencies={},
         )
 
     def _replace_dep(
@@ -91,8 +98,9 @@ class Decorator:
             )
         return old_key
 
-    def __get__(self, instance: Any, owner: Any) -> Decorator:
+    def __get__(self, instance: Any, owner: Any) -> "Decorator":
         return Decorator(
             self.factory.__get__(instance, owner),
             scope=self.scope,
+            when=self.when,
         )

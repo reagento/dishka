@@ -1,9 +1,10 @@
 from collections import defaultdict
-from collections.abc import Sequence
-from typing import Any, TypeVar, cast, get_origin
+from collections.abc import Iterator, Sequence
+from typing import Any, cast, get_origin
 
 from ._adaptix.type_tools.basic_utils import is_generic
 from .dependency_source import (
+    Activator,
     Alias,
     ContextVariable,
     Decorator,
@@ -12,19 +13,30 @@ from .dependency_source import (
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
+from .entities.marker import (
+    BaseMarker,
+    BinOpMarker,
+    BoolMarker,
+    Marker,
+    NotMarker,
+    or_markers,
+)
 from .entities.scope import BaseScope, InvalidScopes
 from .entities.validation_settings import ValidationSettings
 from .exceptions import (
+    ActivatorOverrideError,
     AliasedFactoryNotFoundError,
     CycleDependenciesError,
     GraphMissingFactoryError,
     ImplicitOverrideDetectedError,
     InvalidGraphError,
+    InvalidMarkerError,
+    NoActivatorError,
     NoFactoryError,
     NothingOverriddenError,
     UnknownScopeError,
 )
-from .provider import BaseProvider
+from .provider import BaseProvider, ProviderWrapper
 from .registry import Registry
 
 DECORATED_COMPONENT_PREFIX = "__Dishka_decorate_"
@@ -45,7 +57,7 @@ class GraphValidator:
             return
         if key in self.path:
             keys = list(self.path)
-            factories = list(self.path.values())[keys.index(key) :]
+            factories = list(self.path.values())[keys.index(key):]
             raise CycleDependenciesError(factories)
 
         suggest_abstract_factories = []
@@ -79,12 +91,12 @@ class GraphValidator:
             raise CycleDependenciesError([factory])
         try:
             for dep in factory.dependencies:
-                # ignore TypeVar parameters
-                if not isinstance(dep.type_hint, TypeVar):
+                # ignore TypeVar and const parameters
+                if not dep.is_type_var() and not dep.is_const():
                     self._validate_key(dep, registry_index)
             for dep in factory.kw_dependencies.values():
-                # ignore TypeVar parameters
-                if not isinstance(dep.type_hint, TypeVar):
+                # ignore TypeVar and const parameters
+                if not dep.is_type_var() and not dep.is_const():
                     self._validate_key(dep, registry_index)
 
         except NoFactoryError as e:
@@ -138,22 +150,27 @@ class RegistryBuilder:
             self,
             *,
             scopes: type[BaseScope],
+            multicomponent_providers: Sequence[BaseProvider],
             providers: Sequence[BaseProvider],
             container_key: DependencyKey,
             skip_validation: bool,
             validation_settings: ValidationSettings,
     ) -> None:
         self.scopes = scopes
+        self.multicomponent_providers = multicomponent_providers
         self.providers = providers
         self.dependency_scopes: dict[DependencyKey, BaseScope] = {}
         self.components: set[Component] = {DEFAULT_COMPONENT}
         self.alias_sources: dict[DependencyKey, Any] = {}
         self.aliases: dict[DependencyKey, Alias] = {}
+        self.marker_aliases_to: dict[DependencyKey, DependencyKey] = {}
         self.container_key = container_key
         self.decorator_depth: dict[DependencyKey, int] = defaultdict(int)
         self.skip_validation = skip_validation
         self.validation_settings = validation_settings
         self.processed_factories: dict[DependencyKey, list[Factory]] = {}
+        self.activators: dict[DependencyKey, Activator] = {}
+        self.requested_markers: set[tuple[DependencyKey, BaseScope]] = set()
 
     def _collect_components(self) -> None:
         for provider in self.providers:
@@ -184,24 +201,6 @@ class RegistryBuilder:
                 self.alias_sources[provides] = alias_source
                 self.aliases[provides] = alias
 
-    def _validate_override(self, factory_list: list[Factory]) -> None:
-        if self.skip_validation:
-            return
-
-        first_factory, *others = factory_list
-        if (
-            self.validation_settings.nothing_overridden and
-            first_factory.override
-        ):
-            raise NothingOverriddenError(first_factory)
-        if self.validation_settings.implicit_override:
-            for other_factory in others:
-                if not other_factory.override:
-                    raise ImplicitOverrideDetectedError(
-                        first_factory,
-                        other_factory,
-                    )
-
     def _make_registries(self) -> tuple[Registry, ...]:
         registries: dict[BaseScope, Registry] = {}
         has_fallback = True
@@ -220,24 +219,158 @@ class RegistryBuilder:
         for key, factory_list in self.processed_factories.items():
             if not factory_list:
                 continue
-            self._validate_override(factory_list)
-            factory = factory_list[-1]
-            scope = cast(BaseScope, factory.scope)
-            registries[scope].add_factory(factory, key)
+            for factory in factory_list:
+                scope = cast(BaseScope, factory.scope)
+                registries[scope].add_factory(factory, key)
         return tuple(registries.values())
 
+    def _ensure_override_flags(
+            self,
+            factory: Factory,
+            prev_factory: Factory | None,
+    ) -> None:
+        if self.skip_validation:
+            return
+
+        if (
+            not prev_factory and
+            self.validation_settings.nothing_overridden and
+            factory.when_override == BoolMarker(True)
+        ):
+            raise NothingOverriddenError(factory)
+
+        if (
+            prev_factory and
+            self.validation_settings.implicit_override and
+            factory.when_override is None
+        ):
+            raise ImplicitOverrideDetectedError(
+                prev_factory,
+                factory,
+            )
+
+    def _unite_factories_group(
+        self,
+        provides: DependencyKey,
+        group: list[Factory],
+    ) -> dict[DependencyKey, list[Factory]]:
+        if len(group) == 1:
+            self._ensure_override_flags(group[0], None)
+            return {}
+
+        when_dependencies: dict[DependencyKey, BaseMarker | None] = {}
+        moved_factories: dict[DependencyKey, list[Factory]] = {}
+        prev_factory: Factory | None = None
+
+        for factory in group:
+            self._ensure_override_flags(factory, prev_factory)
+            # implicit and explicit override
+            if factory.when_override in (None, BoolMarker(True)):
+                when_dependencies = {}
+                moved_factories = {}
+
+            depth = self.decorator_depth[provides]
+            self.decorator_depth[provides] += 1
+            new_component = (f"{DECORATED_COMPONENT_PREFIX}{depth}_"
+                             f"{provides.component}")
+            new_provides = DependencyKey(
+                type_hint=provides.type_hint,
+                component=new_component,
+            )
+            prev_factory = factory
+            new_factory = factory.replace(provides=new_provides)
+            moved_factories[new_provides] = [new_factory]
+            when_dependencies[new_provides] = factory.when_override
+        if len(moved_factories) == 1:
+            self.processed_factories[provides] = [
+                cast(Factory, prev_factory),  # at least one factory found
+            ]
+            return {}
+
+        scope = max(
+            cast(BaseScope, factory.scope)  # scopes already validated
+            for group in moved_factories.values()
+            for factory in group
+        )
+        factory = Factory(
+            cache=False,
+            scope=scope,
+            provides=provides,
+            is_to_bind=False,
+            dependencies=(),
+            type_=FactoryType.SELECTOR,
+            kw_dependencies={},
+            source=None,
+            when_override=None,
+            when_active=or_markers(*(
+                factory.when_active
+                for group in moved_factories.values()
+                for factory in group
+            )),
+            when_component=provides.component,
+            # reverse dict, so last wins
+            when_dependencies=dict(reversed(when_dependencies.items())),
+        )
+        moved_factories[provides] = [factory]
+        return moved_factories
+
+    def _unite_selectors(self) -> None:
+        new_groups: dict[DependencyKey, list[Factory]] = {}
+        for provides, group in self.processed_factories.items():
+            new_groups |= self._unite_factories_group(provides, group)
+        self.processed_factories.update(new_groups)
+
+    def _process_activation(
+            self,
+            provider: BaseProvider,
+            src: Activator,
+    ) -> None:
+        src = src.with_component(provider.component)
+        # at least one is set
+        marker = cast(Marker | type[Marker], src.marker or src.marker_type)
+        key = DependencyKey(marker, src.factory.when_component)
+        if key in self.activators:
+            raise ActivatorOverrideError(
+                marker,
+                [src.factory, self.activators[key].factory],
+            )
+        self.activators[key] = src
+
+    def _register_when(self, factory: Factory) -> None:
+        scope = cast(BaseScope, factory.scope)  # already validated
+        for marker in self._unpack_marker(factory.when_active):
+            marker_key = DependencyKey(marker, factory.when_component)
+            self.requested_markers.add((marker_key, scope))
+        for marker in self._unpack_marker(factory.when_override):
+            marker_key = DependencyKey(marker, factory.when_component)
+            self.requested_markers.add((marker_key, scope))
+
     def _process_factory(
-            self, provider: BaseProvider, factory: Factory,
+        self,
+        provider: BaseProvider,
+        factory: Factory,
     ) -> None:
         factory = factory.with_component(provider.component)
         lst = self.processed_factories.setdefault(factory.provides, [])
         lst.append(factory)
+        for dep in factory.dependencies:
+            if dep == factory.provides:
+                raise CycleDependenciesError([factory])
+        for dep in factory.kw_dependencies.values():
+            if dep == factory.provides:
+                raise CycleDependenciesError([factory])
+        self._register_when(factory)
 
     def _process_alias(
             self, provider: BaseProvider, alias: Alias,
     ) -> None:
         component = provider.component
         alias_source = alias.source.with_component(component)
+        if alias.provides.is_marker():
+            provides = alias.provides.with_component(component)
+            self.marker_aliases_to[provides] = alias_source
+            return
+
         visited_keys: list[DependencyKey] = []
         while alias_source not in self.dependency_scopes:
             if alias_source not in self.alias_sources:
@@ -270,6 +403,7 @@ class RegistryBuilder:
         self.dependency_scopes[factory.provides] = scope
         lst = self.processed_factories.setdefault(factory.provides, [])
         lst.append(factory)
+        self._register_when(factory)
 
     def _process_generic_decorator(
         self,
@@ -350,6 +484,7 @@ class RegistryBuilder:
             raise ValueError(  # noqa: TRY003
                 f"Unexpected empty component for {provides}",
             )
+
         group_replacement = []
         decorated_group = []
 
@@ -367,6 +502,9 @@ class RegistryBuilder:
                 "Cannot apply decorator because there is"
                 f"no factory for {provides}",
             )
+
+        if decorator.when not in (None, BoolMarker(True)):
+            group_replacement.extend(old_group)
         for old_factory in old_group:
             if (
                 old_factory.type is FactoryType.ALIAS
@@ -376,18 +514,22 @@ class RegistryBuilder:
 
             new_factory = old_factory.replace(provides=decorated_provides)
             decorated_group.append(new_factory)
-            group_replacement.append(decorator.as_factory(
+            decorated_factory = decorator.as_factory(
                 scope=cast(BaseScope, old_factory.scope),
                 new_dependency=decorated_provides,
                 cache=old_factory.cache,
                 component=provides.component,
-            ).replace(provides=provides))
+            ).replace(provides=provides)
+            group_replacement.append(decorated_factory)
+            self._register_when(decorated_factory)
 
         self.processed_factories[provides] = group_replacement
         self.processed_factories[decorated_provides] = decorated_group
 
     def _process_context_var(
-            self, provider: BaseProvider, context_var: ContextVariable,
+        self,
+        provider: BaseProvider,
+        context_var: ContextVariable,
     ) -> None:
         if context_var.scope is None:
             raise UnknownScopeError(
@@ -401,19 +543,97 @@ class RegistryBuilder:
         # append context factory to processed list
         lst = self.processed_factories.setdefault(factory.provides, [])
         lst.append(factory)
+        self._register_when(factory)
+
+    def _post_process_generic_factories(self) -> None:
+        found: list[Factory] = []
+        for factory_list in self.processed_factories.values():
+            for factory in factory_list:
+                if is_generic(factory.provides.type_hint):
+                    found.append(factory)
+        for factory in found:
+            origin = get_origin(factory.provides.type_hint)
+            origin_key = DependencyKey(origin, factory.provides.component)
+            lst = self.processed_factories.setdefault(origin_key, [])
+            lst.append(factory)
+
+    def _unpack_marker(self, marker: BaseMarker | None) -> Iterator[Marker]:
+        match marker:
+            case Marker():
+                yield marker
+            case NotMarker():
+                yield from self._unpack_marker(marker.marker)
+            case BinOpMarker():
+                yield from self._unpack_marker(marker.left)
+                yield from self._unpack_marker(marker.right)
+            case BoolMarker():
+                return
+            case None:
+                return
+            case _:
+                raise InvalidMarkerError(marker)
+
+    def _find_activator(
+        self,
+        key: DependencyKey,
+    ) -> tuple[DependencyKey, Activator | None]:
+        if key in self.activators:
+            return key, self.activators[key]
+
+        if key in self.marker_aliases_to:
+            return self._find_activator(
+                self.marker_aliases_to[key],
+            )
+
+        type_key = DependencyKey(type(key.type_hint), key.component)
+        if type_key in self.activators:
+            return key, self.activators[type_key]
+        if type_key in self.marker_aliases_to:
+            # type aliases for markers always keep type, but change component
+            new_key = DependencyKey(
+                key.type_hint,
+                self.marker_aliases_to[type_key].component,
+            )
+            return self._find_activator(new_key)
+
+        return key, None
+
+    def _register_activators(self) -> None:
+        for dependency, scope in self.requested_markers:
+            new_key, activator = self._find_activator(dependency)
+            if not activator:
+                raise NoActivatorError(dependency)
+            factory = activator.as_factory(None, new_key.component, new_key)
+            factory = factory.with_scope(scope)
+            group = self.processed_factories.setdefault(dependency, [])
+            group.append(factory)
+
+    def _collect_factory_scopes(self, providers: list[BaseProvider]) -> None:
+        for provider in providers:
+            for factory in provider.factories:
+                self.dependency_scopes[
+                    factory.provides.with_component(provider.component)
+                ] = cast(BaseScope, factory.scope)
+
+    def _duplicate_multicomponent_providers(self) -> Iterator[BaseProvider]:
+        for component in self.components:
+            for provider in self.multicomponent_providers:
+                yield ProviderWrapper(component, provider)
 
     def build(self) -> tuple[Registry, ...]:
         self._collect_components()
         self._collect_provided_scopes()
         self._collect_aliases()
 
-        for provider in self.providers:
-            for factory in provider.factories:
-                self.dependency_scopes[
-                    factory.provides.with_component(provider.component)
-                ] = cast(BaseScope, factory.scope)
+        providers = [
+            *self._duplicate_multicomponent_providers(),
+            *self.providers,
+        ]
+        self._collect_factory_scopes(providers)
 
-        for provider in self.providers:
+        for provider in providers:
+            for activation in provider.activators:
+                self._process_activation(provider, activation)
             for factory in provider.factories:
                 self._process_factory(provider, factory)
             for alias in provider.aliases:
@@ -425,21 +645,11 @@ class RegistryBuilder:
                     self._process_generic_decorator(provider, decorator)
                 else:
                     self._process_normal_decorator(provider, decorator)
-        self._post_process_generic_factories()
 
+        self._post_process_generic_factories()
+        self._unite_selectors()
+        self._register_activators()
         registries = self._make_registries()
         if not self.skip_validation:
             GraphValidator(registries).validate()
         return registries
-
-    def _post_process_generic_factories(self) -> None:
-        found: list[Factory] = []
-        for factory_list in self.processed_factories.values():
-            for factory in factory_list:
-                if is_generic(factory.provides.type_hint):
-                    found.append(factory)  # noqa: PERF401
-        for factory in found:
-            origin = get_origin(factory.provides.type_hint)
-            origin_key = DependencyKey(origin, factory.provides.component)
-            lst = self.processed_factories.setdefault(origin_key, [])
-            lst.append(factory)

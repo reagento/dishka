@@ -1,9 +1,18 @@
 from abc import ABC, ABCMeta
-from collections.abc import Callable
 from enum import Enum
-from typing import Any, Final, Generic, Protocol, TypeVar, get_args, get_origin
+from typing import (
+    Any,
+    Final,
+    Generic,
+    Protocol,
+    TypeAlias,
+    TypeVar,
+    get_args,
+    get_origin,
+)
 
 from ._adaptix.type_tools.fundamentals import get_type_vars
+from .code_tools.factory_compiler import compile_activation, compile_factory
 from .container_objects import CompiledFactory
 from .dependency_source import (
     Factory,
@@ -14,8 +23,8 @@ from .dependency_source.type_match import (
 )
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
+from .entities.marker import Marker
 from .entities.scope import BaseScope
-from .factory_compiler import compile_factory
 
 IGNORE_TYPES: Final = (
     type,
@@ -29,10 +38,14 @@ IGNORE_TYPES: Final = (
     BaseException,
 )
 
+CompiledFactories: TypeAlias = dict[DependencyKey, CompiledFactory]
+
 
 class Registry:
     __slots__ = (
         "compiled",
+        "compiled_activation",
+        "compiled_activation_async",
         "compiled_async",
         "factories",
         "has_fallback",
@@ -42,8 +55,10 @@ class Registry:
     def __init__(self, scope: BaseScope, *, has_fallback: bool) -> None:
         self.scope = scope
         self.factories: dict[DependencyKey, Factory] = {}
-        self.compiled: dict[DependencyKey, Callable[..., Any]] = {}
-        self.compiled_async: dict[DependencyKey, Callable[..., Any]] = {}
+        self.compiled: CompiledFactories = {}
+        self.compiled_async: CompiledFactories = {}
+        self.compiled_activation: CompiledFactories = {}
+        self.compiled_activation_async: CompiledFactories = {}
         self.has_fallback = has_fallback
 
     def add_factory(
@@ -81,23 +96,55 @@ class Registry:
             self.compiled_async[dependency] = compiled
             return compiled
 
+    def get_compiled_activation(
+            self, dependency: DependencyKey,
+    ) -> CompiledFactory | None:
+        try:
+            return self.compiled_activation[dependency]
+        except KeyError:
+            factory = self.get_factory(dependency)
+            if not factory:
+                return None
+            compiled = compile_activation(factory=factory, is_async=False)
+            self.compiled_activation[dependency] = compiled
+            return compiled
+
+    def get_compiled_activation_async(
+            self, dependency: DependencyKey,
+    ) -> CompiledFactory | None:
+        try:
+            return self.compiled_activation_async[dependency]
+        except KeyError:
+            factory = self.get_factory(dependency)
+            if not factory:
+                return None
+            compiled = compile_activation(factory=factory, is_async=True)
+            self.compiled_activation_async[dependency] = compiled
+            return compiled
+
     def get_factory(self, dependency: DependencyKey) -> Factory | None:
         try:
             return self.factories[dependency]
         except KeyError:
+            if isinstance(dependency.type_hint, Marker):
+                return None
+
             origin = get_origin(dependency.type_hint)
             if not origin:
                 return None
-            if origin is type and self.has_fallback:
+
+            if (origin is type) and self.has_fallback:
                 return self._get_type_var_factory(dependency)
 
             origin_key = DependencyKey(origin, dependency.component)
             factory = self.factories.get(origin_key)
-            if not factory:
-                return None
-            if not is_broader_or_same_type(
+
+            if (
+                not factory or
+                not is_broader_or_same_type(
                     factory.provides.type_hint,
                     dependency.type_hint,
+                )
             ):
                 return None
             factory = self._specialize_generic(factory, dependency)
@@ -167,8 +214,11 @@ class Registry:
             type_=FactoryType.FACTORY,
             is_to_bind=False,
             cache=False,
-            override=False,
             source=lambda: typevar,
+            when_override=None,
+            when_active=None,
+            when_component=None,
+            when_dependencies={},
         )
 
     def _specialize_generic(
@@ -213,5 +263,8 @@ class Registry:
             type_=factory.type,
             scope=factory.scope,
             cache=factory.cache,
-            override=factory.override,
+            when_override=factory.when_override,
+            when_active=factory.when_active,
+            when_component=factory.when_component,
+            when_dependencies=factory.when_dependencies,
         )

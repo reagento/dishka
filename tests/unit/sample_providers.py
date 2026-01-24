@@ -125,6 +125,9 @@ value_factory = Factory(
     scope=Scope.APP,
     is_to_bind=False,
     cache=False,
-    override=False,
+    when_override=None,
+    when_active=None,
+    when_component=None,
+    when_dependencies={},
 )
 value_source = CompositeDependencySource(lambda: None, [value_factory])

@@ -2,17 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import TYPE_CHECKING
 
+from dishka.dependency_source.activator import Activator
+from dishka.dependency_source.factory import Factory
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.marker import Marker
-
-if TYPE_CHECKING:
-    from dishka.dependency_source.activator import Activator
-    from dishka.dependency_source.factory import Factory
-    from dishka.entities.scope import BaseScope
-    from dishka.registry import Registry
+from dishka.entities.scope import BaseScope
+from dishka.factory_index import FactoryIndex
 
 
 class ActivatorType(Enum):
@@ -31,26 +28,13 @@ class ClassifiedActivator:
 class ActivatorClassifier:
     def __init__(
         self,
-        registries: tuple[Registry, ...],
+        factory_index: FactoryIndex,
         activators: dict[DependencyKey, Activator],
         root_scope: BaseScope,
     ) -> None:
-        self._registries = registries
+        self._factory_index = factory_index
         self._activators = activators
         self._root_scope = root_scope
-        self._all_factories: dict[DependencyKey, Factory] = {}
-        self._context_keys_at_root: set[DependencyKey] = set()
-        self._build_factory_index()
-
-    def _build_factory_index(self) -> None:
-        for registry in self._registries:
-            for key, factory in registry.factories.items():
-                self._all_factories[key] = factory
-                if (
-                    factory.type == FactoryType.CONTEXT
-                    and factory.scope == self._root_scope
-                ):
-                    self._context_keys_at_root.add(key)
 
     def _is_async_factory(self, factory: Factory) -> bool:
         return factory.type in (
@@ -63,7 +47,6 @@ class ActivatorClassifier:
         activator: Activator,
         dep: DependencyKey,
     ) -> bool:
-        """Check if dependency is the activator's marker (auto-injected)."""
         return (
             dep.type_hint is activator.marker_type
             or dep.type_hint is Marker
@@ -97,10 +80,10 @@ class ActivatorClassifier:
         ]
 
     def _is_root_context_dep(self, dep: DependencyKey) -> bool:
-        return dep in self._context_keys_at_root
+        return dep in self._factory_index.context_keys_at_root
 
     def _is_registered(self, dep: DependencyKey) -> bool:
-        return dep in self._all_factories or dep in self._activators
+        return dep in self._factory_index or dep in self._activators
 
     def _topological_sort(
         self,

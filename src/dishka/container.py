@@ -30,7 +30,6 @@ from .exceptions import (
 from .provider import BaseProvider, make_root_context_provider
 from .registry import Registry
 from .registry_builder import RegistryBuilder
-from .static_evaluator import apply_static_evaluation
 
 T = TypeVar("T")
 
@@ -313,10 +312,7 @@ def make_container(
         skip_validation=skip_validation,
         validation_settings=validation_settings,
     )
-    registries = builder.build()
-    registries = apply_static_evaluation(
-        registries, builder.activators, context, start_scope,
-    )
+    registries = builder.build(context=context, start_scope=start_scope)
 
     container = Container(
         *registries,

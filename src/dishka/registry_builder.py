@@ -3,6 +3,7 @@ from collections.abc import Iterator, Sequence
 from typing import Any, cast, get_origin
 
 from ._adaptix.type_tools.basic_utils import is_generic
+from .activator_classifier import ActivatorClassifier
 from .dependency_source import (
     Activator,
     Alias,
@@ -36,8 +37,11 @@ from .exceptions import (
     NothingOverriddenError,
     UnknownScopeError,
 )
+from .factory_index import FactoryIndex
+from .processed_factory_filter import ProcessedFactoryFilter
 from .provider import BaseProvider, ProviderWrapper
 from .registry import Registry
+from .static_evaluator import StaticActivatorEvaluator
 
 DECORATED_COMPONENT_PREFIX = "__Dishka_decorate_"
 
@@ -620,7 +624,60 @@ class RegistryBuilder:
             for provider in self.multicomponent_providers:
                 yield ProviderWrapper(component, provider)
 
-    def build(self) -> tuple[Registry, ...]:
+    def _determine_root_scope(
+        self,
+        start_scope: BaseScope | None,
+    ) -> BaseScope:
+        if start_scope is not None:
+            return start_scope
+        first_scope: BaseScope | None = None
+        for scope in self.scopes:
+            if first_scope is None:
+                first_scope = scope
+            if not scope.skip:
+                return scope
+        return cast("BaseScope", first_scope)
+
+    def _apply_static_evaluation(
+        self,
+        context: dict[Any, Any],
+        start_scope: BaseScope | None,
+    ) -> None:
+        if not self.activators:
+            return
+
+        root_scope = self._determine_root_scope(start_scope)
+
+        factory_index = FactoryIndex.from_processed_factories(
+            self.processed_factories,
+            root_scope,
+        )
+
+        classifier = ActivatorClassifier(
+            factory_index, self.activators, root_scope,
+        )
+        classification = classifier.classify()
+
+        evaluator = StaticActivatorEvaluator(
+            classification,
+            context,
+            factory_index,
+        )
+        activation_results = evaluator.evaluate()
+
+        if not activation_results:
+            return
+
+        factory_filter = ProcessedFactoryFilter(activation_results)
+        self.processed_factories = factory_filter.filter(
+            self.processed_factories,
+        )
+
+    def build(
+        self,
+        context: dict[Any, Any] | None = None,
+        start_scope: BaseScope | None = None,
+    ) -> tuple[Registry, ...]:
         self._collect_components()
         self._collect_provided_scopes()
         self._collect_aliases()
@@ -647,8 +704,12 @@ class RegistryBuilder:
                     self._process_normal_decorator(provider, decorator)
 
         self._post_process_generic_factories()
-        self._unite_selectors()
         self._register_activators()
+
+        if context is not None:
+            self._apply_static_evaluation(context, start_scope)
+
+        self._unite_selectors()
         registries = self._make_registries()
         if not self.skip_validation:
             GraphValidator(registries).validate()

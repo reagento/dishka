@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from dishka.activator_classifier import (
-    ActivatorClassifier,
     ActivatorType,
     ClassifiedActivator,
 )
+from dishka.dependency_source.activator import Activator
 from dishka.entities.component import DEFAULT_COMPONENT
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
@@ -17,53 +17,8 @@ from dishka.entities.marker import (
     NotMarker,
     OrMarker,
 )
-from dishka.entities.scope import BaseScope
 from dishka.exceptions import NoContextValueError
-from dishka.registry_filter import RegistryFilter
-
-if TYPE_CHECKING:
-    from dishka.dependency_source.activator import Activator
-    from dishka.dependency_source.factory import Factory
-    from dishka.registry import Registry
-
-
-def _determine_root_scope(
-    registries: tuple[Registry, ...],
-    start_scope: BaseScope | None,
-) -> BaseScope:
-    if start_scope is not None:
-        return start_scope
-    for registry in registries:
-        if not registry.scope.skip:
-            return registry.scope
-    return registries[0].scope
-
-
-def apply_static_evaluation(
-    registries: tuple[Registry, ...],
-    activators: dict[DependencyKey, Activator],
-    context: dict[Any, Any] | None,
-    start_scope: BaseScope | None = None,
-) -> tuple[Registry, ...]:
-    if not activators:
-        return registries
-
-    root_scope = _determine_root_scope(registries, start_scope)
-    classifier = ActivatorClassifier(registries, activators, root_scope)
-    classification = classifier.classify()
-
-    evaluator = StaticActivatorEvaluator(
-        classification,
-        context or {},
-        registries,
-    )
-    activation_results = evaluator.evaluate()
-
-    if not activation_results:
-        return registries
-
-    registry_filter = RegistryFilter(activation_results)
-    return registry_filter.filter(registries)
+from dishka.factory_index import FactoryIndex
 
 
 class StaticActivatorEvaluator:
@@ -71,29 +26,21 @@ class StaticActivatorEvaluator:
         self,
         classification: dict[DependencyKey, ClassifiedActivator],
         context: dict[Any, Any],
-        registries: tuple[Registry, ...],
+        factory_index: FactoryIndex,
     ) -> None:
         self._classification = classification
         self._context = context
-        self._registries = registries
+        self._factory_index = factory_index
         self._context_by_type: dict[type, Any] = {
             type(v): v for v in context.values()
         }
         for k, v in context.items():
             if isinstance(k, type):
                 self._context_by_type[k] = v
-        self._registered_keys = self._build_registered_keys()
-
-    def _build_registered_keys(self) -> set[DependencyKey]:
-        keys: set[DependencyKey] = set()
-        for registry in self._registries:
-            keys.update(registry.factories.keys())
-        return keys
 
     def _evaluate_has(self, marker: Has) -> bool:
-        # Search across all registered keys for this type (any component)
         matching_key = None
-        for key in self._registered_keys:
+        for key in self._factory_index.factories_by_key:
             if key.type_hint == marker.value:
                 matching_key = key
                 break
@@ -101,29 +48,18 @@ class StaticActivatorEvaluator:
         if matching_key is None:
             return False
 
-        factory = self._get_factory(matching_key)
+        factory = self._factory_index.get(matching_key)
         if factory is None:
             return False
         if factory.type == FactoryType.CONTEXT:
             return marker.value in self._context_by_type
         return True
 
-    def _get_factory(self, key: DependencyKey) -> Factory | None:
-        for registry in self._registries:
-            if key in registry.factories:
-                return registry.factories[key]
-        return None
-
     def _collect_has_markers_from_when(
         self,
         marker: BaseMarker | None,
         component: str,
     ) -> dict[DependencyKey, Has]:
-        """Collect Has markers from when expression for static evaluation.
-
-        Note: HasContext markers are intentionally excluded - they are
-        evaluated at runtime to preserve from_context factory behavior.
-        """
         result: dict[DependencyKey, Has] = {}
         if marker is None:
             return result
@@ -145,14 +81,13 @@ class StaticActivatorEvaluator:
 
     def _collect_all_has_markers(self) -> dict[DependencyKey, Has]:
         all_markers: dict[DependencyKey, Has] = {}
-        for registry in self._registries:
-            for key, factory in registry.factories.items():
-                component = key.component or DEFAULT_COMPONENT
-                markers = self._collect_has_markers_from_when(
-                    factory.when_active,
-                    component,
-                )
-                all_markers.update(markers)
+        for key, factory in self._factory_index.factories_by_key.items():
+            component = key.component or DEFAULT_COMPONENT
+            markers = self._collect_has_markers_from_when(
+                factory.when_active,
+                component,
+            )
+            all_markers.update(markers)
         return all_markers
 
     def _get_static_activators(

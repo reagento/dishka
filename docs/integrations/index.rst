@@ -69,7 +69,7 @@ Some of the integrations are supported by a community, refer to their documentat
      -
      - `Jobify <https://github.com/C3EQUALZz/dishka-jobify>`_ (:abbr:`com (Community support)`)
      -
-   * -  :ref:`Starlette`
+   * -  `Starlette <https://github.com/reagento/starlette-dishka>`_ (:abbr:`com (Community support)`)
      -
      -
      -

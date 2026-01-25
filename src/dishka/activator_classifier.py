@@ -52,14 +52,16 @@ class ActivatorClassifier:
             or dep.type_hint is Marker
         )
 
+    def _get_factory_deps(self, factory: Factory) -> list[DependencyKey]:
+        return list(factory.dependencies) + list(
+            factory.kw_dependencies.values(),
+        )
+
     def _get_activator_dependencies(
         self,
         activator: Activator,
     ) -> frozenset[DependencyKey]:
-        factory = activator.factory
-        all_deps = list(factory.dependencies) + list(
-            factory.kw_dependencies.values(),
-        )
+        all_deps = self._get_factory_deps(activator.factory)
         return frozenset(
             dep for dep in all_deps
             if dep in self._activators
@@ -70,10 +72,7 @@ class ActivatorClassifier:
         self,
         activator: Activator,
     ) -> list[DependencyKey]:
-        factory = activator.factory
-        all_deps = list(factory.dependencies) + list(
-            factory.kw_dependencies.values(),
-        )
+        all_deps = self._get_factory_deps(activator.factory)
         return [
             dep for dep in all_deps
             if not self._is_marker_dependency(activator, dep)

@@ -21,22 +21,14 @@ from dishka.exceptions import NoContextValueError
 from dishka.factory_index import FactoryIndex
 
 
-class StaticActivatorEvaluator:
+class HasMarkerEvaluator:
     def __init__(
         self,
-        classification: dict[DependencyKey, ClassifiedActivator],
-        context: dict[Any, Any],
         factory_index: FactoryIndex,
+        context_types: frozenset[type],
     ) -> None:
-        self._classification = classification
-        self._context = context
         self._factory_index = factory_index
-        self._context_by_type: dict[type, Any] = {
-            type(v): v for v in context.values()
-        }
-        for k, v in context.items():
-            if isinstance(k, type):
-                self._context_by_type[k] = v
+        self._context_types = context_types
 
     def _evaluate_has(self, marker: Has) -> bool:
         matching_key = None
@@ -52,7 +44,7 @@ class StaticActivatorEvaluator:
         if factory is None:
             return False
         if factory.type == FactoryType.CONTEXT:
-            return marker.value in self._context_by_type
+            return marker.value in self._context_types
         return True
 
     def _collect_has_markers_from_when(
@@ -79,7 +71,7 @@ class StaticActivatorEvaluator:
             )
         return result
 
-    def _collect_all_has_markers(self) -> dict[DependencyKey, Has]:
+    def evaluate_all(self) -> dict[DependencyKey, bool]:
         all_markers: dict[DependencyKey, Has] = {}
         for key, factory in self._factory_index.factories_by_key.items():
             component = key.component or DEFAULT_COMPONENT
@@ -88,7 +80,28 @@ class StaticActivatorEvaluator:
                 component,
             )
             all_markers.update(markers)
-        return all_markers
+        return {
+            key: self._evaluate_has(marker)
+            for key, marker in all_markers.items()
+        }
+
+
+class StaticActivatorEvaluator:
+    def __init__(
+        self,
+        classification: dict[DependencyKey, ClassifiedActivator],
+        context: dict[Any, Any],
+        factory_index: FactoryIndex,
+    ) -> None:
+        self._classification = classification
+        self._context = context
+        self._factory_index = factory_index
+        self._context_by_type: dict[type, Any] = {
+            type(v): v for v in context.values()
+        }
+        for k, v in context.items():
+            if isinstance(k, type):
+                self._context_by_type[k] = v
 
     def _resolve_dependency(
         self,
@@ -102,9 +115,11 @@ class StaticActivatorEvaluator:
         if type_hint in self._context_by_type:
             return self._context_by_type[type_hint]
 
-        for ctx_value in self._context.values():
-            if isinstance(ctx_value, type_hint):
-                return ctx_value
+        if isinstance(type_hint, type):
+            for ctx_value in self._context.values():
+                if isinstance(ctx_value, type_hint):
+                    self._context_by_type[type_hint] = ctx_value
+                    return ctx_value
 
         raise NoContextValueError(type_hint)
 
@@ -145,8 +160,10 @@ class StaticActivatorEvaluator:
                 )
                 results[key] = result
 
-        has_markers = self._collect_all_has_markers()
-        for key, marker in has_markers.items():
-            results[key] = self._evaluate_has(marker)
+        has_evaluator = HasMarkerEvaluator(
+            self._factory_index,
+            frozenset(self._context_by_type.keys()),
+        )
+        results.update(has_evaluator.evaluate_all())
 
         return results

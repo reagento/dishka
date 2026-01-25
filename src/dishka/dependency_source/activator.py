@@ -2,7 +2,7 @@ from typing import Any
 
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey, const_dependency_key
-from dishka.entities.marker import Marker
+from dishka.entities.marker import BaseMarker, Marker
 from dishka.entities.scope import BaseScope
 from .factory import Factory
 
@@ -35,7 +35,7 @@ class Activator:
         if (
             dependency.type_hint is self.marker_type or
             dependency.type_hint is Marker or
-            dependency.type_hint is Marker
+            dependency.type_hint is BaseMarker
         ):
             return const_dependency_key(marker)
         return dependency

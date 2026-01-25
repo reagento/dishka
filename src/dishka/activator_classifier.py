@@ -107,6 +107,11 @@ class ActivatorClassifier:
         return result
 
     def classify(self) -> dict[DependencyKey, ClassifiedActivator]:
+        """Classify activators as STATIC or DYNAMIC.
+
+        Returns dict ordered by dependency topology (dependencies before
+        dependents). Callers may rely on this ordering invariant.
+        """
         activator_deps: dict[DependencyKey, frozenset[DependencyKey]] = {}
         for key, activator in self._activators.items():
             activator_deps[key] = self._get_activator_dependencies(activator)

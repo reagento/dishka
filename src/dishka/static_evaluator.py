@@ -90,38 +90,6 @@ class StaticActivatorEvaluator:
             all_markers.update(markers)
         return all_markers
 
-    def _get_static_activators(
-        self,
-    ) -> dict[DependencyKey, ClassifiedActivator]:
-        return {
-            key: classified
-            for key, classified in self._classification.items()
-            if classified.type == ActivatorType.STATIC
-        }
-
-    def _topological_sort(
-        self,
-        static_activators: dict[DependencyKey, ClassifiedActivator],
-    ) -> list[DependencyKey]:
-        result: list[DependencyKey] = []
-        visited: set[DependencyKey] = set()
-
-        def visit(key: DependencyKey) -> None:
-            if key in visited:
-                return
-            classified = static_activators.get(key)
-            if classified:
-                for dep in classified.dependencies:
-                    if dep in static_activators:
-                        visit(dep)
-            visited.add(key)
-            result.append(key)
-
-        for key in static_activators:
-            visit(key)
-
-        return result
-
     def _resolve_dependency(
         self,
         dep: DependencyKey,
@@ -169,11 +137,8 @@ class StaticActivatorEvaluator:
     def evaluate(self) -> dict[DependencyKey, bool]:
         results: dict[DependencyKey, bool] = {}
 
-        static_activators = self._get_static_activators()
-        if static_activators:
-            eval_order = self._topological_sort(static_activators)
-            for key in eval_order:
-                classified = static_activators[key]
+        for key, classified in self._classification.items():
+            if classified.type == ActivatorType.STATIC:
                 result = self._evaluate_activator(
                     classified.activator,
                     results,

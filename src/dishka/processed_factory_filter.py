@@ -14,8 +14,6 @@ from dishka.entities.marker import (
 
 
 class ProcessedFactoryFilter:
-    """Filters processed_factories based on static activation results."""
-
     def __init__(
         self,
         activation_results: dict[DependencyKey, bool],

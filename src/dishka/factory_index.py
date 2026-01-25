@@ -10,8 +10,6 @@ from dishka.entities.scope import BaseScope
 
 @dataclass(frozen=True, slots=True)
 class FactoryIndex:
-    """Lightweight factory lookup for activator classification."""
-
     factories_by_key: dict[DependencyKey, Factory]
     context_keys_at_root: frozenset[DependencyKey]
 

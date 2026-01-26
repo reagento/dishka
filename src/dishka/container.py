@@ -23,6 +23,7 @@ from .entities.validation_settings import (
 from .exceptions import (
     ChildScopeNotFoundError,
     ExitError,
+    NoActiveFactoryError,
     NoChildScopesError,
     NoFactoryError,
     NoNonSkippedScopesError,
@@ -161,7 +162,7 @@ class Container:
                 return self._get_unlocked(key)
             with lock:
                 return self._get_unlocked(key)
-        except NoFactoryError as e:
+        except (NoFactoryError, NoActiveFactoryError) as e:
             e.scope = self.scope
             raise
 
@@ -215,6 +216,9 @@ class Container:
             # return Factory. This happens because registry.get_compiled
             # uses the same method and returns None if the factory is not found
             # If None is returned, then go to the parent container
+            e.add_path(cast(Factory, self.registry.get_factory(key)))
+            raise
+        except NoActiveFactoryError as e:
             e.add_path(cast(Factory, self.registry.get_factory(key)))
             raise
 

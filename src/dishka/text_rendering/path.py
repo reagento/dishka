@@ -5,7 +5,7 @@ from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryData
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
-from dishka.text_rendering.name import get_key_name, get_source_name
+from dishka.text_rendering.name import get_key_name, get_name, get_source_name
 
 
 class PathRenderer:
@@ -27,6 +27,9 @@ class PathRenderer:
             return "▼   "
         else:
             return "╰─> "
+
+    def _arrow_failed_variant(self) -> str:
+            return "  ╰─× "  # noqa: RUF001
 
     def _arrow(self, index: int, length: int) -> str:
         if self.cycle:
@@ -52,6 +55,7 @@ class PathRenderer:
             self,
             path: Sequence[FactoryData],
             last: DependencyKey | None = None,
+            variants: Sequence[FactoryData] = (),
     ) -> str:
         row_count = len(path) + bool(last)
         rows = [
@@ -77,7 +81,11 @@ class PathRenderer:
         space_between = "   "
         res = ""
 
-        columns_count = len(rows[0].columns)
+        if not rows:
+            columns_count = 0
+        else:
+            columns_count = len(rows[0].columns)
+
         columns_width = [
             max(len(row.columns[col_num]) for row in rows)
             for col_num in range(columns_count)
@@ -104,6 +112,16 @@ class PathRenderer:
                     c.ljust(cw)
                     for c, cw in zip(row.columns, columns_width, strict=False)
                 ) +
+                "\n"
+            )
+        border_failed = self._arrow_failed_variant()
+        for variant in variants:
+            res += (
+                space_left +
+                border_failed +
+                get_name(variant.source, include_module=False) +
+                ": " +
+                repr(variant.when_override) +
                 "\n"
             )
         return res

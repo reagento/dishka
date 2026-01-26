@@ -59,7 +59,7 @@ class Alias:
                 if self.when_component is None
                 else self.when_component
             ),
-            when_dependencies={},
+            when_dependencies=[],
         )
 
     def __get__(self, instance: Any, owner: Any) -> "Alias":

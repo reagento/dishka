@@ -8,6 +8,7 @@ from typing import Any
 from dishka.text_rendering import get_name
 
 NOT_ALLOWED_SYMBOLS = re.compile(r"\W", flags=re.ASCII)
+MAX_NAME_LENGTH = 30
 
 
 class CodeBuilder:
@@ -28,6 +29,8 @@ class CodeBuilder:
     def _make_global_name(self, obj: Any, name: str | None = None) -> str:
         if name is None:
             name = get_name(obj, include_module=False)
+            if len(name) > MAX_NAME_LENGTH:
+                name = "val_" + get_name(type(obj), include_module=False)
         if not name.isidentifier():
             name = "_" + NOT_ALLOWED_SYMBOLS.sub("_", name)
         if (

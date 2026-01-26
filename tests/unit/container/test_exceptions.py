@@ -9,6 +9,7 @@ from dishka import (
     Container,
     DependencyKey,
     FromComponent,
+    Has,
     Provider,
     Scope,
     from_context,
@@ -16,8 +17,10 @@ from dishka import (
     make_container,
     provide,
 )
+from dishka.entities.factory_type import FactoryData, FactoryType
 from dishka.exceptions import (
     ExitError,
+    NoActiveFactoryError,
     NoContextValueError,
     NoFactoryError,
     UnknownScopeError,
@@ -308,3 +311,50 @@ def test_more_concrete_factory_provided() -> None:
     assert concrete_suggestions[0].provides == DependencyKey(
         Provided, DEFAULT_COMPONENT,
     )
+
+
+@pytest.mark.parametrize(("path_len", "variants_count"), [
+    (0, 1),
+    (1, 0),
+    (2, 2),
+])
+def test_no_active_factory_smoke(path_len: int, variants_count: int)  -> None:
+    data = FactoryData(
+        source=int,
+        provides=DependencyKey(object, DEFAULT_COMPONENT),
+        when_override=Has(float),
+        scope=Scope.APP,
+        type_=FactoryType.FACTORY,
+    )
+    e = NoActiveFactoryError(
+        requested=DependencyKey(object, DEFAULT_COMPONENT),
+        variants=[data]*variants_count,
+        path=[data]*path_len,
+    )
+    assert str(e)
+
+
+@pytest.mark.parametrize("is_async", [True, False])
+@pytest.mark.asyncio
+async def test_no_active_factory(*, is_async: bool) -> None:
+    provider = Provider(scope=Scope.APP)
+    provider.provide(int, when=Has(float))
+    provider.provide(int, when=Has(complex))
+
+    @provider.provide
+    def get_str(value: int) -> str:
+        raise NotImplementedError
+
+    if is_async:
+        container = make_async_container(provider)
+        with pytest.raises(NoActiveFactoryError) as e:
+            await container.get(str)
+    else:
+        container = make_container(provider)
+        with pytest.raises(NoActiveFactoryError) as e:
+            container.get(str)
+
+
+    assert str(e.value)
+    assert len(e.value.variants) == 2
+    assert len(e.value.path) == 2

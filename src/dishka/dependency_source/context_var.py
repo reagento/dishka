@@ -46,7 +46,7 @@ class ContextVariable:
                 when_override=override,
                 when_active=HasContext(self.provides.type_hint),
                 when_component=component,
-                when_dependencies={},
+                when_dependencies=[],
             )
         else:
             aliased = Alias(

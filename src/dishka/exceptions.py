@@ -147,6 +147,35 @@ class NoFactoryError(DishkaError):
             ) + suggestion
 
 
+class NoActiveFactoryError(DishkaError):
+    def __init__(
+        self,
+        requested: DependencyKey,
+        variants: Sequence[FactoryData],
+        path: Sequence[FactoryData] = (),
+    ) -> None:
+        self.requested = requested
+        self.variants = variants
+        self.path = list(path)
+        self.scope: BaseScope | None = None
+
+    def add_path(self, requested_by: FactoryData) -> None:
+        self.path.insert(0, requested_by)
+
+    def __str__(self) -> str:
+        requested_name = get_name(
+            self.requested.type_hint, include_module=False,
+        )
+        requested_repr = (
+            f"({requested_name}, "
+            f"component={self.requested.component!r})"
+        )
+        return (
+            f"Cannot select active factory for {requested_repr}. "
+            f"All variants are not active.\n"
+        ) + _linear_renderer.render(self.path, None, self.variants)
+
+
 class AliasedFactoryNotFoundError(ValueError, DishkaError):
     def __init__(
             self, dependency: DependencyKey, alias: FactoryData,

@@ -218,7 +218,7 @@ class Registry:
             when_override=None,
             when_active=None,
             when_component=None,
-            when_dependencies={},
+            when_dependencies=[],
         )
 
     def _specialize_generic(

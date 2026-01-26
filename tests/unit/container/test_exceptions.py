@@ -335,6 +335,7 @@ def test_no_active_factory_smoke(path_len: int, variants_count: int)  -> None:
 
 
 @pytest.mark.parametrize("is_async", [True, False])
+@pytest.mark.asyncio
 async def test_no_active_factory(*, is_async: bool) -> None:
     provider = Provider(scope=Scope.APP)
     provider.provide(int, when=Has(float))

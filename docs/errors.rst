@@ -137,6 +137,23 @@ Check what are you passing to ``provide`` function. Probably that object cannot 
 Note, that you can provide some type by creating an instance of another one using the form ``provide(YourClass, provides=SomeTypeHint)``.
 
 
+NoActiveFactoryError: Cannot select active factory for ...
+-------------------------------------------------------------------------
+
+.. code-block::
+
+    dishka.exceptions.NoActiveFactoryError: Cannot select active factory for (Cache, component=''). All variants are not active.
+       │      ◈ Scope.REQUEST, component='' ◈
+       ▼   __main__.Service   MyProvider.service
+       ╰─> __main__.Cache     select
+         ╰─× MyProvider.redis_cache: Has(RedisCache)
+         ╰─× MyProvider.cache: Marker("a")
+
+
+There were multiple variant of factory provided wit various conditions, but none of them is considered active.
+Check the logic of marker activation.
+
+
 ImplicitOverrideDetectedError: Detected multiple factories for ...
 -------------------------------------------------------------------------
 

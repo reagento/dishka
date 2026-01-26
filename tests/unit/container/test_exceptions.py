@@ -9,6 +9,7 @@ from dishka import (
     Container,
     DependencyKey,
     FromComponent,
+    Has,
     Provider,
     Scope,
     from_context,
@@ -18,6 +19,7 @@ from dishka import (
 )
 from dishka.exceptions import (
     ExitError,
+    NoActiveFactoryError,
     NoContextValueError,
     NoFactoryError,
     UnknownScopeError,
@@ -308,3 +310,20 @@ def test_more_concrete_factory_provided() -> None:
     assert concrete_suggestions[0].provides == DependencyKey(
         Provided, DEFAULT_COMPONENT,
     )
+
+
+def test_no_active_factory():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(int, when=Has(float))
+    provider.provide(int, when=Has(complex))
+    @provider.provide
+    def get_str(value: int) -> str:
+        pass
+
+    container = make_container(provider)
+    with pytest.raises(NoActiveFactoryError) as e:
+        container.get(str)
+
+    assert str(e.value)
+    assert len(e.value.variants) == 2
+    assert len(e.value.path) == 2

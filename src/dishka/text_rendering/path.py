@@ -5,7 +5,7 @@ from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryData
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
-from dishka.text_rendering.name import get_key_name, get_source_name
+from dishka.text_rendering.name import get_key_name, get_name, get_source_name
 
 
 class PathRenderer:
@@ -115,7 +115,9 @@ class PathRenderer:
             res += (
                 space_left +
                 border_failed +
-                get_source_name(variant) +
+                get_name(variant.source, include_module=False) +
+                ": " +
+                repr(variant.when_override) +
                 "\n"
             )
         return res

@@ -14,7 +14,11 @@ from dishka.entities.marker import (
     NotMarker,
     OrMarker,
 )
-from dishka.exceptions import NoContextValueError, UnsupportedFactoryError
+from dishka.exceptions import (
+    NoActiveFactoryError,
+    NoContextValueError,
+    UnsupportedFactoryError,
+)
 from dishka.text_rendering import get_name
 
 
@@ -171,9 +175,11 @@ def _selector_factory_body(
     builder: FactoryBuilder, source_call: str, factory: Factory,
 ) -> None:
     first = True
-    for key, marker in factory.when_dependencies.items():
-        condition = builder.when(marker, factory.when_component)
-        solved_value = builder.getter(key)
+    has_default = False
+    for variant in factory.when_dependencies:
+        condition = builder.when(variant.when_override, factory.when_component)
+        solved_value = builder.getter(variant.provides)
+        has_default = False
         if first and not condition:
             builder.assign_solved(solved_value)
         elif first:
@@ -183,10 +189,22 @@ def _selector_factory_body(
         elif not condition:
             with builder.else_():
                 builder.assign_solved(solved_value)
+                has_default = True
             first = True
         else:
             with builder.elif_(condition):
                 builder.assign_solved(solved_value)
+    if not has_default:
+        error_call = builder.call(
+            builder.global_(NoActiveFactoryError),
+            builder.global_(factory.provides),
+            builder.global_(factory.when_dependencies, "when_dependencies"),
+        )
+        if first:  # no options at all
+            builder.raise_(error_call)
+        else:
+            with builder.else_():
+                builder.raise_(error_call)
 
 
 ASYNC_TYPES = (FactoryType.ASYNC_FACTORY, FactoryType.ASYNC_GENERATOR)

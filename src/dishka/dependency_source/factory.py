@@ -40,7 +40,7 @@ class Factory(FactoryData):
         when_override: BaseMarker | None,
         when_active: BaseMarker | None,
         when_component: Component | None,
-        when_dependencies: dict[DependencyKey, BaseMarker | None],
+        when_dependencies: Sequence[FactoryData],
     ) -> None:
         """
 
@@ -62,12 +62,12 @@ class Factory(FactoryData):
             provides=provides,
             type_=type_,
             scope=scope,
+            when_override=when_override,
         )
         self.dependencies = dependencies
         self.kw_dependencies = kw_dependencies
         self.is_to_bind = is_to_bind
         self.cache = cache
-        self.when_override = when_override
         self.when_active = when_active
         self.when_component = when_component
         self.when_dependencies = when_dependencies

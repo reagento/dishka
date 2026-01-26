@@ -28,6 +28,9 @@ class PathRenderer:
         else:
             return "╰─> "
 
+    def _arrow_failed_variant(self) -> str:
+            return "  ╰─× "  # noqa: RUF001
+
     def _arrow(self, index: int, length: int) -> str:
         if self.cycle:
             return self._arrow_cycle(index, length)
@@ -52,6 +55,7 @@ class PathRenderer:
             self,
             path: Sequence[FactoryData],
             last: DependencyKey | None = None,
+            variants: Sequence[FactoryData] = (),
     ) -> str:
         row_count = len(path) + bool(last)
         rows = [
@@ -104,6 +108,14 @@ class PathRenderer:
                     c.ljust(cw)
                     for c, cw in zip(row.columns, columns_width, strict=False)
                 ) +
+                "\n"
+            )
+        border_failed = self._arrow_failed_variant()
+        for variant in variants:
+            res += (
+                space_left +
+                border_failed +
+                get_source_name(variant) +
                 "\n"
             )
         return res

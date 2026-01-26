@@ -334,7 +334,8 @@ def test_no_active_factory_smoke(path_len: int, variants_count: int)  -> None:
     assert str(e)
 
 
-def test_no_active_factory():
+@pytest.mark.parametrize("is_async", [True, False])
+async def test_no_active_factory(*, is_async: bool) -> None:
     provider = Provider(scope=Scope.APP)
     provider.provide(int, when=Has(float))
     provider.provide(int, when=Has(complex))
@@ -343,9 +344,15 @@ def test_no_active_factory():
     def get_str(value: int) -> str:
         raise NotImplementedError
 
-    container = make_container(provider)
-    with pytest.raises(NoActiveFactoryError) as e:
-        container.get(str)
+    if is_async:
+        container = make_async_container(provider)
+        with pytest.raises(NoActiveFactoryError) as e:
+            await container.get(str)
+    else:
+        container = make_container(provider)
+        with pytest.raises(NoActiveFactoryError) as e:
+            container.get(str)
+
 
     assert str(e.value)
     assert len(e.value.variants) == 2

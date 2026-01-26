@@ -17,6 +17,7 @@ from dishka import (
     make_container,
     provide,
 )
+from dishka.entities.factory_type import FactoryData, FactoryType
 from dishka.exceptions import (
     ExitError,
     NoActiveFactoryError,
@@ -310,6 +311,27 @@ def test_more_concrete_factory_provided() -> None:
     assert concrete_suggestions[0].provides == DependencyKey(
         Provided, DEFAULT_COMPONENT,
     )
+
+
+@pytest.mark.parametrize(("path_len", "variants_count"), [
+    (0, 1),
+    (1, 0),
+    (2, 2),
+])
+def test_no_active_factory_smoke(path_len: int, variants_count: int)  -> None:
+    data = FactoryData(
+        source=int,
+        provides=DependencyKey(object, DEFAULT_COMPONENT),
+        when_override=Has(float),
+        scope=Scope.APP,
+        type_=FactoryType.FACTORY,
+    )
+    e = NoActiveFactoryError(
+        requested=DependencyKey(object, DEFAULT_COMPONENT),
+        variants=[data]*variants_count,
+        path=[data]*path_len,
+    )
+    assert str(e)
 
 
 def test_no_active_factory():

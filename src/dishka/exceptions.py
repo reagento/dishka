@@ -166,25 +166,14 @@ class NoActiveFactoryError(DishkaError):
         requested_name = get_name(
             self.requested.type_hint, include_module=False,
         )
-        if self.path:
-            requested_repr = (
-                f"({requested_name}, "
-                f"component={self.requested.component!r})"
-            )
-            return (
-                f"Cannot select active factory for {requested_repr}. "
-                f"All variants are not active.\n"
-            ) + _linear_renderer.render(self.path, None, self.variants)
-        else:
-            requested_repr = (
-                f"({requested_name}, "
-                f"component={self.requested.component!r}, "
-                f"scope={self.scope!s})"
-            )
-            return (
-                f"Cannot select active factory for {requested_repr}. "
-                f"All variants are not active."
-            )
+        requested_repr = (
+            f"({requested_name}, "
+            f"component={self.requested.component!r})"
+        )
+        return (
+            f"Cannot select active factory for {requested_repr}. "
+            f"All variants are not active.\n"
+        ) + _linear_renderer.render(self.path, None, self.variants)
 
 
 class AliasedFactoryNotFoundError(ValueError, DishkaError):

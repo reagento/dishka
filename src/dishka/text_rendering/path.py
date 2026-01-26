@@ -81,7 +81,11 @@ class PathRenderer:
         space_between = "   "
         res = ""
 
-        columns_count = len(rows[0].columns)
+        if not rows:
+            columns_count = 0
+        else:
+            columns_count = len(rows[0].columns)
+
         columns_width = [
             max(len(row.columns[col_num]) for row in rows)
             for col_num in range(columns_count)

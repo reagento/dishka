@@ -316,9 +316,10 @@ def test_no_active_factory():
     provider = Provider(scope=Scope.APP)
     provider.provide(int, when=Has(float))
     provider.provide(int, when=Has(complex))
+
     @provider.provide
     def get_str(value: int) -> str:
-        pass
+        raise NotImplementedError
 
     container = make_container(provider)
     with pytest.raises(NoActiveFactoryError) as e:

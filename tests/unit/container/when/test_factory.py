@@ -1,9 +1,9 @@
 import pytest
 
 from dishka import Marker, Provider, Scope, make_container
+from dishka.exception_base import InvalidMarkerError
 from dishka.exceptions import (
     ActivatorOverrideError,
-    InvalidMarkerError,
     NoActivatorError,
     WhenOverrideConflictError,
 )

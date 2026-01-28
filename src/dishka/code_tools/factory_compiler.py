@@ -175,11 +175,9 @@ def _selector_factory_body(
     builder: FactoryBuilder, source_call: str, factory: Factory,
 ) -> None:
     first = True
-    has_default = False
     for variant in factory.when_dependencies:
         condition = builder.when(variant.when_override, factory.when_component)
         solved_value = builder.getter(variant.provides)
-        has_default = False
         if first and not condition:
             builder.assign_solved(solved_value)
         elif first:
@@ -189,12 +187,12 @@ def _selector_factory_body(
         elif not condition:
             with builder.else_():
                 builder.assign_solved(solved_value)
-                has_default = True
             first = True
         else:
             with builder.elif_(condition):
                 builder.assign_solved(solved_value)
-    if not has_default:
+    # if-chain not closed with else or not generated at all
+    if not first or not factory.when_dependencies:
         error_call = builder.call(
             builder.global_(NoActiveFactoryError),
             builder.global_(factory.provides),

@@ -29,7 +29,7 @@ class PathRenderer:
             return "╰─> "
 
     def _arrow_failed_variant(self) -> str:
-            return "  ╰─× "  # noqa: RUF001
+        return "  ╰─× "  # noqa: RUF001
 
     def _arrow(self, index: int, length: int) -> str:
         if self.cycle:

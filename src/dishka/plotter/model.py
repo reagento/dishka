@@ -13,6 +13,7 @@ class NodeType(Enum):
     CONTEXT = "Context"
     FACTORY = "Factory"
     DECORATOR = "Decorator"
+    SELECTOR = "Selector"
     ALIAS = "Alias"
 
 

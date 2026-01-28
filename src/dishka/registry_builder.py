@@ -14,12 +14,10 @@ from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.marker import (
-    BaseMarker,
-    BinOpMarker,
     BoolMarker,
     Marker,
-    NotMarker,
     or_markers,
+    unpack_marker,
 )
 from .entities.scope import BaseScope, InvalidScopes
 from .entities.validation_settings import ValidationSettings
@@ -30,7 +28,6 @@ from .exceptions import (
     GraphMissingFactoryError,
     ImplicitOverrideDetectedError,
     InvalidGraphError,
-    InvalidMarkerError,
     NoActivatorError,
     NoFactoryError,
     NothingOverriddenError,
@@ -339,10 +336,10 @@ class RegistryBuilder:
 
     def _register_when(self, factory: Factory) -> None:
         scope = cast(BaseScope, factory.scope)  # already validated
-        for marker in self._unpack_marker(factory.when_active):
+        for marker in unpack_marker(factory.when_active):
             marker_key = DependencyKey(marker, factory.when_component)
             self.requested_markers.add((marker_key, scope))
-        for marker in self._unpack_marker(factory.when_override):
+        for marker in unpack_marker(factory.when_override):
             marker_key = DependencyKey(marker, factory.when_component)
             self.requested_markers.add((marker_key, scope))
 
@@ -564,22 +561,6 @@ class RegistryBuilder:
             origin_key = DependencyKey(origin, factory.provides.component)
             lst = self.processed_factories.setdefault(origin_key, [])
             lst.append(factory)
-
-    def _unpack_marker(self, marker: BaseMarker | None) -> Iterator[Marker]:
-        match marker:
-            case Marker():
-                yield marker
-            case NotMarker():
-                yield from self._unpack_marker(marker.marker)
-            case BinOpMarker():
-                yield from self._unpack_marker(marker.left)
-                yield from self._unpack_marker(marker.right)
-            case BoolMarker():
-                return
-            case None:
-                return
-            case _:
-                raise InvalidMarkerError(marker)
 
     def _find_activator(
         self,

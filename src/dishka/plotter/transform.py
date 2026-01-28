@@ -4,8 +4,12 @@ from dishka import AsyncContainer, BaseScope, Container, DependencyKey
 from dishka._adaptix.type_tools.basic_utils import is_protocol
 from dishka.dependency_source import Factory
 from dishka.entities.factory_type import FactoryType
+from dishka.entities.marker import unpack_marker
 from dishka.registry import Registry
-from dishka.registry_builder import DECORATED_COMPONENT_PREFIX
+from dishka.registry_builder import (
+    DECORATED_COMPONENT_PREFIX,
+    SELECTOR_COMPONENT_PREFIX,
+)
 from dishka.text_rendering import get_name
 from .model import Group, GroupType, Node, NodeType
 
@@ -38,6 +42,8 @@ class Transformer:
         for dep in factory.kw_dependencies.values():
             if self._is_decorated(dep):
                 return NodeType.DECORATOR
+        if factory.when_dependencies:
+            return NodeType.SELECTOR
 
         if factory.type is FactoryType.ALIAS:
             return NodeType.ALIAS
@@ -51,11 +57,23 @@ class Transformer:
             return False
         return group.name.startswith(DECORATED_COMPONENT_PREFIX)
 
-    def _trace_decorator(self, node: Node, target_group: Group) -> None:
-        if node.type is not NodeType.DECORATOR:
+    def _is_selector_component(self, group: Group) -> bool:
+        if group.type is not GroupType.COMPONENT:
+            return False
+        return group.name.startswith(SELECTOR_COMPONENT_PREFIX)
+
+    def _trace_internal_components(
+        self,
+        node: Node,
+        target_group: Group,
+    ) -> None:
+        if node.type not in (NodeType.DECORATOR, NodeType.SELECTOR):
             return
         for group in self.groups.values():
-            if not self._is_decorated_component(group):
+            if not (
+                self._is_decorated_component(group) or
+                self._is_selector_component(group)
+            ):
                 continue
             nodes_to_move = [
                 n
@@ -65,7 +83,7 @@ class Transformer:
             for moved in nodes_to_move:
                 group.nodes.remove(moved)
                 target_group.nodes.append(moved)
-                self._trace_decorator(moved, target_group)
+                self._trace_internal_components(moved, target_group)
 
     def _make_factories(
             self, scope: BaseScope, group: Group, registry: Registry,
@@ -107,8 +125,13 @@ class Transformer:
         for key, factory in registry.factories.items():
             node = self.nodes[key, registry.scope]
             all_deps = (
-                    list(factory.dependencies)
-                    + list(factory.kw_dependencies.values())
+                list(factory.dependencies)
+                + list(factory.kw_dependencies.values())
+                + [
+                    DependencyKey(m, factory.when_component)
+                    for m in unpack_marker(factory.when_override)
+                ]
+                + [sub.provides for sub in factory.when_dependencies]
             )
             for dep in all_deps:
                 for dep_registry in parent_registries:
@@ -151,6 +174,6 @@ class Transformer:
 
         for group in self.groups.values():
             for node in group.nodes:
-                self._trace_decorator(node, group)
+                self._trace_internal_components(node, group)
 
         return self.clean_groups(result)

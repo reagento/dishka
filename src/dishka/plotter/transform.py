@@ -102,6 +102,9 @@ class Transformer:
                 )
                 group.children.append(component_group)
             node_name = get_name(key.type_hint, include_module=False)
+            if self._is_selector_component(component_group):
+                node_name = node_name + "?"
+
             if factory.type in (FactoryType.CONTEXT, FactoryType.ALIAS):
                 source_name = ""
             else:

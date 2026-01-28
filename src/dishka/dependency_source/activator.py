@@ -34,7 +34,6 @@ class Activator:
     ) -> DependencyKey:
         if (
             dependency.type_hint is self.marker_type or
-            dependency.type_hint is Marker or
             dependency.type_hint is Marker
         ):
             return const_dependency_key(marker)

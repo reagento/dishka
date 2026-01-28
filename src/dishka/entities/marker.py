@@ -1,5 +1,8 @@
+from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, ClassVar
+
+from dishka.exception_base import InvalidMarkerError
 
 
 class BaseMarker:
@@ -153,4 +156,21 @@ class HasContext(Marker):
     Special marker for checking if a type is available in current context.
     """
     def __repr__(self) -> str:
-        return f"HasContext({self.value.__name__})"
+        return f"HasContext({self.value})"
+
+
+def unpack_marker(marker: BaseMarker | None) -> Iterator[Marker]:
+    match marker:
+        case Marker():
+            yield marker
+        case NotMarker():
+            yield from unpack_marker(marker.marker)
+        case BinOpMarker():
+            yield from unpack_marker(marker.left)
+            yield from unpack_marker(marker.right)
+        case BoolMarker():
+            return
+        case None:
+            return
+        case _:
+            raise InvalidMarkerError(marker)

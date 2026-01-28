@@ -2,7 +2,7 @@ from typing import Any, TypeVar, get_args, get_origin
 
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
-from dishka.entities.marker import BaseMarker, BoolMarker, combine_when
+from dishka.entities.marker import BaseMarker, combine_when
 from dishka.entities.scope import BaseScope
 from .factory import Factory
 from .type_match import get_typevar_replacement, is_broader_or_same_type
@@ -42,6 +42,8 @@ class Decorator:
             new_dependency: DependencyKey,
             cache: bool,
             component: Component,
+            when_override: BaseMarker | None,
+            when_active: BaseMarker | None,
     ) -> Factory:
         typevar_replacement = get_typevar_replacement(
             self.provides.type_hint,
@@ -50,7 +52,6 @@ class Decorator:
         if self.scope is not None:
             scope = self.scope
 
-        when = self.when or BoolMarker(False)
         return Factory(
             scope=scope,
             source=self.factory.source,
@@ -70,8 +71,8 @@ class Decorator:
             },
             type_=self.factory.type,
             cache=cache,
-            when_override=when,
-            when_active=when,
+            when_override=combine_when(self.when, when_override),
+            when_active=combine_when(self.when, when_active),
             when_component=self.factory.when_component or component,
             when_dependencies=[],
         )

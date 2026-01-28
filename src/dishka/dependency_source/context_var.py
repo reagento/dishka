@@ -63,7 +63,7 @@ class ContextVariable:
             return aliased.as_factory(scope=self.scope, component=component)
 
     def __get__(self, instance: Any, owner: Any) -> ContextVariable:
-        scope = self.scope or instance.scope
+        scope = self.scope or getattr(instance, "scope", None)
         return ContextVariable(
             scope=scope,
             provides=self.provides,

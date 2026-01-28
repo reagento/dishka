@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Any
 
 from dishka.entities.factory_type import FactoryData
 from dishka.entities.marker import Marker
@@ -46,14 +45,6 @@ class UnsupportedFactoryError(DishkaError):
 
 class InvalidGraphError(DishkaError):
     pass
-
-
-class InvalidMarkerError(DishkaError):
-    def __init__(self, marker: Any) -> None:
-        self.marker = marker
-
-    def __str__(self) -> str:
-        return f"Cannot use {self.marker!r} as marker."
 
 
 class NoActivatorError(DishkaError):

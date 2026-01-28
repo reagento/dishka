@@ -23,7 +23,6 @@ class Factory(FactoryData):
         "when_active",
         "when_component",
         "when_dependencies",
-        "when_override",
     )
 
     def __init__(
@@ -73,9 +72,7 @@ class Factory(FactoryData):
         self.when_dependencies = when_dependencies
 
     def __get__(self, instance: Any, owner: Any) -> Factory:
-        scope = self.scope or instance.scope
-        if instance is None:
-            return self
+        scope = self.scope or getattr(instance, "scope", None)
         provider_when = getattr(instance, "when", None)
         when_active = combine_when(provider_when, self.when_active)
         when_override = combine_when(provider_when, self.when_override)

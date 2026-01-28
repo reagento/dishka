@@ -14,12 +14,10 @@ from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.marker import (
-    BaseMarker,
-    BinOpMarker,
     BoolMarker,
     Marker,
-    NotMarker,
     or_markers,
+    unpack_marker,
 )
 from .entities.scope import BaseScope, InvalidScopes
 from .entities.validation_settings import ValidationSettings
@@ -30,7 +28,6 @@ from .exceptions import (
     GraphMissingFactoryError,
     ImplicitOverrideDetectedError,
     InvalidGraphError,
-    InvalidMarkerError,
     NoActivatorError,
     NoFactoryError,
     NothingOverriddenError,
@@ -40,6 +37,7 @@ from .provider import BaseProvider, ProviderWrapper
 from .registry import Registry
 
 DECORATED_COMPONENT_PREFIX = "__Dishka_decorate_"
+SELECTOR_COMPONENT_PREFIX = "__Dishka_select_"
 
 
 class GraphValidator:
@@ -271,7 +269,7 @@ class RegistryBuilder:
 
             depth = self.decorator_depth[provides]
             self.decorator_depth[provides] += 1
-            new_component = (f"{DECORATED_COMPONENT_PREFIX}{depth}_"
+            new_component = (f"{SELECTOR_COMPONENT_PREFIX}{depth}_"
                              f"{provides.component}")
             new_provides = DependencyKey(
                 type_hint=provides.type_hint,
@@ -338,10 +336,10 @@ class RegistryBuilder:
 
     def _register_when(self, factory: Factory) -> None:
         scope = cast(BaseScope, factory.scope)  # already validated
-        for marker in self._unpack_marker(factory.when_active):
+        for marker in unpack_marker(factory.when_active):
             marker_key = DependencyKey(marker, factory.when_component)
             self.requested_markers.add((marker_key, scope))
-        for marker in self._unpack_marker(factory.when_override):
+        for marker in unpack_marker(factory.when_override):
             marker_key = DependencyKey(marker, factory.when_component)
             self.requested_markers.add((marker_key, scope))
 
@@ -437,6 +435,8 @@ class RegistryBuilder:
                     new_dependency=provides,
                     cache=False,
                     component=provider.component,
+                    when_override=None,
+                    when_active=None,
                 )],
             )
 
@@ -456,6 +456,8 @@ class RegistryBuilder:
                     new_dependency=provides,
                     cache=False,
                     component=provider.component,
+                    when_active=None,
+                    when_override=None,
                 )],
             )
         self._decorate_factory(
@@ -486,15 +488,7 @@ class RegistryBuilder:
             )
 
         group_replacement = []
-        decorated_group = []
-
-        depth = self.decorator_depth[provides]
-        self.decorator_depth[provides] += 1
-        decorated_component = (f"{DECORATED_COMPONENT_PREFIX}{depth}_"
-                               f"{provides.component}")
-        decorated_provides = DependencyKey(
-            provides.type_hint, decorated_component,
-        )
+        decorated_groups = {}
 
         old_group = self.processed_factories[provides]
         if not old_group:
@@ -506,25 +500,36 @@ class RegistryBuilder:
         if decorator.when not in (None, BoolMarker(True)):
             group_replacement.extend(old_group)
         for old_factory in old_group:
+
+            depth = self.decorator_depth[provides]
+            self.decorator_depth[provides] += 1
+            decorated_component = (f"{DECORATED_COMPONENT_PREFIX}{depth}_"
+                                   f"{provides.component}")
+            decorated_provides = DependencyKey(
+                provides.type_hint, decorated_component,
+            )
+
             if (
-                old_factory.type is FactoryType.ALIAS
-                    and self._is_alias_decorated(decorator, old_factory)
+                old_factory.type is FactoryType.ALIAS and
+                self._is_alias_decorated(decorator, old_factory)
             ):
                 return
 
             new_factory = old_factory.replace(provides=decorated_provides)
-            decorated_group.append(new_factory)
+            decorated_groups[decorated_provides] = [new_factory]
             decorated_factory = decorator.as_factory(
                 scope=cast(BaseScope, old_factory.scope),
                 new_dependency=decorated_provides,
                 cache=old_factory.cache,
                 component=provides.component,
+                when_override=old_factory.when_override,
+                when_active=old_factory.when_active,
             ).replace(provides=provides)
             group_replacement.append(decorated_factory)
             self._register_when(decorated_factory)
 
         self.processed_factories[provides] = group_replacement
-        self.processed_factories[decorated_provides] = decorated_group
+        self.processed_factories.update(decorated_groups)
 
     def _process_context_var(
         self,
@@ -556,22 +561,6 @@ class RegistryBuilder:
             origin_key = DependencyKey(origin, factory.provides.component)
             lst = self.processed_factories.setdefault(origin_key, [])
             lst.append(factory)
-
-    def _unpack_marker(self, marker: BaseMarker | None) -> Iterator[Marker]:
-        match marker:
-            case Marker():
-                yield marker
-            case NotMarker():
-                yield from self._unpack_marker(marker.marker)
-            case BinOpMarker():
-                yield from self._unpack_marker(marker.left)
-                yield from self._unpack_marker(marker.right)
-            case BoolMarker():
-                return
-            case None:
-                return
-            case _:
-                raise InvalidMarkerError(marker)
 
     def _find_activator(
         self,

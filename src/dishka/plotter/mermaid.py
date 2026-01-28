@@ -39,6 +39,8 @@ class MermaidRenderer(Renderer):
         if node.type is NodeType.ALIAS:
             return ""
         name = self._node_type(node) + self._escape(node.name)
+        if node.type is NodeType.SELECTOR:
+            return  f'class {node.id}["{name}"]'
         source_name = self._escape(node.source_name)
         return "\n".join([
             f'class {node.id}["{name}"]{{',
@@ -118,8 +120,14 @@ class MermaidRenderer(Renderer):
 
     def render(self, groups: list[Group]) -> str:
         self._fill_nodes(groups)
-
-        res = "classDiagram\n"
+        res = (
+            "---\n"
+            "  config:\n"
+            "    class:\n"
+            "      hideEmptyMembersBox: true\n"
+            "---\n"
+        )
+        res += "classDiagram\n"
         res += "direction LR\n"
         for group in groups:
             res += self._render_group(group)

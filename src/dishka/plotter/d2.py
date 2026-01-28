@@ -15,13 +15,18 @@ class D2Renderer(Renderer):
         if node.type is NodeType.ALIAS:
             return ""
         name = self._node_type(node) + self._escape(node.name)
+
         if node.source_name:
             source = f'    "{self._escape(node.source_name)}()": ""\n'
         else:
             source = ""
-
         res = f'{node.id}: "{name}"' + "{\n"
         res += "    shape: class\n"
+
+        if node.type is NodeType.SELECTOR:
+            res += "}\n"
+            return res
+
         res += source
         for dep in node.dependencies:
             dep_name = self._escape(self.nodes[dep].name)

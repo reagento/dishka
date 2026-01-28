@@ -4,7 +4,7 @@ from dishka import AsyncContainer, BaseScope, Container, DependencyKey
 from dishka._adaptix.type_tools.basic_utils import is_protocol
 from dishka.dependency_source import Factory
 from dishka.entities.factory_type import FactoryType
-from dishka.entities.marker import unpack_marker
+from dishka.entities.marker import BoolMarker, unpack_marker
 from dishka.registry import Registry
 from dishka.registry_builder import (
     DECORATED_COMPONENT_PREFIX,
@@ -105,7 +105,11 @@ class Transformer:
             if self._is_selector_component(component_group):
                 node_name = node_name + "?"
 
-            if factory.type in (FactoryType.CONTEXT, FactoryType.ALIAS):
+            if factory.type in (
+                FactoryType.CONTEXT,
+                FactoryType.ALIAS,
+                FactoryType.SELECTOR,
+            ):
                 source_name = ""
             else:
                 source_name = get_name(factory.source, include_module=False)
@@ -133,6 +137,7 @@ class Transformer:
                 + [
                     DependencyKey(m, factory.when_component)
                     for m in unpack_marker(factory.when_override)
+                    if m not in (None, BoolMarker(True), BoolMarker(False))
                 ]
                 + [sub.provides for sub in factory.when_dependencies]
             )

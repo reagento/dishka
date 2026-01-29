@@ -42,8 +42,6 @@ class Decorator:
             new_dependency: DependencyKey,
             cache: bool,
             component: Component,
-            when_override: BaseMarker | None,
-            when_active: BaseMarker | None,
     ) -> Factory:
         typevar_replacement = get_typevar_replacement(
             self.provides.type_hint,
@@ -71,8 +69,8 @@ class Decorator:
             },
             type_=self.factory.type,
             cache=cache,
-            when_override=combine_when(self.when, when_override),
-            when_active=combine_when(self.when, when_active),
+            when_override=self.when,
+            when_active=self.when,
             when_component=self.factory.when_component or component,
             when_dependencies=[],
         )

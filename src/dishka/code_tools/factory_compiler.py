@@ -170,40 +170,15 @@ def _context_factory_body(
             ),
         )
 
-
 def _selector_factory_body(
     builder: FactoryBuilder, source_call: str, factory: Factory,
-) -> None:
-    first = True
-    for variant in factory.when_dependencies:
-        condition = builder.when(variant.when_override, factory.when_component)
-        solved_value = builder.getter(variant.provides)
-        if first and not condition:
-            builder.assign_solved(solved_value)
-        elif first:
-            with builder.if_(condition):
-                builder.assign_solved(solved_value)
-            first = False
-        elif not condition:
-            with builder.else_():
-                builder.assign_solved(solved_value)
-            first = True
-        else:
-            with builder.elif_(condition):
-                builder.assign_solved(solved_value)
-    # if-chain not closed with else or not generated at all
-    if not first or not factory.when_dependencies:
-        error_call = builder.call(
-            builder.global_(NoActiveFactoryError),
-            builder.global_(factory.provides),
-            builder.global_(factory.when_dependencies, "when_dependencies"),
-        )
-        if first:  # no options at all
-            builder.raise_(error_call)
-        else:
-            with builder.else_():
-                builder.raise_(error_call)
-
+):
+    error_call = builder.call(
+        builder.global_(NoActiveFactoryError),
+        builder.global_(factory.provides),
+        builder.global_(factory.when_dependencies, "when_dependencies"),
+    )
+    builder.raise_(error_call)
 
 ASYNC_TYPES = (FactoryType.ASYNC_FACTORY, FactoryType.ASYNC_GENERATOR)
 BODY_GENERATORS = {
@@ -218,6 +193,32 @@ BODY_GENERATORS = {
 }
 
 
+def _select_when_dependency(
+    builder: FactoryBuilder,
+    factory: Factory,
+) -> bool:
+    """return True if there is assignment in any case"""
+    first = True
+    for variant in factory.when_dependencies:
+        condition = builder.when(variant.when_override, factory.when_component)
+        solved_value = builder.getter(variant.provides)
+        if first and not condition:
+            builder.assign_solved(solved_value)
+            return True
+        elif first:
+            with builder.if_(condition):
+                builder.assign_solved(solved_value)
+        elif not condition:
+            with builder.else_():
+                builder.assign_solved(solved_value)
+            return True
+        else:
+            with builder.elif_(condition):
+                builder.assign_solved(solved_value)
+        first = False
+    return False
+
+
 def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
     if not is_async and factory.type in ASYNC_TYPES:
         raise UnsupportedFactoryError(factory)
@@ -228,16 +229,22 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
     builder.register_provides(factory.provides)
 
     with builder.make_getter():
-        source_call = builder.call(
-            builder.global_(factory.source),
-            *(builder.getter(dep) for dep in factory.dependencies),
-            **{
-                name: builder.getter(dep)
-                for name, dep in factory.kw_dependencies.items()
-            },
-        )
-        body_generator = BODY_GENERATORS[factory.type]
-        body_generator(builder, source_call, factory)
+        if not _select_when_dependency(builder, factory):
+            source_call = builder.call(
+                builder.global_(factory.source),
+                *(builder.getter(dep) for dep in factory.dependencies),
+                **{
+                    name: builder.getter(dep)
+                    for name, dep in factory.kw_dependencies.items()
+                },
+            )
+            body_generator = BODY_GENERATORS[factory.type]
+            if factory.when_dependencies:  # conditions generated
+                with builder.else_():
+                    body_generator(builder, source_call, factory)
+            else:  # no options at all
+                body_generator(builder, source_call, factory)
+
         if factory.cache:
             builder.cache()
         builder.return_("solved")

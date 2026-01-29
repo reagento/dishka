@@ -229,7 +229,6 @@ class RegistryBuilder:
     ) -> None:
         if self.skip_validation:
             return
-
         if (
             not prev_factory and
             self.validation_settings.nothing_overridden and
@@ -435,8 +434,6 @@ class RegistryBuilder:
                     new_dependency=provides,
                     cache=False,
                     component=provider.component,
-                    when_override=None,
-                    when_active=None,
                 )],
             )
 
@@ -456,8 +453,6 @@ class RegistryBuilder:
                     new_dependency=provides,
                     cache=False,
                     component=provider.component,
-                    when_active=None,
-                    when_override=None,
                 )],
             )
         self._decorate_factory(
@@ -497,8 +492,6 @@ class RegistryBuilder:
                 f"no factory for {provides}",
             )
 
-        if decorator.when not in (None, BoolMarker(True)):
-            group_replacement.extend(old_group)
         for old_factory in old_group:
 
             depth = self.decorator_depth[provides]
@@ -515,18 +508,33 @@ class RegistryBuilder:
             ):
                 return
 
-            new_factory = old_factory.replace(provides=decorated_provides)
+            factory_when = (
+                BoolMarker(False)
+                if decorator.when is None
+                else ~decorator.when
+            )
+            new_factory = old_factory.replace(
+                provides=decorated_provides,
+                when_override=factory_when,
+                when_active=factory_when,
+                when_component=provides.component,
+            )
             decorated_groups[decorated_provides] = [new_factory]
             decorated_factory = decorator.as_factory(
                 scope=cast(BaseScope, old_factory.scope),
                 new_dependency=decorated_provides,
                 cache=old_factory.cache,
                 component=provides.component,
-                when_override=old_factory.when_override,
+            ).replace(
+                provides=provides,
                 when_active=old_factory.when_active,
-            ).replace(provides=provides)
+                when_override=old_factory.when_override,
+                when_component=old_factory.when_component,
+            )
+            if new_factory.when_override != BoolMarker(False):
+                decorated_factory.when_dependencies.append(new_factory)
             group_replacement.append(decorated_factory)
-            self._register_when(decorated_factory)
+            self._register_when(new_factory)
 
         self.processed_factories[provides] = group_replacement
         self.processed_factories.update(decorated_groups)

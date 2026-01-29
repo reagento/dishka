@@ -14,7 +14,11 @@ from dishka import (
     make_container,
     provide,
 )
-from dishka.exceptions import CycleDependenciesError, NoFactoryError
+from dishka.exceptions import (
+    CycleDependenciesError,
+    ImplicitOverrideDetectedError,
+    NoFactoryError,
+)
 
 
 class A:
@@ -420,3 +424,24 @@ def test_decorate_override():
         validation_settings=STRICT_VALIDATION,
     )
     assert c.get(str) == "bd"
+
+
+def test_decorate_override_implicit():
+    class MyProvider(Provider):
+        @provide
+        def make_str(self) -> str:
+            return "a"
+
+        @provide
+        def make_str2(self) -> str:
+            return "b"
+
+        @decorate
+        def decorate_str(self, old_value: str) -> str:
+            return old_value + "d"
+
+    with pytest.raises(ImplicitOverrideDetectedError):
+        make_container(
+            MyProvider(scope=Scope.APP),
+            validation_settings=STRICT_VALIDATION,
+        )

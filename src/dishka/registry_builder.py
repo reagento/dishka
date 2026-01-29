@@ -282,11 +282,10 @@ class RegistryBuilder:
             when_dependencies.append(new_factory)
         if (
             len(moved_factories) == 1 and
+            prev_factory and  # at least one factory found
             prev_factory.when_override in (None, BoolMarker(True))
         ):
-            self.processed_factories[provides] = [
-                cast(Factory, prev_factory),  # at least one factory found
-            ]
+            self.processed_factories[provides] = [prev_factory]
             return {}
 
         scope = max(

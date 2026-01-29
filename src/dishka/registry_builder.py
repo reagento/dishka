@@ -529,10 +529,10 @@ class RegistryBuilder:
                 provides=provides,
                 when_active=old_factory.when_active,
                 when_override=old_factory.when_override,
-                when_component=old_factory.when_component,
+                when_component=cast(Component, old_factory.when_component),
             )
             if new_factory.when_override != BoolMarker(False):
-                decorated_factory.when_dependencies.append(new_factory)
+                decorated_factory.when_dependencies=[new_factory]
             group_replacement.append(decorated_factory)
             self._register_when(new_factory)
 

@@ -172,7 +172,7 @@ def _context_factory_body(
 
 def _selector_factory_body(
     builder: FactoryBuilder, source_call: str, factory: Factory,
-):
+) -> None:
     error_call = builder.call(
         builder.global_(NoActiveFactoryError),
         builder.global_(factory.provides),

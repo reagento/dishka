@@ -335,11 +335,20 @@ def test_no_active_factory_smoke(path_len: int, variants_count: int)  -> None:
 
 
 @pytest.mark.parametrize("is_async", [True, False])
+@pytest.mark.parametrize(("has_variants", "variants_count"), [
+    ([float], 1),
+    ([float, complex], 2),
+])
 @pytest.mark.asyncio
-async def test_no_active_factory(*, is_async: bool) -> None:
+async def test_no_active_factory(
+    *,
+    is_async: bool,
+    has_variants: list[object],
+    variants_count: int,
+) -> None:
     provider = Provider(scope=Scope.APP)
-    provider.provide(int, when=Has(float))
-    provider.provide(int, when=Has(complex))
+    for variant in has_variants:
+        provider.provide(int, when=Has(variant))
 
     @provider.provide
     def get_str(value: int) -> str:
@@ -356,5 +365,5 @@ async def test_no_active_factory(*, is_async: bool) -> None:
 
 
     assert str(e.value)
-    assert len(e.value.variants) == 2
+    assert len(e.value.variants) == variants_count
     assert len(e.value.path) == 2

@@ -508,16 +508,10 @@ class RegistryBuilder:
             ):
                 return
 
-            factory_when = (
-                BoolMarker(False)
-                if decorator.when is None
-                else ~decorator.when
-            )
             new_factory = old_factory.replace(
                 provides=decorated_provides,
-                when_override=factory_when,
-                when_active=factory_when,
-                when_component=provides.component,
+                when_active=None,
+                when_override=None,
             )
             decorated_groups[decorated_provides] = [new_factory]
             decorated_factory = decorator.as_factory(
@@ -531,10 +525,15 @@ class RegistryBuilder:
                 when_override=old_factory.when_override,
                 when_component=cast(Component, old_factory.when_component),
             )
-            if new_factory.when_override != BoolMarker(False):
-                decorated_factory.when_dependencies=[new_factory]
+            if decorator.when is not None:
+                conditional_factory = new_factory.replace(
+                    when_override=~decorator.when,
+                    when_active=~decorator.when,
+                    when_component=provides.component,
+                )
+                decorated_factory.when_dependencies=[conditional_factory]
+                self._register_when(conditional_factory)
             group_replacement.append(decorated_factory)
-            self._register_when(new_factory)
 
         self.processed_factories[provides] = group_replacement
         self.processed_factories.update(decorated_groups)

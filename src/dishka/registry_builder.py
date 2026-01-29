@@ -252,8 +252,10 @@ class RegistryBuilder:
         group: list[Factory],
     ) -> dict[DependencyKey, list[Factory]]:
         if len(group) == 1:
-            self._ensure_override_flags(group[0], None)
-            return {}
+            factory = group[0]
+            self._ensure_override_flags(factory, None)
+            if factory.when_override in (None, BoolMarker(True)):
+                return {}
 
         when_dependencies: list[Factory] = []
         moved_factories: dict[DependencyKey, list[Factory]] = {}
@@ -278,7 +280,10 @@ class RegistryBuilder:
             new_factory = factory.replace(provides=new_provides)
             moved_factories[new_provides] = [new_factory]
             when_dependencies.append(new_factory)
-        if len(moved_factories) == 1:
+        if (
+            len(moved_factories) == 1 and
+            prev_factory.when_override in (None, BoolMarker(True))
+        ):
             self.processed_factories[provides] = [
                 cast(Factory, prev_factory),  # at least one factory found
             ]

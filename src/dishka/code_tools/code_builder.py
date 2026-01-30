@@ -177,6 +177,13 @@ class CodeBuilder:
     def not_(self, expr: str) -> str:
         return f"not ({expr})"
 
+    def list_literal(self, *items: str) -> str:
+        if len(items) > 5:
+            items_str = "\n, ".join(items)
+        else:
+            items_str = ", ".join(items)
+        return f"[{items_str}]"
+
     def compile(self, source_file_name: str) -> dict[str, Any]:
         lines = self.code.splitlines(keepends=True)
         linecache.cache[source_file_name] = (

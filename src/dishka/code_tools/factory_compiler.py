@@ -180,6 +180,41 @@ def _selector_factory_body(
     )
     builder.raise_(error_call)
 
+def _collection_factory_body(
+    builder: FactoryBuilder,
+    factory: Factory,
+) -> None:
+    unconditional_factories = []
+    assigned = False
+    for variant in factory.when_dependencies:
+        condition = builder.when(variant.when_override, factory.when_component)
+        if condition:
+            if not assigned:
+                builder.assign_solved(builder.list_literal(*(
+                    builder.getter(f.provides)
+                    for f in unconditional_factories
+                )))
+                assigned = True
+            with builder.if_(condition):
+                builder.call(
+                    "solved.append",
+                    builder.getter(variant.provides),
+                )
+        elif assigned:
+            builder.call(
+                "solved.append",
+                builder.getter(variant.provides),
+            )
+        else:
+            unconditional_factories.append(variant)
+    if not assigned:
+        builder.assign_solved(builder.list_literal(*(
+            builder.getter(f.provides)
+            for f in unconditional_factories
+        )))
+
+
+
 ASYNC_TYPES = (FactoryType.ASYNC_FACTORY, FactoryType.ASYNC_GENERATOR)
 BODY_GENERATORS = {
     FactoryType.FACTORY: _sync_factory_body,
@@ -190,6 +225,7 @@ BODY_GENERATORS = {
     FactoryType.VALUE: _value_factory_body,
     FactoryType.ALIAS: _alias_factory_body,
     FactoryType.SELECTOR: _selector_factory_body,
+    FactoryType.COLLECTION: _collection_factory_body,
 }
 
 
@@ -219,6 +255,7 @@ def _select_when_dependency(
     return False
 
 
+
 def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
     if not is_async and factory.type in ASYNC_TYPES:
         raise UnsupportedFactoryError(factory)
@@ -229,7 +266,10 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
     builder.register_provides(factory.provides)
 
     with builder.make_getter():
-        if not _select_when_dependency(builder, factory):
+        if factory.type is FactoryType.COLLECTION:
+            _collection_factory_body(builder, factory)
+        else:
+            _select_when_dependency(builder, factory)
             source_call = builder.call(
                 builder.global_(factory.source),
                 *(builder.getter(dep) for dep in factory.dependencies),

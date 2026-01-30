@@ -11,7 +11,7 @@ from .dependency_source import (
     Factory,
 )
 from .entities.component import DEFAULT_COMPONENT, Component
-from .entities.factory_type import FactoryType
+from .entities.factory_type import FactoryType, FactoryUnionMode
 from .entities.key import DependencyKey
 from .entities.marker import (
     BoolMarker,
@@ -246,7 +246,65 @@ class RegistryBuilder:
                 factory,
             )
 
-    def _unite_factories_group(
+    def _unite_factories_group_collection(
+            self,
+        union_mode: FactoryUnionMode,
+        provides: DependencyKey,
+        group: list[Factory],
+    ) -> dict[DependencyKey, list[Factory]]:
+        moved_factories: dict[DependencyKey, list[Factory]] = {}
+        prev_factory: Factory | None = None
+
+        for factory in group:
+            # TODO CHECKIN
+            # implicit and explicit override
+            if factory.when_override == BoolMarker(True):
+                moved_factories = {}
+
+            depth = self.decorator_depth[provides]
+            self.decorator_depth[provides] += 1
+            new_component = (f"{SELECTOR_COMPONENT_PREFIX}{depth}_"
+                             f"{provides.component}")
+            new_provides = DependencyKey(
+                type_hint=provides.type_hint,
+                component=new_component,
+            )
+            prev_factory = factory
+            new_factory = factory.replace(provides=new_provides)
+            moved_factories[new_provides] = [new_factory]
+
+        scope = max(
+            cast(BaseScope, factory.scope)  # scopes already validated
+            for group in moved_factories.values()
+            for factory in group
+        )
+        collection_provides = DependencyKey(
+            list[provides.type_hint],
+            provides.component,
+        )
+        factory = Factory(
+            cache=union_mode.cache,
+            scope=union_mode.scope or scope,
+            provides=collection_provides,
+            is_to_bind=False,
+            dependencies=(),
+            type_=FactoryType.COLLECTION,
+            kw_dependencies={},
+            source=None,
+            when_override=None,
+            when_active=or_markers(*(
+                factory.when_active
+                for group in moved_factories.values()
+                for factory in group
+            )),
+            when_component=provides.component,
+            when_dependencies=[g[0] for g in moved_factories.values()],
+        )
+        moved_factories[collection_provides] = [factory]
+        moved_factories[provides] = []
+        return moved_factories
+
+    def _unite_factories_group_selector(
         self,
         provides: DependencyKey,
         group: list[Factory],
@@ -318,7 +376,14 @@ class RegistryBuilder:
     def _unite_selectors(self) -> None:
         new_groups: dict[DependencyKey, list[Factory]] = {}
         for provides, group in self.processed_factories.items():
-            new_groups |= self._unite_factories_group(provides, group)
+            if len(group) == 1:  # TODO check in provider
+                new_groups |= self._unite_factories_group_selector(provides, group)
+            else:
+                new_groups |= self._unite_factories_group_collection(
+                    FactoryUnionMode(scope=None, cache=True, collect=True),
+                    provides,
+                    group,
+                )
         self.processed_factories.update(new_groups)
 
     def _process_activation(

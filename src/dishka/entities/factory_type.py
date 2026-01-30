@@ -15,6 +15,16 @@ class FactoryType(Enum):
     ALIAS = "alias"
     CONTEXT = "context"
     SELECTOR = "selector"
+    COLLECTION = "collection"
+
+
+class FactoryUnionMode:
+    __slots__ = ("scope", "collect", "cache")
+
+    def __init__(self, *, scope: BaseScope|None, collect: bool, cache: bool) -> None:
+        self.scope = scope
+        self.collect = collect
+        self.cache = cache
 
 
 class FactoryData:

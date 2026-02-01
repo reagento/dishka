@@ -48,12 +48,30 @@ class InvalidGraphError(DishkaError):
 
 
 class NoActivatorError(DishkaError):
-    def __init__(self, marker_key: DependencyKey) -> None:
+    def __init__(
+        self,
+        marker_key: DependencyKey,
+        requesting_factories: Sequence[FactoryData] = (),
+    ) -> None:
         self.marker_key = marker_key
+        self.requesting_factories = requesting_factories
 
     def __str__(self) -> str:
-        return (f"Cannot find activator for {self.marker_key.type_hint}"
-                f" at component {self.marker_key.component!r}.")
+        msg = (
+            f"Cannot find activator for {self.marker_key.type_hint}"
+            f" at component {self.marker_key.component!r}."
+        )
+        if self.requesting_factories:
+            scope = self.requesting_factories[0].scope
+            component = self.marker_key.component
+            marker_name = get_name(
+                self.marker_key.type_hint, include_module=False,
+            )
+            msg += f"\n   ◈ {scope}, component={component!r} ◈"
+            msg += f"\n   ╰─> {marker_name}   ???"
+            for factory in self.requesting_factories:
+                msg += f"\n     ╰─× {get_source_name(factory)}"  # noqa: RUF001
+        return msg
 
 
 class ActivatorOverrideError(DishkaError):

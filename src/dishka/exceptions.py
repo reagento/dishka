@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 
+from dishka.dependency_source.factory import Factory
 from dishka.entities.factory_type import FactoryData
 from dishka.entities.marker import Marker
 from dishka.exception_base import DishkaError
@@ -51,10 +52,14 @@ class NoActivatorError(DishkaError):
     def __init__(
         self,
         marker_key: DependencyKey,
-        requesting_factories: Sequence[FactoryData] = (),
+        requesting_factories: Sequence[Factory] = (),
     ) -> None:
         self.marker_key = marker_key
         self.requesting_factories = requesting_factories
+
+    def _get_when_expression(self, factory: Factory) -> str:
+        when = factory.when_active or factory.when_override
+        return repr(when) if when else ""
 
     def __str__(self) -> str:
         msg = (
@@ -62,15 +67,11 @@ class NoActivatorError(DishkaError):
             f" at component {self.marker_key.component!r}."
         )
         if self.requesting_factories:
-            scope = self.requesting_factories[0].scope
-            component = self.marker_key.component
-            marker_name = get_name(
-                self.marker_key.type_hint, include_module=False,
-            )
-            msg += f"\n   ◈ {scope}, component={component!r} ◈"
-            msg += f"\n   ╰─> {marker_name}   ???"
+            msg += "\nUsed in:"
             for factory in self.requesting_factories:
-                msg += f"\n     ╰─× {get_source_name(factory)}"  # noqa: RUF001
+                source = get_source_name(factory)
+                when_expr = self._get_when_expression(factory)
+                msg += f"\n  - {source}: {when_expr}"
         return msg
 
 

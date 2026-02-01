@@ -36,10 +36,10 @@ def test_no_activator_error_shows_requesting_factories():
     assert "unregistered" in error_msg
     assert "service_a" in error_msg
     assert "service_b" in error_msg
-    assert "╰─×" in error_msg  # noqa: RUF001
+    assert "Used in:" in error_msg
 
 
-def test_no_activator_error_shows_scope():
+def test_no_activator_error_shows_when_expression():
     class MyProvider(Provider):
         scope = Scope.REQUEST
 
@@ -51,8 +51,8 @@ def test_no_activator_error_shows_scope():
         make_container(MyProvider())
 
     error_msg = str(exc_info.value)
-    assert "Scope.REQUEST" in error_msg
-    assert "◈" in error_msg
+    assert "Marker('unregistered')" in error_msg
+    assert "service:" in error_msg
 
 
 def test_invalid_marker_error_shows_factory():

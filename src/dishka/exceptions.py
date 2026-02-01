@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 
+from dishka.dependency_source.factory import Factory
 from dishka.entities.factory_type import FactoryData
 from dishka.entities.marker import Marker
 from dishka.exception_base import DishkaError
@@ -48,12 +49,30 @@ class InvalidGraphError(DishkaError):
 
 
 class NoActivatorError(DishkaError):
-    def __init__(self, marker_key: DependencyKey) -> None:
+    def __init__(
+        self,
+        marker_key: DependencyKey,
+        requesting_factories: Sequence[Factory] = (),
+    ) -> None:
         self.marker_key = marker_key
+        self.requesting_factories = requesting_factories
+
+    def _get_when_expression(self, factory: Factory) -> str:
+        when = factory.when_active or factory.when_override
+        return repr(when) if when else ""
 
     def __str__(self) -> str:
-        return (f"Cannot find activator for {self.marker_key.type_hint}"
-                f" at component {self.marker_key.component!r}.")
+        msg = (
+            f"Cannot find activator for {self.marker_key.type_hint}"
+            f" at component {self.marker_key.component!r}."
+        )
+        if self.requesting_factories:
+            msg += "\nUsed in:"
+            for factory in self.requesting_factories:
+                source = get_source_name(factory)
+                when_expr = self._get_when_expression(factory)
+                msg += f"\n  - {source}: {when_expr}"
+        return msg
 
 
 class ActivatorOverrideError(DishkaError):

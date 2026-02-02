@@ -13,14 +13,19 @@ def collect(
         *,
         scope: BaseScope | None = None,
         cache: bool = True,
+        provides: Any = None,
 ) -> CompositeDependencySource:
     src = CompositeDependencySource(source)
     key = hint_to_dependency_key(source)
+    if provides is None:
+        provides_key = DependencyKey(list[key.type_hint], key.component)
+    else:
+        provides_key = hint_to_dependency_key(provides)
     src.dependency_sources.append(FactoryUnionMode(
         source=key,
         collect=True,
         cache=cache,
         scope=scope,
-        provides=DependencyKey(list[key.type_hint], key.component),
+        provides=provides_key,
     ))
     return src

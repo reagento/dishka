@@ -152,11 +152,13 @@ class Provider(BaseProvider):
         *,
         scope: BaseScope | None = None,
         cache: bool = True,
+        provides: Any = None,
     )-> CompositeDependencySource:
         composite = collect(
             source,
             scope=scope,
             cache=cache,
+            provides=provides,
         )
         self._add_dependency_sources(composite.dependency_sources)
         return composite

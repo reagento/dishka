@@ -9,6 +9,7 @@ from dishka.text_rendering import get_name
 
 NOT_ALLOWED_SYMBOLS = re.compile(r"\W", flags=re.ASCII)
 MAX_NAME_LENGTH = 30
+MAX_ITEMS_PER_LINE = 5
 
 
 class CodeBuilder:
@@ -128,7 +129,11 @@ class CodeBuilder:
             raise ValueError(f"Function {func} is not defined")  # noqa: TRY003
         args_list = [*args]
         args_list.extend(f"{name}={value}" for name, value in kwargs.items())
-        args_str = ", ".join(args_list)
+
+        if len(args_list) > MAX_ITEMS_PER_LINE:
+            args_str = ",\n".join(args_list)
+        else:
+            args_str = ", ".join(args_list)
         return f"{func}({args_str})"
 
     def await_(self, expr: str) -> str:
@@ -178,7 +183,7 @@ class CodeBuilder:
         return f"not ({expr})"
 
     def list_literal(self, *items: str) -> str:
-        if len(items) > 5:
+        if len(items) > MAX_ITEMS_PER_LINE:
             items_str = "\n, ".join(items)
         else:
             items_str = ", ".join(items)

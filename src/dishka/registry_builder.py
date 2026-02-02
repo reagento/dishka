@@ -10,8 +10,9 @@ from .dependency_source import (
     Decorator,
     Factory,
 )
+from .dependency_source.factory_union_mode import FactoryUnionMode
 from .entities.component import DEFAULT_COMPONENT, Component
-from .entities.factory_type import FactoryType, FactoryUnionMode
+from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.marker import (
     BoolMarker,
@@ -169,6 +170,7 @@ class RegistryBuilder:
         self.processed_factories: dict[DependencyKey, list[Factory]] = {}
         self.activators: dict[DependencyKey, Activator] = {}
         self.requested_markers: set[tuple[DependencyKey, BaseScope]] = set()
+        self.factory_union_modes: dict[DependencyKey, FactoryUnionMode] = {}
 
     def _collect_components(self) -> None:
         for provider in self.providers:
@@ -198,6 +200,18 @@ class RegistryBuilder:
                 alias_source = alias.source.with_component(component)
                 self.alias_sources[provides] = alias_source
                 self.aliases[provides] = alias
+
+    def _collect_factory_union_modes(self) -> None:
+        for provider in self.providers:
+            component = provider.component
+            for mode in provider.factory_union_mode:
+                mode_fixed = mode.with_component(component)
+                if mode_fixed.source in self.factory_union_modes:
+                    raise InvalidGraphError(
+                        f"Multiple factory union modes found"
+                        f" for {mode_fixed.source}",
+                    )
+                self.factory_union_modes[mode_fixed.source] = mode_fixed
 
     def _make_registries(self) -> tuple[Registry, ...]:
         registries: dict[BaseScope, Registry] = {}
@@ -247,7 +261,7 @@ class RegistryBuilder:
             )
 
     def _unite_factories_group_collection(
-            self,
+        self,
         union_mode: FactoryUnionMode,
         provides: DependencyKey,
         group: list[Factory],
@@ -273,19 +287,18 @@ class RegistryBuilder:
             new_factory = factory.replace(provides=new_provides)
             moved_factories[new_provides] = [new_factory]
 
-        scope = max(
-            cast(BaseScope, factory.scope)  # scopes already validated
-            for group in moved_factories.values()
-            for factory in group
-        )
-        collection_provides = DependencyKey(
-            list[provides.type_hint],
-            provides.component,
-        )
+        if union_mode.scope is None:
+            scope = max(
+                cast(BaseScope, factory.scope)  # scopes already validated
+                for group in moved_factories.values()
+                for factory in group
+            )
+        else:
+            scope = union_mode.scope
         factory = Factory(
             cache=union_mode.cache,
             scope=union_mode.scope or scope,
-            provides=collection_provides,
+            provides=union_mode.provides,
             is_to_bind=False,
             dependencies=(),
             type_=FactoryType.COLLECTION,
@@ -300,12 +313,13 @@ class RegistryBuilder:
             when_component=provides.component,
             when_dependencies=[g[0] for g in moved_factories.values()],
         )
-        moved_factories[collection_provides] = [factory]
+        moved_factories[union_mode.provides] = [factory]
         moved_factories[provides] = []
         return moved_factories
 
     def _unite_factories_group_selector(
         self,
+        union_mode: FactoryUnionMode,
         provides: DependencyKey,
         group: list[Factory],
     ) -> dict[DependencyKey, list[Factory]]:
@@ -346,13 +360,16 @@ class RegistryBuilder:
             self.processed_factories[provides] = [prev_factory]
             return {}
 
-        scope = max(
-            cast(BaseScope, factory.scope)  # scopes already validated
-            for group in moved_factories.values()
-            for factory in group
-        )
+        if union_mode.scope is None:
+            scope = max(
+                cast(BaseScope, factory.scope)  # scopes already validated
+                for group in moved_factories.values()
+                for factory in group
+            )
+        else:
+            scope = union_mode.scope
         factory = Factory(
-            cache=False,
+            cache=union_mode.cache,
             scope=scope,
             provides=provides,
             is_to_bind=False,
@@ -373,17 +390,34 @@ class RegistryBuilder:
         moved_factories[provides] = [factory]
         return moved_factories
 
+    def _get_factory_union_mode(self, key: DependencyKey) -> FactoryUnionMode:
+        if key in self.factory_union_modes:
+            return self.factory_union_modes[key]
+        return FactoryUnionMode(
+            scope=None,
+            cache=False,
+            collect=False,
+            provides=DependencyKey(list[key.type_hint], key.component),
+            source=key,
+        )
+
     def _unite_selectors(self) -> None:
         new_groups: dict[DependencyKey, list[Factory]] = {}
         for provides, group in self.processed_factories.items():
-            if len(group) == 1:  # TODO check in provider
-                new_groups |= self._unite_factories_group_selector(provides, group)
-            else:
+            union_mode = self._get_factory_union_mode(provides)
+            if union_mode.collect:
                 new_groups |= self._unite_factories_group_collection(
-                    FactoryUnionMode(scope=None, cache=True, collect=True),
+                    union_mode,
                     provides,
                     group,
                 )
+            else:
+                new_groups |= self._unite_factories_group_selector(
+                    union_mode,
+                    provides,
+                    group,
+                )
+
         self.processed_factories.update(new_groups)
 
     def _process_activation(
@@ -689,6 +723,7 @@ class RegistryBuilder:
         self._collect_components()
         self._collect_provided_scopes()
         self._collect_aliases()
+        self._collect_factory_union_modes()
 
         providers = [
             *self._duplicate_multicomponent_providers(),

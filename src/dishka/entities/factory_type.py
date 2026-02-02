@@ -18,15 +18,6 @@ class FactoryType(Enum):
     COLLECTION = "collection"
 
 
-class FactoryUnionMode:
-    __slots__ = ("scope", "collect", "cache")
-
-    def __init__(self, *, scope: BaseScope|None, collect: bool, cache: bool) -> None:
-        self.scope = scope
-        self.collect = collect
-        self.cache = cache
-
-
 class FactoryData:
     __slots__ = ("provides", "scope", "source", "type", "when_override")
 

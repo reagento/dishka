@@ -5,6 +5,7 @@ from dishka.dependency_source import (
     Decorator,
     Factory,
 )
+from dishka.dependency_source.factory_union_mode import FactoryUnionMode
 from dishka.entities.component import Component
 
 
@@ -17,6 +18,7 @@ class BaseProvider:
         self.decorators: list[Decorator] = []
         self.context_vars: list[ContextVariable] = []
         self.activators: list[Activator] = []
+        self.factory_union_mode: list[FactoryUnionMode] = []
 
 
 class ProviderWrapper(BaseProvider):
@@ -26,3 +28,4 @@ class ProviderWrapper(BaseProvider):
         self.aliases.extend(provider.aliases)
         self.decorators.extend(provider.decorators)
         self.activators.extend(provider.activators)
+        self.factory_union_mode.extend(provider.factory_union_mode)

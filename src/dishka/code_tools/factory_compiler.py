@@ -269,21 +269,22 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
         if factory.type is FactoryType.COLLECTION:
             _collection_factory_body(builder, factory)
         else:
-            _select_when_dependency(builder, factory)
-            source_call = builder.call(
-                builder.global_(factory.source),
-                *(builder.getter(dep) for dep in factory.dependencies),
-                **{
-                    name: builder.getter(dep)
-                    for name, dep in factory.kw_dependencies.items()
-                },
-            )
-            body_generator = BODY_GENERATORS[factory.type]
-            if factory.when_dependencies:  # conditions generated
-                with builder.else_():
+            has_default = _select_when_dependency(builder, factory)
+            if not has_default:
+                source_call = builder.call(
+                    builder.global_(factory.source),
+                    *(builder.getter(dep) for dep in factory.dependencies),
+                    **{
+                        name: builder.getter(dep)
+                        for name, dep in factory.kw_dependencies.items()
+                    },
+                )
+                body_generator = BODY_GENERATORS[factory.type]
+                if factory.when_dependencies:  # conditions generated
+                    with builder.else_():
+                        body_generator(builder, source_call, factory)
+                else:  # no options at all
                     body_generator(builder, source_call, factory)
-            else:  # no options at all
-                body_generator(builder, source_call, factory)
 
         if factory.cache:
             builder.cache()

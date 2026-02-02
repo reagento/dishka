@@ -22,6 +22,7 @@ from .entities.marker import (
 )
 from .entities.scope import BaseScope, InvalidScopes
 from .entities.validation_settings import ValidationSettings
+from .exception_base import InvalidMarkerError
 from .exceptions import (
     ActivatorOverrideError,
     AliasedFactoryNotFoundError,
@@ -36,6 +37,7 @@ from .exceptions import (
 )
 from .provider import BaseProvider, ProviderWrapper
 from .registry import Registry
+from .text_rendering.name import get_source_name
 
 DECORATED_COMPONENT_PREFIX = "__Dishka_decorate_"
 SELECTOR_COMPONENT_PREFIX = "__Dishka_select_"
@@ -167,9 +169,13 @@ class RegistryBuilder:
         self.decorator_depth: dict[DependencyKey, int] = defaultdict(int)
         self.skip_validation = skip_validation
         self.validation_settings = validation_settings
-        self.processed_factories: dict[DependencyKey, list[Factory]] = {}
+        self.processed_factories: dict[
+            DependencyKey, list[Factory],
+        ] = defaultdict(list)
         self.activators: dict[DependencyKey, Activator] = {}
-        self.requested_markers: set[tuple[DependencyKey, BaseScope]] = set()
+        self.requested_markers: defaultdict[
+            tuple[DependencyKey, BaseScope], list[Factory],
+        ] = defaultdict(list)
         self.factory_union_modes: dict[DependencyKey, FactoryUnionMode] = {}
 
     def _collect_components(self) -> None:
@@ -438,12 +444,20 @@ class RegistryBuilder:
 
     def _register_when(self, factory: Factory) -> None:
         scope = cast(BaseScope, factory.scope)  # already validated
-        for marker in unpack_marker(factory.when_active):
+        try:
+            markers = (
+                *unpack_marker(factory.when_active),
+                *unpack_marker(factory.when_override),
+            )
+        except InvalidMarkerError as e:
+            e.source_name = get_source_name(factory)
+            raise
+
+        for marker in markers:
             marker_key = DependencyKey(marker, factory.when_component)
-            self.requested_markers.add((marker_key, scope))
-        for marker in unpack_marker(factory.when_override):
-            marker_key = DependencyKey(marker, factory.when_component)
-            self.requested_markers.add((marker_key, scope))
+            factories = self.requested_markers[(marker_key, scope)]
+            if factory not in factories:
+                factories.append(factory)
 
     def _process_factory(
         self,
@@ -451,8 +465,7 @@ class RegistryBuilder:
         factory: Factory,
     ) -> None:
         factory = factory.with_component(provider.component)
-        lst = self.processed_factories.setdefault(factory.provides, [])
-        lst.append(factory)
+        self.processed_factories[factory.provides].append(factory)
         for dep in factory.dependencies:
             if dep == factory.provides:
                 raise CycleDependenciesError([factory])
@@ -501,8 +514,7 @@ class RegistryBuilder:
 
         factory = alias.as_factory(scope, component)
         self.dependency_scopes[factory.provides] = scope
-        lst = self.processed_factories.setdefault(factory.provides, [])
-        lst.append(factory)
+        self.processed_factories[factory.provides].append(factory)
         self._register_when(factory)
 
     def _process_generic_decorator(
@@ -656,8 +668,7 @@ class RegistryBuilder:
             )
         factory = context_var.as_factory(provider.component)
         # append context factory to processed list
-        lst = self.processed_factories.setdefault(factory.provides, [])
-        lst.append(factory)
+        self.processed_factories[factory.provides].append(factory)
         self._register_when(factory)
 
     def _post_process_generic_factories(self) -> None:
@@ -669,8 +680,7 @@ class RegistryBuilder:
         for factory in found:
             origin = get_origin(factory.provides.type_hint)
             origin_key = DependencyKey(origin, factory.provides.component)
-            lst = self.processed_factories.setdefault(origin_key, [])
-            lst.append(factory)
+            self.processed_factories[origin_key].append(factory)
 
     def _find_activator(
         self,
@@ -698,10 +708,10 @@ class RegistryBuilder:
         return key, None
 
     def _register_activators(self) -> None:
-        for dependency, scope in self.requested_markers:
+        for (dependency, scope), factories in self.requested_markers.items():
             new_key, activator = self._find_activator(dependency)
             if not activator:
-                raise NoActivatorError(dependency)
+                raise NoActivatorError(dependency, factories)
             factory = activator.as_factory(None, new_key.component, new_key)
             factory = factory.with_scope(scope)
             group = self.processed_factories.setdefault(dependency, [])

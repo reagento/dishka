@@ -218,6 +218,7 @@ class RegistryBuilder:
                         f" for {mode_fixed.source}",
                     )
                 self.factory_union_modes[mode_fixed.source] = mode_fixed
+                self.processed_factories.setdefault(mode_fixed.source, [])
 
     def _make_registries(self) -> tuple[Registry, ...]:
         registries: dict[BaseScope, Registry] = {}
@@ -293,14 +294,16 @@ class RegistryBuilder:
             new_factory = factory.replace(provides=new_provides)
             moved_factories[new_provides] = [new_factory]
 
-        if union_mode.scope is None:
+        if union_mode.scope is not None:
+            scope = union_mode.scope
+        elif moved_factories:
             scope = max(
                 cast(BaseScope, factory.scope)  # scopes already validated
                 for group in moved_factories.values()
                 for factory in group
             )
         else:
-            scope = union_mode.scope
+            scope = next(iter(self.scopes))
         factory = Factory(
             cache=union_mode.cache,
             scope=union_mode.scope or scope,
@@ -329,12 +332,8 @@ class RegistryBuilder:
         provides: DependencyKey,
         group: list[Factory],
     ) -> dict[DependencyKey, list[Factory]]:
-        if len(group) == 1:
-            factory = group[0]
-            self._ensure_override_flags(factory, None)
-            if factory.when_override in (None, BoolMarker(True)):
-                return {}
-
+        if not group:
+            return {}
         when_dependencies: list[Factory] = []
         moved_factories: dict[DependencyKey, list[Factory]] = {}
         prev_factory: Factory | None = None

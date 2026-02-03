@@ -57,3 +57,29 @@ def test_collect_cache():
     numbers = c.get(list[int])
     assert numbers == [1, 2]
     assert c.get(list[int]) is not numbers
+
+
+def test_collect_empty():
+    p = Provider()
+    p.collect(int)
+    c = make_container(p)
+    assert c.get(list[int]) == []
+
+
+def list_decorator(a: list[int]) -> list[int]:
+    return a + [42]
+
+
+def test_collect_decorate():
+    p = Provider()
+    p.collect(int)
+    p.decorate(list_decorator)
+    c = make_container(p)
+    assert c.get(list[int]) == [42]
+
+def test_collect_alias():
+    p = Provider()
+    p.collect(int)
+    p.alias(list[int], provides=Sequence[int])
+    c = make_container(p)
+    assert c.get(Sequence[int]) == []

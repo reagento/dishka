@@ -322,14 +322,6 @@ def make_async_container(
     builder.add_providers(context_provider)
     registries = builder.build()
 
-    # registries = RegistryBuilder(
-    #     scopes=scopes,
-    #     container_key=CONTAINER_KEY,
-    #     multicomponent_providers=[has_provider],
-    #     providers=(*providers, context_provider),
-    #     skip_validation=skip_validation,
-    #     validation_settings=validation_settings,
-    # ).build()
     container = AsyncContainer(
         *registries,
         context=context,

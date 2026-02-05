@@ -28,9 +28,9 @@ from .exceptions import (
     NoFactoryError,
     NoNonSkippedScopesError,
 )
+from .graph_builder.builder import GraphBuilder
 from .provider import BaseProvider, make_root_context_provider
 from .registry import Registry
-from .registry_builder import RegistryBuilder
 
 T = TypeVar("T")
 
@@ -308,14 +308,16 @@ def make_container(
 ) -> Container:
     context_provider = make_root_context_provider(providers, context, scopes)
     has_provider = HasProvider()
-    registries = RegistryBuilder(
+    builder = GraphBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,
-        multicomponent_providers=[has_provider],
-        providers=(*providers, context_provider),
         skip_validation=skip_validation,
         validation_settings=validation_settings,
-    ).build()
+    )
+    builder.add_multicomponent_providers(has_provider)
+    builder.add_providers(*providers)
+    builder.add_providers(context_provider)
+    registries = builder.build()
     container = Container(
         *registries,
         context=context,

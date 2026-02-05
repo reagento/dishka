@@ -13,6 +13,7 @@ from dishka.dependency_source import (
 from dishka.entities.component import INTERNAL_COMPONENT_PREFIX, Component
 from dishka.entities.factory_type import FactoryData, FactoryType
 from dishka.entities.key import DependencyKey
+from dishka.entities.marker import unpack_marker
 from dishka.entities.scope import BaseScope, InvalidScopes
 from dishka.entities.validation_settings import ValidationSettings
 from dishka.exception_base import InvalidMarkerError
@@ -20,10 +21,12 @@ from dishka.exceptions import (
     ActivatorOverrideError,
     CycleDependenciesError,
     GraphMissingFactoryError,
+    NoActivatorError,
     UnknownScopeError,
 )
 from dishka.provider import BaseProvider, ProviderWrapper
 from dishka.registry import Registry
+from dishka.text_rendering.name import get_source_name
 from .internal_component_tracker import (
     InternalComponentTracker,
 )
@@ -65,10 +68,14 @@ class GraphBuilder:
         self.components: set[Component] = set()
         self.decorator_depth: dict[DependencyKey, int] = {}
         self.factories: dict[DependencyKey, list[Factory]] = defaultdict(list)
+        self.requested_markers: dict[
+            DependencyKey, list[Factory],
+        ] = defaultdict(list)
         # for multicomponent processing
         self.multicomponent_providers: list[BaseProvider] = []
         self.context_vars: list[ContextVariable] = []
         # for delayed processing
+        self.marker_aliases_to: dict[DependencyKey, DependencyKey] = {}
         self.activators: dict[DependencyKey, Activator] = {}
         self.union_modes: dict[DependencyKey, FactoryUnionMode] = {}
 
@@ -98,6 +105,10 @@ class GraphBuilder:
         for decorator in provider.decorators:
             self._process_decorator(component, decorator)
 
+    def _add_factory(self, factory: Factory) -> None:
+        self.factories[factory.provides].append(factory)
+        self._register_factory_markers(factory)
+
     def _add_component(self, component: Component) -> None:
         if component in self.components:
             return
@@ -106,19 +117,22 @@ class GraphBuilder:
         for provider in self.multicomponent_providers:
             self._add_provider(ProviderWrapper(component, provider))
         for src in self.context_vars:
-            factory = src.as_factory(component)
-            self.factories[factory.provides].append(factory)
+            self._add_factory(src.as_factory(component))
 
     def _process_alias(self, component: Component, src: Alias) -> None:
-        # TODO: process marker alias
+        alias_source = src.source.with_component(component)
+        if src.provides.is_marker():
+            provides = src.provides.with_component(component)
+            self.marker_aliases_to[provides] = alias_source
+            return
         factory = src.as_factory(None, component)
-        self.factories[factory.provides].append(factory)
+        self._add_factory(factory)
 
     def _process_factory(self, component: Component, src: Factory) -> None:
         if not isinstance(src.scope, self.scopes):
             raise UnknownScopeError(src.scope, self.scopes)
         factory = src.with_component(component)
-        self.factories[factory.provides].append(factory)
+        self._add_factory(factory)
 
     def _process_context_var(
             self,
@@ -129,7 +143,7 @@ class GraphBuilder:
             raise UnknownScopeError(src.scope, self.scopes)
         for known_component in self.components:
             factory = src.as_factory(known_component)
-            self.factories[factory.provides].append(factory)
+            self._add_factory(factory)
         self.context_vars.append(src)
 
     def _collect_decorating_keys(
@@ -226,6 +240,12 @@ class GraphBuilder:
         to_decorate = self._collect_decorating_keys(src, component)
         for key in to_decorate:
             self._decorate_group(src, key)
+            self._register_factory_markers(src.as_factory(
+                scope=next(iter(self.scopes)),
+                cache=False,
+                component=component,
+                new_dependency=src.provides,
+            ))
 
     def _process_union_mode(self, component: Component,
                             src: FactoryUnionMode) -> None:
@@ -259,6 +279,20 @@ class GraphBuilder:
             provides=DependencyKey(list[key.type_hint], key.component),
             source=key,
         )
+
+    def _register_factory_markers(self, factory: Factory) -> None:
+        try:
+            markers = {
+                *unpack_marker(factory.when_active),
+                *unpack_marker(factory.when_override),
+            }
+        except InvalidMarkerError as e:
+            e.source_name = get_source_name(factory)
+            raise
+
+        for marker in markers:
+            marker_key = DependencyKey(marker, factory.when_component)
+            self.requested_markers[marker_key].append(factory)
 
     def _collect_prepared_factories(self):
         factories = []
@@ -309,7 +343,10 @@ class GraphBuilder:
             self._calc_scope(factory, all_factories, scopes_cache, path)
             for factory in sub_factories
         ]
-        scope = max(scopes)
+        if scopes:
+            scope = max(scopes)
+        else:
+            scope = next(iter(self.scopes))
         scopes_cache[factory.provides] = scope
         return scope
 
@@ -333,10 +370,65 @@ class GraphBuilder:
             registries[scope].add_factory(factory, factory.provides)
         return tuple(registries.values())
 
+    def _find_activator(
+        self,
+        key: DependencyKey,
+    ) -> tuple[DependencyKey, Activator | None]:
+        if key in self.activators:
+            return key, self.activators[key]
+
+        if key in self.marker_aliases_to:
+            return self._find_activator(
+                self.marker_aliases_to[key],
+            )
+
+        type_key = DependencyKey(type(key.type_hint), key.component)
+        if type_key in self.activators:
+            return key, self.activators[type_key]
+        if type_key in self.marker_aliases_to:
+            # type aliases for markers always keep type, but change component
+            new_key = DependencyKey(
+                key.type_hint,
+                self.marker_aliases_to[type_key].component,
+            )
+            return self._find_activator(new_key)
+
+        return key, None
+
+    def _check_markers(self) -> None:
+        for marker_key, factories in self.requested_markers.items():
+            found_key, activator = self._find_activator(marker_key)
+            if not activator and not self.skip_validation:
+                raise NoActivatorError(marker_key, factories)
+
+    def _get_activator_factories(
+        self,
+        factories: dict[DependencyKey, Factory],
+    ) -> list[Factory]:
+        activator_factories: list[Factory] = []
+        for factory in factories.values():
+            markers = {
+                *unpack_marker(factory.when_active),
+                *unpack_marker(factory.when_override),
+            }
+            for marker in markers:
+                marker_key = DependencyKey(marker, factory.when_component)
+                found_key, activator = self._find_activator(marker_key)
+                factory = activator.as_factory(
+                    None,
+                    found_key.component,
+                    found_key,
+                )
+                activator_factories.append(factory)
+        return activator_factories
+
     def build(self) -> Sequence[Registry]:
+        self._check_markers()
         factories: dict[DependencyKey, Factory] = {
             f.provides: f for f in self._collect_prepared_factories()
         }
+        for factory in self._get_activator_factories(factories):
+            factories[factory.provides] = factory
 
         scope_cache = {}
         fixed_factories: list[Factory] = [

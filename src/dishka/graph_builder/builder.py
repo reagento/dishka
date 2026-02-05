@@ -115,6 +115,8 @@ class GraphBuilder:
         self.factories[factory.provides].append(factory)
 
     def _process_factory(self, component: Component, src: Factory) -> None:
+        if not isinstance(src.scope, self.scopes):
+            raise UnknownScopeError(src.scope, self.scopes)
         factory = src.with_component(component)
         self.factories[factory.provides].append(factory)
 
@@ -123,6 +125,8 @@ class GraphBuilder:
             component: Component,
             src: ContextVariable,
     ) -> None:
+        if not isinstance(src.scope, self.scopes):
+            raise UnknownScopeError(src.scope, self.scopes)
         for known_component in self.components:
             factory = src.as_factory(known_component)
             self.factories[factory.provides].append(factory)
@@ -217,6 +221,8 @@ class GraphBuilder:
         self.factories.update(decorated_groups)
 
     def _process_decorator(self, component: Component, src: Decorator) -> None:
+        if src.scope and not isinstance(src.scope, self.scopes):
+            raise UnknownScopeError(src.scope, self.scopes)
         to_decorate = self._collect_decorating_keys(src, component)
         for key in to_decorate:
             self._decorate_group(src, key)
@@ -290,17 +296,6 @@ class GraphBuilder:
         path = path + [factory]
         if factory.provides in scopes_cache:
             return scopes_cache[factory.provides]
-        # TODO: activator?
-        if factory.type not in (FactoryType.ALIAS, FactoryType.COLLECTION,
-                                FactoryType.SELECTOR):
-            raise UnknownScopeError(
-                # TODO: pass factory
-                factory.scope,
-                self.scopes,
-                extend_message=(
-                    "Define it explicitly in Provider or from_context"
-                ),
-            )
         sub_factories: list[FactoryData] = []
         for dep in factory.dependencies:
             if dep in all_factories:
@@ -314,15 +309,6 @@ class GraphBuilder:
             self._calc_scope(factory, all_factories, scopes_cache, path)
             for factory in sub_factories
         ]
-        if not scopes:
-            raise UnknownScopeError(
-                # TODO: pass factory
-                factory.scope,
-                self.scopes,
-                extend_message=(
-                    "Define it explicitly in Provider or from_context"
-                ),
-            )
         scope = max(scopes)
         scopes_cache[factory.provides] = scope
         return scope

@@ -177,7 +177,7 @@ class GraphBuilder:
     ) -> None:
         group_replacement = []
         decorated_groups = {}
-        old_group = self.processed_factories[provides]
+        old_group = self.factories[provides]
         for old_factory in old_group:
             if self._is_alias_decorated(decorator, old_factory):
                 return

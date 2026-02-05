@@ -286,6 +286,7 @@ class GraphBuilder:
             return factory.scope
         if factory in path:
             raise CycleDependenciesError(path)
+        path = path + [factory]
         if factory.provides in scopes_cache:
             return scopes_cache[factory.provides]
         # TODO: activator?
@@ -309,8 +310,7 @@ class GraphBuilder:
         sub_factories.extend(factory.when_dependencies)
 
         scopes = [
-            self._calc_scope(factory, all_factories, scopes_cache,
-                             path + [factory])
+            self._calc_scope(factory, all_factories, scopes_cache, path)
             for factory in sub_factories
         ]
         if not scopes:

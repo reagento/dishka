@@ -35,115 +35,13 @@ from .exceptions import (
     NothingOverriddenError,
     UnknownScopeError,
 )
+from .graph_builder.validator import GraphValidator
 from .provider import BaseProvider, ProviderWrapper
 from .registry import Registry
 from .text_rendering.name import get_source_name
 
 DECORATED_COMPONENT_PREFIX = "__Dishka_decorate_"
 SELECTOR_COMPONENT_PREFIX = "__Dishka_select_"
-
-
-class GraphValidator:
-    def __init__(self, registries: Sequence[Registry]) -> None:
-        self.registries = registries
-        self.path: dict[DependencyKey, Factory] = {}
-        self.valid_keys: dict[DependencyKey, bool] = {}
-
-    def _validate_key(
-        self,
-        key: DependencyKey,
-        registry_index: int,
-    ) -> None:
-        if key in self.valid_keys:
-            return
-        if key in self.path:
-            keys = list(self.path)
-            factories = list(self.path.values())[keys.index(key):]
-            raise CycleDependenciesError(factories)
-
-        suggest_abstract_factories = []
-        suggest_concrete_factories = []
-        for index in range(registry_index + 1):
-            registry = self.registries[index]
-            factory = registry.get_factory(key)
-            if factory:
-                self._validate_factory(factory, registry_index)
-                return
-
-            abstract_factories = registry.get_more_abstract_factories(key)
-            concrete_factories = registry.get_more_concrete_factories(key)
-            suggest_abstract_factories.extend(abstract_factories)
-            suggest_concrete_factories.extend(concrete_factories)
-
-        raise NoFactoryError(
-            requested=key,
-            suggest_abstract_factories=suggest_abstract_factories,
-            suggest_concrete_factories=suggest_concrete_factories,
-        )
-
-    def _validate_factory(
-            self, factory: Factory, registry_index: int,
-    ) -> None:
-        self.path[factory.provides] = factory
-        if (
-            factory.provides in factory.kw_dependencies.values() or
-            factory.provides in factory.dependencies
-        ):
-            raise CycleDependenciesError([factory])
-        try:
-            for dep in factory.dependencies:
-                # ignore TypeVar and const parameters
-                if not dep.is_type_var() and not dep.is_const():
-                    self._validate_key(dep, registry_index)
-            for dep in factory.kw_dependencies.values():
-                # ignore TypeVar and const parameters
-                if not dep.is_type_var() and not dep.is_const():
-                    self._validate_key(dep, registry_index)
-
-        except NoFactoryError as e:
-            e.add_path(factory)
-            raise
-        finally:
-            self.path.pop(factory.provides)
-        self.valid_keys[factory.provides] = True
-
-    def validate(self) -> None:
-        for registry_index, registry in enumerate(self.registries):
-            factories = tuple(registry.factories.values())
-            for factory in factories:
-                self.path = {}
-                try:
-                    self._validate_factory(factory, registry_index)
-                except NoFactoryError as e:
-                    raise GraphMissingFactoryError(
-                        e.requested,
-                        e.path,
-                        self._find_other_scope(e.requested),
-                        self._find_other_component(e.requested),
-                        e.suggest_abstract_factories,
-                        e.suggest_concrete_factories,
-                    ) from None
-                except CycleDependenciesError as e:
-                    raise e from None
-
-    def _find_other_scope(self, key: DependencyKey) -> list[Factory]:
-        found = []
-        for registry in self.registries:
-            for factory_key, factory in registry.factories.items():
-                if factory_key == key:
-                    found.append(factory)
-        return found
-
-    def _find_other_component(self, key: DependencyKey) -> list[Factory]:
-        found = []
-        for registry in self.registries:
-            for factory_key, factory in registry.factories.items():
-                if factory_key.type_hint != key.type_hint:
-                    continue
-                if factory_key.component == key.component:
-                    continue
-                found.append(factory)
-        return found
 
 
 class RegistryBuilder:

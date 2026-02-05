@@ -22,15 +22,16 @@ from dishka.exceptions import (
     GraphMissingFactoryError,
     UnknownScopeError,
 )
-from dishka.graph_builder.internal_component_tracker import (
+from dishka.provider import BaseProvider, ProviderWrapper
+from dishka.registry import Registry
+from .internal_component_tracker import (
     InternalComponentTracker,
 )
-from dishka.graph_builder.uniter import (
+from .uniter import (
     CollectionGroupProcessor,
     SelectorGroupProcessor,
 )
-from dishka.provider import BaseProvider, ProviderWrapper
-from dishka.registry import Registry
+from .validator import GraphValidator
 
 DECORATED_COMPONENT_PREFIX = f"{INTERNAL_COMPONENT_PREFIX}decorate_"
 
@@ -134,24 +135,24 @@ class GraphBuilder:
     ) -> list[DependencyKey]:
         provides = src.provides.with_component(component)
         if src.is_generic():
-            if provides in self.factories:
-                return [provides]
-        else:
             found = []
             for factory_provides, group in self.factories.items():
-                if factory_provides.component != provides.component:
-                    continue
-                if not src.match_type(factory_provides.type_hint):
-                    continue
-                if not group:
+                if (
+                        not group or
+                        factory_provides.component != provides.component or
+                        not src.match_type(factory_provides.type_hint)
+                ):
                     continue
                 found.append(factory_provides)
             if found:
                 return found
+        elif provides in self.factories:
+            return [provides]
 
-        if not self.validation_settings.nothing_decorated:
-            return []
-        if self.skip_validation:
+        if (
+                self.skip_validation or
+                not self.validation_settings.nothing_decorated
+        ):
             return []
         raise GraphMissingFactoryError(
             requested=provides,
@@ -358,4 +359,7 @@ class GraphBuilder:
             )
             for factory in factories.values()
         ]
-        return self._make_registries(fixed_factories)
+        registries = self._make_registries(fixed_factories)
+        if not self.skip_validation:
+            GraphValidator(registries).validate()
+        return registries

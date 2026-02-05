@@ -154,6 +154,7 @@ class Factory(FactoryData):
 
     def replace(
         self,
+        scope: MayBe[BaseScope] = Special.OMITTED,
         provides: MayBe[DependencyKey] = Special.OMITTED,
         when_active: MayBe[BaseMarker|None] = Special.OMITTED,
         when_override: MayBe[BaseMarker|None] = Special.OMITTED,
@@ -164,7 +165,7 @@ class Factory(FactoryData):
             kw_dependencies=dict(self.kw_dependencies),
             source=self.source,
             provides=coalesce(provides, self.provides),
-            scope=self.scope,
+            scope=coalesce(scope, self.scope),
             is_to_bind=self.is_to_bind,
             cache=self.cache,
             type_=self.type,

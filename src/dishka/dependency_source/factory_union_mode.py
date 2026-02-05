@@ -1,8 +1,10 @@
 from typing import Any
 
 from dishka.entities.component import Component
+from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.scope import BaseScope
+from .factory import Factory
 
 
 class FactoryUnionMode:
@@ -39,4 +41,22 @@ class FactoryUnionMode:
             collect=self.collect,
             cache=self.cache,
             provides=self.provides,
+        )
+
+    def as_factory(self) -> Factory | None:
+        if not self.collect:
+            return None
+        return Factory(
+            source=None,
+            provides=self.provides,
+            scope=self.scope,
+            when_active=None,
+            when_override=None,
+            cache=self.cache,
+            when_component=self.provides.component,
+            is_to_bind=False,
+            type_=FactoryType.COLLECTION,
+            when_dependencies=[],
+            dependencies=[],
+            kw_dependencies={},
         )

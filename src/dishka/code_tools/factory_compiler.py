@@ -196,15 +196,15 @@ def _collection_factory_body(
                 )))
                 assigned = True
             with builder.if_(condition):
-                builder.call(
+                builder.statement(builder.call(
                     "solved.append",
                     builder.getter(variant.provides),
-                )
+                ))
         elif assigned:
-            builder.call(
+            builder.statement(builder.call(
                 "solved.append",
                 builder.getter(variant.provides),
-            )
+            ))
         else:
             unconditional_factories.append(variant)
     if not assigned:

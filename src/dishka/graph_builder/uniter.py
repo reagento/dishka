@@ -126,13 +126,12 @@ class CollectionGroupProcessor:
         res_factories = []
 
         for factory in group:
-            # TODO CHECKIN
-            # implicit and explicit override
+            # explicit override only
             if factory.when_override == BoolMarker(True):
-                moved_factories = {}
+                res_factories = []
 
             new_provides = self.component_tracker.to_internal_component(
-                prefix=SELECTOR_COMPONENT_PREFIX,
+                prefix=COLLECTION_COMPONENT_PREFIX,
                 provides=provides,
             )
             new_factory = factory.replace(provides=new_provides)

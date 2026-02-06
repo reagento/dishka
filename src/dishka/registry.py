@@ -11,6 +11,7 @@ from typing import (
     get_origin,
 )
 
+from ._adaptix.type_tools import is_generic
 from ._adaptix.type_tools.fundamentals import get_type_vars
 from .code_tools.factory_compiler import compile_activation, compile_factory
 from .container_objects import CompiledFactory
@@ -69,6 +70,10 @@ class Registry:
         if provides is None:
             provides = factory.provides
         self.factories[provides] = factory
+        if is_generic(factory.provides.type_hint):
+            origin = get_origin(factory.provides.type_hint)
+            origin_key = DependencyKey(origin, factory.provides.component)
+            self.factories[origin_key] = factory
 
     def get_compiled(
             self, dependency: DependencyKey,

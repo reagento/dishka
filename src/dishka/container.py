@@ -243,6 +243,7 @@ class Container:
             raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
     def _has(self, marker: Any) -> bool:
+        # TODO: component?
         key = DependencyKey(marker, DEFAULT_COMPONENT)
         compiled = self.registry.get_compiled_activation(key)
         if not compiled:

@@ -321,6 +321,28 @@ def test_decorate_alias():
     assert isinstance(a, ADecorator)
     assert a.a == 17
 
+def test_decorate_alias_next_provider():
+
+    class AliasProvider(Provider):
+        scope = Scope.APP
+        baz = alias(source=int, provides=float)
+
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        @provide(scope=Scope.APP)
+        def bar(self) -> int:
+            return 17
+
+        @decorate
+        def dec(self, a: T) -> T:
+            return ADecorator(a)
+
+    container = make_container(AliasProvider(), MyProvider())
+    a = container.get(float)
+    assert isinstance(a, ADecorator)
+    assert a.a == 17
+
 
 def test_decorate_subscope_valid():
 

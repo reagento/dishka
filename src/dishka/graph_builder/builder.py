@@ -74,7 +74,6 @@ class GraphBuilder:
         ] = defaultdict(list)
         # for multicomponent processing
         self.multicomponent_providers: list[BaseProvider] = []
-        self.context_vars: list[ContextVariable] = []
         # for delayed processing
         self.marker_aliases_to: dict[DependencyKey, DependencyKey] = {}
         self.activators: dict[DependencyKey, Activator] = {}
@@ -117,8 +116,6 @@ class GraphBuilder:
         self.components.add(component)
         for provider in self.multicomponent_providers:
             self._add_provider(ProviderWrapper(component, provider))
-        for src in self.context_vars:
-            self._add_factory(src.as_factory(component))
 
     def _process_alias(self, component: Component, src: Alias) -> None:
         alias_source = src.source.with_component(component)
@@ -149,10 +146,8 @@ class GraphBuilder:
     ) -> None:
         if not isinstance(src.scope, self.scopes):
             raise UnknownScopeError(src.scope, self.scopes)
-        for known_component in self.components:
-            factory = src.as_factory(known_component)
-            self._add_factory(factory)
-        self.context_vars.append(src)
+        factory = src.as_factory(component)
+        self._add_factory(factory)
 
     def _collect_decorating_keys(
             self,

@@ -132,6 +132,13 @@ class GraphBuilder:
     def _process_factory(self, component: Component, src: Factory) -> None:
         if not isinstance(src.scope, self.scopes):
             raise UnknownScopeError(src.scope, self.scopes)
+        for dep in src.dependencies:
+            if dep == src.provides:
+                raise CycleDependenciesError([src])
+        for dep in src.kw_dependencies.values():
+            if dep == src.provides:
+                raise CycleDependenciesError([src])
+
         factory = src.with_component(component)
         self._add_factory(factory)
 

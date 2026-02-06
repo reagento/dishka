@@ -328,19 +328,38 @@ class GraphBuilder:
             marker_key = DependencyKey(marker, factory.when_component)
             self.requested_markers[marker_key].append(factory)
 
-    def _collect_prepared_factories(self):
+    def _collect_prepared_factories(self) -> list[Factory]:
         factories = []
+        collection_factories: dict[DependencyKey, Factory] = {
+            f.source: f
+            for group in self.factories.values()
+            for f in group
+            if f.type is FactoryType.COLLECTION
+        }
+        for key, union_mode in self.union_modes.items():
+            if not union_mode.collect:
+                continue
+
+            existing_factory = collection_factories.pop(key)
+            factory_group = self.factories[union_mode.source]
+            new_factories = self.collection_group_processor.unite(
+                union_mode=union_mode,
+                provides=key,
+                group=factory_group,
+                collection_factory=existing_factory,
+            )
+            for factory in new_factories:
+                group = self.factories[factory.provides]
+                if factory.type is FactoryType.COLLECTION:
+                    idx = group.index(existing_factory)
+                    group[idx] = factory
+                else:
+                    group.append(factory)
+
+        # collect existing
         for key, factory_group in self.factories.items():
             mode = self._get_factory_union_mode(key)
-            if mode.collect:
-                factories.extend(
-                    self.collection_group_processor.unite(
-                        union_mode=mode,
-                        provides=key,
-                        group=factory_group,
-                    ),
-                )
-            else:
+            if not mode.collect:
                 factories.extend(
                     self.selector_group_processor.unite(
                         union_mode=mode,

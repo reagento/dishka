@@ -172,10 +172,8 @@ class RegistryBuilder:
         group: list[Factory],
     ) -> dict[DependencyKey, list[Factory]]:
         moved_factories: dict[DependencyKey, list[Factory]] = {}
-        prev_factory: Factory | None = None
 
         for factory in group:
-            # TODO CHECKIN
             # implicit and explicit override
             if factory.when_override == BoolMarker(True):
                 moved_factories = {}

@@ -122,9 +122,9 @@ class CollectionGroupProcessor:
             union_mode: FactoryUnionMode,
             provides: DependencyKey,
             group: list[Factory],
+            collection_factory: Factory,
     ) -> list[Factory]:
         res_factories = []
-
         for factory in group:
             # explicit override only
             if factory.when_override == BoolMarker(True):
@@ -137,19 +137,9 @@ class CollectionGroupProcessor:
             new_factory = factory.replace(provides=new_provides)
             res_factories.append(new_factory)
 
-        factory = Factory(
-            cache=union_mode.cache,
-            scope=union_mode.scope,
-            provides=union_mode.provides,
-            is_to_bind=False,
-            dependencies=(),
-            type_=FactoryType.COLLECTION,
-            kw_dependencies={},
-            source=None,
-            when_override=None,
-            when_active=None,
-            when_component=provides.component,
-            when_dependencies=[f for f in res_factories],
+        factory = union_mode.as_factory().replace(
+            when_dependencies=res_factories[:],
+            provides=collection_factory.provides,
         )
         res_factories.append(factory)
         return res_factories

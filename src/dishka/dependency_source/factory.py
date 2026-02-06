@@ -59,7 +59,7 @@ class Factory(FactoryData):
 
         :param dependencies: args of source
         :param kw_dependencies: kwargs of source
-        :param source: callable to produce result
+        :param source: callable to produce result (or item key in collection)
         :param provides:
         :param scope:
         :param type_:
@@ -159,6 +159,7 @@ class Factory(FactoryData):
         when_active: MayBe[BaseMarker|None] = Special.OMITTED,
         when_override: MayBe[BaseMarker|None] = Special.OMITTED,
         when_component: MayBe[Component] = Special.OMITTED,
+        when_dependencies: MayBe[ Sequence[FactoryData]] = Special.OMITTED,
     ) -> Factory:
         return Factory(
             dependencies=list(self.dependencies),
@@ -172,5 +173,8 @@ class Factory(FactoryData):
             when_override=coalesce(when_override, self.when_override),
             when_active=coalesce(when_active, self.when_active),
             when_component=coalesce(when_component, self.when_component),
-            when_dependencies=self.when_dependencies,
+            when_dependencies=coalesce(
+                when_dependencies,
+                self.when_dependencies,
+            ),
         )

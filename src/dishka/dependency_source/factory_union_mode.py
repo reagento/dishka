@@ -47,7 +47,7 @@ class FactoryUnionMode:
         if not self.collect:
             return None
         return Factory(
-            source=None,
+            source=self.source,
             provides=self.provides,
             scope=self.scope,
             when_active=None,

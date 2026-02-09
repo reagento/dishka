@@ -1,4 +1,4 @@
-from dishka import Provider, Scope, Has, make_container
+from dishka import Has, Provider, Scope, make_container
 
 
 def test_collect_when():

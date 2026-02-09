@@ -67,7 +67,7 @@ def test_collect_empty():
 
 
 def list_decorator(a: list[int]) -> list[int]:
-    return a + [42]
+    return [*a, 42]
 
 
 def test_collect_decorate():

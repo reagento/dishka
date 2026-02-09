@@ -53,7 +53,7 @@ class Factory(FactoryData):
         when_override: BaseMarker | None,
         when_active: BaseMarker | None,
         when_component: Component | None,
-        when_dependencies: Sequence[FactoryData],
+        when_dependencies: Sequence[Factory],
     ) -> None:
         """
 

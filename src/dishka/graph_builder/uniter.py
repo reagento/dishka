@@ -1,5 +1,4 @@
 from dishka.dependency_source import Factory, FactoryUnionMode
-from dishka.entities.component import INTERNAL_COMPONENT_PREFIX
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.marker import BoolMarker, or_markers
@@ -8,25 +7,20 @@ from dishka.exceptions import (
     ImplicitOverrideDetectedError,
     NothingOverriddenError,
 )
-from dishka.graph_builder.internal_component_tracker import (
-    InternalComponentTracker,
-)
-
-SELECTOR_COMPONENT_PREFIX = f"{INTERNAL_COMPONENT_PREFIX}select_"
-COLLECTION_COMPONENT_PREFIX = f"{INTERNAL_COMPONENT_PREFIX}collect_"
+from .moved_objects_tracker import MovedObjectsTracker
 
 
 class SelectorGroupProcessor:
     def __init__(
-            self,
-            *,
-            skip_validation: bool = False,
-            validation_settings: ValidationSettings,
-            component_tracker: InternalComponentTracker,
+        self,
+        *,
+        skip_validation: bool = False,
+        validation_settings: ValidationSettings,
+        moved_objects_tracker: MovedObjectsTracker,
     ) -> None:
         self.skip_validation = skip_validation
         self.validation_settings = validation_settings
-        self.component_tracker = component_tracker
+        self.moved_objects_tracker = moved_objects_tracker
 
     def _ensure_override_flags(
             self,
@@ -69,10 +63,7 @@ class SelectorGroupProcessor:
             if factory.when_override in (None, BoolMarker(True)):
                 res_factories = []
 
-            new_provides = self.component_tracker.to_internal_component(
-                prefix=SELECTOR_COMPONENT_PREFIX,
-                provides=provides,
-            )
+            new_provides = self.moved_objects_tracker.move(provides)
             prev_factory = factory
             new_factory = factory.replace(provides=new_provides)
             res_factories.append(new_factory)
@@ -107,15 +98,15 @@ class SelectorGroupProcessor:
 
 class CollectionGroupProcessor:
     def __init__(
-            self,
-            *,
-            skip_validation: bool = False,
-            validation_settings: ValidationSettings,
-            component_tracker: InternalComponentTracker,
+        self,
+        *,
+        skip_validation: bool = False,
+        validation_settings: ValidationSettings,
+        moved_objects_tracker: MovedObjectsTracker,
     ) -> None:
         self.skip_validation = skip_validation
         self.validation_settings = validation_settings
-        self.component_tracker = component_tracker
+        self.moved_objects_tracker = moved_objects_tracker
 
     def unite(
         self,
@@ -124,18 +115,22 @@ class CollectionGroupProcessor:
         group: list[Factory],
         collection_factory: Factory,
     ) -> list[Factory]:
-        res_factories = []
-        moved_factories = []
+        res_factories: list[Factory] = []
+        moved_factories: list[Factory] = []
         for factory in group:
             # explicit override only
             if factory.when_override == BoolMarker(True):
+                if (
+                    not moved_factories and
+                    not self.skip_validation and
+                    self.validation_settings.nothing_overridden
+                ):
+                    raise NothingOverriddenError(factory)
+
                 res_factories = []
                 moved_factories = []
 
-            new_provides = self.component_tracker.to_internal_component(
-                prefix=COLLECTION_COMPONENT_PREFIX,
-                provides=provides,
-            )
+            new_provides = self.moved_objects_tracker.move(provides)
             new_factory = factory.replace(
                 provides=new_provides,
             )

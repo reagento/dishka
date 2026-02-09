@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import Any
 
 from dishka import AsyncContainer, BaseScope, Container, DependencyKey
@@ -8,6 +9,13 @@ from dishka.entities.marker import unpack_marker
 from dishka.registry import Registry
 from dishka.text_rendering import get_name
 from .model import Group, GroupType, Node, NodeType
+
+FACTORY_NODE_TYPE: Mapping[FactoryType, NodeType] = {
+    FactoryType.ALIAS: NodeType.ALIAS,
+    FactoryType.CONTEXT: NodeType.CONTEXT,
+    FactoryType.COLLECTION: NodeType.COLLECTION,
+    FactoryType.SELECTOR: NodeType.SELECTOR,
+}
 
 
 class Transformer:
@@ -36,16 +44,8 @@ class Transformer:
         for dep in factory.kw_dependencies.values():
             if self._is_decorated(dep):
                 return NodeType.DECORATOR
-        if factory.type is FactoryType.COLLECTION:
-            return NodeType.COLLECTION
-        if factory.type is FactoryType.SELECTOR:
-            return NodeType.SELECTOR
-        if factory.type is FactoryType.ALIAS:
-            return NodeType.ALIAS
-        elif factory.type is FactoryType.CONTEXT:
-            return NodeType.CONTEXT
-        else:
-            return NodeType.FACTORY
+
+        return FACTORY_NODE_TYPE.get(factory.type, NodeType.FACTORY)
 
     def _make_factories(
             self, scope: BaseScope, group: Group, registry: Registry,

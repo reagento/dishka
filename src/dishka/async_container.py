@@ -286,7 +286,8 @@ class HasProvider(Provider):
         marker: DependencyKey,
         container: AsyncContainer,
     ) -> bool:
-        return await container._has(DependencyKey(marker.type_hint.value, marker.component))  # noqa: SLF001
+        key = DependencyKey(marker.type_hint.value, marker.component)
+        return await container._has(key)  # noqa: SLF001
 
     @activate(HasContext)
     def has_context(

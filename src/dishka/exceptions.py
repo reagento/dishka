@@ -231,16 +231,19 @@ class UnknownScopeError(InvalidGraphError):
             self,
             scope: BaseScope | None,
             expected: type[BaseScope],
+            factory: FactoryData,
             extend_message: str = "",
     ) -> None:
         self.scope = scope
         self.expected = expected
+        self.factory = factory
         self.extend_message = extend_message
 
     def __str__(self) -> str:
+        name = get_name(self.factory.source, include_module=False)
         return " ".join((
-            f"Scope {self.scope} is unknown, "
-            f"expected one of {self.expected}",
+            f"Scope {self.scope} at `{name}` is unknown, "
+            f"expected one of {self.expected}.",
             self.extend_message,
         ))
 

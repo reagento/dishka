@@ -126,7 +126,7 @@ class GraphBuilder:
 
     def _process_factory(self, component: Component, src: Factory) -> None:
         if not isinstance(src.scope, self.scopes):
-            raise UnknownScopeError(src.scope, self.scopes)
+            raise UnknownScopeError(src.scope, self.scopes, src)
         for dep in src.dependencies:
             if dep == src.provides:
                 raise CycleDependenciesError([src])
@@ -142,9 +142,9 @@ class GraphBuilder:
             component: Component,
             src: ContextVariable,
     ) -> None:
-        if not isinstance(src.scope, self.scopes):
-            raise UnknownScopeError(src.scope, self.scopes)
         factory = src.as_factory(component)
+        if not isinstance(src.scope, self.scopes):
+            raise UnknownScopeError(src.scope, self.scopes, factory)
         self._add_factory(factory)
 
     def _collect_decorating_keys(
@@ -272,7 +272,7 @@ class GraphBuilder:
 
     def _process_decorator(self, component: Component, src: Decorator) -> None:
         if src.scope and not isinstance(src.scope, self.scopes):
-            raise UnknownScopeError(src.scope, self.scopes)
+            raise UnknownScopeError(src.scope, self.scopes, src.factory)
         to_decorate = self._collect_decorating_keys(src, component)
         for key in to_decorate:
             self._decorate_group(src, key)
@@ -467,12 +467,20 @@ class GraphBuilder:
             for marker in unpack_marker(factory.when_active):
                 key = DependencyKey(marker, factory.when_component)
                 if factory.scope is None:
-                    raise UnknownScopeError(factory.scope, self.scopes)
+                    raise UnknownScopeError(
+                        factory.scope,
+                        self.scopes,
+                        factory,
+                    )
                 processed_markers[key, factory.scope] = None
             for subfactory in factory.when_dependencies:
                 for marker in unpack_marker(subfactory.when_override):
                     if subfactory.scope is None:
-                        raise UnknownScopeError(factory.scope, self.scopes)
+                        raise UnknownScopeError(
+                            subfactory.scope,
+                            self.scopes,
+                            subfactory,
+                        )
                     key = DependencyKey(marker, factory.when_component)
                     processed_markers[key, subfactory.scope] = None
         for marker_key, scope in processed_markers:

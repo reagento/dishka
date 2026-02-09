@@ -246,8 +246,7 @@ class AsyncContainer:
             raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
     async def _has(self, marker: Any) -> bool:
-        key = DependencyKey(marker, DEFAULT_COMPONENT)
-        compiled = self.registry.get_compiled_activation_async(key)
+        compiled = self.registry.get_compiled_activation(marker)
         if not compiled:
             if not self.parent_container:
                 return False
@@ -284,10 +283,10 @@ class HasProvider(Provider):
     @activate(Has)
     async def has(
         self,
-        marker: Has,
+        marker: DependencyKey,
         container: AsyncContainer,
     ) -> bool:
-        return await container._has(marker.value)  # noqa: SLF001
+        return await container._has(DependencyKey(marker.type_hint.value, marker.component))  # noqa: SLF001
 
     @activate(HasContext)
     def has_context(

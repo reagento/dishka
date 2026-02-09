@@ -61,7 +61,7 @@ EXPECTED_GRAPH = [
                     Node(
                         id="factory6",
                         name="P",
-                        dependencies=["factory9"],
+                        dependencies=["factory8"],
                         type=NodeType.DECORATOR,
                         is_protocol=True,
                         source_name="p_decorator",
@@ -75,7 +75,7 @@ EXPECTED_GRAPH = [
                         source_name="",
                     ),
                     Node(
-                        id="factory9",
+                        id="factory8",
                         name="P",
                         dependencies=[],
                         type=NodeType.FACTORY,

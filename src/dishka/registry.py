@@ -72,7 +72,7 @@ class Registry:
         self.factories[provides] = factory
         if is_generic(factory.provides.type_hint):
             origin = get_origin(factory.provides.type_hint)
-            origin_key = DependencyKey(origin, factory.provides.component)
+            origin_key = DependencyKey(origin, factory.provides.component, factory.provides.depth)
             self.factories[origin_key] = factory
 
     def get_compiled(
@@ -141,7 +141,7 @@ class Registry:
             if (origin is type) and self.has_fallback:
                 return self._get_type_var_factory(dependency)
 
-            origin_key = DependencyKey(origin, dependency.component)
+            origin_key = DependencyKey(origin, dependency.component, dependency.depth)
             factory = self.factories.get(origin_key)
 
             if (
@@ -244,7 +244,7 @@ class Registry:
                     for param in type_vars
                 )]
             new_dependencies.append(DependencyKey(
-                hint, source_dependency.component,
+                hint, source_dependency.component, source_dependency.depth,
             ))
         new_kw_dependencies: dict[str, DependencyKey] = {}
         for name, source_dependency in factory.kw_dependencies.items():
@@ -257,7 +257,7 @@ class Registry:
                     for param in type_vars
                 )]
             new_kw_dependencies[name] = DependencyKey(
-                hint, source_dependency.component,
+                hint, source_dependency.component, source_dependency.depth,
             )
         return Factory(
             source=factory.source,

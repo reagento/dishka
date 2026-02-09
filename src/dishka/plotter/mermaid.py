@@ -39,7 +39,7 @@ class MermaidRenderer(Renderer):
         if node.type is NodeType.ALIAS:
             return ""
         name = self._node_type(node) + self._escape(node.name)
-        if node.type is NodeType.SELECTOR:
+        if node.type in (NodeType.SELECTOR, NodeType.COLLECTION):
             return  f'class {node.id}["{name}"]'
         source_name = self._escape(node.source_name)
         return "\n".join([
@@ -79,6 +79,8 @@ class MermaidRenderer(Renderer):
             prefix = ""
         if node.type is NodeType.DECORATOR:
             return "🎭 " + prefix
+        elif node.type is NodeType.COLLECTION:
+            return "🗂 " + prefix
         elif node.type is NodeType.SELECTOR:
             return "🤔 " + prefix
         elif node.type is NodeType.CONTEXT:

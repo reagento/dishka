@@ -53,10 +53,10 @@ class SelectorGroupProcessor:
             )
 
     def unite(
-            self,
-            union_mode: FactoryUnionMode,
-            provides: DependencyKey,
-            group: list[Factory],
+        self,
+        union_mode: FactoryUnionMode,
+        provides: DependencyKey,
+        group: list[Factory],
     ) -> list[Factory]:
         if not group:
             return []
@@ -118,28 +118,29 @@ class CollectionGroupProcessor:
         self.component_tracker = component_tracker
 
     def unite(
-            self,
-            union_mode: FactoryUnionMode,
-            provides: DependencyKey,
-            group: list[Factory],
-            collection_factory: Factory,
+        self,
+        union_mode: FactoryUnionMode,
+        provides: DependencyKey,
+        group: list[Factory],
+        collection_factory: Factory,
     ) -> list[Factory]:
         res_factories = []
+        moved_factories = []
         for factory in group:
             # explicit override only
             if factory.when_override == BoolMarker(True):
                 res_factories = []
+                moved_factories = []
 
             new_provides = self.component_tracker.to_internal_component(
                 prefix=COLLECTION_COMPONENT_PREFIX,
                 provides=provides,
             )
-            new_factory = factory.replace(provides=new_provides)
+            new_factory = factory.replace(
+                provides=new_provides,
+            )
+            moved_factories.append(new_factory)
             res_factories.append(new_factory)
 
-        factory = union_mode.as_factory().replace(
-            when_dependencies=res_factories[:],
-            provides=collection_factory.provides,
-        )
-        res_factories.append(factory)
+        collection_factory.when_dependencies = moved_factories[:]
         return res_factories

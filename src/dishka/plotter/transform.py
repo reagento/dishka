@@ -6,10 +6,6 @@ from dishka.dependency_source import Factory
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.marker import unpack_marker
 from dishka.registry import Registry
-from dishka.registry_builder import (
-    DECORATED_COMPONENT_PREFIX,
-    SELECTOR_COMPONENT_PREFIX,
-)
 from dishka.text_rendering import get_name
 from .model import Group, GroupType, Node, NodeType
 
@@ -31,9 +27,7 @@ class Transformer:
         return True
 
     def _is_decorated(self, key: DependencyKey) -> bool:
-        if not key.component:
-            return False
-        return key.component.startswith(DECORATED_COMPONENT_PREFIX)
+        return key.depth > 0
 
     def _node_type(self, factory: Factory) -> NodeType:
         for dep in factory.dependencies:
@@ -42,48 +36,16 @@ class Transformer:
         for dep in factory.kw_dependencies.values():
             if self._is_decorated(dep):
                 return NodeType.DECORATOR
-        if factory.when_dependencies:
+        if factory.type is FactoryType.COLLECTION:
+            return NodeType.COLLECTION
+        if factory.type is FactoryType.SELECTOR:
             return NodeType.SELECTOR
-
         if factory.type is FactoryType.ALIAS:
             return NodeType.ALIAS
         elif factory.type is FactoryType.CONTEXT:
             return NodeType.CONTEXT
         else:
             return NodeType.FACTORY
-
-    def _is_decorated_component(self, group: Group) -> bool:
-        if group.type is not GroupType.COMPONENT:
-            return False
-        return group.name.startswith(DECORATED_COMPONENT_PREFIX)
-
-    def _is_selector_component(self, group: Group) -> bool:
-        if group.type is not GroupType.COMPONENT:
-            return False
-        return group.name.startswith(SELECTOR_COMPONENT_PREFIX)
-
-    def _trace_internal_components(
-        self,
-        node: Node,
-        target_group: Group,
-    ) -> None:
-        if node.type not in (NodeType.DECORATOR, NodeType.SELECTOR):
-            return
-        for group in self.groups.values():
-            if not (
-                self._is_decorated_component(group) or
-                self._is_selector_component(group)
-            ):
-                continue
-            nodes_to_move = [
-                n
-                for n in group.nodes
-                if n.id in node.dependencies
-            ]
-            for moved in nodes_to_move:
-                group.nodes.remove(moved)
-                target_group.nodes.append(moved)
-                self._trace_internal_components(moved, target_group)
 
     def _make_factories(
             self, scope: BaseScope, group: Group, registry: Registry,
@@ -106,6 +68,7 @@ class Transformer:
                 FactoryType.CONTEXT,
                 FactoryType.ALIAS,
                 FactoryType.SELECTOR,
+                FactoryType.COLLECTION,
             ):
                 source_name = ""
             else:
@@ -175,9 +138,5 @@ class Transformer:
             if self._is_empty(registry):
                 continue
             self._fill_dependencies(registry, registries[n::-1])
-
-        for group in self.groups.values():
-            for node in group.nodes:
-                self._trace_internal_components(node, group)
 
         return self.clean_groups(result)

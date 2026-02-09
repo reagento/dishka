@@ -35,6 +35,8 @@ class FactoryBuilder(CodeBuilder):
             preferred_name = f"key_{type_name}"
             if obj.component:
                 preferred_name += f"_{obj.component}"
+            if obj.depth:
+                preferred_name += f"_{obj.depth}"
         return super().global_(obj, preferred_name)
 
     def register_provides(self, provides: DependencyKey) -> None:
@@ -51,6 +53,8 @@ class FactoryBuilder(CodeBuilder):
     def getter(self, obj: DependencyKey) -> str:
         if obj.is_const():
             return self.global_(obj.get_const_value())
+        if obj.type_hint is DependencyKey:
+            return self.provides_name
         return self.await_(self.call("getter", self.global_(obj)))
 
     def cache(self) -> None:
@@ -159,14 +163,14 @@ def _alias_factory_body(
 def _context_factory_body(
     builder: FactoryBuilder, source_call: str, factory: Factory,
 ) -> None:
-    provides_hint = builder.global_(factory.provides.type_hint)
+    source = builder.global_(factory.source)
     with builder.try_():
-        builder.assign_solved(f"context[{provides_hint}]")
+        builder.assign_solved(f"context[{source}]")
     with builder.except_(KeyError):
         builder.raise_(
             builder.call(
                 builder.global_(NoContextValueError),
-                provides_hint,
+                source,
             ),
         )
 
@@ -187,7 +191,7 @@ def _collection_factory_body(
     unconditional_factories = []
     assigned = False
     for variant in factory.when_dependencies:
-        condition = builder.when(variant.when_override, factory.when_component)
+        condition = builder.when(variant.when_override, variant.when_component)
         if condition:
             if not assigned:
                 builder.assign_solved(builder.list_literal(*(

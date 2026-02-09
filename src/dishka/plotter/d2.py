@@ -23,7 +23,7 @@ class D2Renderer(Renderer):
         res = f'{node.id}: "{name}"' + "{\n"
         res += "    shape: class\n"
 
-        if node.type is NodeType.SELECTOR:
+        if node.type in (NodeType.SELECTOR, NodeType.COLLECTION):
             res += "}\n"
             return res
 
@@ -59,6 +59,8 @@ class D2Renderer(Renderer):
             prefix = ""
         if node.type is NodeType.DECORATOR:
             return "🎭 " + prefix
+        elif node.type is NodeType.COLLECTION:
+            return "🗂 " + prefix
         elif node.type is NodeType.SELECTOR:
             return "🤔 " + prefix
         elif node.type is NodeType.CONTEXT:

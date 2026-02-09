@@ -242,15 +242,12 @@ class Container:
         if errors:
             raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
-    def _has(self, marker: Any) -> bool:
-        # TODO: component?
-        key = DependencyKey(marker, DEFAULT_COMPONENT)
-        compiled = self.registry.get_compiled_activation(key)
+    def _has(self, marker: DependencyKey) -> bool:
+        compiled = self.registry.get_compiled_activation(marker)
         if not compiled:
             if not self.parent_container:
                 return False
             return self.parent_container._has(marker)  # noqa: SLF001
-
         return bool(compiled(
             self._get_unlocked,
             self._exits,
@@ -284,10 +281,10 @@ class HasProvider(Provider):
     @activate(Has)
     def has(
         self,
-        marker: Has,
+        marker: DependencyKey,
         container: Container,
     ) -> bool:
-        return container._has(marker.value)  # noqa: SLF001
+        return container._has(DependencyKey(marker.type_hint.value, marker.component))  # noqa: SLF001
 
     @activate(HasContext)
     def has_context(

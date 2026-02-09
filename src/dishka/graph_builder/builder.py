@@ -160,6 +160,7 @@ class GraphBuilder:
             for factory_provides, group in self.factories.items():
                 if (
                         not group or
+                        factory_provides.depth > 0 or  # inner function
                         factory_provides.component != provides.component or
                         not src.match_type(factory_provides.type_hint)
                 ):
@@ -245,7 +246,6 @@ class GraphBuilder:
                 when_override=None,
             )
             decorated_groups[decorated_provides] = [new_factory]
-            # TODO: handle selection factory
             decorated_factory = decorator.as_factory(
                 scope=cast(BaseScope, old_factory.scope),
                 new_dependency=decorated_provides,
@@ -310,7 +310,7 @@ class GraphBuilder:
             scope=None,
             cache=False,
             collect=False,
-            provides=DependencyKey(list[key.type_hint], key.component),
+            provides=DependencyKey(list[key.type_hint], key.component, key.depth),
             source=key,
         )
 
@@ -336,30 +336,19 @@ class GraphBuilder:
             for f in group
             if f.type is FactoryType.COLLECTION
         }
-        for key, union_mode in self.union_modes.items():
-            if not union_mode.collect:
-                continue
-
-            existing_factory = collection_factories.pop(key)
-            factory_group = self.factories[union_mode.source]
-            new_factories = self.collection_group_processor.unite(
-                union_mode=union_mode,
-                provides=key,
-                group=factory_group,
-                collection_factory=existing_factory,
-            )
-            for factory in new_factories:
-                group = self.factories[factory.provides]
-                if factory.type is FactoryType.COLLECTION:
-                    idx = group.index(existing_factory)
-                    group[idx] = factory
-                else:
-                    group.append(factory)
 
         # collect existing
         for key, factory_group in self.factories.items():
             mode = self._get_factory_union_mode(key)
-            if not mode.collect:
+            if mode.collect:
+                existing_factory = collection_factories.pop(key)
+                factories.extend(self.collection_group_processor.unite(
+                    union_mode=mode,
+                    provides=key,
+                    group=factory_group,
+                    collection_factory=existing_factory,
+                ))
+            else:
                 factories.extend(
                     self.selector_group_processor.unite(
                         union_mode=mode,
@@ -381,14 +370,19 @@ class GraphBuilder:
             return factory.scope
         if factory in path:
             raise CycleDependenciesError(path)
+
         path = path + [factory]
         if factory.provides in scopes_cache:
             return scopes_cache[factory.provides]
         sub_factories: list[FactoryData] = []
         for dep in factory.dependencies:
+            if dep == self.container_key:
+                return requester_scope
             if dep in all_factories:
                 sub_factories.append(all_factories[dep])
         for dep in factory.kw_dependencies.values():
+            if dep == self.container_key:
+                return requester_scope
             if dep in all_factories:
                 sub_factories.append(all_factories[dep])
         sub_factories.extend(factory.when_dependencies)
@@ -457,35 +451,30 @@ class GraphBuilder:
 
     def _get_activator_factories(
         self,
-        factories: dict[DependencyKey, Factory],
+        factories: Sequence[Factory],
     ) -> list[Factory]:
+        factories_dict = {f.provides: f for f in factories}
         activator_factories: list[Factory] = []
         processed_markers: set[tuple[DependencyKey, BaseScope]] = set()
         scope_cache: dict[DependencyKey, BaseScope] = {}
-        for factory in factories.values():
-            markers = {
-                *unpack_marker(factory.when_active),
-                *unpack_marker(factory.when_override),
-            }
+        for factory in factories:
+            for marker in unpack_marker(factory.when_active):
+                processed_markers.add((DependencyKey(marker, factory.when_component), factory.scope))
             for subfactory in factory.when_dependencies:
-                markers.update(unpack_marker(subfactory.when_override))
-            for marker in markers:
-                marker_key = DependencyKey(marker, factory.when_component)
-                found_key, activator = self._find_activator(marker_key)
-                activator_factory = activator.as_factory(
-                    None,
-                    found_key.component,
-                    found_key,
-                ).replace(provides=marker_key)
-                scope = self._calc_scope(
-                    activator_factory, factories, scope_cache,[], factory.scope,
-                )
-                if (marker_key, scope) in processed_markers:
-                    continue
-
-                activator_factory = activator_factory.replace(scope=scope)
-                activator_factories.append(activator_factory)
-                processed_markers.add((marker_key, scope))
+                for marker in unpack_marker(subfactory.when_override):
+                    processed_markers.add((DependencyKey(marker, subfactory.when_component), subfactory.scope))
+        for marker_key, scope in processed_markers:
+            found_key, activator = self._find_activator(marker_key)
+            activator_factory = activator.as_factory(
+                None,
+                found_key.component,
+                found_key,
+            ).replace(provides=marker_key)
+            scope = self._calc_scope(
+                activator_factory, factories_dict, scope_cache,[], scope,
+            )
+            activator_factory = activator_factory.replace(scope=scope)
+            activator_factories.append(activator_factory)
         return activator_factories
 
     def build(self) -> Sequence[Registry]:
@@ -493,17 +482,14 @@ class GraphBuilder:
         factories: dict[DependencyKey, Factory] = {
             f.provides: f for f in self._collect_prepared_factories()
         }
-        for factory in self._get_activator_factories(factories):
-            factories[factory.provides] = factory
 
-        scope_cache = {}
         root_scope = next(iter(self.scopes))
-        fixed_factories: list[Factory] = [
-            factory.replace(
-                scope=self._calc_scope(factory, factories, scope_cache, [], root_scope),
-            )
-            for factory in factories.values()
-        ]
+        factory_scopes = {}
+        for factory in factories.values():
+            factory.scope = self._calc_scope(factory, factories, factory_scopes, [], root_scope)
+
+        fixed_factories = list(factories.values())
+        fixed_factories.extend(self._get_activator_factories(fixed_factories))
         registries = self._make_registries(fixed_factories)
         if not self.skip_validation:
             GraphValidator(registries).validate()

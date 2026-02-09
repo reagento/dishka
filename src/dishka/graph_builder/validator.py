@@ -23,6 +23,10 @@ class GraphValidator:
     ) -> None:
         if key in self.valid_keys:
             return
+        if key.is_const():
+            return
+        if key.type_hint is DependencyKey:
+            return
         if key in self.path:
             keys = list(self.path)
             factories = list(self.path.values())[keys.index(key):]

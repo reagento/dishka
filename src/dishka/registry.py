@@ -11,7 +11,7 @@ from typing import (
     get_origin,
 )
 
-from ._adaptix.type_tools import is_generic
+from ._adaptix.type_tools.basic_utils import is_generic
 from ._adaptix.type_tools.fundamentals import get_type_vars
 from .code_tools.factory_compiler import compile_activation, compile_factory
 from .container_objects import CompiledFactory

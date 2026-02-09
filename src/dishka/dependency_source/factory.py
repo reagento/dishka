@@ -159,7 +159,7 @@ class Factory(FactoryData):
         when_active: MayBe[BaseMarker|None] = Special.OMITTED,
         when_override: MayBe[BaseMarker|None] = Special.OMITTED,
         when_component: MayBe[Component] = Special.OMITTED,
-        when_dependencies: MayBe[ Sequence[FactoryData]] = Special.OMITTED,
+        when_dependencies: MayBe[Sequence[Factory]] = Special.OMITTED,
     ) -> Factory:
         return Factory(
             dependencies=list(self.dependencies),

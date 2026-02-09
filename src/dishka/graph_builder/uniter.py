@@ -115,6 +115,9 @@ class CollectionGroupProcessor:
         group: list[Factory],
         collection_factory: Factory,
     ) -> list[Factory]:
+        """
+        Generate new factories from united and patch `collection_factory`
+        """
         res_factories: list[Factory] = []
         moved_factories: list[Factory] = []
         for factory in group:

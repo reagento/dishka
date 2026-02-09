@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from contextlib import AbstractContextManager
-from typing import Any, cast
+from typing import Any, TypeAlias, cast
 
 from dishka.code_tools.code_builder import CodeBuilder
 from dishka.container_objects import CompiledFactory, Exit
@@ -188,7 +189,7 @@ def _collection_factory_body(
     builder: FactoryBuilder,
     factory: Factory,
 ) -> None:
-    unconditional_factories = []
+    unconditional_factories: list[Factory] = []
     assigned = False
     for variant in factory.when_dependencies:
         condition = builder.when(variant.when_override, variant.when_component)
@@ -220,7 +221,8 @@ def _collection_factory_body(
 
 
 ASYNC_TYPES = (FactoryType.ASYNC_FACTORY, FactoryType.ASYNC_GENERATOR)
-BODY_GENERATORS = {
+BodyGenerator: TypeAlias = Callable[[FactoryBuilder, str, Factory], None]
+BODY_GENERATORS: dict[FactoryType, BodyGenerator] = {
     FactoryType.FACTORY: _sync_factory_body,
     FactoryType.ASYNC_FACTORY: _async_factory_body,
     FactoryType.GENERATOR: _generator_body,
@@ -229,7 +231,8 @@ BODY_GENERATORS = {
     FactoryType.VALUE: _value_factory_body,
     FactoryType.ALIAS: _alias_factory_body,
     FactoryType.SELECTOR: _selector_factory_body,
-    FactoryType.COLLECTION: _collection_factory_body,
+    # special case, value not used
+    FactoryType.COLLECTION: lambda _, __, ___: None,
 }
 
 

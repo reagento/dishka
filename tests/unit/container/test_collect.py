@@ -2,7 +2,7 @@ from collections.abc import Sequence
 
 import pytest
 
-from dishka import Provider, Scope, make_container, collect, provide
+from dishka import Provider, Scope, collect, make_container, provide
 from dishka.exceptions import InvalidSubfactoryScopeError, NoFactoryError
 
 

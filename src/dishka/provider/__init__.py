@@ -18,6 +18,6 @@ from .make_alias import alias
 from .make_context_var import from_context
 from .make_decorator import decorate
 from .make_factory import provide, provide_all
+from .make_union_mode import collect
 from .provider import Provider
 from .root_context import make_root_context_provider
-from .make_union_mode import collect

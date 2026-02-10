@@ -1,6 +1,6 @@
 import itertools
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from typing import cast
 
 from dishka.dependency_source import (
@@ -454,15 +454,12 @@ class GraphBuilder:
             if not activator and not self.skip_validation:
                 raise NoActivatorError(marker_key, factories)
 
-    def _get_activator_factories(
+    def _collect_markers(
         self,
         factories: Sequence[Factory],
-    ) -> list[Factory]:
-        factories_dict = {f.provides: f for f in factories}
-        activator_factories: list[Factory] = []
+    ) ->  Collection[tuple[DependencyKey, BaseScope]]:
         # use dict to keep stable order
         processed_markers: dict[tuple[DependencyKey, BaseScope], None] = {}
-        scope_cache: dict[DependencyKey, BaseScope] = {}
         for factory in factories:
             for marker in unpack_marker(factory.when_active):
                 key = DependencyKey(marker, factory.when_component)
@@ -483,7 +480,17 @@ class GraphBuilder:
                         )
                     key = DependencyKey(marker, factory.when_component)
                     processed_markers[key, subfactory.scope] = None
-        for marker_key, scope in processed_markers:
+        return processed_markers
+
+    def _get_activator_factories(
+        self,
+        factories: Sequence[Factory],
+        markers: Collection[tuple[DependencyKey, BaseScope]],
+    ) -> list[Factory]:
+        factories_dict = {f.provides: f for f in factories}
+        activator_factories: list[Factory] = []
+        scope_cache: dict[DependencyKey, BaseScope] = {}
+        for marker_key, scope in markers:
             found_key, activator = self._find_activator(marker_key)
             if not activator:
                 # should be also checked before with all factories info
@@ -528,7 +535,11 @@ class GraphBuilder:
         }
         self._fix_missing_scopes(factories)
         fixed_factories = list(factories.values())
-        fixed_factories.extend(self._get_activator_factories(fixed_factories))
+
+        found_markers = self._collect_markers(fixed_factories)
+        fixed_factories.extend(
+            self._get_activator_factories(fixed_factories, found_markers),
+        )
         registries = self._make_registries(fixed_factories)
         if not self.skip_validation:
             GraphValidator(registries).validate()

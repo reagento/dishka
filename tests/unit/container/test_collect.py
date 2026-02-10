@@ -3,7 +3,7 @@ from collections.abc import Sequence
 import pytest
 
 from dishka import Provider, Scope, make_container
-from dishka.exceptions import NoFactoryError
+from dishka.exceptions import InvalidSubfactoryScopeError, NoFactoryError
 
 
 def test_collect_base():
@@ -52,7 +52,7 @@ def test_collect_scope_invalid():
     p.provide(lambda: 2, provides=int, scope=Scope.REQUEST)
     p.collect(int, scope=Scope.APP)
 
-    with pytest.raises(NoFactoryError):
+    with pytest.raises(InvalidSubfactoryScopeError):
         make_container(p)
 
 

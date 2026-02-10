@@ -1,4 +1,4 @@
-Multiple objects of same type
+Multiple objects of the same type
 ============================================
 
 By default dishka relies on approach "last wins" which means that

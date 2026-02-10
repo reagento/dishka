@@ -17,6 +17,7 @@ def test_collect_base():
     assert numbers == [1, 2]
     assert c.get(list[int]) is numbers
 
+
 def test_collect_provides():
     p = Provider()
     p.provide(lambda: 1, provides=int, scope=Scope.APP)

@@ -321,6 +321,7 @@ def test_decorate_alias():
     assert isinstance(a, ADecorator)
     assert a.a == 17
 
+
 def test_decorate_alias_next_provider():
 
     class AliasProvider(Provider):

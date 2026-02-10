@@ -219,7 +219,6 @@ def _collection_factory_body(
         )))
 
 
-
 ASYNC_TYPES = (FactoryType.ASYNC_FACTORY, FactoryType.ASYNC_GENERATOR)
 BodyGenerator: TypeAlias = Callable[[FactoryBuilder, str, Factory], None]
 BODY_GENERATORS: dict[FactoryType, BodyGenerator] = {

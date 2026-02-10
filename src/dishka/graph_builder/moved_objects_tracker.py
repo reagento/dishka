@@ -6,7 +6,7 @@ from typing import Any, TypeAlias
 from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
 
-RawKey: TypeAlias = tuple[Any, Component|None]
+RawKey: TypeAlias = tuple[Any, Component | None]
 
 
 class MovedObjectsTracker:

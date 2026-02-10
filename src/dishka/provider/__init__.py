@@ -4,6 +4,7 @@ __all__ = [
     "ProviderWrapper",
     "activate",
     "alias",
+    "collect",
     "decorate",
     "from_context",
     "make_root_context_provider",
@@ -19,3 +20,4 @@ from .make_decorator import decorate
 from .make_factory import provide, provide_all
 from .provider import Provider
 from .root_context import make_root_context_provider
+from .make_union_mode import collect

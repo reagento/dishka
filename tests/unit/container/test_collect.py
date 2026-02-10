@@ -2,7 +2,7 @@ from collections.abc import Sequence
 
 import pytest
 
-from dishka import Provider, Scope, make_container
+from dishka import Provider, Scope, make_container, collect, provide
 from dishka.exceptions import InvalidSubfactoryScopeError, NoFactoryError
 
 
@@ -26,6 +26,18 @@ def test_collect_provides():
 
     c = make_container(p)
     numbers = c.get(Sequence)
+    assert numbers == [1, 2]
+
+def test_collect_on_class():
+    p = Provider()
+    p.provide(lambda: 1, provides=int, scope=Scope.APP)
+    p.provide(lambda: 2, provides=int, scope=Scope.APP)
+
+    class CollectProvider(Provider):
+        int_list = collect(int)
+
+    c = make_container(p, CollectProvider())
+    numbers = c.get(list[int])
     assert numbers == [1, 2]
 
 
@@ -94,3 +106,18 @@ def test_collect_alias():
     p.alias(list[int], provides=Sequence[int])
     c = make_container(p)
     assert c.get(Sequence[int]) == []
+
+
+def test_collect_as_dep():
+    p = Provider(scope=Scope.APP)
+    p.provide(lambda: 1, provides=int)
+    p.provide(lambda: 2, provides=int)
+    p.collect(int)
+
+    class DepProvider(Provider):
+        @provide(scope=Scope.APP)
+        def foo(self, nums: list[int]) -> tuple[int, ...]:
+            return tuple(nums)
+
+    c = make_container(p, DepProvider())
+    assert c.get(tuple[int, ...]) == (1, 2)

@@ -78,7 +78,11 @@ class GraphValidator:
         finally:
             self.path.pop(factory.provides)
 
+        if factory.scope is None:
+            raise ValueError  # should be checked in builder
         for subfactory in factory.when_dependencies:
+            if subfactory.scope is None:
+                raise ValueError  # should be checked in builder
             if subfactory.scope > factory.scope:
                 raise InvalidSubfactoryScopeError(factory, subfactory)
 

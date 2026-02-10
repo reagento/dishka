@@ -64,7 +64,7 @@ class GraphBuilder:
         )
 
         # registered objects
-        self.components: set[Component] = set()
+        self.components: dict[Component, None] = {}  # keep order
         self.decorator_depth: dict[DependencyKey, int] = {}
         self.factories: dict[DependencyKey, list[Factory]] = defaultdict(list)
         self.requested_markers: dict[
@@ -111,7 +111,7 @@ class GraphBuilder:
         if component in self.components:
             return
 
-        self.components.add(component)
+        self.components[component] = None
         for provider in self.multicomponent_providers:
             self._add_provider(ProviderWrapper(component, provider))
 

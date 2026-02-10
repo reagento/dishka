@@ -48,7 +48,20 @@ class InvalidGraphError(DishkaError):
     pass
 
 
-class NoActivatorError(DishkaError):
+class InvalidSubfactoryScopeError(InvalidGraphError):
+    def __init__(self, factory: Factory, subfactory: Factory) -> None:
+        self.factory = factory
+        self.subfactory = subfactory
+
+    def __str__(self) -> str:
+        name = get_source_name(self.factory)
+        sub_name = get_source_name(self.subfactory)
+        return (
+            f"`{name}` with scope {self.factory.scope} cannot use "
+            f"`{sub_name}` with scope {self.subfactory.scope}"
+        )
+
+class NoActivatorError(InvalidGraphError):
     def __init__(
         self,
         marker_key: DependencyKey,

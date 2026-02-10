@@ -187,11 +187,35 @@ COMPONENT_GRAPH = [
         children=[
             Group(
                 id="component2",
-                name="",
+                name="comp1",
                 children=[],
                 nodes=[
                     Node(
                         id="factory3",
+                        name="Container",
+                        dependencies=["factory5"],
+                        type=NodeType.ALIAS,
+                        is_protocol=False,
+                        source_name="",
+                    ),
+                    Node(
+                        id="factory6",
+                        name="A",
+                        dependencies=[],
+                        type=NodeType.FACTORY,
+                        is_protocol=False,
+                        source_name="A",
+                    ),
+                ],
+                type=GroupType.COMPONENT,
+            ),
+            Group(
+                id="component4",
+                name="",
+                children=[],
+                nodes=[
+                    Node(
+                        id="factory5",
                         name="Container",
                         dependencies=[],
                         type=NodeType.CONTEXT,
@@ -217,30 +241,6 @@ COMPONENT_GRAPH = [
                         type=NodeType.ALIAS,
                         is_protocol=False,
                         source_name="",
-                    ),
-                ],
-                type=GroupType.COMPONENT,
-            ),
-            Group(
-                id="component4",
-                name="comp1",
-                children=[],
-                nodes=[
-                    Node(
-                        id="factory5",
-                        name="Container",
-                        dependencies=["factory3"],
-                        type=NodeType.ALIAS,
-                        is_protocol=False,
-                        source_name="",
-                    ),
-                    Node(
-                        id="factory6",
-                        name="A",
-                        dependencies=[],
-                        type=NodeType.FACTORY,
-                        is_protocol=False,
-                        source_name="A",
                     ),
                 ],
                 type=GroupType.COMPONENT,

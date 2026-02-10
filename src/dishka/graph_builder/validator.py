@@ -1,3 +1,4 @@
+import itertools
 from collections.abc import Sequence
 
 from dishka.dependency_source import Factory
@@ -5,6 +6,7 @@ from dishka.entities.key import DependencyKey
 from dishka.exceptions import (
     CycleDependenciesError,
     GraphMissingFactoryError,
+    InvalidSubfactoryScopeError,
     NoFactoryError,
 )
 from dishka.registry import Registry
@@ -61,21 +63,25 @@ class GraphValidator:
             factory.provides in factory.dependencies
         ):
             raise CycleDependenciesError([factory])
-        try:
-            for dep in factory.dependencies:
-                # ignore TypeVar and const parameters
-                if not dep.is_type_var() and not dep.is_const():
-                    self._validate_key(dep, registry_index)
-            for dep in factory.kw_dependencies.values():
-                # ignore TypeVar and const parameters
-                if not dep.is_type_var() and not dep.is_const():
-                    self._validate_key(dep, registry_index)
 
+        try:
+            for dep in itertools.chain(
+                factory.dependencies,
+                factory.kw_dependencies.values(),
+            ):
+                # ignore TypeVar and const parameters
+                if not dep.is_type_var() and not dep.is_const():
+                    self._validate_key(dep, registry_index)
         except NoFactoryError as e:
             e.add_path(factory)
             raise
         finally:
             self.path.pop(factory.provides)
+
+        for subfactory in factory.when_dependencies:
+            if subfactory.scope > factory.scope:
+                raise InvalidSubfactoryScopeError(factory, subfactory)
+
         self.valid_keys[factory.provides] = True
 
     def validate(self) -> None:

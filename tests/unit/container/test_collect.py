@@ -46,6 +46,16 @@ def test_collect_scope():
         assert request_c.get(list[int]) is not numbers
 
 
+def test_collect_scope_invalid():
+    p = Provider()
+    p.provide(lambda: 1, provides=int, scope=Scope.APP)
+    p.provide(lambda: 2, provides=int, scope=Scope.REQUEST)
+    p.collect(int, scope=Scope.APP)
+
+    with pytest.raises(NoFactoryError):
+        make_container(p)
+
+
 def test_collect_cache():
     p = Provider()
     p.provide(lambda: 1, provides=int, scope=Scope.APP)

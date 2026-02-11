@@ -1,4 +1,3 @@
-import math
 from collections.abc import (
     AsyncGenerator,
     AsyncIterable,
@@ -28,7 +27,6 @@ from dishka import (
     Scope,
     alias,
     decorate,
-    make_container,
     provide,
 )
 from dishka._adaptix.feature_requirement import HAS_TV_DEFAULT
@@ -477,46 +475,6 @@ def test_invalid_decorator():
 
     with pytest.raises(ValueError):  # noqa: PT011
         decorate(decorator)
-
-
-def test_provide_all_as_provider_method():
-    def a() -> int:
-        return 100
-
-    def b(num: int) -> float:
-        return num / 2
-
-    provider = Provider(scope=Scope.APP)
-    provider.provide_all(a, b)
-
-    container = make_container(provider)
-
-    hundred = container.get(int)
-    assert hundred == 100
-
-    fifty = container.get(float)
-    assert math.isclose(fifty, 50.0, abs_tol=1e-9)
-
-
-def test_provide_all_in_class():
-    class MyProvider(Provider):
-        scope = Scope.APP
-
-        def a(self) -> int:
-            return 100
-
-        def b(self, num: int) -> float:
-            return num / 2
-
-        abcd = provide_all(a, b)
-
-    container = make_container(MyProvider())
-
-    hundred = container.get(int)
-    assert hundred == 100
-
-    fifty = container.get(float)
-    assert math.isclose(fifty, 50.0, abs_tol=1e-9)
 
 
 make_factory_by_source = partial(

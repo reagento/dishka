@@ -36,7 +36,7 @@ class ContextVariable:
         if component == DEFAULT_COMPONENT:
             return Factory(
                 scope=self.scope,
-                source=context_stub,
+                source=self.provides.type_hint,
                 provides=self.provides,
                 is_to_bind=False,
                 dependencies=[],

@@ -6,6 +6,7 @@ __all__ = [
     "Decorator",
     "DependencySource",
     "Factory",
+    "FactoryUnionMode",
     "context_stub",
     "ensure_composite",
 ]
@@ -20,3 +21,4 @@ from .composite import (
 from .context_var import ContextVariable, context_stub
 from .decorator import Decorator
 from .factory import Factory
+from .factory_union_mode import FactoryUnionMode

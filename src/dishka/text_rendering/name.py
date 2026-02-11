@@ -58,6 +58,8 @@ def get_source_name(factory: FactoryData) -> str:
         return "alias"
     if factory.type is FactoryType.SELECTOR:
         return "select"
+    if factory.type is FactoryType.COLLECTION:
+        return "collect"
 
     return get_name(source, include_module=False)
 

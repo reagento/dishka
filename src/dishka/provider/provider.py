@@ -10,6 +10,7 @@ from dishka.dependency_source import (
     Decorator,
     DependencySource,
     Factory,
+    FactoryUnionMode,
 )
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.marker import BaseMarker, Marker
@@ -27,6 +28,7 @@ from .make_factory import (
     provide_all_on_instance,
     provide_on_instance,
 )
+from .make_union_mode import collect
 
 
 def is_dependency_source(
@@ -128,6 +130,8 @@ class Provider(BaseProvider):
                     )
                 case Factory():
                     self.factories.append(source)
+                case FactoryUnionMode():
+                    self.factory_union_mode.append(source)
                 case _:
                     raise TypeError(  # noqa: TRY003
                         f"Unsupported dependency source type {source}",
@@ -139,6 +143,23 @@ class Provider(BaseProvider):
             *markers: Marker | type[Marker],
     ) -> CompositeDependencySource:
         composite = activate_on_instance(source, *markers)
+        self._add_dependency_sources(composite.dependency_sources)
+        return composite
+
+    def collect(
+        self,
+        source: Any,
+        *,
+        scope: BaseScope | None = None,
+        cache: bool = True,
+        provides: Any = None,
+    )-> CompositeDependencySource:
+        composite = collect(
+            source,
+            scope=scope,
+            cache=cache,
+            provides=provides,
+        )
         self._add_dependency_sources(composite.dependency_sources)
         return composite
 

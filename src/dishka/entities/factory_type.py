@@ -15,6 +15,7 @@ class FactoryType(Enum):
     ALIAS = "alias"
     CONTEXT = "context"
     SELECTOR = "selector"
+    COLLECTION = "collection"
 
 
 class FactoryData:

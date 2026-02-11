@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from contextlib import AbstractContextManager
-from typing import Any, cast
+from typing import Any, TypeAlias, cast
 
 from dishka.code_tools.code_builder import CodeBuilder
 from dishka.container_objects import CompiledFactory, Exit
@@ -35,6 +36,8 @@ class FactoryBuilder(CodeBuilder):
             preferred_name = f"key_{type_name}"
             if obj.component:
                 preferred_name += f"_{obj.component}"
+            if obj.depth:
+                preferred_name += f"_{obj.depth}"
         return super().global_(obj, preferred_name)
 
     def register_provides(self, provides: DependencyKey) -> None:
@@ -51,6 +54,8 @@ class FactoryBuilder(CodeBuilder):
     def getter(self, obj: DependencyKey) -> str:
         if obj.is_const():
             return self.global_(obj.get_const_value())
+        if obj.type_hint is DependencyKey:
+            return self.provides_name
         return self.await_(self.call("getter", self.global_(obj)))
 
     def cache(self) -> None:
@@ -159,14 +164,14 @@ def _alias_factory_body(
 def _context_factory_body(
     builder: FactoryBuilder, source_call: str, factory: Factory,
 ) -> None:
-    provides_hint = builder.global_(factory.provides.type_hint)
+    source = builder.global_(factory.source)
     with builder.try_():
-        builder.assign_solved(f"context[{provides_hint}]")
+        builder.assign_solved(f"context[{source}]")
     with builder.except_(KeyError):
         builder.raise_(
             builder.call(
                 builder.global_(NoContextValueError),
-                provides_hint,
+                source,
             ),
         )
 
@@ -180,8 +185,43 @@ def _selector_factory_body(
     )
     builder.raise_(error_call)
 
+def _collection_factory_body(
+    builder: FactoryBuilder,
+    factory: Factory,
+) -> None:
+    unconditional_factories: list[Factory] = []
+    assigned = False
+    for variant in factory.when_dependencies:
+        condition = builder.when(variant.when_override, variant.when_component)
+        if condition:
+            if not assigned:
+                builder.assign_solved(builder.list_literal(*(
+                    builder.getter(f.provides)
+                    for f in unconditional_factories
+                )))
+                assigned = True
+            with builder.if_(condition):
+                builder.statement(builder.call(
+                    "solved.append",
+                    builder.getter(variant.provides),
+                ))
+        elif assigned:
+            builder.statement(builder.call(
+                "solved.append",
+                builder.getter(variant.provides),
+            ))
+        else:
+            unconditional_factories.append(variant)
+    if not assigned:
+        builder.assign_solved(builder.list_literal(*(
+            builder.getter(f.provides)
+            for f in unconditional_factories
+        )))
+
+
 ASYNC_TYPES = (FactoryType.ASYNC_FACTORY, FactoryType.ASYNC_GENERATOR)
-BODY_GENERATORS = {
+BodyGenerator: TypeAlias = Callable[[FactoryBuilder, str, Factory], None]
+BODY_GENERATORS: dict[FactoryType, BodyGenerator] = {
     FactoryType.FACTORY: _sync_factory_body,
     FactoryType.ASYNC_FACTORY: _async_factory_body,
     FactoryType.GENERATOR: _generator_body,
@@ -190,6 +230,8 @@ BODY_GENERATORS = {
     FactoryType.VALUE: _value_factory_body,
     FactoryType.ALIAS: _alias_factory_body,
     FactoryType.SELECTOR: _selector_factory_body,
+    # special case, value not used
+    FactoryType.COLLECTION: lambda _, __, ___: None,
 }
 
 
@@ -229,21 +271,25 @@ def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
     builder.register_provides(factory.provides)
 
     with builder.make_getter():
-        if not _select_when_dependency(builder, factory):
-            source_call = builder.call(
-                builder.global_(factory.source),
-                *(builder.getter(dep) for dep in factory.dependencies),
-                **{
-                    name: builder.getter(dep)
-                    for name, dep in factory.kw_dependencies.items()
-                },
-            )
-            body_generator = BODY_GENERATORS[factory.type]
-            if factory.when_dependencies:  # conditions generated
-                with builder.else_():
+        if factory.type is FactoryType.COLLECTION:
+            _collection_factory_body(builder, factory)
+        else:
+            has_default = _select_when_dependency(builder, factory)
+            if not has_default:
+                source_call = builder.call(
+                    builder.global_(factory.source),
+                    *(builder.getter(dep) for dep in factory.dependencies),
+                    **{
+                        name: builder.getter(dep)
+                        for name, dep in factory.kw_dependencies.items()
+                    },
+                )
+                body_generator = BODY_GENERATORS[factory.type]
+                if factory.when_dependencies:  # conditions generated
+                    with builder.else_():
+                        body_generator(builder, source_call, factory)
+                else:  # no options at all
                     body_generator(builder, source_call, factory)
-            else:  # no options at all
-                body_generator(builder, source_call, factory)
 
         if factory.cache:
             builder.cache()

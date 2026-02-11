@@ -27,6 +27,7 @@ def FromComponent(  # noqa: N802
 class DependencyKey(NamedTuple):
     type_hint: Any  # type hint or marker instance
     component: Component | None
+    depth: int = 0  # counter to distinguish decorated/united factories
 
     def with_component(self, component: Component | None) -> DependencyKey:
         if self.component is not None:
@@ -34,10 +35,15 @@ class DependencyKey(NamedTuple):
         return DependencyKey(
             type_hint=self.type_hint,
             component=component,
+            depth=self.depth,
         )
 
     def __str__(self) -> str:
-        return f"({self.type_hint}, component={self.component!r})"
+        if self.depth == 0:
+            return f"({self.type_hint}, component={self.component!r})"
+        return (f"({self.type_hint},"
+                f" component={self.component!r},"
+                f" depth={self.depth})")
 
     def is_const(self) -> bool:
         return (

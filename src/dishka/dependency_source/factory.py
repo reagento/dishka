@@ -53,13 +53,13 @@ class Factory(FactoryData):
         when_override: BaseMarker | None,
         when_active: BaseMarker | None,
         when_component: Component | None,
-        when_dependencies: Sequence[FactoryData],
+        when_dependencies: Sequence[Factory],
     ) -> None:
         """
 
         :param dependencies: args of source
         :param kw_dependencies: kwargs of source
-        :param source: callable to produce result
+        :param source: callable to produce result (or item key in collection)
         :param provides:
         :param scope:
         :param type_:
@@ -154,22 +154,27 @@ class Factory(FactoryData):
 
     def replace(
         self,
+        scope: MayBe[BaseScope] = Special.OMITTED,
         provides: MayBe[DependencyKey] = Special.OMITTED,
         when_active: MayBe[BaseMarker|None] = Special.OMITTED,
         when_override: MayBe[BaseMarker|None] = Special.OMITTED,
         when_component: MayBe[Component] = Special.OMITTED,
+        when_dependencies: MayBe[Sequence[Factory]] = Special.OMITTED,
     ) -> Factory:
         return Factory(
             dependencies=list(self.dependencies),
             kw_dependencies=dict(self.kw_dependencies),
             source=self.source,
             provides=coalesce(provides, self.provides),
-            scope=self.scope,
+            scope=coalesce(scope, self.scope),
             is_to_bind=self.is_to_bind,
             cache=self.cache,
             type_=self.type,
             when_override=coalesce(when_override, self.when_override),
             when_active=coalesce(when_active, self.when_active),
             when_component=coalesce(when_component, self.when_component),
-            when_dependencies=self.when_dependencies,
+            when_dependencies=coalesce(
+                when_dependencies,
+                self.when_dependencies,
+            ),
         )

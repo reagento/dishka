@@ -49,6 +49,7 @@ Key features:
    advanced/generics
    advanced/scopes
    advanced/when
+   advanced/collect
    advanced/testing/index
    advanced/plotter
 

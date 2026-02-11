@@ -28,9 +28,9 @@ from .exceptions import (
     NoFactoryError,
     NoNonSkippedScopesError,
 )
+from .graph_builder.builder import GraphBuilder
 from .provider import BaseProvider, make_root_context_provider
 from .registry import Registry
-from .registry_builder import RegistryBuilder
 
 T = TypeVar("T")
 
@@ -246,8 +246,7 @@ class AsyncContainer:
             raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
     async def _has(self, marker: Any) -> bool:
-        key = DependencyKey(marker, DEFAULT_COMPONENT)
-        compiled = self.registry.get_compiled_activation_async(key)
+        compiled = self.registry.get_compiled_activation_async(marker)
         if not compiled:
             if not self.parent_container:
                 return False
@@ -284,10 +283,11 @@ class HasProvider(Provider):
     @activate(Has)
     async def has(
         self,
-        marker: Has,
+        marker: DependencyKey,
         container: AsyncContainer,
     ) -> bool:
-        return await container._has(marker.value)  # noqa: SLF001
+        key = DependencyKey(marker.type_hint.value, marker.component)
+        return await container._has(key)  # noqa: SLF001
 
     @activate(HasContext)
     def has_context(
@@ -311,14 +311,17 @@ def make_async_container(
 ) -> AsyncContainer:
     context_provider = make_root_context_provider(providers, context, scopes)
     has_provider = HasProvider()
-    registries = RegistryBuilder(
+    builder = GraphBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,
-        multicomponent_providers=[has_provider],
-        providers=(*providers, context_provider),
         skip_validation=skip_validation,
         validation_settings=validation_settings,
-    ).build()
+    )
+    builder.add_multicomponent_providers(has_provider)
+    builder.add_providers(*providers)
+    builder.add_providers(context_provider)
+    registries = builder.build()
+
     container = AsyncContainer(
         *registries,
         context=context,

@@ -11,6 +11,7 @@ from typing import (
     get_origin,
 )
 
+from ._adaptix.type_tools.basic_utils import is_generic
 from ._adaptix.type_tools.fundamentals import get_type_vars
 from .code_tools.factory_compiler import compile_activation, compile_factory
 from .container_objects import CompiledFactory
@@ -69,6 +70,14 @@ class Registry:
         if provides is None:
             provides = factory.provides
         self.factories[provides] = factory
+        if is_generic(factory.provides.type_hint):
+            origin = get_origin(factory.provides.type_hint)
+            origin_key = DependencyKey(
+                origin,
+                factory.provides.component,
+                factory.provides.depth,
+            )
+            self.factories[origin_key] = factory
 
     def get_compiled(
             self, dependency: DependencyKey,
@@ -136,7 +145,11 @@ class Registry:
             if (origin is type) and self.has_fallback:
                 return self._get_type_var_factory(dependency)
 
-            origin_key = DependencyKey(origin, dependency.component)
+            origin_key = DependencyKey(
+                origin,
+                dependency.component,
+                dependency.depth,
+            )
             factory = self.factories.get(origin_key)
 
             if (
@@ -239,7 +252,7 @@ class Registry:
                     for param in type_vars
                 )]
             new_dependencies.append(DependencyKey(
-                hint, source_dependency.component,
+                hint, source_dependency.component, source_dependency.depth,
             ))
         new_kw_dependencies: dict[str, DependencyKey] = {}
         for name, source_dependency in factory.kw_dependencies.items():
@@ -252,7 +265,7 @@ class Registry:
                     for param in type_vars
                 )]
             new_kw_dependencies[name] = DependencyKey(
-                hint, source_dependency.component,
+                hint, source_dependency.component, source_dependency.depth,
             )
         return Factory(
             source=factory.source,

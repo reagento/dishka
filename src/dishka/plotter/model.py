@@ -14,6 +14,7 @@ class NodeType(Enum):
     FACTORY = "Factory"
     DECORATOR = "Decorator"
     SELECTOR = "Selector"
+    COLLECTION = "Collection"
     ALIAS = "Alias"
 
 

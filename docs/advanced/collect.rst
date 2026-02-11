@@ -12,6 +12,11 @@ To achieve that you should use ``collect`` in your provider.
 By default, it provides a list of requested type.
 You can use it as a dependency or request directly from a container.
 
+
+.. note::
+    Setting ``override=True`` on a factory makes the container ignore all
+    previously registered factories of that type. They won't be collected either.
+
 .. code-block:: python
 
     from dishka import Provider, Scope, collect, provide, make_container

@@ -100,6 +100,7 @@ def test_collect_decorate():
     c = make_container(p)
     assert c.get(list[int]) == [42]
 
+
 def test_collect_alias():
     p = Provider()
     p.collect(int)

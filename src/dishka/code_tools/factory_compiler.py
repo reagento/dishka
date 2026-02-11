@@ -261,7 +261,6 @@ def _select_when_dependency(
     return False
 
 
-
 def compile_factory(*, factory: Factory, is_async: bool) -> CompiledFactory:
     if not is_async and factory.type in ASYNC_TYPES:
         raise UnsupportedFactoryError(factory)

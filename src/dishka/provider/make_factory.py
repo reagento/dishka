@@ -92,8 +92,22 @@ def _is_bound_method(obj: Any) -> bool:
     return ismethod(obj) and bool(obj.__self__)
 
 
+def _resolve_init(tp: type) -> Any:
+    init = tp.__init__  # type: ignore[misc]
+    if init is not _protocol_init:
+        return init
+    for cls in tp.__mro__:
+        if cls is object:
+            continue
+        init_candidate = cls.__dict__.get("__init__")
+        if init_candidate is not None and init_candidate is not _protocol_init:
+            return init_candidate
+    return init
+
+
 def _get_init_members(tp: type) -> MembersStorage[str, None]:
-    type_hints = get_all_type_hints(tp.__init__)  # type: ignore[misc, no-untyped-call]
+    real_init = _resolve_init(tp)
+    type_hints = get_all_type_hints(real_init)  # type: ignore[no-untyped-call]
     if "__init__" in tp.__dict__:
         overridden = frozenset(type_hints)
     else:
@@ -256,7 +270,7 @@ def _make_factory_by_class(
     if not provides:
         provides = source
 
-    init = strip_alias(source).__init__
+    init = _resolve_init(strip_alias(source))
     if missing_hints := _params_without_hints(init, skip_self=True):
         raise MissingHintsError(source, missing_hints, append_init=True)
     # we need to fix concrete generics and normal classes as well

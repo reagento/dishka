@@ -1,3 +1,6 @@
+import math
+from typing import Protocol
+
 import pytest
 
 from dishka import (
@@ -7,6 +10,7 @@ from dishka import (
     make_container,
     provide,
 )
+from dishka.provider import provide_all
 from ..sample_providers import (
     A_VALUE,
     ClassA,
@@ -144,3 +148,135 @@ def test_kwargs():
 
     container = make_container(provider)
     assert container.get(str) == "ok"
+
+
+class _Dep:
+    pass
+
+
+def test_provide_multiple_protocols_before_base():
+    class Proto1(Protocol):
+        pass
+
+    class Proto2(Protocol):
+        pass
+
+    class Base:
+        def __init__(self, dep: _Dep) -> None:
+            self.dep = dep
+
+    class Multi(Proto1, Proto2, Base):
+        pass
+
+    provider = Provider(scope=Scope.APP)
+    provider.provide(_Dep)
+    provider.provide(Multi)
+
+    container = make_container(provider)
+    result = container.get(Multi)
+    assert isinstance(result, Multi)
+    assert isinstance(result.dep, _Dep)
+
+
+def test_provide_own_init_overrides_protocol_stub():
+    class Proto(Protocol):
+        pass
+
+    class Base:
+        def __init__(self, dep: _Dep) -> None:
+            self.dep = dep
+
+    class Impl(Proto, Base):
+        def __init__(self, dep: _Dep) -> None:
+            self.own_dep = dep
+
+    provider = Provider(scope=Scope.APP)
+    provider.provide(_Dep)
+    provider.provide(Impl)
+
+    container = make_container(provider)
+    result = container.get(Impl)
+    assert isinstance(result, Impl)
+    assert isinstance(result.own_dep, _Dep)
+
+
+def test_provide_protocol_with_explicit_init():
+    class ProtoWithInit(Protocol):
+        def __init__(self, dep: _Dep) -> None: ...
+
+    class Impl(ProtoWithInit):
+        def __init__(self, dep: _Dep) -> None:
+            self.dep = dep
+
+    provider = Provider(scope=Scope.APP)
+    provider.provide(_Dep)
+    provider.provide(Impl)
+
+    container = make_container(provider)
+    result = container.get(Impl)
+    assert isinstance(result, Impl)
+    assert isinstance(result.dep, _Dep)
+
+
+def test_provide_deep_hierarchy_with_protocol():
+    class Proto(Protocol):
+        pass
+
+    class GrandBase:
+        def __init__(self, dep: _Dep) -> None:
+            self.dep = dep
+
+    class Base(GrandBase):
+        pass
+
+    class Impl(Proto, Base):
+        pass
+
+    provider = Provider(scope=Scope.APP)
+    provider.provide(_Dep)
+    provider.provide(Impl)
+
+    container = make_container(provider)
+    result = container.get(Impl)
+    assert isinstance(result, Impl)
+    assert isinstance(result.dep, _Dep)
+
+
+def test_provide_all_as_provider_method():
+    def a() -> int:
+        return 100
+
+    def b(num: int) -> float:
+        return num / 2
+
+    provider = Provider(scope=Scope.APP)
+    provider.provide_all(a, b)
+
+    container = make_container(provider)
+
+    hundred = container.get(int)
+    assert hundred == 100
+
+    fifty = container.get(float)
+    assert math.isclose(fifty, 50.0, abs_tol=1e-9)
+
+
+def test_provide_all_in_class():
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        def a(self) -> int:
+            return 100
+
+        def b(self, num: int) -> float:
+            return num / 2
+
+        abcd = provide_all(a, b)
+
+    container = make_container(MyProvider())
+
+    hundred = container.get(int)
+    assert hundred == 100
+
+    fifty = container.get(float)
+    assert math.isclose(fifty, 50.0, abs_tol=1e-9)

@@ -1,4 +1,4 @@
-__all__ = ["CONTAINER_NAME", "inject"]
+__all__ = ["CONTAINER_NAME", "FromDishka", "inject"]
 
 from collections.abc import Awaitable, Callable
 from typing import (
@@ -16,7 +16,7 @@ from aiogram_dialog.api.entities import ChatEvent
 from aiogram_dialog.api.internal import Widget
 from aiogram_dialog.widgets.common import ManagedWidget
 
-from dishka import AsyncContainer
+from dishka import AsyncContainer, FromDishka
 from dishka.integrations.base import wrap_injection
 
 CONTAINER_NAME: Final = "dishka_container"
@@ -27,7 +27,7 @@ _ReturnT = TypeVar("_ReturnT", bound=Awaitable[Any])
 
 _EventT = TypeVar("_EventT", bound=ChatEvent)
 _OnDialogEventData = TypeVar("_OnDialogEventData", bound=Data)
-_OnProccessResultEventResultT = TypeVar("_OnProccessResultEventResultT")
+_OnProcessResultEventResultT = TypeVar("_OnProcessResultEventResultT")
 
 _WidgetItemT = TypeVar("_WidgetItemT")
 _WidgetT = TypeVar("_WidgetT", bound=Widget)
@@ -68,6 +68,7 @@ def inject(
 ]:
     ...
 
+
 # overload for callback with 3 arguments
 @overload
 def inject(
@@ -83,6 +84,7 @@ def inject(
 ) -> Callable[[_EventT, _WidgetT, _DialogManagerT], _ReturnT]:
     ...
 
+
 # overload for on result event
 # `type: ignore[overload-overlap]` is used because mypy is dumb
 @overload
@@ -90,17 +92,18 @@ def inject(  # type: ignore[overload-overlap]
     func: Callable[
         Concatenate[
             _OnDialogEventData,
-            _OnProccessResultEventResultT,
+            _OnProcessResultEventResultT,
             _DialogManagerT,
             _ParamsP,
         ],
         _ReturnT,
     ],
 ) -> Callable[
-    [_OnDialogEventData, _OnProccessResultEventResultT, _DialogManagerT],
+    [_OnDialogEventData, _OnProcessResultEventResultT, _DialogManagerT],
     _ReturnT,
 ]:
     ...
+
 
 # overload for on dialog event
 @overload

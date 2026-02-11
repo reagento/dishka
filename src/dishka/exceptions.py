@@ -1,12 +1,15 @@
 from collections.abc import Sequence
 
+from dishka.dependency_source.factory import Factory
 from dishka.entities.factory_type import FactoryData
+from dishka.entities.marker import Marker
 from dishka.exception_base import DishkaError
 from dishka.text_rendering import get_name
 from dishka.text_rendering.path import PathRenderer
 from dishka.text_rendering.suggestion import render_suggestions_for_missing
 from .entities.key import DependencyKey
 from .entities.scope import BaseScope
+from .text_rendering.name import get_source_name
 
 try:
     from builtins import (  # type: ignore[attr-defined, unused-ignore]
@@ -34,11 +37,76 @@ class NoContextValueError(DishkaError):
 
 
 class UnsupportedFactoryError(DishkaError):
-    pass
+    def __init__(self, factory_type: FactoryData) -> None:
+        self.factory_type = factory_type
+
+    def __str__(self) -> str:
+        return f"Unsupported factory type {self.factory_type}."
 
 
 class InvalidGraphError(DishkaError):
     pass
+
+
+class InvalidSubfactoryScopeError(InvalidGraphError):
+    def __init__(self, factory: Factory, subfactory: Factory) -> None:
+        self.factory = factory
+        self.subfactory = subfactory
+
+    def __str__(self) -> str:
+        name = get_source_name(self.factory)
+        sub_name = get_source_name(self.subfactory)
+        return (
+            f"`{name}` with scope {self.factory.scope} cannot use "
+            f"`{sub_name}` with scope {self.subfactory.scope}"
+        )
+
+class NoActivatorError(InvalidGraphError):
+    def __init__(
+        self,
+        marker_key: DependencyKey,
+        requesting_factories: Sequence[Factory] = (),
+    ) -> None:
+        self.marker_key = marker_key
+        self.requesting_factories = requesting_factories
+
+    def _get_when_expression(self, factory: Factory) -> str:
+        when = factory.when_active or factory.when_override
+        return repr(when) if when else ""
+
+    def __str__(self) -> str:
+        msg = (
+            f"Cannot find activator for {self.marker_key.type_hint}"
+            f" at component {self.marker_key.component!r}."
+        )
+        if self.requesting_factories:
+            msg += "\nUsed in:"
+            for factory in self.requesting_factories:
+                source = get_source_name(factory)
+                when_expr = self._get_when_expression(factory)
+                msg += f"\n  - {source}: {when_expr}"
+        return msg
+
+
+class ActivatorOverrideError(DishkaError):
+    def __init__(
+        self,
+        marker: Marker | type[Marker],
+        activators: Sequence[FactoryData],
+    ) -> None:
+        self.marker = marker
+        self.activators = activators
+
+    def __str__(self) -> str:
+        return (
+            f"Multiple activators found for {self.marker}: "
+            f"{', '.join(map(get_source_name, self.activators))}"
+        )
+
+
+class WhenOverrideConflictError(DishkaError):
+    def __str__(self) -> str:
+        return "Cannot have both `when` and `override` set. "
 
 
 class NoFactoryError(DishkaError):
@@ -102,6 +170,35 @@ class NoFactoryError(DishkaError):
             ) + suggestion
 
 
+class NoActiveFactoryError(DishkaError):
+    def __init__(
+        self,
+        requested: DependencyKey,
+        variants: Sequence[FactoryData],
+        path: Sequence[FactoryData] = (),
+    ) -> None:
+        self.requested = requested
+        self.variants = variants
+        self.path = list(path)
+        self.scope: BaseScope | None = None
+
+    def add_path(self, requested_by: FactoryData) -> None:
+        self.path.insert(0, requested_by)
+
+    def __str__(self) -> str:
+        requested_name = get_name(
+            self.requested.type_hint, include_module=False,
+        )
+        requested_repr = (
+            f"({requested_name}, "
+            f"component={self.requested.component!r})"
+        )
+        return (
+            f"Cannot select active factory for {requested_repr}. "
+            f"All variants are not active.\n"
+        ) + _linear_renderer.render(self.path, None, self.variants)
+
+
 class AliasedFactoryNotFoundError(ValueError, DishkaError):
     def __init__(
             self, dependency: DependencyKey, alias: FactoryData,
@@ -147,16 +244,19 @@ class UnknownScopeError(InvalidGraphError):
             self,
             scope: BaseScope | None,
             expected: type[BaseScope],
+            factory: FactoryData,
             extend_message: str = "",
     ) -> None:
         self.scope = scope
         self.expected = expected
+        self.factory = factory
         self.extend_message = extend_message
 
     def __str__(self) -> str:
+        name = get_name(self.factory.source, include_module=False)
         return " ".join((
-            f"Scope {self.scope} is unknown, "
-            f"expected one of {self.expected}",
+            f"Scope {self.scope} at `{name}` is unknown, "
+            f"expected one of {self.expected}.",
             self.extend_message,
         ))
 

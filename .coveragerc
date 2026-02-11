@@ -6,3 +6,4 @@ exclude_lines =
 relative_files = true
 omit =
     src/dishka/_adaptix/**
+    src/dishka/_version.py

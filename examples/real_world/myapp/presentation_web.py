@@ -1,9 +1,9 @@
-from fastapi import APIRouter
-
 from dishka.integrations.fastapi import (
     FromDishka,
     inject,
 )
+from fastapi import APIRouter
+
 from myapp.use_cases import AddProductsInteractor
 
 router = APIRouter()

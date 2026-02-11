@@ -6,7 +6,6 @@ from collections.abc import AsyncIterator
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.types import Chat, Message, TelegramObject, User
-
 from dishka import Provider, Scope, make_async_container, provide
 from dishka.integrations.aiogram import (
     AiogramMiddlewareData,
@@ -16,8 +15,8 @@ from dishka.integrations.aiogram import (
     setup_dishka,
 )
 
-# app dependency logic
 
+# app dependency logic
 class MyProvider(Provider):
     @provide(scope=Scope.APP)
     async def get_int(self) -> AsyncIterator[int]:
@@ -29,18 +28,20 @@ class MyProvider(Provider):
         return obj.from_user
 
     @provide(scope=Scope.REQUEST)
-    async def get_chat(self, middleware_data: AiogramMiddlewareData) -> Chat | None:
+    async def get_chat(
+            self,
+            middleware_data: AiogramMiddlewareData,
+    ) -> Chat | None:
         return middleware_data.get("event_chat")
 
 
 # app
-
 API_TOKEN = os.getenv("BOT_TOKEN")
 router = Router()
 
 
 @router.message()
-@inject  # if auto_inject=True is specified in the setup_dishka, then you do not need to specify a decorator
+@inject  # if auto_inject=True is specified in the setup_dishka, then you do not need to specify a decorator  # noqa: E501
 async def start(
     message: Message,
     user: FromDishka[User],

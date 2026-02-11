@@ -9,6 +9,8 @@ __all__ = [
 ]
 
 from collections.abc import Callable
+from dataclasses import dataclass
+from enum import Enum
 from inspect import (
     Parameter,
     isasyncgenfunction,
@@ -34,6 +36,29 @@ from .starlette import ContainerMiddleware, SyncContainerMiddleware
 
 T = TypeVar("T")
 P = ParamSpec("P")
+
+
+DISHKA_REQUEST_PARAM = Parameter(
+    name="___dishka_request",
+    annotation=Request,
+    kind=Parameter.KEYWORD_ONLY,
+)
+DISHKA_WEBSOCKET_PARAM = Parameter(
+    name="___dishka_websocket",
+    annotation=WebSocket,
+    kind=Parameter.KEYWORD_ONLY,
+)
+
+
+class ContainerSource(Enum):
+    REQUEST = "request"
+    WEBSOCKET = "websocket"
+
+
+@dataclass(frozen=True)
+class ContainerResult:
+    container: AsyncContainer | Container
+    source: ContainerSource | None = None
 
 
 def _async_depends(dependency: DependencyKey) -> Any:
@@ -68,24 +93,97 @@ def _replace_depends(
     return func
 
 
-def _find_request_param(func: Callable[P, T]) -> str | None:
-    hints = get_type_hints(func)
-    request_hint = next(
-        (name for name, hint in hints.items() if hint is Request),
-        None,
-    )
-    websocket_hint = next(
-        (name for name, hint in hints.items() if hint is WebSocket),
-        None,
-    )
+def _find_context_param(func: Callable[P, T]) -> str | None:
+    hints = get_type_hints(func, include_extras=True)
+    func_signature = signature(func)
+
+    request_hint = None
+    websocket_hint = None
+
+    for name, hint in hints.items():
+        param = func_signature.parameters.get(name)
+        if param is None:
+            continue
+        if default_parse_dependency(param, hint) is not None:
+            continue
+        if hint is Request:
+            request_hint = name
+        elif hint is WebSocket:
+            websocket_hint = name
+
     return request_hint or websocket_hint
 
 
-DISHKA_REQUEST_PARAM = Parameter(
-    name="___dishka_request",
-    annotation=Request,
-    kind=Parameter.KEYWORD_ONLY,
-)
+def _get_container_with_source(
+    _: tuple,
+    kwargs: dict,
+    *,
+    param_name: str | None,
+) -> ContainerResult:
+    if param_name and param_name in kwargs:
+        return ContainerResult(
+            container=kwargs[param_name].state.dishka_container,
+        )
+
+    if DISHKA_REQUEST_PARAM.name in kwargs:
+        return ContainerResult(
+            container=kwargs[DISHKA_REQUEST_PARAM.name].state.dishka_container,
+            source=ContainerSource.REQUEST,
+        )
+
+    return ContainerResult(
+        container=kwargs[DISHKA_WEBSOCKET_PARAM.name].state.dishka_container,
+        source=ContainerSource.WEBSOCKET,
+    )
+
+
+def _get_additional_params(
+    param_name: str | None,
+    source: ContainerSource,
+) -> list[Parameter]:
+    if param_name:
+        return []
+
+    if source == ContainerSource.REQUEST:
+        return [DISHKA_REQUEST_PARAM]
+
+    return [DISHKA_WEBSOCKET_PARAM]
+
+
+def _wrap_fastapi_injection(
+    *,
+    func: Callable[P, T],
+    is_async: bool,
+) -> Callable[P, T]:
+    param_name = _find_context_param(func)
+
+    additional_params = (
+        [] if param_name else [DISHKA_REQUEST_PARAM, DISHKA_WEBSOCKET_PARAM]
+    )
+
+    def container_getter(
+        args: tuple,
+        kwargs: dict,
+    ) -> AsyncContainer | Container:
+        result = _get_container_with_source(
+            args,
+            kwargs,
+            param_name=param_name,
+        )
+
+        additional_params[:] = _get_additional_params(
+            param_name,
+            result.source,
+        )
+
+        return result.container
+
+    return wrap_injection(
+        func=func,
+        is_async=is_async,
+        additional_params=additional_params,
+        container_getter=container_getter,
+    )
 
 
 def inject(func: Callable[P, T]) -> Callable[P, T]:
@@ -96,25 +194,6 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
 
 def inject_sync(func: Callable[P, T]) -> Callable[P, T]:
     return _wrap_fastapi_injection(func=func, is_async=False)
-
-
-def _wrap_fastapi_injection(
-    *,
-    func: Callable[P, T],
-    is_async: bool,
-) -> Callable[P, T]:
-    param_name = _find_request_param(func)
-    if param_name:
-        additional_params = []
-    else:
-        additional_params = [DISHKA_REQUEST_PARAM]
-        param_name = DISHKA_REQUEST_PARAM.name
-    return wrap_injection(
-        func=func,
-        is_async=is_async,
-        additional_params=additional_params,
-        container_getter=lambda _, p: p[param_name].state.dishka_container,
-    )
 
 
 class DishkaRoute(APIRoute):

@@ -1,8 +1,11 @@
 line-length = 79
 target-version = "py310"
-src = ["src"]
 
-include = ["src/**.py", "tests/**.py"]
+include = [
+    "src/**.py",
+    "tests/**.py",
+    "examples/**.py",
+]
 exclude = [
     "src/dishka/_adaptix/**",
 ]
@@ -23,6 +26,9 @@ lint.ignore = [
     "PLR0913",
     "SIM103",
     "ISC003",
+    "PERF401",
+    "FBT003",
+    "PLW0108",
 
     # identical by code != identical by meaning
     "SIM114",
@@ -46,8 +52,8 @@ lint.ignore = [
 ]
 
 [per-file-target-version]
+"tests/unit/container/pep695_new_syntax.py" = "py312"
 "tests/unit/container/type_alias_type_provider.py" = "py312"
-"tests/unit/container/pep695_new_syntax.py" =  "py312"
 
 [lint.isort]
 no-lines-before = ["local-folder"]

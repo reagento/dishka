@@ -84,7 +84,7 @@ def test_skip_cant_override() -> None:
     [
         (Scope.APP, Scope.REQUEST, {}, {int: 2}),
         (Scope.REQUEST, Scope.APP, {int: 2}, {}),
-        (Scope.APP, Scope.APP, {}, {int: 2}),
+        (Scope.APP, Scope.APP, {int: 2}, {}),
     ],
 )
 def test_override_to_context(

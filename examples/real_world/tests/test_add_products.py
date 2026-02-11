@@ -6,6 +6,12 @@ though it is not necessary as our interactor is not bound to library
 from unittest.mock import Mock
 
 import pytest
+from dishka import (
+    Provider,
+    Scope,
+    make_container,
+    provide,
+)
 from myapp.ioc import InteractorProvider
 from myapp.use_cases import (
     AddProductsInteractor,
@@ -14,13 +20,6 @@ from myapp.use_cases import (
     User,
     UserGateway,
     WarehouseClient,
-)
-
-from dishka import (
-    Provider,
-    Scope,
-    make_container,
-    provide,
 )
 
 

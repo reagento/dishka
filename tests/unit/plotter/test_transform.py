@@ -61,7 +61,7 @@ EXPECTED_GRAPH = [
                     Node(
                         id="factory6",
                         name="P",
-                        dependencies=["factory9"],
+                        dependencies=["factory8"],
                         type=NodeType.DECORATOR,
                         is_protocol=True,
                         source_name="p_decorator",
@@ -75,7 +75,7 @@ EXPECTED_GRAPH = [
                         source_name="",
                     ),
                     Node(
-                        id="factory9",
+                        id="factory8",
                         name="P",
                         dependencies=[],
                         type=NodeType.FACTORY,
@@ -187,11 +187,35 @@ COMPONENT_GRAPH = [
         children=[
             Group(
                 id="component2",
-                name="",
+                name="comp1",
                 children=[],
                 nodes=[
                     Node(
                         id="factory3",
+                        name="Container",
+                        dependencies=["factory5"],
+                        type=NodeType.ALIAS,
+                        is_protocol=False,
+                        source_name="",
+                    ),
+                    Node(
+                        id="factory6",
+                        name="A",
+                        dependencies=[],
+                        type=NodeType.FACTORY,
+                        is_protocol=False,
+                        source_name="A",
+                    ),
+                ],
+                type=GroupType.COMPONENT,
+            ),
+            Group(
+                id="component4",
+                name="",
+                children=[],
+                nodes=[
+                    Node(
+                        id="factory5",
                         name="Container",
                         dependencies=[],
                         type=NodeType.CONTEXT,
@@ -217,30 +241,6 @@ COMPONENT_GRAPH = [
                         type=NodeType.ALIAS,
                         is_protocol=False,
                         source_name="",
-                    ),
-                ],
-                type=GroupType.COMPONENT,
-            ),
-            Group(
-                id="component4",
-                name="comp1",
-                children=[],
-                nodes=[
-                    Node(
-                        id="factory5",
-                        name="Container",
-                        dependencies=["factory3"],
-                        type=NodeType.ALIAS,
-                        is_protocol=False,
-                        source_name="",
-                    ),
-                    Node(
-                        id="factory6",
-                        name="A",
-                        dependencies=[],
-                        type=NodeType.FACTORY,
-                        is_protocol=False,
-                        source_name="A",
                     ),
                 ],
                 type=GroupType.COMPONENT,

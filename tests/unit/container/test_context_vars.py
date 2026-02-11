@@ -1,9 +1,7 @@
 import pytest
 
 from dishka import (
-    DEFAULT_COMPONENT,
     STRICT_VALIDATION,
-    DependencyKey,
     Provider,
     Scope,
     decorate,
@@ -12,7 +10,7 @@ from dishka import (
     make_container,
     provide,
 )
-from dishka.exceptions import InvalidGraphError, NoContextValueError
+from dishka.exceptions import NoContextValueError
 
 
 def test_simple():
@@ -20,12 +18,9 @@ def test_simple():
     provider.from_context(provides=int, scope=Scope.APP)
     provider.from_context(provides=float, scope=Scope.APP)
     container = make_container(provider, context={int: 1})
-    container.context[DependencyKey(float, DEFAULT_COMPONENT)] = 2
     assert container.get(int) == 1
-    assert container.get(float) == 2
     container.close()
     assert container.get(int) == 1
-    assert container.get(float) == 2
 
 
 @pytest.mark.asyncio
@@ -34,12 +29,9 @@ async def test_simple_async():
     provider.from_context(provides=int, scope=Scope.APP)
     provider.from_context(provides=float, scope=Scope.APP)
     container = make_async_container(provider, context={int: 1})
-    container.context[DependencyKey(float, DEFAULT_COMPONENT)] = 2
     assert await container.get(int) == 1
-    assert await container.get(float) == 2
     await container.close()
     assert await container.get(int) == 1
-    assert await container.get(float) == 2
 
 
 def test_not_found():
@@ -103,13 +95,8 @@ def test_decorate():
         def ii(self, i: int) -> int:
             return i + 1
 
-    with pytest.raises(InvalidGraphError):
-        make_container(MyProvider(), context={int: 1})
-
-    p2 = Provider(Scope.APP)
-    p2.provide(lambda: 2, provides=int)
-    with pytest.raises(InvalidGraphError):
-        make_container(MyProvider(), p2)
+    c = make_container(MyProvider(), context={int: 1})
+    assert c.get(int) == 2
 
 
 def test_automatic_context():

@@ -137,6 +137,23 @@ Check what are you passing to ``provide`` function. Probably that object cannot 
 Note, that you can provide some type by creating an instance of another one using the form ``provide(YourClass, provides=SomeTypeHint)``.
 
 
+NoActiveFactoryError: Cannot select active factory for ...
+-------------------------------------------------------------------------
+
+.. code-block::
+
+    dishka.exceptions.NoActiveFactoryError: Cannot select active factory for (Cache, component=''). All variants are not active.
+       │      ◈ Scope.REQUEST, component='' ◈
+       ▼   __main__.Service   MyProvider.service
+       ╰─> __main__.Cache     select
+         ╰─× MyProvider.redis_cache: Has(RedisCache)
+         ╰─× MyProvider.cache: Marker("a")
+
+
+There were multiple variant of factory provided wit various conditions, but none of them is considered active.
+Check the logic of marker activation.
+
+
 ImplicitOverrideDetectedError: Detected multiple factories for ...
 -------------------------------------------------------------------------
 
@@ -168,7 +185,7 @@ NothingOverriddenError: Overriding factory found for ..., but there is nothing t
     * Check the order of providers
 
 This error can be seen only if you enabled ``nothing_overridden=True`` in validation settings.
-That means you set ``override=True``, but there is no second factory to be overriden or the order of providers is incorrect.
+That means you set ``override=True``, but there is no second factory to be overridden or the order of providers is incorrect.
 
 Check, that you have specified all expected providers in correct order or remove the flag.
 
@@ -181,7 +198,7 @@ IndependentDecoratorError: Decorator ... does not depend on provided type.
     dishka.provider.exceptions.IndependentDecoratorError: Decorator __main__.FirstProvider.get_a does not depend on provided type.
     Did you mean @provide instead of @decorate?
 
-Using ``decorate`` is a special case if you need to apply decorator patter or do modifications with an object created in another provider.
+Using ``decorate`` is a special case if you need to apply decorator pattern or do modifications with an object created in another provider.
 Is requests an object of some type (additional dependencies are allowed) and returns the same type.
 
 If you are not going to use an object received from another factory, probably you meant to use simple ``provide`` instead?

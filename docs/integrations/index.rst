@@ -21,11 +21,14 @@ Some of the integrations are supported by a community, refer to their documentat
    fastapi
    faststream
    flask
+   flet <https://github.com/C3EQUALZz/dishka-flet>
    grpcio
+   jobify <https://github.com/C3EQUALZz/dishka-jobify>
    litestar
    RQ <https://github.com/prepin/dishka-rq>
    sanic
    starlette
+   Strawberry <https://github.com/aryadovoy/dishka-strawberry>
    taskiq
    telebot
    Quart <https://github.com/hrimov/quart-dishka>
@@ -46,8 +49,8 @@ Some of the integrations are supported by a community, refer to their documentat
 
    * - :ref:`grpcio`
      - :ref:`Aiogram_dialog`
-     - :ref:`FastStream`
-     -
+     - `FastStream  <https://github.com/faststream-community/dishka-faststream>`_ (:abbr:`com (Community support)`)
+     - `Flet <https://github.com/C3EQUALZz/dishka-flet>`_ (:abbr:`com (Community support)`)
 
    * - :ref:`Fastapi`
      - :ref:`pyTelegramBotAPI<telebot>`
@@ -64,9 +67,13 @@ Some of the integrations are supported by a community, refer to their documentat
      -
    * -  :ref:`Sanic`
      -
+     - `Jobify <https://github.com/C3EQUALZz/dishka-jobify>`_ (:abbr:`com (Community support)`)
+     -
+   * -  `Starlette <https://github.com/reagento/starlette-dishka>`_ (:abbr:`com (Community support)`)
      -
      -
-   * -  :ref:`Starlette`
+     -
+   * - `Strawberry <https://github.com/aryadovoy/dishka-strawberry>`_ (:abbr:`com (Community support)`)
      -
      -
      -
@@ -90,7 +97,7 @@ To use framework integration you mainly need to do 4 things:
 
 * call ``setup_dishka`` on your container and framework entity
 * add ``FromDishka[YourClass]`` on you framework handlers (or view-functions)
-* decorate your handlers with ``@inject`` before registering them in framework. Some integrations do not required it, see their details
+* decorate your handlers with ``@inject`` before registering them in framework. Some integrations do not require it, see their details
 * add additional provider to the container to access framework specific objects from your provider.
 
 .. note::
@@ -120,4 +127,3 @@ For ``FastAPI`` it will look like:
    app = FastAPI()
    container = make_async_container(your_provider, FastapiProvider())
    setup_dishka(container, app)
-

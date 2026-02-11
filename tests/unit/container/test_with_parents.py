@@ -25,7 +25,6 @@ from dishka._adaptix.feature_requirement import HAS_PY_311, HAS_PY_312
 from dishka.entities.with_parents import (
     ParentsResolver,
     WithParents,
-    is_type_var_tuple,
 )
 from dishka.exceptions import NoFactoryError
 
@@ -42,14 +41,6 @@ if HAS_PY_312:
 
 T = TypeVar("T")
 B = TypeVar("B")
-
-
-@pytest.mark.skipif(
-    not HAS_PY_311,
-    reason="test for python >= 3.11",
-)
-def test_is_type_var_tuple() -> None:
-    assert is_type_var_tuple(Unpack[Ts])
 
 
 def test_simple_inheritance() -> None:
@@ -312,3 +303,32 @@ def test_specific_generic_parents() -> None:
     container = make_container(MyProvider())
 
     assert isinstance(container.get(IntRepo), ConcreteRepo)
+
+
+class _Dep:
+    pass
+
+
+def test_protocol_first_with_parents() -> None:
+    class Proto(Protocol):
+        pass
+
+    class Base:
+        def __init__(self, dep: _Dep) -> None:
+            self.dep = dep
+
+    class Impl(Proto, Base):
+        pass
+
+    provider = Provider(scope=Scope.APP)
+    provider.provide(_Dep)
+    provider.provide(WithParents[Impl])
+
+    container = make_container(provider)
+    result = container.get(Impl)
+    assert isinstance(result, Impl)
+    assert isinstance(result.dep, _Dep)
+    assert container.get(Proto) is result
+    assert container.get(Base) is result
+
+

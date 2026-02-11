@@ -38,7 +38,7 @@ How to use
 
     class YourProvider(Provider):
         @provide(scope=Scope.REQUEST)
-        def create_x(self, request: Request) -> X:
+        def create_gateway(self, request: Request) -> Gateway:
              ...
 
 2a. *(optional)* Set route class to each of your fastapi routers to enable automatic injection (it works only for HTTP, not for websockets)
@@ -92,6 +92,31 @@ How to use
 .. code-block:: python
 
     setup_dishka(container=container, app=app)
+
+
+Using with ``fastapi.Depends``
+********************************
+
+To inject Dishka-managed dependencies into ``fastapi.Depends`` functions, declare a factory function using ``FromDishka[]`` and decorate it with ``@inject``.
+
+.. code-block:: python
+
+    @inject
+    def get_dependency(
+        gateway: FromDishka[Gateway],
+    ) -> Dependency:
+        ...
+
+    @router.get('/')
+    @inject
+    async def endpoint(
+        dependency: Annotated[Dependency, Depends(get_dependency)],
+    ) -> ResponseModel:
+        ...
+
+.. note::
+    The ``@inject`` decorator is required for ``Depends`` functions even when using ``DishkaRouter``.
+
 
 
 Websockets

@@ -27,7 +27,6 @@ from .type_alias_type_provider import (
     IterableInt,
     ListFloat,
     StrNone,
-    WrappedInteger,
     WrappedIntegerDep,
 )
 
@@ -44,10 +43,6 @@ class MainProvider(Provider):
     @provide
     def get_list_float(self) -> ListFloat:
         return [1.1, 1.2]
-
-    @provide
-    def get_wrapped_integer(self) -> WrappedInteger:
-        return 1
 
     @provide
     def get_float(self, dep: Integer) -> float:
@@ -77,7 +72,6 @@ HINT_VALUES = [
     (float, 1),
     (complex, 1),
     (list[float], [1.1, 1.2]),
-    (WrappedInteger, 1),
     (IntStr, "foo"),
     (BytesMemoryView, b"foo"),
     (bytes, b"foo1"),
@@ -147,10 +141,6 @@ COMPONENT_PRIVDER_VALUES = [
 
 @pytest.mark.parametrize("component_provider", COMPONENT_PRIVDER_VALUES)
 def test_type_alias_component(component_provider):
-    @component_provider.provide
-    def foo() -> IntegerWithComponent:
-        return 42
-
     container = make_container(
         ComponentDepProvider(),
         component_provider,

@@ -50,6 +50,7 @@ from dishka._adaptix.type_tools.generic_resolver import (
 )
 from dishka.dependency_source import (
     CompositeDependencySource,
+    DependencySource,
     Factory,
     ensure_composite,
 )
@@ -58,12 +59,14 @@ from dishka.entities.key import (
     dependency_key_to_hint,
     hint_to_dependency_key,
 )
+from dishka.entities.marker import BaseMarker, BoolMarker
 from dishka.entities.provides_marker import AnyOf, ProvideMultiple
 from dishka.entities.scope import BaseScope
 from dishka.entities.type_alias_type import (
     is_type_alias_type,
     unwrap_type_alias,
 )
+from dishka.exceptions import WhenOverrideConflictError
 from dishka.text_rendering import get_name
 from .exceptions import (
     CannotUseProtocolError,
@@ -89,8 +92,22 @@ def _is_bound_method(obj: Any) -> bool:
     return ismethod(obj) and bool(obj.__self__)
 
 
+def _resolve_init(tp: type) -> Any:
+    init = tp.__init__  # type: ignore[misc]
+    if init is not _protocol_init:
+        return init
+    for cls in tp.__mro__:
+        if cls is object:
+            continue
+        init_candidate = cls.__dict__.get("__init__")
+        if init_candidate is not None and init_candidate is not _protocol_init:
+            return init_candidate
+    return init
+
+
 def _get_init_members(tp: type) -> MembersStorage[str, None]:
-    type_hints = get_all_type_hints(tp.__init__)  # type: ignore[misc, no-untyped-call]
+    real_init = _resolve_init(tp)
+    type_hints = get_all_type_hints(real_init)  # type: ignore[no-untyped-call]
     if "__init__" in tp.__dict__:
         overridden = frozenset(type_hints)
     else:
@@ -99,7 +116,7 @@ def _get_init_members(tp: type) -> MembersStorage[str, None]:
     return MembersStorage(
         meta=None,
         members=type_hints,
-        overriden=overridden,
+        overridden=overridden,
     )
 
 
@@ -186,7 +203,7 @@ def _generator_result(hint: Any) -> Any:
     elif origin is Iterator:
         return get_args(hint)[0]
     elif origin is Generator:
-        return get_args(hint)[1]
+        return get_args(hint)[0]
     # errors
     name = _type_repr(hint)
     if origin is AsyncIterable:
@@ -248,11 +265,12 @@ def _make_factory_by_class(
         source: type,
         cache: bool,
         override: bool,
+        when: BaseMarker | None,
 ) -> Factory:
     if not provides:
         provides = source
 
-    init = strip_alias(source).__init__
+    init = _resolve_init(strip_alias(source))
     if missing_hints := _params_without_hints(init, skip_self=True):
         raise MissingHintsError(source, missing_hints, append_init=True)
     # we need to fix concrete generics and normal classes as well
@@ -261,7 +279,7 @@ def _make_factory_by_class(
     try:
         hints = dict(res.get_resolved_members(source).members)
     except NameError as e:
-        raise UndefinedTypeAnalysisError(source, e.name) from e
+        raise UndefinedTypeAnalysisError(source, str(e.name)) from e
 
     hints.pop("return", _empty)
     params = signature(init).parameters
@@ -275,7 +293,10 @@ def _make_factory_by_class(
         provides=hint_to_dependency_key(provides),
         is_to_bind=False,
         cache=cache,
-        override=override,
+        when_override=calc_override(when=when, override=override),
+        when_active=when,
+        when_component=None,
+        when_dependencies=[],
     )
 
 
@@ -306,6 +327,7 @@ def _make_factory_by_function(
         is_in_class: bool,
         override: bool,
         check_self_name: bool,
+        when: BaseMarker | None,
 ) -> Factory:
     # typing.cast is applied as unwrap takes a Callable object
     raw_source = unwrap(cast(Callable[..., Any], source))
@@ -319,7 +341,7 @@ def _make_factory_by_function(
     try:
         hints = get_type_hints(source, include_extras=True)
     except NameError as e:
-        raise UndefinedTypeAnalysisError(source, e.name) from e
+        raise UndefinedTypeAnalysisError(source, str(e.name)) from e
     if is_in_class:
         self = next(iter(params.values()), None)
         if self and self.name not in hints:
@@ -347,7 +369,10 @@ def _make_factory_by_function(
         provides=hint_to_dependency_key(provides),
         is_to_bind=is_in_class,
         cache=cache,
-        override=override,
+        when_override=calc_override(when=when, override=override),
+        when_active=when,
+        when_component=None,
+        when_dependencies=[],
     )
 
 
@@ -358,6 +383,7 @@ def _make_factory_by_static_method(
         source: staticmethod,  # type: ignore[type-arg]
         cache: bool,
         override: bool,
+        when: BaseMarker | None,
 ) -> Factory:
     if missing_hints := _params_without_hints(source, skip_self=False):
         raise MissingHintsError(source, missing_hints)
@@ -365,7 +391,7 @@ def _make_factory_by_static_method(
     try:
         hints = get_type_hints(source, include_extras=True)
     except NameError as e:
-        raise UndefinedTypeAnalysisError(source, e.name) from e
+        raise UndefinedTypeAnalysisError(source, str(e.name)) from e
 
     params = signature(source).parameters
     possible_dependency = hints.pop("return", _empty)
@@ -387,8 +413,23 @@ def _make_factory_by_static_method(
         provides=hint_to_dependency_key(provides),
         is_to_bind=False,
         cache=cache,
-        override=override,
+        when_override=calc_override(when=when, override=override),
+        when_active=when,
+        when_component=None,
+        when_dependencies=[],
     )
+
+
+def calc_override(
+    *,
+    when: BaseMarker | None,
+    override: bool,
+) -> BaseMarker | None:
+    if when is not None:
+        return when
+    if override:
+        return BoolMarker(True)
+    return None
 
 
 def _make_factory_by_other_callable(
@@ -398,6 +439,7 @@ def _make_factory_by_other_callable(
         source: Callable[..., Any],
         cache: bool,
         override: bool,
+        when: BaseMarker | None,
 ) -> Factory:
     if _is_bound_method(source):
         to_check = source.__func__  # type: ignore[attr-defined]
@@ -418,11 +460,13 @@ def _make_factory_by_other_callable(
         is_in_class=is_in_class,
         override=override,
         check_self_name=False,
+        when=when,
     )
     if factory.is_to_bind:
         dependencies = factory.dependencies[1:]  # remove `self`
     else:
         dependencies = factory.dependencies
+
     return Factory(
         dependencies=dependencies,
         kw_dependencies=factory.kw_dependencies,
@@ -432,7 +476,10 @@ def _make_factory_by_other_callable(
         provides=factory.provides,
         is_to_bind=False,
         cache=cache,
-        override=override,
+        when_override=calc_override(when=when, override=override),
+        when_active=when,
+        when_component=None,
+        when_dependencies=[],
     )
 
 
@@ -461,6 +508,7 @@ def make_factory(
         cache: bool,
         is_in_class: bool,
         override: bool,
+        when: BaseMarker | None = None,
 ) -> Factory:
     provides, source = _extract_source(provides, source)
 
@@ -479,6 +527,7 @@ def make_factory(
             source=cast(type, source),
             cache=cache,
             override=override,
+            when=when,
         )
     elif isfunction(source) or isinstance(source, classmethod):
         return _make_factory_by_function(
@@ -489,6 +538,7 @@ def make_factory(
             is_in_class=is_in_class,
             override=override,
             check_self_name=True,
+            when=when,
         )
     elif isbuiltin(source):
         return _make_factory_by_function(
@@ -499,6 +549,7 @@ def make_factory(
             is_in_class=False,
             override=override,
             check_self_name=False,
+            when=when,
         )
     elif isinstance(source, staticmethod):
         return _make_factory_by_static_method(
@@ -507,6 +558,7 @@ def make_factory(
             source=source,
             cache=cache,
             override=override,
+            when=when,
         )
     elif callable(source) and not source_origin:
         return _make_factory_by_other_callable(
@@ -515,6 +567,7 @@ def make_factory(
             source=source,
             cache=cache,
             override=override,
+            when=when,
         )
     else:
         raise NotAFactoryError(source)
@@ -529,18 +582,23 @@ def _provide(
         is_in_class: bool = True,
         recursive: bool = False,
         override: bool = False,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
+    if when and override:
+        raise WhenOverrideConflictError
     composite = ensure_composite(source)
     factory = make_factory(
         provides=provides, scope=scope,
         source=composite.origin, cache=cache,
         is_in_class=is_in_class,
         override=override,
+        when=when,
     )
     composite.dependency_sources.extend(unpack_factory(factory))
     if not recursive:
         return composite
 
+    additional_sources: list[DependencySource] = []
     for src in composite.dependency_sources:
         if not isinstance(src, Factory):
             # we expect Factory and Alias here
@@ -553,8 +611,10 @@ def _provide(
                 cache=cache,
                 is_in_class=is_in_class,
                 override=override,
+                when=when,
             )
-            composite.dependency_sources.extend(additional.dependency_sources)
+            additional_sources.extend(additional.dependency_sources)
+    composite.dependency_sources.extend(additional_sources)
     return composite
 
 
@@ -566,11 +626,13 @@ def provide_on_instance(
         cache: bool = True,
         recursive: bool = False,
         override: bool = False,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
     return _provide(
         provides=provides, scope=scope, source=source, cache=cache,
         is_in_class=False,
         recursive=recursive, override=override,
+        when=when,
     )
 
 
@@ -582,6 +644,7 @@ def provide(
         cache: bool = True,
         recursive: bool = False,
         override: bool = False,
+        when: BaseMarker | None = None,
 ) -> Callable[[Callable[..., Any]], CompositeDependencySource]:
     ...
 
@@ -595,6 +658,7 @@ def provide(
         cache: bool = True,
         recursive: bool = False,
         override: bool = False,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
     ...
 
@@ -607,6 +671,7 @@ def provide(
         cache: bool = True,
         recursive: bool = False,
         override: bool = False,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource | Callable[
     [Callable[..., Any]], CompositeDependencySource,
 ]:
@@ -636,12 +701,14 @@ def provide(
         return _provide(
             provides=provides, scope=scope, source=source, cache=cache,
             is_in_class=True, recursive=recursive, override=override,
+            when=when,
         )
 
     def scoped(func: Callable[..., Any]) -> CompositeDependencySource:
         return _provide(
             provides=provides, scope=scope, source=func, cache=cache,
             is_in_class=True, recursive=recursive, override=override,
+            when=when,
         )
 
     return scoped
@@ -655,6 +722,7 @@ def _provide_all(
         is_in_class: bool,
         recursive: bool,
         override: bool = False,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
     composite = CompositeDependencySource(None)
     for single_provides in provides:
@@ -666,6 +734,7 @@ def _provide_all(
             is_in_class=is_in_class,
             recursive=recursive,
             override=override,
+            when=when,
         )
         composite.dependency_sources.extend(source.dependency_sources)
     return composite
@@ -677,11 +746,13 @@ def provide_all(
         cache: bool = True,
         recursive: bool = False,
         override: bool = False,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,
         cache=cache, is_in_class=True,
         recursive=recursive, override=override,
+        when=when,
     )
 
 
@@ -691,9 +762,11 @@ def provide_all_on_instance(
         cache: bool = True,
         recursive: bool = False,
         override: bool = False,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,
         cache=cache, is_in_class=False,
         recursive=recursive, override=override,
+        when=when,
     )

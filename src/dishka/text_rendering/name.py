@@ -2,6 +2,7 @@ from typing import Any, get_args, get_origin
 
 from dishka.entities.factory_type import FactoryData, FactoryType
 from dishka.entities.key import DependencyKey
+from dishka.entities.marker import Has, HasContext
 
 
 def _render_args(hint: Any) -> str:
@@ -19,6 +20,9 @@ def get_name(hint: Any, *, include_module: bool) -> str:
             for item in hint
         )
         return f"[{res}]"
+    if type(hint) in (Has, HasContext):
+        value_name = get_name(hint.value, include_module=include_module)
+        return f"{type(hint).__name__}({value_name})"
     if hint is ...:
         return "..."
     if func := getattr(object, "__func__", None):
@@ -52,6 +56,10 @@ def get_source_name(factory: FactoryData) -> str:
         return ""
     if factory.type is FactoryType.ALIAS:
         return "alias"
+    if factory.type is FactoryType.SELECTOR:
+        return "select"
+    if factory.type is FactoryType.COLLECTION:
+        return "collect"
 
     return get_name(source, include_module=False)
 

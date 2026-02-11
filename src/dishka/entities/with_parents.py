@@ -15,7 +15,6 @@ from typing import (
 
 from dishka._adaptix.common import TypeHint
 from dishka._adaptix.feature_requirement import (
-    HAS_PY_311,
     HAS_PY_312,
     HAS_TV_TUPLE,
     HAS_UNPACK,
@@ -35,9 +34,6 @@ from dishka._adaptix.type_tools.fundamentals import (
 )
 from dishka._adaptix.type_tools.implicit_params import fill_implicit_params
 from dishka.entities.provides_marker import ProvideMultiple
-
-__all__ = ["ParentsResolver", "WithParents"]
-
 from dishka.exception_base import DishkaError
 
 IGNORE_TYPES: Final = (
@@ -54,15 +50,6 @@ IGNORE_TYPES: Final = (
 
 TypeArgsTuple: TypeAlias = tuple[TypeHint, ...]
 
-if HAS_PY_311:
-
-    def is_type_var_tuple(obj: TypeHint) -> bool:
-        return getattr(obj, "__typing_is_unpacked_typevartuple__", False)
-else:
-
-    def is_type_var_tuple(obj: TypeHint) -> bool:
-        return False
-
 
 if HAS_PY_312:
     from types import (  # type: ignore[attr-defined, unused-ignore]
@@ -72,50 +59,15 @@ else:
 
     def get_original_bases(cls: type, /) -> tuple[Any, ...]:
         try:
-            return cls.__dict__.get("__orig_bases__", cls.__bases__)
+            bases = cls.__dict__.get("__orig_bases__", cls.__bases__)
+            return typing.cast(tuple[Any, ...], bases)
         except AttributeError:
             msg = f"Expected an instance of type, not {type(cls).__name__!r}"
             raise TypeError(msg) from None
 
-def has_orig_bases(obj: TypeHint) -> bool:
-    return hasattr(obj, "__orig_bases__")
-
 
 def is_ignored_type(origin_type: TypeHint) -> bool:
     return origin_type in IGNORE_TYPES
-
-
-def create_type_vars_map(obj: TypeHint) -> dict[TypeHint, TypeHint]:
-    origin_obj = strip_alias(obj)
-    type_vars = list(get_type_vars(origin_obj) or get_type_vars(obj))
-
-    if not type_vars:
-        return {}
-
-    type_vars_map = {}
-    arguments = list(get_generic_args(obj))
-    reversed_arguments = False
-
-    while True:
-        if not type_vars:
-            break
-
-        type_var = type_vars[0]
-
-        if isinstance(type_var, TypeVar):
-            del type_vars[0]
-            type_vars_map[type_var] = arguments.pop(0)
-        else:
-            if len(type_vars) == 1:
-                if reversed_arguments:
-                    arguments.reverse()
-                type_vars_map[type_var] = arguments
-                break
-            type_vars.reverse()
-            arguments.reverse()
-            reversed_arguments = not reversed_arguments
-
-    return type_vars_map
 
 
 class ParentsResolver:

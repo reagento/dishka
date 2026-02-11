@@ -14,6 +14,8 @@ Actually, everything can be done in your code: DI-framework is not a required th
 
 There might be errors in this comparison, some features are not well described while still exist in selected libraries. Some features can be implemented manually, but this topic is not about your code - it is about existing libraries.
 
+.. note:: The data is up to date as of **March 8, 2024**
+
 Overview
 ===========================
 
@@ -169,8 +171,8 @@ Why not svcs?
 
 On first approach ``dishka`` and ``svcs`` have similar api, but ``svcs`` does much less automation:
 
-1. In ``svcs`` all binding between classes is done manually by calling ``container`` inside each factory. In ``dishka`` you can just add class if you have type-hinted its ``__init__``. Additionally, in ``svsc`` you cannot use this information to validate graph or somehow visualize.
-2. While ``svsc`` caches dependencies there is no scope hierarchy. You can create multiple containers to make lazy singletons, but they are not thread-safe.
+1. In ``svcs`` all binding between classes is done manually by calling ``container`` inside each factory. In ``dishka`` you can just add class if you have type-hinted its ``__init__``. Additionally, in ``svcs`` you cannot use this information to validate graph or somehow visualize.
+2. While ``svcs`` caches dependencies there is no scope hierarchy. You can create multiple containers to make lazy singletons, but they are not thread-safe.
 3. There are no predefined patterns like multiple providers and class-based providers. So the only way to make your container modular you need to decide how to do it. With ``dishka`` you can reuse ``providers`` making different combinations for different environments or cases.
 
 Why not rodi?

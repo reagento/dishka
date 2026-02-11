@@ -2,15 +2,6 @@ from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 
-from grpc import ServicerContext, server as make_server
-from grpcio.di import service_provider
-from grpcio.pb2.service_pb2 import RequestMessage, ResponseMessage
-from grpcio.pb2.service_pb2_grpc import (
-    ExampleServiceServicer,
-    add_ExampleServiceServicer_to_server,
-)
-from grpcio.services.uuid_service import UUIDService
-
 from dishka import Container
 from dishka.container import make_container
 from dishka.integrations.grpcio import (
@@ -19,6 +10,17 @@ from dishka.integrations.grpcio import (
     GrpcioProvider,
     inject,
 )
+from grpc import (
+    ServicerContext,
+    server as make_server,
+)
+from grpcio.di import service_provider
+from grpcio.pb2.service_pb2 import RequestMessage, ResponseMessage
+from grpcio.pb2.service_pb2_grpc import (
+    ExampleServiceServicer,
+    add_ExampleServiceServicer_to_server,
+)
+from grpcio.services.uuid_service import UUIDService
 
 
 class ExampleService(ExampleServiceServicer):
@@ -30,7 +32,9 @@ class ExampleService(ExampleServiceServicer):
         service: FromDishka[UUIDService],
     ) -> ResponseMessage:
 
-        return ResponseMessage(message=f"UnaryUnary: {service.generate_uuid()}!")
+        return ResponseMessage(
+            message=f"UnaryUnary: {service.generate_uuid()}!",
+        )
 
     @inject
     def UnaryStream(
@@ -43,7 +47,7 @@ class ExampleService(ExampleServiceServicer):
             with container() as request_container:
                 service = request_container.get(UUIDService)
                 yield ResponseMessage(
-                    message=f"UnaryStream {i}: {service.generate_uuid()}!"
+                    message=f"UnaryStream {i}: {service.generate_uuid()}!",
                 )
 
     @inject
@@ -53,13 +57,12 @@ class ExampleService(ExampleServiceServicer):
         context: ServicerContext,
         container: FromDishka[Container],
     ) -> ResponseMessage:
-        messages = []
-        for request in request_iterator:
-            messages.append(request.message)
+        messages = [request.message for request in request_iterator]
         with container() as request_container:
             service = request_container.get(UUIDService)
             return ResponseMessage(
-                message=f"StreamUnary: {service.generate_uuid()}! messages: {', '.join(messages)}"
+                message=f"StreamUnary: {service.generate_uuid()}! "
+                        f"messages: {', '.join(messages)}",
             )
 
     @inject
@@ -73,7 +76,8 @@ class ExampleService(ExampleServiceServicer):
             with container() as request_container:
                 service = request_container.get(UUIDService)
                 yield ResponseMessage(
-                    message=f"StreamStream: {service.generate_uuid()}!, message: {request.message}"
+                    message=f"StreamStream: {service.generate_uuid()}!, "
+                            f"message: {request.message}",
                 )
 
 

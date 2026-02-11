@@ -10,7 +10,9 @@ from typing import Any, TypeVar, cast, overload
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
+from dishka.entities.marker import Has, HasContext
 from dishka.entities.scope import BaseScope, Scope
+from dishka.provider import Provider, activate
 from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .dependency_source import Factory
@@ -21,13 +23,14 @@ from .entities.validation_settings import (
 from .exceptions import (
     ChildScopeNotFoundError,
     ExitError,
+    NoActiveFactoryError,
     NoChildScopesError,
     NoFactoryError,
     NoNonSkippedScopesError,
 )
+from .graph_builder.builder import GraphBuilder
 from .provider import BaseProvider, make_root_context_provider
 from .registry import Registry
-from .registry_builder import RegistryBuilder
 
 T = TypeVar("T")
 
@@ -59,14 +62,8 @@ class AsyncContainer:
         self.child_registries = child_registries
         self._context = {CONTAINER_KEY: self}
         if context:
-            for key, value in context.items():
-                if not isinstance(key, DependencyKey):
-                    key = DependencyKey(  # noqa: PLW2901
-                        key,
-                        DEFAULT_COMPONENT,
-                    )
-                self._context[key] = value
-        self._cache = {**self._context}
+            self._context.update(context)
+        self._cache = {CONTAINER_KEY: self}
         self.parent_container = parent_container
 
         self.lock: AbstractAsyncContextManager[Any] | None
@@ -166,7 +163,7 @@ class AsyncContainer:
                 return await self._get_unlocked(key)
             async with lock:
                 return await self._get_unlocked(key)
-        except NoFactoryError as e:
+        except (NoFactoryError, NoActiveFactoryError) as e:
             e.scope = self.scope
             raise
 
@@ -208,12 +205,20 @@ class AsyncContainer:
                 raise
 
         try:
-            return await compiled(self._get_unlocked, self._exits, self._cache)
+            return await compiled(
+                self._get_unlocked,
+                self._exits,
+                self._cache,
+                self._context,
+            )
         except NoFactoryError as e:
             # cast is needed because registry.get_factory will always
             # return Factory. This happens because registry.get_compiled
             # uses the same method and returns None if the factory is not found
             # If None is returned, then go to the parent container
+            e.add_path(cast(Factory, self.registry.get_factory(key)))
+            raise
+        except NoActiveFactoryError as e:
             e.add_path(cast(Factory, self.registry.get_factory(key)))
             raise
 
@@ -231,7 +236,7 @@ class AsyncContainer:
                 pass
             except Exception as err:  # noqa: BLE001
                 errors.append(err)
-        self._cache = {**self._context}
+        self._cache = {CONTAINER_KEY: self}
         if self.close_parent and self.parent_container:
             try:
                 await self.parent_container.close(exception)
@@ -239,6 +244,23 @@ class AsyncContainer:
                 errors.append(err)
         if errors:
             raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
+
+    async def _has(self, marker: Any) -> bool:
+        compiled = self.registry.get_compiled_activation_async(marker)
+        if not compiled:
+            if not self.parent_container:
+                return False
+            return await self.parent_container._has(marker)  # noqa: SLF001
+
+        return bool(await compiled(
+            self._get_unlocked,
+            self._exits,
+            self._cache,
+            self._context,
+        ))
+
+    def _has_context(self, marker: Any) -> bool:
+        return marker in self._context
 
 
 class AsyncContextWrapper:
@@ -257,6 +279,25 @@ class AsyncContextWrapper:
         await self.container.close(exception=exc_val)
 
 
+class HasProvider(Provider):
+    @activate(Has)
+    async def has(
+        self,
+        marker: DependencyKey,
+        container: AsyncContainer,
+    ) -> bool:
+        key = DependencyKey(marker.type_hint.value, marker.component)
+        return await container._has(key)  # noqa: SLF001
+
+    @activate(HasContext)
+    def has_context(
+        self,
+        marker: HasContext,
+        container: AsyncContainer,
+    ) -> bool:
+        return container._has_context(marker.value)  # noqa: SLF001
+
+
 def make_async_container(
         *providers: BaseProvider,
         scopes: type[BaseScope] = Scope,
@@ -269,13 +310,18 @@ def make_async_container(
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,
 ) -> AsyncContainer:
     context_provider = make_root_context_provider(providers, context, scopes)
-    registries = RegistryBuilder(
+    has_provider = HasProvider()
+    builder = GraphBuilder(
         scopes=scopes,
         container_key=CONTAINER_KEY,
-        providers=(*providers, context_provider),
         skip_validation=skip_validation,
         validation_settings=validation_settings,
-    ).build()
+    )
+    builder.add_multicomponent_providers(has_provider)
+    builder.add_providers(*providers)
+    builder.add_providers(context_provider)
+    registries = builder.build()
+
     container = AsyncContainer(
         *registries,
         context=context,

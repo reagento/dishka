@@ -3,12 +3,21 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, ClassVar
 
+from .activator import Activator
 from .alias import Alias
 from .context_var import ContextVariable
 from .decorator import Decorator
 from .factory import Factory
+from .factory_union_mode import FactoryUnionMode
 
-DependencySource = Alias | Factory | Decorator | ContextVariable
+DependencySource = (
+    Alias |
+    Factory |
+    Decorator |
+    ContextVariable |
+    Activator |
+    FactoryUnionMode
+)
 
 
 class CompositeDependencySource:

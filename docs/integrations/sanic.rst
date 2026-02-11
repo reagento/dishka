@@ -74,7 +74,7 @@ Or pass your own inject decorator
 
 .. code-block:: python
 
-    setup_dishka(container=container, app=app, auto_inject=my_injet)
+    setup_dishka(container=container, app=app, auto_inject=my_inject)
 
 Websockets
 **********************

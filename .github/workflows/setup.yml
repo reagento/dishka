@@ -25,17 +25,19 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
-          - "3.14.0-rc.2"
+          - "3.14"
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        persist-credentials: false
     - name: Set up ${{ matrix.python-version }} on ${{ matrix.os }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 # v7.1.6
 
     - name: Install dependencies
       run: |
@@ -54,13 +56,20 @@ jobs:
         nox -t ci
         mv .coverage .coverage.${{ matrix.python-version }}
 
+    - name: Run spell check
+      run: |
+        typos src/ tests/ examples/ docs/ .github/ CONTRIBUTING.md README.md --config .typos.toml
+
     - name: Build doc
       run: |
         uv pip install -r requirements_doc.txt --system
         sphinx-build -M html docs docs-build -W
 
+    - name: Run zizmor
+      run: zizmor .github
+
     - name: Store coverage file
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
       if: ${{ github.event_name == 'pull_request' }}
       with:
         name: coverage-${{ matrix.python-version }}
@@ -79,11 +88,11 @@ jobs:
     if: ${{ github.event_name == 'pull_request' }}
 
     steps:
-      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           persist-credentials: false
 
-      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
         id: download
         with:
           pattern: coverage-*
@@ -91,14 +100,14 @@ jobs:
 
       - name: Coverage comment
         id: coverage_comment
-        uses: py-cov-action/python-coverage-comment-action@0544a9c648672334d94ec5dd1add7410b4470ddc
+        uses: py-cov-action/python-coverage-comment-action@7188638f871f721a365d644f505d1ff3df20d683
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MERGE_COVERAGE_FILES: true
           MINIMUM_GREEN: 90
 
       - name: Store Pull Request comment to be posted (for external pr)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         if: steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
         with:
           name: python-coverage-comment-action

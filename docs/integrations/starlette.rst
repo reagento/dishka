@@ -3,6 +3,12 @@
 Starlette
 ===========================================
 
+.. warning::
+   The integration has been moved to the `starlette-dishka <https://github.com/reagento/starlette-dishka>`_ package and will be removed in future versions.
+    .. code-block:: shell
+
+        pip install starlette-dishka
+
 Though it is not required, you can use *dishka-starlette* integration. It features:
 
 * automatic *REQUEST* and *SESSION* scope management using middleware

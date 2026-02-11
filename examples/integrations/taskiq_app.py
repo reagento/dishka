@@ -1,13 +1,12 @@
 import asyncio
 import random
 
-from taskiq import AsyncTaskiqTask, InMemoryBroker
-
 from dishka import FromDishka, Provider, Scope, make_async_container
 from dishka.integrations.taskiq import TaskiqProvider, inject, setup_dishka
+from taskiq import AsyncTaskiqTask, InMemoryBroker
 
 provider = Provider(scope=Scope.REQUEST)
-provider.provide(lambda: random.random(), provides=float)  # noqa: S311
+provider.provide(lambda: random.random(), provides=float)
 
 broker = InMemoryBroker()
 
@@ -25,7 +24,7 @@ async def main() -> None:
 
     task: AsyncTaskiqTask[float] = await random_task.kiq()
     result = await task.wait_result()
-    print(result.return_value)  # noqa: T201
+    print(result.return_value)
 
     await broker.shutdown()
     await container.close()

@@ -96,6 +96,23 @@ Compile docs:
 
 Open file ``docs-build/html/index.html`` in your browser
 
+Running security audit for GitHub Actions
+==========================================
+
+We use ``zizmor`` to audit our GitHub Actions workflows for security issues. To run it locally:
+
+.. code-block::
+
+    zizmor .github/
+
+Running spell check for code and documentation
+==============================================
+
+We use ``typos`` to check our code and documentation for spelling mistakes. To run it locally:
+
+.. code-block::
+
+    typos src/ tests/ examples/ docs/ .github/ CONTRIBUTING.md README.md
 
 Submitting changes
 ============================

@@ -155,7 +155,7 @@ class ParentsResolver:
         ]
 
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # ast-grep-ignore: DISHKA001
     T = TypeVar("T")
     WithParents: TypeAlias = T
 else:

@@ -43,6 +43,10 @@ jobs:
       run: |
         uv pip install . -r requirements_dev.txt --system
 
+    - name: Run ast-grep
+      run: |
+        sg scan
+
     - name: Run ruff
       run: |
         ruff check .

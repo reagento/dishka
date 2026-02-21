@@ -1,3 +1,4 @@
+import itertools
 from abc import ABC, ABCMeta
 from enum import Enum
 from typing import (
@@ -88,7 +89,23 @@ class Registry:
             factory = self.get_factory(dependency)
             if not factory:
                 return None
-            compiled = compile_factory(factory=factory, is_async=False)
+
+            compiled_deps = {}
+            for dep in itertools.chain(
+                factory.dependencies,
+                factory.kw_dependencies.values(),
+            ):
+                if dep in self.factories:
+                    compiled_deps[dep] = self.get_compiled(dep)
+            for sub_factory in factory.when_dependencies:
+                if sub_factory.provides in self.factories:
+                    compiled_deps[sub_factory.provides] = self.get_compiled(dep)
+
+            compiled = compile_factory(
+                factory=factory,
+                is_async=False,
+                compiled_deps=compiled_deps,
+            )
             self.compiled[dependency] = compiled
             return compiled
 
@@ -101,7 +118,7 @@ class Registry:
             factory = self.get_factory(dependency)
             if not factory:
                 return None
-            compiled = compile_factory(factory=factory, is_async=True)
+            compiled = compile_factory(factory=factory, is_async=True, compiled_deps={})
             self.compiled_async[dependency] = compiled
             return compiled
 

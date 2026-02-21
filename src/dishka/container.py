@@ -45,6 +45,7 @@ class Container:
         "lock",
         "parent_container",
         "registry",
+        "parent_getter",
     )
 
     def __init__(
@@ -57,6 +58,7 @@ class Container:
                 [], AbstractContextManager[Any],
             ] | None = None,
             close_parent: bool = False,
+            parent_getter: Callable = None,
     ):
         self.registry = registry
         self.child_registries = child_registries
@@ -73,6 +75,7 @@ class Container:
             self.lock = None
         self._exits: list[Exit] = []
         self.close_parent = close_parent
+        self.parent_getter = parent_getter
 
     @property
     def scope(self) -> BaseScope:
@@ -109,6 +112,7 @@ class Container:
             parent_container=self,
             context=context,
             lock_factory=lock_factory,
+            parent_getter=self._get,
         )
         if scope is None:
             while child.registry.scope.skip:
@@ -120,6 +124,7 @@ class Container:
                     context=context,
                     lock_factory=lock_factory,
                     close_parent=True,
+                    parent_getter=child._get,
                 )
         else:
             while child.registry.scope is not scope:
@@ -131,8 +136,9 @@ class Container:
                     context=context,
                     lock_factory=lock_factory,
                     close_parent=True,
+                    parent_getter=child._get,
                 )
-        return ContextWrapper(child)
+        return child
 
     @overload
     def get(
@@ -174,8 +180,6 @@ class Container:
             return self._get_unlocked(key)
 
     def _get_unlocked(self, key: DependencyKey) -> Any:
-        if key in self._cache:
-            return self._cache[key]
         compiled = self.registry.get_compiled(key)
         if not compiled:
             if not self.parent_container:
@@ -206,7 +210,7 @@ class Container:
 
         try:
             return compiled(
-                self._get_unlocked,
+                self.parent_getter,
                 self._exits,
                 self._cache,
                 self._context,
@@ -223,6 +227,14 @@ class Container:
             raise
 
     def close(self, exception: BaseException | None = None) -> None:
+        self.__exit__(type(exception), exception, None)
+
+    def __exit__(
+            self,
+            exc_type: type[BaseException] | None = None,
+            exception: BaseException | None = None,
+            exc_tb: TracebackType | None = None,
+    ) -> None:
         errors = []
         for exit_generator in self._exits[::-1]:
             try:
@@ -257,6 +269,11 @@ class Container:
 
     def _has_context(self, marker: Any) -> bool:
         return marker in self._context
+
+
+    def __enter__(self):
+        return self
+
 
 
 class ContextWrapper:

@@ -18,7 +18,7 @@ from dishka.entities.marker import (
 from dishka.exceptions import (
     NoActiveFactoryError,
     NoContextValueError,
-    UnsupportedFactoryError,
+    UnsupportedFactoryError, NoFactoryError,
 )
 from dishka.text_rendering import get_name
 
@@ -301,26 +301,36 @@ def compile_factory(*, factory: Factory, is_async: bool, compiled_deps: dict[Dep
     with builder.make_getter():
         builder.return_if_cached(factory)
 
-        if factory.type is FactoryType.COLLECTION:
-            _collection_factory_body(builder, factory, compiled_deps)
-        else:
-            has_default = _select_when_dependency(builder, factory, compiled_deps)
-            if not has_default:
-                source_call = builder.call(
-                    builder.global_(factory.source),
-                    *(builder.getter(dep, compiled_deps) for dep in factory.dependencies),
-                    **{
-                        name: builder.getter(dep, compiled_deps)
-                        for name, dep in factory.kw_dependencies.items()
-                    },
-                )
-                body_generator = BODY_GENERATORS[factory.type]
-                if factory.when_dependencies:  # conditions generated
-                    with builder.else_():
+        with builder.try_():
+            if factory.type is FactoryType.COLLECTION:
+                _collection_factory_body(builder, factory, compiled_deps)
+            else:
+                has_default = _select_when_dependency(builder, factory, compiled_deps)
+                if not has_default:
+                    source_call = builder.call(
+                        builder.global_(factory.source),
+                        *(builder.getter(dep, compiled_deps) for dep in factory.dependencies),
+                        **{
+                            name: builder.getter(dep, compiled_deps)
+                            for name, dep in factory.kw_dependencies.items()
+                        },
+                    )
+                    body_generator = BODY_GENERATORS[factory.type]
+                    if factory.when_dependencies:  # conditions generated
+                        with builder.else_():
+                            body_generator(builder, source_call, factory, compiled_deps)
+                    else:  # no options at all
                         body_generator(builder, source_call, factory, compiled_deps)
-                else:  # no options at all
-                    body_generator(builder, source_call, factory, compiled_deps)
-
+        with builder.except_(NoFactoryError, as_="e"):
+            builder.statement(builder.call(
+                "e.add_path", builder.global_(factory)
+            ))
+            builder.statement("raise")
+        with builder.except_(NoActiveFactoryError, as_="e"):
+            builder.statement(builder.call(
+                "e.add_path", builder.global_(factory)
+            ))
+            builder.statement("raise")
         builder.cache(factory)
         builder.return_("solved")
 

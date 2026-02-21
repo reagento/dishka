@@ -208,23 +208,13 @@ class Container:
                 ex.suggest_concrete_factories.extend(concrete_dependencies)
                 raise
 
-        try:
-            return compiled(
-                self.parent_getter,
-                self._exits,
-                self._cache,
-                self._context,
-            )
-        except NoFactoryError as e:
-            # cast is needed because registry.get_factory will always
-            # return Factory. This happens because registry.get_compiled
-            # uses the same method and returns None if the factory is not found
-            # If None is returned, then go to the parent container
-            e.add_path(cast(Factory, self.registry.get_factory(key)))
-            raise
-        except NoActiveFactoryError as e:
-            e.add_path(cast(Factory, self.registry.get_factory(key)))
-            raise
+        return compiled(
+            self.parent_getter,
+            self._exits,
+            self._cache,
+            self._context,
+        )
+
 
     def close(self, exception: BaseException | None = None) -> None:
         self.__exit__(type(exception), exception, None)

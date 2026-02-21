@@ -165,9 +165,14 @@ class CodeBuilder:
     def except_(
         self,
         exception: type[Exception],
+        as_: str = "",
     ) -> AbstractContextManager[None]:
         name = self.global_(exception)
-        self.statement(f"except {name}:")
+        if as_:
+            as_str = " as " + as_
+        else:
+            as_str = ""
+        self.statement(f"except {name}{as_str}:")
         return self.block()
 
     def raise_(self, expr: str) -> None:

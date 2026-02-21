@@ -60,7 +60,7 @@ class AsyncContainer:
     ):
         self.registry = registry
         self.child_registries = child_registries
-        self._context = {CONTAINER_KEY: self}
+        self._context = {AsyncContainer: self}
         if context:
             self._context.update(context)
         self._cache = {CONTAINER_KEY: self}

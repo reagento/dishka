@@ -98,19 +98,22 @@ class Registry:
                     for m in unpack_marker(marker)
                 ),
             )
-            if dep in self.factories
         ]
     def _compile_deps(self, factory: Factory) -> dict[DependencyKey, CompiledFactory]:
-        return {
-            dep: self.get_compiled(dep)
-            for dep in self.collect_deps(factory)
-        }
+        res = {}
+        for dep in self.collect_deps(factory):
+            compiled = self.get_compiled(dep)
+            if compiled:
+                res[dep] = compiled
+        return res
 
     def _compile_deps_async(self, factory: Factory) -> dict[DependencyKey, CompiledFactory]:
-        return {
-            dep: self.get_compiled_async(dep)
-            for dep in self.collect_deps(factory)
-        }
+        res = {}
+        for dep in self.collect_deps(factory):
+            compiled = self.get_compiled_async(dep)
+            if compiled:
+                res[dep] = compiled
+        return res
 
     def get_compiled(
             self, dependency: DependencyKey,

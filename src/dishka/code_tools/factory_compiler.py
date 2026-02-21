@@ -322,11 +322,11 @@ def compile_factory(*, factory: Factory, is_async: bool, compiled_deps: dict[Dep
     return builder.build_getter()
 
 
-def compile_activation(*, factory: Factory, is_async: bool) -> CompiledFactory:
+def compile_activation(*, factory: Factory, is_async: bool, compiled_deps: dict[DependencyKey, CompiledFactory]) -> CompiledFactory:
     builder = FactoryBuilder(is_async=is_async, getter_prefix="is_active_")
     builder.register_provides(factory.provides)
     with builder.make_getter():
-        condition = builder.when(factory.when_active, factory.when_component, {})
+        condition = builder.when(factory.when_active, factory.when_component, compiled_deps)
         if not condition:
             builder.return_(builder.global_(True))
         else:

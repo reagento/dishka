@@ -64,12 +64,14 @@ class FactoryBuilder(CodeBuilder):
             return self.await_(self.call(factory, "getter", "exits", "cache", "context"))
         return self.await_(self.call("getter", self.global_(obj)))
 
-    def cache(self) -> None:
-        self.assign_expr(f"cache[{self.cache_key}]", "solved")
+    def cache(self, factory: Factory) -> None:
+        if factory.cache and factory.type is not FactoryType.CONTEXT:
+            self.assign_expr(f"cache[{self.cache_key}]", "solved")
 
-    def return_if_cached(self) -> None:
-        with self.if_(f"{self.cache_key} in cache"):
-            self.return_(f"cache[{self.cache_key}]")
+    def return_if_cached(self, factory: Factory) -> None:
+        if factory.cache and factory.type is not FactoryType.CONTEXT:
+            with self.if_(f"{self.cache_key} in cache"):
+                self.return_(f"cache[{self.cache_key}]")
 
     def assign_solved(self, expr: str) -> None:
         self.assign_local("solved", expr)
@@ -179,7 +181,9 @@ def _alias_factory_body(
 
 
 def _context_factory_body(
-    builder: FactoryBuilder, source_call: str, factory: Factory,
+    builder: FactoryBuilder,
+    source_call: str,
+    factory: Factory,
     compiled_deps: dict[DependencyKey, CompiledFactory],
 ) -> None:
     source = builder.global_(factory.source)
@@ -240,7 +244,10 @@ def _collection_factory_body(
 
 
 ASYNC_TYPES = (FactoryType.ASYNC_FACTORY, FactoryType.ASYNC_GENERATOR)
-BodyGenerator: TypeAlias = Callable[[FactoryBuilder, str, Factory], None]
+BodyGenerator: TypeAlias = Callable[
+    [FactoryBuilder, str, Factory, dict[DependencyKey, CompiledFactory]],
+    None,
+]
 BODY_GENERATORS: dict[FactoryType, BodyGenerator] = {
     FactoryType.FACTORY: _sync_factory_body,
     FactoryType.ASYNC_FACTORY: _async_factory_body,
@@ -292,8 +299,7 @@ def compile_factory(*, factory: Factory, is_async: bool, compiled_deps: dict[Dep
     builder.register_provides(factory.provides)
 
     with builder.make_getter():
-        if factory.cache:
-            builder.return_if_cached()
+        builder.return_if_cached(factory)
 
         if factory.type is FactoryType.COLLECTION:
             _collection_factory_body(builder, factory, compiled_deps)
@@ -315,8 +321,7 @@ def compile_factory(*, factory: Factory, is_async: bool, compiled_deps: dict[Dep
                 else:  # no options at all
                     body_generator(builder, source_call, factory, compiled_deps)
 
-        if factory.cache:
-            builder.cache()
+        builder.cache(factory)
         builder.return_("solved")
 
     return builder.build_getter()

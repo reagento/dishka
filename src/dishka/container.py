@@ -57,15 +57,15 @@ class Container:
             lock_factory: Callable[
                 [], AbstractContextManager[Any],
             ] | None = None,
-            close_parent: bool = False,
+            close_parent: Callable = None,
             parent_getter: Callable = None,
     ):
         self.registry = registry
         self.child_registries = child_registries
-        self._context = {CONTAINER_KEY: self}
+        self._context = {Container: self}
         if context:
             self._context.update(context)
-        self._cache = {CONTAINER_KEY: self}
+        self._cache = {}
         self.parent_container = parent_container
 
         self.lock: AbstractContextManager[Any] | None
@@ -97,7 +97,7 @@ class Container:
                 [], AbstractContextManager[Any],
             ] | None = None,
             scope: BaseScope | None = None,
-    ) -> ContextWrapper:
+    ) -> "Container":
         """
         Prepare container for entering the inner scope.
         :param context: Data which will available in inner scope
@@ -123,7 +123,7 @@ class Container:
                     parent_container=child,
                     context=context,
                     lock_factory=lock_factory,
-                    close_parent=True,
+                    close_parent=child.__exit__,
                     parent_getter=child._get,
                 )
         else:
@@ -135,7 +135,7 @@ class Container:
                     parent_container=child,
                     context=context,
                     lock_factory=lock_factory,
-                    close_parent=True,
+                    close_parent=child.__exit__,
                     parent_getter=child._get,
                 )
         return child
@@ -245,9 +245,9 @@ class Container:
             except Exception as err:  # noqa: BLE001
                 errors.append(err)
         self._cache = {CONTAINER_KEY: self}
-        if self.close_parent and self.parent_container:
+        if self.close_parent:
             try:
-                self.parent_container.close(exception)
+                self.close_parent(exc_type, exception, exc_tb)
             except Exception as err:  # noqa: BLE001
                 errors.append(err)
 
@@ -346,7 +346,8 @@ def make_container(
                 parent_container=container,
                 context=context,
                 lock_factory=lock_factory,
-                close_parent=True,
+                close_parent=container.__exit__,
+                parent_getter=container._get,
             )
     else:
         while container.registry.scope is not start_scope:
@@ -355,7 +356,8 @@ def make_container(
                 parent_container=container,
                 context=context,
                 lock_factory=lock_factory,
-                close_parent=True,
+                close_parent=container.__exit__,
+                parent_getter=container._get,
             )
     return container
 

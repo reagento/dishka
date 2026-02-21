@@ -27,6 +27,7 @@ class FactoryBuilder(CodeBuilder):
     def __init__(self, *, is_async: bool, getter_prefix: str):
         super().__init__(is_async=is_async)
         self.provides_name = ""
+        self.cache_key = ""
         self.getter_name = ""
         self.getter_prefix = getter_prefix
 
@@ -42,6 +43,8 @@ class FactoryBuilder(CodeBuilder):
 
     def register_provides(self, provides: DependencyKey) -> None:
         self.provides_name = self.global_(provides)
+        # special object to improve dictionary lookup
+        self.cache_key = self.global_(object(), f"{self.provides_name}_cache")
 
     def make_getter(self) -> AbstractContextManager[None]:
         raw_provides_name = self.provides_name.removeprefix("key_")
@@ -62,11 +65,11 @@ class FactoryBuilder(CodeBuilder):
         return self.await_(self.call("getter", self.global_(obj)))
 
     def cache(self) -> None:
-        self.assign_expr(f"cache[{self.provides_name}]", "solved")
+        self.assign_expr(f"cache[{self.cache_key}]", "solved")
 
     def return_if_cached(self) -> None:
-        with self.if_(f"{self.provides_name} in cache"):
-            self.return_(f"cache[{self.provides_name}]")
+        with self.if_(f"{self.cache_key} in cache"):
+            self.return_(f"cache[{self.cache_key}]")
 
     def assign_solved(self, expr: str) -> None:
         self.assign_local("solved", expr)

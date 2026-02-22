@@ -68,7 +68,7 @@ class _PyDependencyKey(NamedTuple):
         )
 
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # ast-grep-ignore: DISHKA001
     DependencyKey = _PyDependencyKey
 elif os.getenv("DISHKA_USE_CYTHON_KEY") == "1":
     try:

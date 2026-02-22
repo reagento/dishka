@@ -31,13 +31,18 @@ class FactoryBuilder(CodeBuilder):
         self.getter_prefix = getter_prefix
 
     def global_(self, obj: Any, preferred_name: str | None = None) -> str:
-        if preferred_name is None and isinstance(obj, DependencyKey):
-            type_name = get_name(obj.type_hint, include_module=False)
+        if preferred_name is None and (
+            hasattr(obj, "type_hint") and
+            hasattr(obj, "component") and
+            hasattr(obj, "depth")
+        ):
+            dep_key = cast(DependencyKey, obj)
+            type_name = get_name(dep_key.type_hint, include_module=False)
             preferred_name = f"key_{type_name}"
-            if obj.component:
-                preferred_name += f"_{obj.component}"
-            if obj.depth:
-                preferred_name += f"_{obj.depth}"
+            if dep_key.component:
+                preferred_name += f"_{dep_key.component}"
+            if dep_key.depth:
+                preferred_name += f"_{dep_key.depth}"
         return super().global_(obj, preferred_name)
 
     def register_provides(self, provides: DependencyKey) -> None:

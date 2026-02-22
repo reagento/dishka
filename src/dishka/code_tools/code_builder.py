@@ -194,6 +194,13 @@ class CodeBuilder:
             items_str = ", ".join(items)
         return f"[{items_str}]"
 
+    def tuple_literal(self, *items: str) -> str:
+        if len(items) > MAX_ITEMS_PER_LINE:
+            items_str = "\n, ".join(items)
+        else:
+            items_str = ", ".join(items)
+        return f"({items_str})"
+
     def compile(self, source_file_name: str) -> dict[str, Any]:
         lines = self.code.splitlines(keepends=True)
         linecache.cache[source_file_name] = (

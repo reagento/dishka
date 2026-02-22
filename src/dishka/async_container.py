@@ -6,7 +6,6 @@ from types import TracebackType
 from typing import Any, TypeVar, overload
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
-from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.marker import Has, HasContext
 from dishka.entities.scope import BaseScope, Scope
@@ -227,12 +226,12 @@ class AsyncContainer:
         exc_tb: TracebackType | None = None,
     ) -> None:
         errors = []
-        for exit_generator in self._exits[::-1]:
+        for gen, agen in reversed(self._exits):
             try:
-                if exit_generator.type is FactoryType.ASYNC_GENERATOR:
-                    await exit_generator.callable.asend(exception)  # type: ignore[attr-defined]
-                elif exit_generator.type is FactoryType.GENERATOR:
-                    exit_generator.callable.send(exception)  # type: ignore[attr-defined]
+                if agen is not None:
+                    await agen.asend(exception)  # type: ignore[attr-defined]
+                elif gen is not None:
+                    gen.send(exception)  # type: ignore[attr-defined]
             except StopIteration:  # noqa: PERF203
                 pass
             except StopAsyncIteration:

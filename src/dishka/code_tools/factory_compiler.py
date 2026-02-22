@@ -3,7 +3,7 @@ from contextlib import AbstractContextManager
 from typing import Any, TypeAlias, cast
 
 from dishka.code_tools.code_builder import CodeBuilder
-from dishka.container_objects import CompiledFactory, Exit
+from dishka.container_objects import CompiledFactory
 from dishka.dependency_source import Factory
 from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryType
@@ -138,10 +138,9 @@ def _generator_body(
     builder.statement(
         builder.call(
             "exits.append",
-            builder.call(
-                builder.global_(Exit),
-                builder.global_(factory.type, "factory_type"),
+            builder.tuple_literal(
                 "generator",
+                "None",
             ),
         ),
     )
@@ -158,9 +157,8 @@ def _async_generator_body(
     builder.statement(
         builder.call(
             "exits.append",
-            builder.call(
-                builder.global_(Exit),
-                builder.global_(factory.type, "factory_type"),
+            builder.tuple_literal(
+                "None",
                 "generator",
             ),
         ),

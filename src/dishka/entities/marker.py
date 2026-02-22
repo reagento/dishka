@@ -160,17 +160,14 @@ class HasContext(Marker):
 
 
 def unpack_marker(marker: BaseMarker | None) -> Iterator[Marker]:
-    match marker:
-        case Marker():
-            yield marker
-        case NotMarker():
-            yield from unpack_marker(marker.marker)
-        case BinOpMarker():
-            yield from unpack_marker(marker.left)
-            yield from unpack_marker(marker.right)
-        case BoolMarker():
-            return
-        case None:
-            return
-        case _:
-            raise InvalidMarkerError(marker)
+    if isinstance(marker, Marker):
+        yield marker
+    elif isinstance(marker, NotMarker):
+        yield from unpack_marker(marker.marker)
+    elif isinstance(marker, BinOpMarker):
+        yield from unpack_marker(marker.left)
+        yield from unpack_marker(marker.right)
+    elif isinstance(marker, BoolMarker) or marker is None:
+        return
+    else:
+        raise InvalidMarkerError(marker)

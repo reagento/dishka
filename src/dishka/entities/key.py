@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import (
     Annotated,
     Any,
@@ -24,44 +25,53 @@ def FromComponent(  # noqa: N802
     return _FromComponent(component)
 
 
-class DependencyKey(NamedTuple):
-    type_hint: Any  # type hint or marker instance
-    component: Component | None
-    depth: int = 0  # counter to distinguish decorated/united factories
+if os.getenv("DISHKA_USE_CYTHON_KEY") == "1":
+    try:
+        from ._key_c import DependencyKey
+    except Exception:
+        DependencyKey = None
+else:
+    DependencyKey = None
 
-    def with_component(self, component: Component | None) -> DependencyKey:
-        if self.component is not None:
-            return self
-        return DependencyKey(
-            type_hint=self.type_hint,
-            component=component,
-            depth=self.depth,
-        )
+if DependencyKey is None:
+    class DependencyKey(NamedTuple):
+        type_hint: Any  # type hint or marker instance
+        component: Component | None
+        depth: int = 0  # counter to distinguish decorated/united factories
 
-    def __str__(self) -> str:
-        if self.depth == 0:
-            return f"({self.type_hint}, component={self.component!r})"
-        return (f"({self.type_hint},"
-                f" component={self.component!r},"
-                f" depth={self.depth})")
+        def with_component(self, component: Component | None) -> DependencyKey:
+            if self.component is not None:
+                return self
+            return DependencyKey(
+                type_hint=self.type_hint,
+                component=component,
+                depth=self.depth,
+            )
 
-    def is_const(self) -> bool:
-        return (
-            get_origin(self.type_hint) is Literal and
-            len(get_args(self.type_hint)) == 1
-        )
+        def __str__(self) -> str:
+            if self.depth == 0:
+                return f"({self.type_hint}, component={self.component!r})"
+            return (f"({self.type_hint},"
+                    f" component={self.component!r},"
+                    f" depth={self.depth})")
 
-    def is_type_var(self) -> bool:
-        return isinstance(self.type_hint, TypeVar)
+        def is_const(self) -> bool:
+            return (
+                get_origin(self.type_hint) is Literal and
+                len(get_args(self.type_hint)) == 1
+            )
 
-    def get_const_value(self) -> Any:
-        return get_args(self.type_hint)[0]
+        def is_type_var(self) -> bool:
+            return isinstance(self.type_hint, TypeVar)
 
-    def is_marker(self) -> bool:
-        return isinstance(self.type_hint, Marker) or (
-            isinstance(self.type_hint, type) and
-            issubclass(self.type_hint, Marker)
-        )
+        def get_const_value(self) -> Any:
+            return get_args(self.type_hint)[0]
+
+        def is_marker(self) -> bool:
+            return isinstance(self.type_hint, Marker) or (
+                isinstance(self.type_hint, type) and
+                issubclass(self.type_hint, Marker)
+            )
 
 
 def const_dependency_key(value: Any) -> DependencyKey:

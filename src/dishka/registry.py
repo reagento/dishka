@@ -2,6 +2,7 @@ from abc import ABC, ABCMeta
 from enum import Enum
 from typing import (
     Any,
+    Callable,
     Final,
     Generic,
     Protocol,
@@ -40,6 +41,7 @@ IGNORE_TYPES: Final = (
 )
 
 CompiledFactories: TypeAlias = dict[DependencyKey, CompiledFactory]
+COMPILED_MISSING = object()
 
 
 class Registry:
@@ -48,8 +50,14 @@ class Registry:
         "compiled_activation",
         "compiled_activation_async",
         "compiled_async",
+        "enter_default",
+        "enter_scope_fns",
         "factories",
         "has_fallback",
+        "resolver",
+        "resolver_activation",
+        "resolver_activation_async",
+        "resolver_async",
         "scope",
     )
 
@@ -60,6 +68,12 @@ class Registry:
         self.compiled_async: CompiledFactories = {}
         self.compiled_activation: CompiledFactories = {}
         self.compiled_activation_async: CompiledFactories = {}
+        self.resolver: Callable[..., Any] | None = None
+        self.resolver_async: Callable[..., Any] | None = None
+        self.resolver_activation: Callable[..., Any] | None = None
+        self.resolver_activation_async: Callable[..., Any] | None = None
+        self.enter_scope_fns: dict[BaseScope, Callable[..., Any]] = {}
+        self.enter_default: Callable[..., Any] | None = None
         self.has_fallback = has_fallback
 
     def add_factory(
@@ -83,10 +97,14 @@ class Registry:
             self, dependency: DependencyKey,
     ) -> CompiledFactory | None:
         try:
-            return self.compiled[dependency]
+            compiled = self.compiled[dependency]
+            if compiled is COMPILED_MISSING:
+                return None
+            return compiled
         except KeyError:
             factory = self.get_factory(dependency)
             if not factory:
+                self.compiled[dependency] = COMPILED_MISSING
                 return None
             compiled = compile_factory(factory=factory, is_async=False)
             self.compiled[dependency] = compiled
@@ -96,10 +114,14 @@ class Registry:
             self, dependency: DependencyKey,
     ) -> CompiledFactory | None:
         try:
-            return self.compiled_async[dependency]
+            compiled = self.compiled_async[dependency]
+            if compiled is COMPILED_MISSING:
+                return None
+            return compiled
         except KeyError:
             factory = self.get_factory(dependency)
             if not factory:
+                self.compiled_async[dependency] = COMPILED_MISSING
                 return None
             compiled = compile_factory(factory=factory, is_async=True)
             self.compiled_async[dependency] = compiled
@@ -109,10 +131,14 @@ class Registry:
             self, dependency: DependencyKey,
     ) -> CompiledFactory | None:
         try:
-            return self.compiled_activation[dependency]
+            compiled = self.compiled_activation[dependency]
+            if compiled is COMPILED_MISSING:
+                return None
+            return compiled
         except KeyError:
             factory = self.get_factory(dependency)
             if not factory:
+                self.compiled_activation[dependency] = COMPILED_MISSING
                 return None
             compiled = compile_activation(factory=factory, is_async=False)
             self.compiled_activation[dependency] = compiled
@@ -122,10 +148,14 @@ class Registry:
             self, dependency: DependencyKey,
     ) -> CompiledFactory | None:
         try:
-            return self.compiled_activation_async[dependency]
+            compiled = self.compiled_activation_async[dependency]
+            if compiled is COMPILED_MISSING:
+                return None
+            return compiled
         except KeyError:
             factory = self.get_factory(dependency)
             if not factory:
+                self.compiled_activation_async[dependency] = COMPILED_MISSING
                 return None
             compiled = compile_activation(factory=factory, is_async=True)
             self.compiled_activation_async[dependency] = compiled

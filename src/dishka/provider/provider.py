@@ -108,34 +108,33 @@ class Provider(BaseProvider):
             sources: Sequence[DependencySource],
     ) -> None:
         for source in sources:
-            match source:
-                case Activator():
-                    self.activators.append(source)
-                case Alias():
-                    self.aliases.append(source)
-                case ContextVariable(scope=None):
+            if isinstance(source, Activator):
+                self.activators.append(source)
+            elif isinstance(source, Alias):
+                self.aliases.append(source)
+            elif isinstance(source, ContextVariable):
+                if source.scope is None:
                     raise NoScopeSetInContextError(
                         self._provides_name(source),
                         self._name(),
                     )
-                case ContextVariable():
-                    self.context_vars.append(source)
-                case Decorator():
-                    self.decorators.append(source)
-                case Factory(scope=None):
+                self.context_vars.append(source)
+            elif isinstance(source, Decorator):
+                self.decorators.append(source)
+            elif isinstance(source, Factory):
+                if source.scope is None:
                     raise NoScopeSetInProvideError(
                         self._provides_name(source),
                         self._source_name(source),
                         self._name(),
                     )
-                case Factory():
-                    self.factories.append(source)
-                case FactoryUnionMode():
-                    self.factory_union_mode.append(source)
-                case _:
-                    raise TypeError(  # noqa: TRY003
-                        f"Unsupported dependency source type {source}",
-                    )
+                self.factories.append(source)
+            elif isinstance(source, FactoryUnionMode):
+                self.factory_union_mode.append(source)
+            else:
+                raise TypeError(  # noqa: TRY003
+                    f"Unsupported dependency source type {source}",
+                )
 
     def activate(
             self,

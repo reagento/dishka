@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     Literal,
@@ -14,6 +15,8 @@ from typing import (
 from .component import DEFAULT_COMPONENT, Component
 from .marker import Marker
 
+__all__ = ["DependencyKey", "FromComponent", "const_dependency_key"]
+
 
 class _FromComponent(NamedTuple):
     component: Component
@@ -25,53 +28,55 @@ def FromComponent(  # noqa: N802
     return _FromComponent(component)
 
 
-if os.getenv("DISHKA_USE_CYTHON_KEY") == "1":
+class _PyDependencyKey(NamedTuple):
+    type_hint: Any  # type hint or marker instance
+    component: Component | None
+    depth: int = 0  # counter to distinguish decorated/united factories
+
+    def with_component(self, component: Component | None) -> _PyDependencyKey:
+        if self.component is not None:
+            return self
+        return _PyDependencyKey(
+            type_hint=self.type_hint,
+            component=component,
+            depth=self.depth,
+        )
+
+    def __str__(self) -> str:
+        if self.depth == 0:
+            return f"({self.type_hint}, component={self.component!r})"
+        return (f"({self.type_hint},"
+                f" component={self.component!r},"
+                f" depth={self.depth})")
+
+    def is_const(self) -> bool:
+        return (
+            get_origin(self.type_hint) is Literal and
+            len(get_args(self.type_hint)) == 1
+        )
+
+    def is_type_var(self) -> bool:
+        return isinstance(self.type_hint, TypeVar)
+
+    def get_const_value(self) -> Any:
+        return get_args(self.type_hint)[0]
+
+    def is_marker(self) -> bool:
+        return isinstance(self.type_hint, Marker) or (
+            isinstance(self.type_hint, type) and
+            issubclass(self.type_hint, Marker)
+        )
+
+
+if TYPE_CHECKING:
+    DependencyKey = _PyDependencyKey
+elif os.getenv("DISHKA_USE_CYTHON_KEY") == "1":
     try:
         from ._key_c import DependencyKey
-    except Exception:
-        DependencyKey = None
+    except ImportError:
+        DependencyKey = _PyDependencyKey
 else:
-    DependencyKey = None
-
-if DependencyKey is None:
-    class DependencyKey(NamedTuple):
-        type_hint: Any  # type hint or marker instance
-        component: Component | None
-        depth: int = 0  # counter to distinguish decorated/united factories
-
-        def with_component(self, component: Component | None) -> DependencyKey:
-            if self.component is not None:
-                return self
-            return DependencyKey(
-                type_hint=self.type_hint,
-                component=component,
-                depth=self.depth,
-            )
-
-        def __str__(self) -> str:
-            if self.depth == 0:
-                return f"({self.type_hint}, component={self.component!r})"
-            return (f"({self.type_hint},"
-                    f" component={self.component!r},"
-                    f" depth={self.depth})")
-
-        def is_const(self) -> bool:
-            return (
-                get_origin(self.type_hint) is Literal and
-                len(get_args(self.type_hint)) == 1
-            )
-
-        def is_type_var(self) -> bool:
-            return isinstance(self.type_hint, TypeVar)
-
-        def get_const_value(self) -> Any:
-            return get_args(self.type_hint)[0]
-
-        def is_marker(self) -> bool:
-            return isinstance(self.type_hint, Marker) or (
-                isinstance(self.type_hint, type) and
-                issubclass(self.type_hint, Marker)
-            )
+    DependencyKey = _PyDependencyKey
 
 
 def const_dependency_key(value: Any) -> DependencyKey:

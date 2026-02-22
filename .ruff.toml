@@ -50,6 +50,10 @@ lint.ignore = [
     "PLW1641",
     "PYI059"
 ]
+"tests/benchmarks/**" = [
+    "E501",
+    "I001",
+]
 
 [per-file-target-version]
 "tests/unit/container/pep695_new_syntax.py" = "py312"

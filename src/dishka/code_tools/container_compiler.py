@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from typing import Any
+from typing import Any, cast
 
 from dishka.code_tools.code_builder import CodeBuilder
 from dishka.exceptions import NoActiveFactoryError, NoFactoryError
 from dishka.registry import COMPILED_MISSING, Registry
 
 
-def _compile_resolver(*, registry: Registry, is_async: bool) -> Callable[..., Any]:
+def _compile_resolver(  # noqa: PLR0915
+    *,
+    registry: Registry,
+    is_async: bool,
+) -> Callable[..., Any]:
     builder = CodeBuilder(is_async=is_async)
     compiled_map = registry.compiled_async if is_async else registry.compiled
     get_compiled = (
@@ -54,7 +58,10 @@ def _compile_resolver(*, registry: Registry, is_async: bool) -> Callable[..., An
         missing_name = builder.global_(COMPILED_MISSING, "compiled_missing")
         builder.assign_local("compiled", f"{compiled_map_name}.get(key)")
         with builder.if_(f"compiled is None or compiled is {missing_name}"):
-            builder.assign_local("compiled", builder.call(get_compiled_name, "key"))
+            builder.assign_local(
+                "compiled",
+                builder.call(get_compiled_name, "key"),
+            )
             with builder.if_("compiled is None"):
                 with builder.if_("parent_get is None"):
                     abstract_call = builder.call(get_more_abstract_name, "key")
@@ -62,10 +69,8 @@ def _compile_resolver(*, registry: Registry, is_async: bool) -> Callable[..., An
                     error_call = builder.call(
                         no_factory_name,
                         "key",
-                        **{
-                            "suggest_abstract_factories": abstract_call,
-                            "suggest_concrete_factories": concrete_call,
-                        },
+                        suggest_abstract_factories=abstract_call,
+                        suggest_concrete_factories=concrete_call,
                     )
                     builder.raise_(error_call)
                 with builder.else_():
@@ -74,7 +79,10 @@ def _compile_resolver(*, registry: Registry, is_async: bool) -> Callable[..., An
                         builder.statement("fallback_keys.add(key)")
                         call_parent = builder.call("parent_get", "key")
                         if is_async:
-                            builder.assign_local("solved", builder.await_(call_parent))
+                            builder.assign_local(
+                                "solved",
+                                builder.await_(call_parent),
+                            )
                         else:
                             builder.assign_local("solved", call_parent)
                         builder.assign_expr("cache[key]", "solved")
@@ -124,7 +132,7 @@ def _compile_resolver(*, registry: Registry, is_async: bool) -> Callable[..., An
             builder.statement("raise")
 
     compiled = builder.compile(f"<{function_name}>")
-    return compiled[function_name]
+    return cast(Callable[..., Any], compiled[function_name])
 
 
 def _compile_activation_resolver(
@@ -147,7 +155,11 @@ def _compile_activation_resolver(
     compiled_map_name = builder.global_(compiled_map, "compiled_map")
     get_compiled_name = builder.global_(get_compiled, "get_compiled")
 
-    function_name = "resolve_activation_async" if is_async else "resolve_activation"
+    function_name = (
+        "resolve_activation_async"
+        if is_async
+        else "resolve_activation"
+    )
     with builder.def_(
         function_name,
         ["getter", "exits", "cache", "context", "key", "parent_has"],
@@ -155,7 +167,10 @@ def _compile_activation_resolver(
         missing_name = builder.global_(COMPILED_MISSING, "compiled_missing")
         builder.assign_local("compiled", f"{compiled_map_name}.get(key)")
         with builder.if_(f"compiled is None or compiled is {missing_name}"):
-            builder.assign_local("compiled", builder.call(get_compiled_name, "key"))
+            builder.assign_local(
+                "compiled",
+                builder.call(get_compiled_name, "key"),
+            )
             with builder.if_("compiled is None"):
                 with builder.if_("parent_has is None"):
                     builder.return_(builder.global_(False))
@@ -178,7 +193,7 @@ def _compile_activation_resolver(
         builder.return_(builder.call("bool", call_compiled))
 
     compiled = builder.compile(f"<{function_name}>")
-    return compiled[function_name]
+    return cast(Callable[..., Any], compiled[function_name])
 
 
 def compile_resolvers(registry: Registry) -> None:
@@ -220,7 +235,9 @@ def _compile_enter_chain(
 
     with builder.def_(name, ["parent", "context", "lock_factory"]):
         if not chain:
-            builder.raise_(builder.call(builder.global_(RuntimeError), "No chain"))
+            builder.raise_(
+                builder.call(builder.global_(RuntimeError), "No chain"),
+            )
         builder.assign_local(
             "child",
             (
@@ -246,7 +263,7 @@ def _compile_enter_chain(
         builder.return_("child")
 
     compiled = builder.compile(f"<{name}>")
-    return compiled[name]
+    return cast(Callable[..., Any], compiled[name])
 
 
 def compile_scope_enters(
@@ -277,11 +294,12 @@ def compile_scope_enters(
                 f"enter_{registry.scope.name}_"
                 f"to_{target_registry.scope.name}"
             )
-            registry.enter_scope_fns[target_registry.scope] = _compile_enter_chain(
+            enter_fn = _compile_enter_chain(
                 container_cls=container_cls,
                 chain=chain,
                 name=name,
             )
+            registry.enter_scope_fns[target_registry.scope] = enter_fn
 
         for target_idx in range(idx + 1, len(registries)):
             target_registry = registries[target_idx]

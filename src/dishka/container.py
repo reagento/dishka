@@ -5,7 +5,7 @@ from collections.abc import Callable, MutableMapping
 from contextlib import AbstractContextManager
 from threading import Lock
 from types import TracebackType
-from typing import Any, TypeVar, overload
+from typing import Any, TypeVar, cast, overload
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.factory_type import FactoryType
@@ -13,7 +13,10 @@ from dishka.entities.key import DependencyKey
 from dishka.entities.marker import Has, HasContext
 from dishka.entities.scope import BaseScope, Scope
 from dishka.provider import Provider, activate
-from .code_tools.container_compiler import compile_resolvers, compile_scope_enters
+from .code_tools.container_compiler import (
+    compile_resolvers,
+    compile_scope_enters,
+)
 from .container_objects import Exit
 from .context_proxy import ContextProxy
 from .entities.validation_settings import (
@@ -204,7 +207,7 @@ class Container:
         if resolver is not None:
             parent_get = None
             if self.parent_container is not None:
-                parent_get = self.parent_container._get
+                parent_get = self.parent_container._get  # noqa: SLF001
             return resolver(
                 self._get_unlocked,
                 self._exits,
@@ -268,14 +271,17 @@ class Container:
         if resolver is not None:
             parent_has = None
             if self.parent_container is not None:
-                parent_has = self.parent_container._has
-            return resolver(
-                self._get_unlocked,
-                self._exits,
-                self._cache,
-                self._context,
-                marker,
-                parent_has,
+                parent_has = self.parent_container._has  # noqa: SLF001
+            return cast(
+                bool,
+                resolver(
+                    self._get_unlocked,
+                    self._exits,
+                    self._cache,
+                    self._context,
+                    marker,
+                    parent_has,
+                ),
             )
         compiled = self.registry.get_compiled_activation(marker)
         if not compiled:

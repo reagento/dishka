@@ -1,13 +1,14 @@
 from abc import ABC, ABCMeta
+from collections.abc import Callable
 from enum import Enum
 from typing import (
     Any,
-    Callable,
     Final,
     Generic,
     Protocol,
     TypeAlias,
     TypeVar,
+    cast,
     get_args,
     get_origin,
 )
@@ -41,7 +42,17 @@ IGNORE_TYPES: Final = (
 )
 
 CompiledFactories: TypeAlias = dict[DependencyKey, CompiledFactory]
-COMPILED_MISSING = object()
+
+
+class _CompiledMissing:
+    __slots__ = ()
+
+
+CompiledFactoriesWithMissing: TypeAlias = dict[
+    DependencyKey,
+    CompiledFactory | _CompiledMissing,
+]
+COMPILED_MISSING: Final = _CompiledMissing()
 
 
 class Registry:
@@ -64,10 +75,10 @@ class Registry:
     def __init__(self, scope: BaseScope, *, has_fallback: bool) -> None:
         self.scope = scope
         self.factories: dict[DependencyKey, Factory] = {}
-        self.compiled: CompiledFactories = {}
-        self.compiled_async: CompiledFactories = {}
-        self.compiled_activation: CompiledFactories = {}
-        self.compiled_activation_async: CompiledFactories = {}
+        self.compiled: CompiledFactoriesWithMissing = {}
+        self.compiled_async: CompiledFactoriesWithMissing = {}
+        self.compiled_activation: CompiledFactoriesWithMissing = {}
+        self.compiled_activation_async: CompiledFactoriesWithMissing = {}
         self.resolver: Callable[..., Any] | None = None
         self.resolver_async: Callable[..., Any] | None = None
         self.resolver_activation: Callable[..., Any] | None = None
@@ -98,9 +109,6 @@ class Registry:
     ) -> CompiledFactory | None:
         try:
             compiled = self.compiled[dependency]
-            if compiled is COMPILED_MISSING:
-                return None
-            return compiled
         except KeyError:
             factory = self.get_factory(dependency)
             if not factory:
@@ -109,15 +117,16 @@ class Registry:
             compiled = compile_factory(factory=factory, is_async=False)
             self.compiled[dependency] = compiled
             return compiled
+        else:
+            if compiled is COMPILED_MISSING:
+                return None
+            return cast(CompiledFactory, compiled)
 
     def get_compiled_async(
             self, dependency: DependencyKey,
     ) -> CompiledFactory | None:
         try:
             compiled = self.compiled_async[dependency]
-            if compiled is COMPILED_MISSING:
-                return None
-            return compiled
         except KeyError:
             factory = self.get_factory(dependency)
             if not factory:
@@ -126,15 +135,16 @@ class Registry:
             compiled = compile_factory(factory=factory, is_async=True)
             self.compiled_async[dependency] = compiled
             return compiled
+        else:
+            if compiled is COMPILED_MISSING:
+                return None
+            return cast(CompiledFactory, compiled)
 
     def get_compiled_activation(
             self, dependency: DependencyKey,
     ) -> CompiledFactory | None:
         try:
             compiled = self.compiled_activation[dependency]
-            if compiled is COMPILED_MISSING:
-                return None
-            return compiled
         except KeyError:
             factory = self.get_factory(dependency)
             if not factory:
@@ -143,15 +153,16 @@ class Registry:
             compiled = compile_activation(factory=factory, is_async=False)
             self.compiled_activation[dependency] = compiled
             return compiled
+        else:
+            if compiled is COMPILED_MISSING:
+                return None
+            return cast(CompiledFactory, compiled)
 
     def get_compiled_activation_async(
             self, dependency: DependencyKey,
     ) -> CompiledFactory | None:
         try:
             compiled = self.compiled_activation_async[dependency]
-            if compiled is COMPILED_MISSING:
-                return None
-            return compiled
         except KeyError:
             factory = self.get_factory(dependency)
             if not factory:
@@ -160,6 +171,10 @@ class Registry:
             compiled = compile_activation(factory=factory, is_async=True)
             self.compiled_activation_async[dependency] = compiled
             return compiled
+        else:
+            if compiled is COMPILED_MISSING:
+                return None
+            return cast(CompiledFactory, compiled)
 
     def get_factory(self, dependency: DependencyKey) -> Factory | None:
         try:

@@ -18,7 +18,8 @@ from dishka.entities.marker import (
 from dishka.exceptions import (
     NoActiveFactoryError,
     NoContextValueError,
-    UnsupportedFactoryError, NoFactoryError,
+    NoFactoryError,
+    UnsupportedFactoryError,
 )
 from dishka.text_rendering import get_name
 
@@ -323,12 +324,12 @@ def compile_factory(*, factory: Factory, is_async: bool, compiled_deps: dict[Dep
                         body_generator(builder, source_call, factory, compiled_deps)
         with builder.except_(NoFactoryError, as_="e"):
             builder.statement(builder.call(
-                "e.add_path", builder.global_(factory)
+                "e.add_path", builder.global_(factory),
             ))
             builder.statement("raise")
         with builder.except_(NoActiveFactoryError, as_="e"):
             builder.statement(builder.call(
-                "e.add_path", builder.global_(factory)
+                "e.add_path", builder.global_(factory),
             ))
             builder.statement("raise")
         builder.cache(factory)

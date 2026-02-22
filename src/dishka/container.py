@@ -1,11 +1,9 @@
-from __future__ import annotations
-
 import warnings
 from collections.abc import Callable, MutableMapping
 from contextlib import AbstractContextManager
 from threading import Lock
 from types import TracebackType
-from typing import Any, TypeVar, cast, overload
+from typing import Any, TypeVar, overload
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.factory_type import FactoryType
@@ -15,7 +13,6 @@ from dishka.entities.scope import BaseScope, Scope
 from dishka.provider import Provider, activate
 from .container_objects import Exit
 from .context_proxy import ContextProxy
-from .dependency_source import Factory
 from .entities.validation_settings import (
     DEFAULT_VALIDATION,
     ValidationSettings,
@@ -44,15 +41,15 @@ class Container:
         "close_parent",
         "lock",
         "parent_container",
-        "registry",
         "parent_getter",
+        "registry",
     )
 
     def __init__(
             self,
             registry: Registry,
             *child_registries: Registry,
-            parent_container: Container | None = None,
+            parent_container: "Container | None" = None,
             context: dict[Any, Any] | None = None,
             lock_factory: Callable[
                 [], AbstractContextManager[Any],
@@ -196,7 +193,7 @@ class Container:
                     suggest_concrete_factories=concrete_dependencies,
                 )
             try:
-                return self.parent_container._get(key)  # noqa: SLF001
+                return self.parent_getter(key)
             except NoFactoryError as ex:
                 abstract_dependencies = (
                     self.registry.get_more_abstract_factories(key)
@@ -263,25 +260,6 @@ class Container:
 
     def __enter__(self):
         return self
-
-
-
-class ContextWrapper:
-    __slots__ = ("container",)
-
-    def __init__(self, container: Container):
-        self.container = container
-
-    def __enter__(self) -> Container:
-        return self.container
-
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None = None,
-        exc_val: BaseException | None = None,
-        exc_tb: TracebackType | None = None,
-    ) -> None:
-        self.container.close(exception=exc_val)
 
 
 class HasProvider(Provider):

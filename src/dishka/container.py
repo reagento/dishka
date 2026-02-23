@@ -42,7 +42,7 @@ class Container:
         "_context",
         "_exits",
         "child_registries",
-        "close_parent",
+        "parent_closer",
         "lock",
         "parent_container",
         "parent_getter",
@@ -58,7 +58,7 @@ class Container:
             lock_factory: Callable[
                 [], AbstractContextManager[Any],
             ] | None = None,
-            close_parent: ExitCallable | None = None,
+            parent_closer: ExitCallable | None = None,
             parent_getter: Callable[[DependencyKey], Any] | None = None,
     ):
         self.registry = registry
@@ -76,7 +76,7 @@ class Container:
         else:
             self.lock = lock_factory()
         self._exits: list[Exit] = []
-        self.close_parent = close_parent
+        self.parent_closer = parent_closer
         self.parent_getter = parent_getter
 
     @property
@@ -125,7 +125,7 @@ class Container:
                     parent_container=child,
                     context=context,
                     lock_factory=lock_factory,
-                    close_parent=child.__exit__,
+                    parent_closer=child.__exit__,
                     parent_getter=child._get,
                 )
         else:
@@ -137,7 +137,7 @@ class Container:
                     parent_container=child,
                     context=context,
                     lock_factory=lock_factory,
-                    close_parent=child.__exit__,
+                    parent_closer=child.__exit__,
                     parent_getter=child._get,
                 )
         return child
@@ -245,9 +245,9 @@ class Container:
                 else:
                     errors.append(err)
         self._cache = {}
-        if self.close_parent:
+        if self.parent_closer:
             try:
-                self.close_parent(exc_type, exception, exc_tb)
+                self.parent_closer(exc_type, exception, exc_tb)
             except Exception as err:  # noqa: BLE001
                 if errors is None:
                     errors = [err]
@@ -326,7 +326,7 @@ def make_container(
                 parent_container=container,
                 context=context,
                 lock_factory=lock_factory,
-                close_parent=container.__exit__,
+                parent_closer=container.__exit__,
                 parent_getter=container._get, # noqa: SLF001
             )
     else:
@@ -336,7 +336,7 @@ def make_container(
                 parent_container=container,
                 context=context,
                 lock_factory=lock_factory,
-                close_parent=container.__exit__,
+                parent_closer=container.__exit__,
                 parent_getter=container._get, # noqa: SLF001
             )
     return container

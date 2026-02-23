@@ -15,7 +15,7 @@ def test_simple():
 
     complex_key = DependencyKey(complex, DEFAULT_COMPONENT)
     proxy[complex_key] = 3
-    assert context[complex_key] == cache[complex_key] == 3
+    assert context[complex] == cache[complex_key] == 3
 
     with pytest.raises(RuntimeError):
         del proxy[complex_key]

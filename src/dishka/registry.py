@@ -1,3 +1,4 @@
+import itertools
 from abc import ABC, ABCMeta
 from enum import Enum
 from typing import (
@@ -24,7 +25,7 @@ from .dependency_source.type_match import (
 )
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
-from .entities.marker import Marker
+from .entities.marker import Marker, unpack_marker
 from .entities.scope import BaseScope
 
 IGNORE_TYPES: Final = (
@@ -79,6 +80,45 @@ class Registry:
             )
             self.factories[origin_key] = factory
 
+    def collect_deps(self, factory: Factory) -> list[DependencyKey]:
+        return list(itertools.chain(
+            factory.dependencies,
+            factory.kw_dependencies.values(),
+            (f.provides for f in factory.when_dependencies),
+            (
+                DependencyKey(m, f.when_component)
+                for f in factory.when_dependencies
+                for m in unpack_marker(f.when_override)
+            ),
+            (
+                DependencyKey(m, factory.when_component)
+                for marker in (factory.when_active, factory.when_override)
+                for m in unpack_marker(marker)
+            ),
+        ))
+
+    def _compile_deps(
+        self,
+        factory: Factory,
+    ) -> dict[DependencyKey, CompiledFactory]:
+        res = {}
+        for dep in self.collect_deps(factory):
+            compiled = self.get_compiled(dep)
+            if compiled:
+                res[dep] = compiled
+        return res
+
+    def _compile_deps_async(
+        self,
+        factory: Factory,
+    ) -> dict[DependencyKey, CompiledFactory]:
+        res = {}
+        for dep in self.collect_deps(factory):
+            compiled = self.get_compiled_async(dep)
+            if compiled:
+                res[dep] = compiled
+        return res
+
     def get_compiled(
             self, dependency: DependencyKey,
     ) -> CompiledFactory | None:
@@ -88,7 +128,12 @@ class Registry:
             factory = self.get_factory(dependency)
             if not factory:
                 return None
-            compiled = compile_factory(factory=factory, is_async=False)
+
+            compiled = compile_factory(
+                factory=factory,
+                is_async=False,
+                compiled_deps=self._compile_deps(factory),
+            )
             self.compiled[dependency] = compiled
             return compiled
 
@@ -101,7 +146,11 @@ class Registry:
             factory = self.get_factory(dependency)
             if not factory:
                 return None
-            compiled = compile_factory(factory=factory, is_async=True)
+            compiled = compile_factory(
+                factory=factory,
+                is_async=True,
+                compiled_deps=self._compile_deps_async(factory),
+            )
             self.compiled_async[dependency] = compiled
             return compiled
 
@@ -114,7 +163,12 @@ class Registry:
             factory = self.get_factory(dependency)
             if not factory:
                 return None
-            compiled = compile_activation(factory=factory, is_async=False)
+
+            compiled = compile_activation(
+                factory=factory,
+                is_async=False,
+                compiled_deps=self._compile_deps(factory),
+            )
             self.compiled_activation[dependency] = compiled
             return compiled
 
@@ -127,7 +181,11 @@ class Registry:
             factory = self.get_factory(dependency)
             if not factory:
                 return None
-            compiled = compile_activation(factory=factory, is_async=True)
+            compiled = compile_activation(
+                factory=factory,
+                is_async=True,
+                compiled_deps=self._compile_deps_async(factory),
+            )
             self.compiled_activation_async[dependency] = compiled
             return compiled
 

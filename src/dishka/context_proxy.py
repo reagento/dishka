@@ -7,7 +7,7 @@ from .entities.key import DependencyKey
 class ContextProxy(MutableMapping[DependencyKey, Any]):
     def __init__(
             self,
-            context: dict[DependencyKey, Any],
+            context: dict[Any, Any],
             cache: dict[DependencyKey, Any],
     ) -> None:
         self._cache = cache
@@ -15,7 +15,7 @@ class ContextProxy(MutableMapping[DependencyKey, Any]):
 
     def __setitem__(self, key: DependencyKey, value: Any) -> None:
         self._cache[key] = value
-        self._context[key] = value
+        self._context[key.type_hint] = value
 
     def __delitem__(self, key: DependencyKey) -> NoReturn:
         raise RuntimeError(  # noqa: TRY003

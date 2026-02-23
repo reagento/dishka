@@ -165,9 +165,14 @@ class CodeBuilder:
     def except_(
         self,
         exception: type[Exception],
+        as_: str = "",
     ) -> AbstractContextManager[None]:
         name = self.global_(exception)
-        self.statement(f"except {name}:")
+        if as_:
+            as_str = " as " + as_
+        else:
+            as_str = ""
+        self.statement(f"except {name}{as_str}:")
         return self.block()
 
     def raise_(self, expr: str) -> None:
@@ -188,6 +193,13 @@ class CodeBuilder:
         else:
             items_str = ", ".join(items)
         return f"[{items_str}]"
+
+    def tuple_literal(self, *items: str) -> str:
+        if len(items) > MAX_ITEMS_PER_LINE:
+            items_str = "\n, ".join(items)
+        else:
+            items_str = ", ".join(items)
+        return f"({items_str})"
 
     def compile(self, source_file_name: str) -> dict[str, Any]:
         lines = self.code.splitlines(keepends=True)

@@ -9,7 +9,7 @@ include = [
 exclude = [
     "src/dishka/_adaptix/**",
 ]
-
+lint.typing-extensions = false
 lint.select = [
     "ALL"
 ]

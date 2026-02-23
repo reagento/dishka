@@ -68,11 +68,11 @@ Some of the integrations are supported by a community, refer to their documentat
      -
    * - `Pyramid <https://github.com/WorkHardes/dishka-pyramid>`_ (:abbr:`com (Community support)`)
      -
-     -
+     - `Jobify <https://github.com/C3EQUALZz/dishka-jobify>`_ (:abbr:`com (Community support)`)
      -
    * -  :ref:`Sanic`
      -
-     - `Jobify <https://github.com/C3EQUALZz/dishka-jobify>`_ (:abbr:`com (Community support)`)
+     -
      -
    * -  `Starlette <https://github.com/reagento/starlette-dishka>`_ (:abbr:`com (Community support)`)
      -

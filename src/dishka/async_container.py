@@ -204,11 +204,9 @@ class AsyncContainer:
             raise
 
     def _get_sync(self, key: DependencyKey) -> Any:
-        if key in self._cache:
-            return self._cache[key]
         compiled = self.registry.get_compiled(key)
         if compiled is None:
-            if self.parent_getter is None:
+            if self.parent_container is None:
                 abstract_dependencies = (
                     self.registry.get_more_abstract_factories(key)
                 )
@@ -234,7 +232,7 @@ class AsyncContainer:
                 raise
 
         return compiled(
-            self.parent_container.get_sync,
+            self.parent_container.get_sync if self.parent_container else None,
             self._exits,
             self._cache,
             self._context,
@@ -248,8 +246,6 @@ class AsyncContainer:
             return await self._get_unlocked(key)
 
     async def _get_unlocked(self, key: DependencyKey) -> Any:
-        if key in self._cache:
-            return self._cache[key]
         compiled = self.registry.get_compiled_async(key)
         if compiled is None:
             if self.parent_getter is None:

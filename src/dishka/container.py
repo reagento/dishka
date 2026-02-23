@@ -3,7 +3,7 @@ from collections.abc import Callable, MutableMapping
 from contextlib import AbstractContextManager
 from threading import Lock
 from types import TracebackType
-from typing import Any, TypeVar, overload
+from typing import Any, Self, TypeVar, overload
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.key import DependencyKey
@@ -222,7 +222,7 @@ class Container:
         self.__exit__(None, exception, None)
 
 
-    def __enter__(self) -> "Container":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(

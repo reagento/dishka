@@ -299,7 +299,7 @@ BODY_GENERATORS: dict[FactoryType, BodyGenerator] = {
     FactoryType.ALIAS: _alias_factory_body,
     FactoryType.SELECTOR: _selector_factory_body,
     # special case, value not used
-    FactoryType.COLLECTION: lambda _, __, ___: None,
+    FactoryType.COLLECTION: lambda _, __, ___, ____: None,
 }
 
 

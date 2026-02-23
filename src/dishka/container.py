@@ -67,7 +67,7 @@ class Container:
             self._context = {Container: self}
         else:
             self._context = {Container: self, **context}
-        self._cache = {}
+        self._cache: dict[DependencyKey, object] = {}
         self.parent_container = parent_container
 
         self.lock: AbstractContextManager[Any] | None
@@ -184,7 +184,7 @@ class Container:
     def _get_unlocked(self, key: DependencyKey) -> Any:
         compiled = self.registry.get_compiled(key)
         if compiled is None:
-            if self.parent_container is None:
+            if self.parent_getter is None:
                 abstract_dependencies = (
                     self.registry.get_more_abstract_factories(key)
                 )
@@ -219,7 +219,11 @@ class Container:
 
 
     def close(self, exception: BaseException | None = None) -> None:
-        self.__exit__(type(exception), exception, None)
+        self.__exit__(None, exception, None)
+
+
+    def __enter__(self) -> "Container":
+        return self
 
     def __exit__(
             self,
@@ -232,7 +236,7 @@ class Container:
             gen, _agen = self._exits.pop()
             try:
                 if gen is not None:
-                    gen.send(exception)  # type: ignore[attr-defined]
+                    gen.send(exception)
             except StopIteration:
                 pass
             except Exception as err:  # noqa: BLE001
@@ -268,10 +272,6 @@ class Container:
 
     def _has_context(self, marker: Any) -> bool:
         return marker in self._context
-
-
-    def __enter__(self):
-        return self
 
 
 class HasProvider(Provider):

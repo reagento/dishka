@@ -1,6 +1,6 @@
 import warnings
 from asyncio import Lock
-from collections.abc import Callable, MutableMapping
+from collections.abc import Awaitable, Callable, MutableMapping
 from contextlib import AbstractAsyncContextManager
 from types import TracebackType
 from typing import Any, TypeVar, overload
@@ -32,7 +32,7 @@ T = TypeVar("T")
 
 ExitCallable = Callable[
     [type | None, BaseException | None, TracebackType | None],
-    None,
+    Awaitable[None],
 ]
 
 
@@ -67,7 +67,7 @@ class AsyncContainer:
             self._context = {AsyncContainer: self}
         else:
             self._context = {AsyncContainer: self, **context}
-        self._cache = {CONTAINER_KEY: self}
+        self._cache: dict[DependencyKey, object] = {}
         self.parent_container = parent_container
 
         self.lock: AbstractAsyncContextManager[Any] | None
@@ -187,7 +187,7 @@ class AsyncContainer:
             return self._cache[key]
         compiled = self.registry.get_compiled_async(key)
         if compiled is None:
-            if self.parent_container is None:
+            if self.parent_getter is None:
                 abstract_dependencies = (
                     self.registry.get_more_abstract_factories(key)
                 )
@@ -220,9 +220,9 @@ class AsyncContainer:
         )
 
     async def close(self, exception: BaseException | None = None) -> None:
-        await self.__aexit__(type(exception), exception, None)
+        await self.__aexit__(None, exception, None)
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "AsyncContainer":
         return self
 
     async def __aexit__(  # noqa: C901
@@ -236,9 +236,9 @@ class AsyncContainer:
             gen, agen = self._exits.pop()
             try:
                 if agen is not None:
-                    await agen.asend(exception)  # type: ignore[attr-defined]
+                    await agen.asend(exception)
                 elif gen is not None:
-                    gen.send(exception)  # type: ignore[attr-defined]
+                    gen.send(exception)
             except (StopIteration, StopAsyncIteration):
                 pass
             except Exception as err:  # noqa: BLE001

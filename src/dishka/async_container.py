@@ -3,7 +3,7 @@ from asyncio import Lock
 from collections.abc import Awaitable, Callable, MutableMapping
 from contextlib import AbstractAsyncContextManager
 from types import TracebackType
-from typing import Any, Self, TypeVar, overload
+from typing import Any, TypeVar, overload
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.key import DependencyKey
@@ -222,7 +222,7 @@ class AsyncContainer:
     async def close(self, exception: BaseException | None = None) -> None:
         await self.__aexit__(None, exception, None)
 
-    async def __aenter__(self) -> Self:
+    async def __aenter__(self) -> "AsyncContainer":
         return self
 
     async def __aexit__(  # noqa: C901

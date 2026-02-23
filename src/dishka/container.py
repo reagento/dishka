@@ -31,6 +31,11 @@ from .registry import Registry
 T = TypeVar("T")
 
 
+ExitCallable = Callable[
+    [type | None, BaseException | None, TracebackType | None],
+    None,
+]
+
 class Container:
     __slots__ = (
         "_cache",
@@ -53,22 +58,23 @@ class Container:
             lock_factory: Callable[
                 [], AbstractContextManager[Any],
             ] | None = None,
-            close_parent: Callable = None,
-            parent_getter: Callable = None,
+            close_parent: ExitCallable | None = None,
+            parent_getter: Callable[[DependencyKey], Any] | None = None,
     ):
         self.registry = registry
         self.child_registries = child_registries
-        self._context = {Container: self}
-        if context:
-            self._context.update(context)
+        if context is None:
+            self._context = {Container: self}
+        else:
+            self._context = {Container: self, **context}
         self._cache = {}
         self.parent_container = parent_container
 
         self.lock: AbstractContextManager[Any] | None
-        if lock_factory:
-            self.lock = lock_factory()
-        else:
+        if lock_factory is None:
             self.lock = None
+        else:
+            self.lock = lock_factory()
         self._exits: list[Exit] = []
         self.close_parent = close_parent
         self.parent_getter = parent_getter
@@ -160,7 +166,7 @@ class Container:
         lock = self.lock
         key = DependencyKey(dependency_type, component)
         try:
-            if not lock:
+            if lock is None:
                 return self._get_unlocked(key)
             with lock:
                 return self._get_unlocked(key)
@@ -170,15 +176,15 @@ class Container:
 
     def _get(self, key: DependencyKey) -> Any:
         lock = self.lock
-        if not lock:
+        if lock is None:
             return self._get_unlocked(key)
         with lock:
             return self._get_unlocked(key)
 
     def _get_unlocked(self, key: DependencyKey) -> Any:
         compiled = self.registry.get_compiled(key)
-        if not compiled:
-            if not self.parent_container:
+        if compiled is None:
+            if self.parent_container is None:
                 abstract_dependencies = (
                     self.registry.get_more_abstract_factories(key)
                 )
@@ -221,23 +227,30 @@ class Container:
             exception: BaseException | None = None,
             exc_tb: TracebackType | None = None,
     ) -> None:
-        errors = []
-        for gen, agen in reversed(self._exits):
+        errors = None
+        while self._exits:
+            gen, _agen = self._exits.pop()
             try:
                 if gen is not None:
                     gen.send(exception)  # type: ignore[attr-defined]
-            except StopIteration:  # noqa: PERF203
+            except StopIteration:
                 pass
             except Exception as err:  # noqa: BLE001
-                errors.append(err)
-        self._cache = {CONTAINER_KEY: self}
+                if errors is None:
+                    errors = [err]
+                else:
+                    errors.append(err)
+        self._cache = {}
         if self.close_parent:
             try:
                 self.close_parent(exc_type, exception, exc_tb)
             except Exception as err:  # noqa: BLE001
-                errors.append(err)
+                if errors is None:
+                    errors = [err]
+                else:
+                    errors.append(err)
 
-        if errors:
+        if errors is not None:
             raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
     def _has(self, marker: DependencyKey) -> bool:
@@ -314,7 +327,7 @@ def make_container(
                 context=context,
                 lock_factory=lock_factory,
                 close_parent=container.__exit__,
-                parent_getter=container._get,
+                parent_getter=container._get, # noqa: SLF001
             )
     else:
         while container.registry.scope is not start_scope:
@@ -324,7 +337,7 @@ def make_container(
                 context=context,
                 lock_factory=lock_factory,
                 close_parent=container.__exit__,
-                parent_getter=container._get,
+                parent_getter=container._get, # noqa: SLF001
             )
     return container
 

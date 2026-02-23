@@ -81,25 +81,26 @@ class Registry:
             self.factories[origin_key] = factory
 
     def collect_deps(self, factory: Factory) -> list[DependencyKey]:
-        return [
-            dep
-            for dep in itertools.chain(
-                factory.dependencies,
-                factory.kw_dependencies.values(),
-                (f.provides for f in factory.when_dependencies),
-                (
-                    DependencyKey(m, f.when_component)
-                    for f in factory.when_dependencies
-                    for m in unpack_marker(f.when_override)
-                ),
-                (
-                    DependencyKey(m, factory.when_component)
-                    for marker in (factory.when_active, factory.when_override)
-                    for m in unpack_marker(marker)
-                ),
-            )
-        ]
-    def _compile_deps(self, factory: Factory) -> dict[DependencyKey, CompiledFactory]:
+        return list(itertools.chain(
+            factory.dependencies,
+            factory.kw_dependencies.values(),
+            (f.provides for f in factory.when_dependencies),
+            (
+                DependencyKey(m, f.when_component)
+                for f in factory.when_dependencies
+                for m in unpack_marker(f.when_override)
+            ),
+            (
+                DependencyKey(m, factory.when_component)
+                for marker in (factory.when_active, factory.when_override)
+                for m in unpack_marker(marker)
+            ),
+        ))
+
+    def _compile_deps(
+        self,
+        factory: Factory,
+    ) -> dict[DependencyKey, CompiledFactory]:
         res = {}
         for dep in self.collect_deps(factory):
             compiled = self.get_compiled(dep)
@@ -107,7 +108,10 @@ class Registry:
                 res[dep] = compiled
         return res
 
-    def _compile_deps_async(self, factory: Factory) -> dict[DependencyKey, CompiledFactory]:
+    def _compile_deps_async(
+        self,
+        factory: Factory,
+    ) -> dict[DependencyKey, CompiledFactory]:
         res = {}
         for dep in self.collect_deps(factory):
             compiled = self.get_compiled_async(dep)

@@ -55,14 +55,20 @@ class FactoryBuilder(CodeBuilder):
             ["getter", "exits", "cache", "context"],
         )
 
-    def getter(self, obj: DependencyKey, compiled_deps: dict[DependencyKey, CompiledFactory]) -> str:
+    def getter(
+        self,
+        obj: DependencyKey,
+        compiled_deps: dict[DependencyKey, CompiledFactory],
+    ) -> str:
         if obj.is_const():
             return self.global_(obj.get_const_value())
         if obj.type_hint is DependencyKey:
             return self.provides_name
         if obj in compiled_deps:
             factory = self.global_(compiled_deps[obj])
-            return self.await_(self.call(factory, "getter", "exits", "cache", "context"))
+            return self.await_(
+                self.call(factory, "getter", "exits", "cache", "context"),
+            )
         return self.await_(self.call("getter", self.global_(obj)))
 
     def cache(self, factory: Factory) -> None:
@@ -97,7 +103,9 @@ class FactoryBuilder(CodeBuilder):
                     self.when(marker.right, component, compiled_deps),
                 )
             case NotMarker():
-                return self.not_(self.when(marker.marker, component, compiled_deps))
+                return self.not_(
+                    self.when(marker.marker, component, compiled_deps),
+                )
             case BoolMarker(False):
                 return self.global_(marker.value)
             case _:
@@ -106,7 +114,9 @@ class FactoryBuilder(CodeBuilder):
                         f"Component is None, cannot generate when condition"
                         f" with marker {marker}",
                     )
-                return self.getter(DependencyKey(marker, component), compiled_deps)
+                return self.getter(
+                    DependencyKey(marker, component), compiled_deps,
+                )
 
     def build_getter(self) -> CompiledFactory:
         name = f"<{self.getter_name}{'_async' if self.async_str else ''}>"
@@ -114,21 +124,27 @@ class FactoryBuilder(CodeBuilder):
 
 
 def _sync_factory_body(
-    builder: FactoryBuilder, source_call: str, factory: Factory,
+    builder: FactoryBuilder,
+    source_call: str,
+    factory: Factory,
     compiled_deps: dict[DependencyKey, CompiledFactory],
 ) -> None:
     builder.assign_solved(source_call)
 
 
 def _async_factory_body(
-    builder: FactoryBuilder, source_call: str, factory: Factory,
+    builder: FactoryBuilder,
+    source_call: str,
+    factory: Factory,
     compiled_deps: dict[DependencyKey, CompiledFactory],
 ) -> None:
     builder.assign_solved(builder.await_(source_call))
 
 
 def _generator_body(
-    builder: FactoryBuilder, source_call: str, factory: Factory,
+    builder: FactoryBuilder,
+    source_call: str,
+    factory: Factory,
     compiled_deps: dict[DependencyKey, CompiledFactory],
 ) -> None:
     builder.assign_local("generator", source_call)
@@ -147,7 +163,9 @@ def _generator_body(
 
 
 def _async_generator_body(
-    builder: FactoryBuilder, source_call: str, factory: Factory,
+    builder: FactoryBuilder,
+    source_call: str,
+    factory: Factory,
     compiled_deps: dict[DependencyKey, CompiledFactory],
 ) -> None:
     builder.assign_local("generator", source_call)
@@ -166,17 +184,23 @@ def _async_generator_body(
 
 
 def _value_factory_body(
-    builder: FactoryBuilder, source_call: str, factory: Factory,
+    builder: FactoryBuilder,
+    source_call: str,
+    factory: Factory,
     compiled_deps: dict[DependencyKey, CompiledFactory],
 ) -> None:
     builder.assign_solved(builder.global_(factory.source))
 
 
 def _alias_factory_body(
-    builder: FactoryBuilder, source_call: str, factory: Factory,
+    builder: FactoryBuilder,
+    source_call: str,
+    factory: Factory,
     compiled_deps: dict[DependencyKey, CompiledFactory],
 ) -> None:
-    builder.assign_solved(builder.getter(factory.dependencies[0], compiled_deps))
+    builder.assign_solved(
+        builder.getter(factory.dependencies[0], compiled_deps),
+    )
 
 
 def _context_factory_body(
@@ -196,8 +220,11 @@ def _context_factory_body(
             ),
         )
 
+
 def _selector_factory_body(
-    builder: FactoryBuilder, source_call: str, factory: Factory,
+    builder: FactoryBuilder,
+    source_call: str,
+    factory: Factory,
     compiled_deps: dict[DependencyKey, CompiledFactory],
 ) -> None:
     error_call = builder.call(
@@ -207,6 +234,7 @@ def _selector_factory_body(
     )
     builder.raise_(error_call)
 
+
 def _collection_factory_body(
     builder: FactoryBuilder,
     factory: Factory,
@@ -215,31 +243,45 @@ def _collection_factory_body(
     unconditional_factories: list[Factory] = []
     assigned = False
     for variant in factory.when_dependencies:
-        condition = builder.when(variant.when_override, variant.when_component, compiled_deps)
+        condition = builder.when(
+            variant.when_override, variant.when_component, compiled_deps,
+        )
         if condition:
             if not assigned:
-                builder.assign_solved(builder.list_literal(*(
-                    builder.getter(f.provides, compiled_deps)
-                    for f in unconditional_factories
-                )))
+                builder.assign_solved(
+                    builder.list_literal(
+                        *(
+                            builder.getter(f.provides, compiled_deps)
+                            for f in unconditional_factories
+                        ),
+                    ),
+                )
                 assigned = True
             with builder.if_(condition):
-                builder.statement(builder.call(
+                builder.statement(
+                    builder.call(
+                        "solved.append",
+                        builder.getter(variant.provides, compiled_deps),
+                    ),
+                )
+        elif assigned:
+            builder.statement(
+                builder.call(
                     "solved.append",
                     builder.getter(variant.provides, compiled_deps),
-                ))
-        elif assigned:
-            builder.statement(builder.call(
-                "solved.append",
-                builder.getter(variant.provides, compiled_deps),
-            ))
+                ),
+            )
         else:
             unconditional_factories.append(variant)
     if not assigned:
-        builder.assign_solved(builder.list_literal(*(
-            builder.getter(f.provides, compiled_deps)
-            for f in unconditional_factories
-        )))
+        builder.assign_solved(
+            builder.list_literal(
+                *(
+                    builder.getter(f.provides, compiled_deps)
+                    for f in unconditional_factories
+                ),
+            ),
+        )
 
 
 ASYNC_TYPES = (FactoryType.ASYNC_FACTORY, FactoryType.ASYNC_GENERATOR)
@@ -269,7 +311,9 @@ def _select_when_dependency(
     """return True if there is assignment in any case"""
     first = True
     for variant in factory.when_dependencies:
-        condition = builder.when(variant.when_override, factory.when_component, compiled_deps)
+        condition = builder.when(
+            variant.when_override, factory.when_component, compiled_deps,
+        )
         solved_value = builder.getter(variant.provides, compiled_deps)
         if first and not condition:
             builder.assign_solved(solved_value)
@@ -288,7 +332,12 @@ def _select_when_dependency(
     return False
 
 
-def compile_factory(*, factory: Factory, is_async: bool, compiled_deps: dict[DependencyKey, CompiledFactory]) -> CompiledFactory:
+def compile_factory(
+    *,
+    factory: Factory,
+    is_async: bool,
+    compiled_deps: dict[DependencyKey, CompiledFactory],
+) -> CompiledFactory:
     if not is_async and factory.type in ASYNC_TYPES:
         raise UnsupportedFactoryError(factory)
     if factory.type not in BODY_GENERATORS:
@@ -304,11 +353,16 @@ def compile_factory(*, factory: Factory, is_async: bool, compiled_deps: dict[Dep
             if factory.type is FactoryType.COLLECTION:
                 _collection_factory_body(builder, factory, compiled_deps)
             else:
-                has_default = _select_when_dependency(builder, factory, compiled_deps)
+                has_default = _select_when_dependency(
+                    builder, factory, compiled_deps,
+                )
                 if not has_default:
                     source_call = builder.call(
                         builder.global_(factory.source),
-                        *(builder.getter(dep, compiled_deps) for dep in factory.dependencies),
+                        *(
+                            builder.getter(dep, compiled_deps)
+                            for dep in factory.dependencies
+                        ),
                         **{
                             name: builder.getter(dep, compiled_deps)
                             for name, dep in factory.kw_dependencies.items()
@@ -317,18 +371,28 @@ def compile_factory(*, factory: Factory, is_async: bool, compiled_deps: dict[Dep
                     body_generator = BODY_GENERATORS[factory.type]
                     if factory.when_dependencies:  # conditions generated
                         with builder.else_():
-                            body_generator(builder, source_call, factory, compiled_deps)
+                            body_generator(
+                                builder, source_call, factory, compiled_deps,
+                            )
                     else:  # no options at all
-                        body_generator(builder, source_call, factory, compiled_deps)
+                        body_generator(
+                            builder, source_call, factory, compiled_deps,
+                        )
         with builder.except_(NoFactoryError, as_="e"):
-            builder.statement(builder.call(
-                "e.add_path", builder.global_(factory),
-            ))
+            builder.statement(
+                builder.call(
+                    "e.add_path",
+                    builder.global_(factory),
+                ),
+            )
             builder.statement("raise")
         with builder.except_(NoActiveFactoryError, as_="e"):
-            builder.statement(builder.call(
-                "e.add_path", builder.global_(factory),
-            ))
+            builder.statement(
+                builder.call(
+                    "e.add_path",
+                    builder.global_(factory),
+                ),
+            )
             builder.statement("raise")
         builder.cache(factory)
         builder.return_("solved")
@@ -336,11 +400,18 @@ def compile_factory(*, factory: Factory, is_async: bool, compiled_deps: dict[Dep
     return builder.build_getter()
 
 
-def compile_activation(*, factory: Factory, is_async: bool, compiled_deps: dict[DependencyKey, CompiledFactory]) -> CompiledFactory:
+def compile_activation(
+    *,
+    factory: Factory,
+    is_async: bool,
+    compiled_deps: dict[DependencyKey, CompiledFactory],
+) -> CompiledFactory:
     builder = FactoryBuilder(is_async=is_async, getter_prefix="is_active_")
     builder.register_provides(factory.provides)
     with builder.make_getter():
-        condition = builder.when(factory.when_active, factory.when_component, compiled_deps)
+        condition = builder.when(
+            factory.when_active, factory.when_component, compiled_deps,
+        )
         if not condition:
             builder.return_(builder.global_(True))
         else:

@@ -30,6 +30,11 @@ from .registry import Registry
 
 T = TypeVar("T")
 
+ExitCallable = Callable[
+    [type | None, BaseException | None, TracebackType | None],
+    None,
+]
+
 
 class AsyncContainer:
     __slots__ = (
@@ -53,22 +58,23 @@ class AsyncContainer:
             lock_factory: Callable[
                 [], AbstractAsyncContextManager[Any],
             ] | None = None,
-            close_parent: Callable = None,
-            parent_getter: Callable = None,
+            close_parent: ExitCallable | None = None,
+            parent_getter:  Callable[[DependencyKey], Any] | None  = None,
     ):
         self.registry = registry
         self.child_registries = child_registries
-        self._context = {AsyncContainer: self}
-        if context:
-            self._context.update(context)
+        if context is None:
+            self._context = {AsyncContainer: self}
+        else:
+            self._context = {AsyncContainer: self, **context}
         self._cache = {CONTAINER_KEY: self}
         self.parent_container = parent_container
 
         self.lock: AbstractAsyncContextManager[Any] | None
-        if lock_factory:
-            self.lock = lock_factory()
-        else:
+        if lock_factory is None:
             self.lock = None
+        else:
+            self.lock = lock_factory()
         self._exits: list[Exit] = []
         self.close_parent = close_parent
         self.parent_getter = parent_getter
@@ -161,7 +167,7 @@ class AsyncContainer:
         lock = self.lock
         key = DependencyKey(dependency_type, component)
         try:
-            if not lock:
+            if lock is None:
                 return await self._get_unlocked(key)
             async with lock:
                 return await self._get_unlocked(key)
@@ -171,7 +177,7 @@ class AsyncContainer:
 
     async def _get(self, key: DependencyKey) -> Any:
         lock = self.lock
-        if not lock:
+        if lock is None:
             return await self._get_unlocked(key)
         async with lock:
             return await self._get_unlocked(key)
@@ -180,8 +186,8 @@ class AsyncContainer:
         if key in self._cache:
             return self._cache[key]
         compiled = self.registry.get_compiled_async(key)
-        if not compiled:
-            if not self.parent_container:
+        if compiled is None:
+            if self.parent_container is None:
                 abstract_dependencies = (
                     self.registry.get_more_abstract_factories(key)
                 )
@@ -219,31 +225,36 @@ class AsyncContainer:
     async def __aenter__(self):
         return self
 
-    async def __aexit__(
+    async def __aexit__(  # noqa: C901
         self,
         exc_type: type[BaseException] | None = None,
         exception: BaseException | None = None,
         exc_tb: TracebackType | None = None,
     ) -> None:
-        errors = []
-        for gen, agen in reversed(self._exits):
+        errors = None
+        while self._exits:
+            gen, agen = self._exits.pop()
             try:
                 if agen is not None:
                     await agen.asend(exception)  # type: ignore[attr-defined]
                 elif gen is not None:
                     gen.send(exception)  # type: ignore[attr-defined]
-            except StopIteration:  # noqa: PERF203
-                pass
-            except StopAsyncIteration:
+            except (StopIteration, StopAsyncIteration):
                 pass
             except Exception as err:  # noqa: BLE001
-                errors.append(err)
-        self._cache = {CONTAINER_KEY: self}
+                if errors is None:
+                    errors = [err]
+                else:
+                    errors.append(err)
+        self._cache = {}
         if self.close_parent:
             try:
                 await self.close_parent(exc_type, exception, exc_tb)
             except Exception as err:  # noqa: BLE001
-                errors.append(err)
+                if errors is None:
+                    errors = [err]
+                else:
+                    errors.append(err)
         if errors:
             raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
@@ -323,7 +334,7 @@ def make_async_container(
                 context=context,
                 lock_factory=lock_factory,
                 close_parent=container.__aexit__,
-                parent_getter=container._get,
+                parent_getter=container._get,  # noqa: SLF001
             )
     else:
         while container.registry.scope is not start_scope:
@@ -333,7 +344,7 @@ def make_async_container(
                 context=context,
                 lock_factory=lock_factory,
                 close_parent=container.__aexit__,
-                parent_getter=container._get,
+                parent_getter=container._get,  # noqa: SLF001
             )
     return container
 

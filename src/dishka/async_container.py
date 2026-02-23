@@ -198,7 +198,7 @@ class AsyncContainer:
     ) -> Any:
         key = DependencyKey(dependency_type, component)
         try:
-            self._get_sync(key)
+            return self._get_sync(key)
         except (NoFactoryError, NoActiveFactoryError) as e:
             e.scope = self.scope
             raise
@@ -219,7 +219,7 @@ class AsyncContainer:
                     suggest_concrete_factories=concrete_dependencies,
                 )
             try:
-                return self.parent_container.get_sync(key)
+                return self.parent_container._get_sync(key)  # noqa: SLF001
             except NoFactoryError as ex:
                 abstract_dependencies = (
                     self.registry.get_more_abstract_factories(key)
@@ -232,7 +232,11 @@ class AsyncContainer:
                 raise
 
         return compiled(
-            self.parent_container.get_sync if self.parent_container else None,
+            (
+                self.parent_container._get_sync  # noqa: SLF001
+                if self.parent_container
+                else None
+            ),
             self._exits,
             self._cache,
             self._context,

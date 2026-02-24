@@ -18,5 +18,6 @@ class CompiledFactory(Protocol):
             exits: list[Exit],
             cache: Any,
             context: Any,
+            container: Any,
     ) -> Any:
         raise NotImplementedError

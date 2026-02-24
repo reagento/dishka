@@ -63,10 +63,7 @@ class Container:
     ):
         self.registry = registry
         self.child_registries = child_registries
-        if context is None:
-            self._context = {Container: self}
-        else:
-            self._context = {Container: self, **context}
+        self._context = context
         self._cache: dict[DependencyKey, object] = {}
         self.parent_container = parent_container
 
@@ -215,6 +212,7 @@ class Container:
             self._exits,
             self._cache,
             self._context,
+            self,
         )
 
 
@@ -268,6 +266,7 @@ class Container:
             self._exits,
             self._cache,
             self._context,
+            self,
         ))
 
     def _has_context(self, marker: Any) -> bool:

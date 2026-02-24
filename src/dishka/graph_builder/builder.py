@@ -407,7 +407,11 @@ class GraphBuilder:
         registries: dict[BaseScope, Registry] = {}
         has_fallback = True
         for scope in self.scopes:
-            registry = Registry(scope, has_fallback=has_fallback)
+            registry = Registry(
+                scope=scope,
+                has_fallback=has_fallback,
+                container_key=self.container_key,
+            )
             context_var = ContextVariable(
                 provides=self.container_key,
                 scope=scope,

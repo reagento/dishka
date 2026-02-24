@@ -240,6 +240,7 @@ class AsyncContainer:
             self._exits,
             self._cache,
             self._context,
+            self,
         )
 
     async def _get(self, key: DependencyKey) -> Any:
@@ -282,6 +283,7 @@ class AsyncContainer:
             self._exits,
             self._cache,
             self._context,
+            self,
         )
 
     async def close(self, exception: BaseException | None = None) -> None:
@@ -335,6 +337,7 @@ class AsyncContainer:
             self._exits,
             self._cache,
             self._context,
+            self,
         ))
 
     def _has_context(self, marker: Any) -> bool:

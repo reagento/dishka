@@ -31,7 +31,11 @@ def factory() -> Factory:
 
 @pytest.fixture
 def registry(factory: Factory) -> Registry:
-    registry = Registry(scope=Scope.APP, has_fallback=True)
+    registry = Registry(
+        scope=Scope.APP,
+        has_fallback=True,
+        container_key=DependencyKey(object, DEFAULT_COMPONENT),
+    )
 
     privede_key = DependencyKey(Provided, DEFAULT_COMPONENT)
     registry.add_factory(factory, privede_key)

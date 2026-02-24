@@ -6,6 +6,7 @@ import pytest
 from dishka import (
     Provider,
     Scope,
+    from_context,
     make_async_container,
     make_container,
     provide,
@@ -280,3 +281,33 @@ def test_provide_all_in_class():
 
     fifty = container.get(float)
     assert math.isclose(fifty, 50.0, abs_tol=1e-9)
+
+
+
+class ClassX:
+    def __init__(self, dep: int, s: str) -> None:
+        self.dep = dep
+        self.s = s
+
+
+@pytest.mark.asyncio
+async def test_sync_in_async():
+    class MyProvider(Provider):
+        a = provide(ClassX, scope=Scope.REQUEST)
+
+        @provide(scope=Scope.APP)
+        def get_int(self) -> int:
+            return 100
+
+        s = from_context(str, scope=Scope.APP)
+
+    container = make_async_container(MyProvider(), context={str: "hello"})
+    num = container.get_sync(int)
+    assert num == 100
+
+    async with container() as request_container:
+        a = request_container.get_sync(ClassX)
+
+    assert a
+    assert a.dep == 100
+    assert a.s == "hello"

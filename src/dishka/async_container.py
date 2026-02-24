@@ -175,6 +175,73 @@ class AsyncContainer:
             e.scope = self.scope
             raise
 
+    @overload
+    def get_sync(
+            self,
+            dependency_type: type[T],
+            component: Component | None = DEFAULT_COMPONENT,
+    ) -> T:
+        ...
+
+    @overload
+    def get_sync(
+            self,
+            dependency_type: Any,
+            component: Component | None = DEFAULT_COMPONENT,
+    ) -> Any:
+        ...
+
+    def get_sync(
+        self,
+        dependency_type: Any,
+        component: Component | None = DEFAULT_COMPONENT,
+    ) -> Any:
+        key = DependencyKey(dependency_type, component)
+        try:
+            return self._get_sync(key)
+        except (NoFactoryError, NoActiveFactoryError) as e:
+            e.scope = self.scope
+            raise
+
+    def _get_sync(self, key: DependencyKey) -> Any:
+        compiled = self.registry.get_compiled(key)
+        if compiled is None:
+            if self.parent_container is None:
+                abstract_dependencies = (
+                    self.registry.get_more_abstract_factories(key)
+                )
+                concrete_dependencies = (
+                    self.registry.get_more_concrete_factories(key)
+                )
+                raise NoFactoryError(
+                    key,
+                    suggest_abstract_factories=abstract_dependencies,
+                    suggest_concrete_factories=concrete_dependencies,
+                )
+            try:
+                return self.parent_container._get_sync(key)  # noqa: SLF001
+            except NoFactoryError as ex:
+                abstract_dependencies = (
+                    self.registry.get_more_abstract_factories(key)
+                )
+                concrete_dependencies = (
+                    self.registry.get_more_concrete_factories(key)
+                )
+                ex.suggest_abstract_factories.extend(abstract_dependencies)
+                ex.suggest_concrete_factories.extend(concrete_dependencies)
+                raise
+
+        return compiled(
+            (
+                self.parent_container._get_sync  # noqa: SLF001
+                if self.parent_container
+                else None
+            ),
+            self._exits,
+            self._cache,
+            self._context,
+        )
+
     async def _get(self, key: DependencyKey) -> Any:
         lock = self.lock
         if lock is None:
@@ -183,8 +250,6 @@ class AsyncContainer:
             return await self._get_unlocked(key)
 
     async def _get_unlocked(self, key: DependencyKey) -> Any:
-        if key in self._cache:
-            return self._cache[key]
         compiled = self.registry.get_compiled_async(key)
         if compiled is None:
             if self.parent_getter is None:

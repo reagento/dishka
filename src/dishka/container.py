@@ -41,7 +41,6 @@ class Container:
         "_cache",
         "_context",
         "_exits",
-        "child_registries",
         "lock",
         "parent_closer",
         "parent_container",
@@ -52,7 +51,6 @@ class Container:
     def __init__(
             self,
             registry: Registry,
-            *child_registries: Registry,
             parent_container: "Container | None" = None,
             context: dict[Any, Any] | None = None,
             lock_factory: Callable[
@@ -62,7 +60,6 @@ class Container:
             parent_getter: Callable[[DependencyKey], Any] | None = None,
     ):
         self.registry = registry
-        self.child_registries = child_registries
         self._context = context
         self._cache: dict[DependencyKey, object] = {}
         self.parent_container = parent_container
@@ -104,38 +101,42 @@ class Container:
         :param scope: target scope or None to enter next non-skipped scope
         :return: context manager for inner scope
         """
-        if not self.child_registries:
+        registry = self.registry.child_registry
+        if registry is None:
             raise NoChildScopesError
         child = Container(
-            *self.child_registries,
-            parent_container=self,
-            context=context,
-            lock_factory=lock_factory,
-            parent_getter=self._get,
+            registry,
+            self,
+            context,
+            lock_factory,
+            None,
+            self._get,
         )
         if scope is None:
-            while child.registry.scope.skip:
-                if not child.child_registries:
+            while registry.scope.skip:
+                registry = registry.child_registry
+                if registry is None:
                     raise NoNonSkippedScopesError
                 child = Container(
-                    *child.child_registries,
-                    parent_container=child,
-                    context=context,
-                    lock_factory=lock_factory,
-                    parent_closer=child.__exit__,
-                    parent_getter=child._get,
+                    registry,
+                    child,
+                    context,
+                    lock_factory,
+                    child.__exit__,
+                    child._get,
                 )
         else:
-            while child.registry.scope is not scope:
-                if not child.child_registries:
+            while registry.scope is not scope:
+                registry = registry.child_registry
+                if registry is None:
                     raise ChildScopeNotFoundError(scope, self.registry.scope)
                 child = Container(
-                    *child.child_registries,
-                    parent_container=child,
-                    context=context,
-                    lock_factory=lock_factory,
-                    parent_closer=child.__exit__,
-                    parent_getter=child._get,
+                    registry,
+                    child,
+                    context,
+                    lock_factory,
+                    child.__exit__,
+                    child._get,
                 )
         return child
 
@@ -314,14 +315,14 @@ def make_container(
     builder.add_providers(context_provider)
     registries = builder.build()
     container = Container(
-        *registries,
+        registries[0],
         context=context,
         lock_factory=lock_factory,
     )
     if start_scope is None:
         while container.registry.scope.skip:
             container = Container(
-                *container.child_registries,
+                registry=container.registry.child_registry,
                 parent_container=container,
                 context=context,
                 lock_factory=lock_factory,
@@ -331,7 +332,7 @@ def make_container(
     else:
         while container.registry.scope is not start_scope:
             container = Container(
-                *container.child_registries,
+                registry=container.registry.child_registry,
                 parent_container=container,
                 context=context,
                 lock_factory=lock_factory,

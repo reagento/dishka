@@ -45,6 +45,7 @@ CompiledFactories: TypeAlias = dict[DependencyKey, CompiledFactory]
 
 class Registry:
     __slots__ = (
+        "child_registry",
         "compiled",
         "compiled_activation",
         "compiled_activation_async",
@@ -61,6 +62,7 @@ class Registry:
             *,
             has_fallback: bool,
             container_key: DependencyKey,
+            child_registry: "Registry | None" = None,
     ) -> None:
         self.scope = scope
         self.factories: dict[DependencyKey, Factory] = {}
@@ -70,6 +72,7 @@ class Registry:
         self.compiled_activation_async: CompiledFactories = {}
         self.has_fallback = has_fallback
         self.container_key = container_key
+        self.child_registry = child_registry
 
     def add_factory(
             self,

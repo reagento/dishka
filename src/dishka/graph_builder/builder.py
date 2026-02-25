@@ -425,7 +425,12 @@ class GraphBuilder:
         for factory in factories:
             scope = cast(BaseScope, factory.scope)
             registries[scope].add_factory(factory, factory.provides)
-        return tuple(registries.values())
+
+        res = tuple(registries.values())
+        for i, registry in enumerate(res):
+            if i+1<len(res):
+                registry.child_registry = res[i+1]
+        return res
 
     def _find_activator(
         self,

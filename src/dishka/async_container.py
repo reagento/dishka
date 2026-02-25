@@ -60,10 +60,7 @@ class AsyncContainer:
             parent_getter:  Callable[[DependencyKey], Any] | None  = None,
     ):
         self.registry = registry
-        if context is None:
-            self._context = {AsyncContainer: self}
-        else:
-            self._context = {AsyncContainer: self, **context}
+        self._context = context
         self._cache: dict[DependencyKey, object] = {}
         self.parent_container = parent_container
 
@@ -341,7 +338,7 @@ class AsyncContainer:
         ))
 
     def _has_context(self, marker: Any) -> bool:
-        return marker in self._context
+        return self._context is not None and marker in self._context
 
 
 
@@ -395,6 +392,8 @@ def make_async_container(
     )
     if start_scope is None:
         while container.registry.scope.skip:
+            if container.registry.child_registry is None:
+                raise NoNonSkippedScopesError
             container = AsyncContainer(
                 registry=container.registry.child_registry,
                 parent_container=container,
@@ -405,6 +404,11 @@ def make_async_container(
             )
     else:
         while container.registry.scope is not start_scope:
+            if container.registry.child_registry is None:
+                raise ChildScopeNotFoundError(
+                    start_scope,
+                    container.registry.scope,
+                )
             container = AsyncContainer(
                 registry=container.registry.child_registry,
                 parent_container=container,

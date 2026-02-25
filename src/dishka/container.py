@@ -271,7 +271,7 @@ class Container:
         ))
 
     def _has_context(self, marker: Any) -> bool:
-        return marker in self._context
+        return self._context is not None and marker in self._context
 
 
 class HasProvider(Provider):
@@ -321,6 +321,8 @@ def make_container(
     )
     if start_scope is None:
         while container.registry.scope.skip:
+            if container.registry.child_registry is None:
+                raise NoNonSkippedScopesError
             container = Container(
                 registry=container.registry.child_registry,
                 parent_container=container,
@@ -331,6 +333,11 @@ def make_container(
             )
     else:
         while container.registry.scope is not start_scope:
+            if container.registry.child_registry is None:
+                raise ChildScopeNotFoundError(
+                    start_scope,
+                    container.registry.scope,
+                )
             container = Container(
                 registry=container.registry.child_registry,
                 parent_container=container,

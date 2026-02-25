@@ -221,6 +221,9 @@ def _context_factory_body(
     factory: Factory,
     compiled_deps: dict[DependencyKey, CompiledFactory],
 ) -> None:
+    if factory.provides == builder.container_key:
+        builder.return_("container")
+        return
     source = builder.global_(factory.source)
     with builder.try_():
         builder.assign_solved(f"context[{source}]")

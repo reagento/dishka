@@ -216,7 +216,6 @@ class Container:
             self,
         )
 
-
     def close(self, exception: BaseException | None = None) -> None:
         self.__exit__(None, exception, None)
 

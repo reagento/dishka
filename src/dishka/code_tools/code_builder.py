@@ -176,9 +176,10 @@ class CodeBuilder:
         return self.block()
 
     def raise_(self, expr: str | None = None) -> None:
-        if not expr:
+        if expr:
+            self.statement(f"raise {expr}")
+        else:
             self.statement("raise")
-        self.statement(f"raise {expr}")
 
     def or_(self, left: str, right: str) -> str:
         return f"({left} or {right})"

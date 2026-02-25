@@ -41,7 +41,6 @@ class AsyncContainer:
         "_cache",
         "_context",
         "_exits",
-        "child_registries",
         "lock",
         "parent_closer",
         "parent_container",
@@ -52,7 +51,6 @@ class AsyncContainer:
     def __init__(
             self,
             registry: Registry,
-            *child_registries: Registry,
             parent_container: "AsyncContainer | None" = None,
             context: dict[Any, Any] | None = None,
             lock_factory: Callable[
@@ -62,11 +60,7 @@ class AsyncContainer:
             parent_getter:  Callable[[DependencyKey], Any] | None  = None,
     ):
         self.registry = registry
-        self.child_registries = child_registries
-        if context is None:
-            self._context = {AsyncContainer: self}
-        else:
-            self._context = {AsyncContainer: self, **context}
+        self._context = context
         self._cache: dict[DependencyKey, object] = {}
         self.parent_container = parent_container
 
@@ -107,39 +101,42 @@ class AsyncContainer:
         :param scope: target scope or None to enter next non-skipped scope
         :return: async context manager for inner scope
         """
-        if not self.child_registries:
+        registry = self.registry.child_registry
+        if registry is None:
             raise NoChildScopesError
-
         child = AsyncContainer(
-            *self.child_registries,
-            parent_container=self,
-            context=context,
-            lock_factory=lock_factory,
-            parent_getter=self._get,
+            registry,
+            self,
+            context,
+            lock_factory,
+            None,
+            self._get,
         )
         if scope is None:
-            while child.registry.scope.skip:
-                if not child.child_registries:
+            while registry.scope.skip:
+                registry = registry.child_registry
+                if registry is None:
                     raise NoNonSkippedScopesError
                 child = AsyncContainer(
-                    *child.child_registries,
-                    parent_container=child,
-                    context=context,
-                    lock_factory=lock_factory,
-                    parent_closer=child.__aexit__,
-                    parent_getter=child._get,
+                    registry,
+                    child,
+                    context,
+                    lock_factory,
+                    child.__aexit__,
+                    child._get,
                 )
         else:
-            while child.registry.scope is not scope:
-                if not child.child_registries:
+            while registry.scope is not scope:
+                registry = registry.child_registry
+                if registry is None:
                     raise ChildScopeNotFoundError(scope, self.registry.scope)
                 child = AsyncContainer(
-                    *child.child_registries,
-                    parent_container=child,
-                    context=context,
-                    lock_factory=lock_factory,
-                    parent_closer=child.__aexit__,
-                    parent_getter=child._get,
+                    registry,
+                    child,
+                    context,
+                    lock_factory,
+                    child.__aexit__,
+                    child._get,
                 )
         return child
 
@@ -240,6 +237,7 @@ class AsyncContainer:
             self._exits,
             self._cache,
             self._context,
+            self,
         )
 
     async def _get(self, key: DependencyKey) -> Any:
@@ -282,6 +280,7 @@ class AsyncContainer:
             self._exits,
             self._cache,
             self._context,
+            self,
         )
 
     async def close(self, exception: BaseException | None = None) -> None:
@@ -335,10 +334,11 @@ class AsyncContainer:
             self._exits,
             self._cache,
             self._context,
+            self,
         ))
 
     def _has_context(self, marker: Any) -> bool:
-        return marker in self._context
+        return self._context is not None and marker in self._context
 
 
 
@@ -386,30 +386,36 @@ def make_async_container(
     registries = builder.build()
 
     container = AsyncContainer(
-        *registries,
+        registries[0],
         context=context,
         lock_factory=lock_factory,
     )
-
     if start_scope is None:
         while container.registry.scope.skip:
+            if container.registry.child_registry is None:
+                raise NoNonSkippedScopesError
             container = AsyncContainer(
-                *container.child_registries,
+                registry=container.registry.child_registry,
                 parent_container=container,
                 context=context,
                 lock_factory=lock_factory,
                 parent_closer=container.__aexit__,
-                parent_getter=container._get,  # noqa: SLF001
+                parent_getter=container._get, # noqa: SLF001
             )
     else:
         while container.registry.scope is not start_scope:
+            if container.registry.child_registry is None:
+                raise ChildScopeNotFoundError(
+                    start_scope,
+                    container.registry.scope,
+                )
             container = AsyncContainer(
-                *container.child_registries,
+                registry=container.registry.child_registry,
                 parent_container=container,
                 context=context,
                 lock_factory=lock_factory,
                 parent_closer=container.__aexit__,
-                parent_getter=container._get,  # noqa: SLF001
+                parent_getter=container._get, # noqa: SLF001
             )
     return container
 

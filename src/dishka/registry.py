@@ -45,16 +45,25 @@ CompiledFactories: TypeAlias = dict[DependencyKey, CompiledFactory]
 
 class Registry:
     __slots__ = (
+        "child_registry",
         "compiled",
         "compiled_activation",
         "compiled_activation_async",
         "compiled_async",
+        "container_key",
         "factories",
         "has_fallback",
         "scope",
     )
 
-    def __init__(self, scope: BaseScope, *, has_fallback: bool) -> None:
+    def __init__(
+            self,
+            scope: BaseScope,
+            *,
+            has_fallback: bool,
+            container_key: DependencyKey,
+            child_registry: "Registry | None" = None,
+    ) -> None:
         self.scope = scope
         self.factories: dict[DependencyKey, Factory] = {}
         self.compiled: CompiledFactories = {}
@@ -62,6 +71,8 @@ class Registry:
         self.compiled_activation: CompiledFactories = {}
         self.compiled_activation_async: CompiledFactories = {}
         self.has_fallback = has_fallback
+        self.container_key = container_key
+        self.child_registry = child_registry
 
     def add_factory(
             self,
@@ -133,6 +144,7 @@ class Registry:
                 factory=factory,
                 is_async=False,
                 compiled_deps=self._compile_deps(factory),
+                container_key=self.container_key,
             )
             self.compiled[dependency] = compiled
             return compiled
@@ -150,6 +162,7 @@ class Registry:
                 factory=factory,
                 is_async=True,
                 compiled_deps=self._compile_deps_async(factory),
+                container_key=self.container_key,
             )
             self.compiled_async[dependency] = compiled
             return compiled
@@ -168,6 +181,7 @@ class Registry:
                 factory=factory,
                 is_async=False,
                 compiled_deps=self._compile_deps(factory),
+                container_key=self.container_key,
             )
             self.compiled_activation[dependency] = compiled
             return compiled
@@ -185,6 +199,7 @@ class Registry:
                 factory=factory,
                 is_async=True,
                 compiled_deps=self._compile_deps_async(factory),
+                container_key=self.container_key,
             )
             self.compiled_activation_async[dependency] = compiled
             return compiled

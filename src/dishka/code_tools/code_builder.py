@@ -175,7 +175,9 @@ class CodeBuilder:
         self.statement(f"except {name}{as_str}:")
         return self.block()
 
-    def raise_(self, expr: str) -> None:
+    def raise_(self, expr: str | None = None) -> None:
+        if not expr:
+            self.statement("raise")
         self.statement(f"raise {expr}")
 
     def or_(self, left: str, right: str) -> str:

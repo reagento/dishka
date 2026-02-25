@@ -407,7 +407,11 @@ class GraphBuilder:
         registries: dict[BaseScope, Registry] = {}
         has_fallback = True
         for scope in self.scopes:
-            registry = Registry(scope, has_fallback=has_fallback)
+            registry = Registry(
+                scope=scope,
+                has_fallback=has_fallback,
+                container_key=self.container_key,
+            )
             context_var = ContextVariable(
                 provides=self.container_key,
                 scope=scope,
@@ -421,7 +425,12 @@ class GraphBuilder:
         for factory in factories:
             scope = cast(BaseScope, factory.scope)
             registries[scope].add_factory(factory, factory.provides)
-        return tuple(registries.values())
+
+        res = tuple(registries.values())
+        for i, registry in enumerate(res):
+            if i+1<len(res):
+                registry.child_registry = res[i+1]
+        return res
 
     def _find_activator(
         self,

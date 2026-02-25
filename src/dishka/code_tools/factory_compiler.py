@@ -25,12 +25,19 @@ from dishka.text_rendering import get_name
 
 
 class FactoryBuilder(CodeBuilder):
-    def __init__(self, *, is_async: bool, getter_prefix: str):
+    def __init__(
+            self,
+            *,
+            is_async: bool,
+            getter_prefix: str,
+            container_key: DependencyKey,
+    ):
         super().__init__(is_async=is_async)
         self.provides_name = ""
         self.cache_key = ""
         self.getter_name = ""
         self.getter_prefix = getter_prefix
+        self.container_key = container_key
 
     def global_(self, obj: Any, preferred_name: str | None = None) -> str:
         if preferred_name is None and isinstance(obj, DependencyKey):
@@ -52,7 +59,7 @@ class FactoryBuilder(CodeBuilder):
         self.getter_name = self.getter_prefix + raw_provides_name
         return self.def_(
             self.getter_name,
-            ["getter", "exits", "cache", "context"],
+            ["getter", "exits", "cache", "context", "container"],
         )
 
     def getter(
@@ -64,10 +71,15 @@ class FactoryBuilder(CodeBuilder):
             return self.global_(obj.get_const_value())
         if obj.type_hint is DependencyKey:
             return self.provides_name
+        if obj == self.container_key:
+            return "container"
         if obj in compiled_deps:
             factory = self.global_(compiled_deps[obj])
             return self.await_(
-                self.call(factory, "getter", "exits", "cache", "context"),
+                self.call(
+                    factory,
+                    "getter", "exits", "cache", "context", "container",
+                ),
             )
         return self.await_(self.call("getter", self.global_(obj)))
 
@@ -209,6 +221,9 @@ def _context_factory_body(
     factory: Factory,
     compiled_deps: dict[DependencyKey, CompiledFactory],
 ) -> None:
+    if factory.provides == builder.container_key:
+        builder.return_("container")
+        return
     source = builder.global_(factory.source)
     with builder.try_():
         builder.assign_solved(f"context[{source}]")
@@ -219,6 +234,15 @@ def _context_factory_body(
                 source,
             ),
         )
+    with builder.except_(TypeError):
+        with builder.if_("context is None"):
+            builder.raise_(
+                builder.call(
+                    builder.global_(NoContextValueError),
+                    source,
+                ),
+            )
+        builder.raise_()
 
 
 def _selector_factory_body(
@@ -337,13 +361,18 @@ def compile_factory(
     factory: Factory,
     is_async: bool,
     compiled_deps: dict[DependencyKey, CompiledFactory],
+    container_key: DependencyKey,
 ) -> CompiledFactory:
     if not is_async and factory.type in ASYNC_TYPES:
         raise UnsupportedFactoryError(factory)
     if factory.type not in BODY_GENERATORS:
         raise UnsupportedFactoryError(factory)
 
-    builder = FactoryBuilder(is_async=is_async, getter_prefix="get_")
+    builder = FactoryBuilder(
+        is_async=is_async,
+        getter_prefix="get_",
+        container_key=container_key,
+    )
     builder.register_provides(factory.provides)
 
     with builder.make_getter():
@@ -405,8 +434,13 @@ def compile_activation(
     factory: Factory,
     is_async: bool,
     compiled_deps: dict[DependencyKey, CompiledFactory],
+    container_key: DependencyKey,
 ) -> CompiledFactory:
-    builder = FactoryBuilder(is_async=is_async, getter_prefix="is_active_")
+    builder = FactoryBuilder(
+        is_async=is_async,
+        getter_prefix="is_active_",
+        container_key=container_key,
+    )
     builder.register_provides(factory.provides)
     with builder.make_getter():
         condition = builder.when(

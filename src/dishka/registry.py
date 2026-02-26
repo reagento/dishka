@@ -23,6 +23,7 @@ from .dependency_source.type_match import (
     get_typevar_replacement,
     is_broader_or_same_type,
 )
+from .entities.component import DEFAULT_COMPONENT
 from .entities.factory_type import FactoryType
 from .entities.key import DependencyKey
 from .entities.marker import Marker, unpack_marker
@@ -40,6 +41,7 @@ IGNORE_TYPES: Final = (
     BaseException,
 )
 
+# key is DependencyKey OR raw typehint (for DEFAULT_COMPONENT, depth-0)
 CompiledFactories: TypeAlias = dict[DependencyKey, CompiledFactory | None]
 
 
@@ -131,12 +133,16 @@ class Registry:
         return res
 
     def get_compiled(
-            self, dependency: DependencyKey,
+            self, dependency: Any,
     ) -> CompiledFactory | None:
         try:
             return self.compiled[dependency]
         except KeyError:
-            factory = self.get_factory(dependency)
+            if isinstance(dependency, DependencyKey):
+                key = dependency
+            else:
+                key = DependencyKey(dependency, DEFAULT_COMPONENT)
+            factory = self.get_factory(key)
             if not factory:
                 self.compiled[dependency] = None
                 return None
@@ -151,12 +157,16 @@ class Registry:
             return compiled
 
     def get_compiled_async(
-            self, dependency: DependencyKey,
+            self, dependency: Any,
     ) -> CompiledFactory | None:
         try:
             return self.compiled_async[dependency]
         except KeyError:
-            factory = self.get_factory(dependency)
+            if isinstance(dependency, DependencyKey):
+                key = dependency
+            else:
+                key = DependencyKey(dependency, DEFAULT_COMPONENT)
+            factory = self.get_factory(key)
             if not factory:
                 self.compiled_async[dependency] = None
                 return None

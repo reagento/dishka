@@ -162,12 +162,13 @@ class AsyncContainer:
             component: Component | None = DEFAULT_COMPONENT,
     ) -> Any:
         lock = self.lock
-        key = DependencyKey(dependency_type, component)
+        if component != DEFAULT_COMPONENT:
+            dependency_type = DependencyKey(dependency_type, component)
         try:
             if lock is None:
-                return await self._get_unlocked(key)
+                return await self._get_unlocked(dependency_type)
             async with lock:
-                return await self._get_unlocked(key)
+                return await self._get_unlocked(dependency_type)
         except (NoFactoryError, NoActiveFactoryError) as e:
             e.scope = self.scope
             raise
@@ -193,9 +194,10 @@ class AsyncContainer:
         dependency_type: Any,
         component: Component | None = DEFAULT_COMPONENT,
     ) -> Any:
-        key = DependencyKey(dependency_type, component)
+        if component != DEFAULT_COMPONENT:
+            dependency_type = DependencyKey(dependency_type, component)
         try:
-            return self._get_sync(key)
+            return self._get_sync(dependency_type)
         except (NoFactoryError, NoActiveFactoryError) as e:
             e.scope = self.scope
             raise
@@ -204,6 +206,8 @@ class AsyncContainer:
         compiled = self.registry.get_compiled(key)
         if compiled is None:
             if self.parent_container is None:
+                if not isinstance(key, DependencyKey):
+                    key = DependencyKey(key, DEFAULT_COMPONENT)
                 abstract_dependencies = (
                     self.registry.get_more_abstract_factories(key)
                 )
@@ -218,6 +222,8 @@ class AsyncContainer:
             try:
                 return self.parent_container._get_sync(key)  # noqa: SLF001
             except NoFactoryError as ex:
+                if not isinstance(key, DependencyKey):
+                    key = DependencyKey(key, DEFAULT_COMPONENT)
                 abstract_dependencies = (
                     self.registry.get_more_abstract_factories(key)
                 )
@@ -240,17 +246,22 @@ class AsyncContainer:
             self,
         )
 
-    async def _get(self, key: DependencyKey) -> Any:
+    async def _get(self, key: Any) -> Any:
+        """
+        get by typehint for default component or dependency key for others
+        """
         lock = self.lock
         if lock is None:
             return await self._get_unlocked(key)
         async with lock:
             return await self._get_unlocked(key)
 
-    async def _get_unlocked(self, key: DependencyKey) -> Any:
+    async def _get_unlocked(self, key: Any) -> Any:
         compiled = self.registry.get_compiled_async(key)
         if compiled is None:
             if self.parent_getter is None:
+                if not isinstance(key, DependencyKey):
+                    key = DependencyKey(key, DEFAULT_COMPONENT)
                 abstract_dependencies = (
                     self.registry.get_more_abstract_factories(key)
                 )
@@ -265,6 +276,8 @@ class AsyncContainer:
             try:
                 return await self.parent_getter(key)
             except NoFactoryError as ex:
+                if not isinstance(key, DependencyKey):
+                    key = DependencyKey(key, DEFAULT_COMPONENT)
                 abstract_dependencies = (
                     self.registry.get_more_abstract_factories(key)
                 )

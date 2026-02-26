@@ -1,27 +1,26 @@
 dishka
 =============================================
 
-Cute DI framework with scopes and agreeable API.
+Cute DI framework with scopes and an agreeable API.
 
 This library provides **IoC container** that's genuinely useful.
-If you're exhausted from endlessly passing objects just to create other objects, only to have those objects create even
-more — you're not alone, and we have a solution.
-Not every project requires IoC container, but take a look at what we offer.
+If you're exhausted from endlessly passing objects to create other objects, only to have those objects create even
+more — you're not alone, and ``dishka`` is a solution.
+Not every project requires an IoC container, but take a look at what ``dishka`` offers.
 
 Unlike other tools, ``dishka`` focuses **only**
-on **dependency injection** without trying to solve unrelated tasks.
+on **dependency injection (DI)**  without trying to solve unrelated tasks.
 It keeps DI in place without cluttering your code with global variables and scattered specifiers.
 
 Key features:
 
 * **Scopes**. Any object can have a lifespan for the entire app, a single request, or even more fractionally. Many
-  frameworks either lack scopes completely or offer only two. Here, you can define as many scopes as needed.
+  frameworks either lack scopes completely or offer only two. With ``dishka``, you can define as many scopes as needed.
 * **Finalization**. Some dependencies, like database connections, need not only to be created but also carefully
   released. Many frameworks lack this essential feature.
 * **Modular providers**. Instead of creating many separate functions or one large class, you can split factories
   into smaller classes for easier reuse.
-* **Clean dependencies**. You don't need to add custom markers to dependency code just to make it visible to the
-  library.
+* **Clean dependencies**.  You don’t need to add custom markers to dependency code to make it visible for the framework.
 * **Simple API**. Only a few objects are needed to start using the library.
 * **Framework integrations**. Popular frameworks are supported out of the box. You can simply extend it for your needs.
 * **Speed**. The library is fast enough that performance is not a concern. In fact, it outperforms many

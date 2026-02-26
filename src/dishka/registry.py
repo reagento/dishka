@@ -40,7 +40,7 @@ IGNORE_TYPES: Final = (
     BaseException,
 )
 
-CompiledFactories: TypeAlias = dict[DependencyKey, CompiledFactory]
+CompiledFactories: TypeAlias = dict[DependencyKey, CompiledFactory | None]
 
 
 class Registry:
@@ -115,7 +115,7 @@ class Registry:
         res = {}
         for dep in self.collect_deps(factory):
             compiled = self.get_compiled(dep)
-            if compiled:
+            if compiled is not None:
                 res[dep] = compiled
         return res
 
@@ -126,7 +126,7 @@ class Registry:
         res = {}
         for dep in self.collect_deps(factory):
             compiled = self.get_compiled_async(dep)
-            if compiled:
+            if compiled is not None:
                 res[dep] = compiled
         return res
 
@@ -138,6 +138,7 @@ class Registry:
         except KeyError:
             factory = self.get_factory(dependency)
             if not factory:
+                self.compiled[dependency] = None
                 return None
 
             compiled = compile_factory(
@@ -157,6 +158,7 @@ class Registry:
         except KeyError:
             factory = self.get_factory(dependency)
             if not factory:
+                self.compiled[dependency] = None
                 return None
             compiled = compile_factory(
                 factory=factory,

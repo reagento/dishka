@@ -1,4 +1,5 @@
-from collections.abc import Callable
+import contextlib
+from collections.abc import Callable, Iterator
 from contextlib import AbstractContextManager
 from typing import Any, TypeAlias, cast
 
@@ -134,6 +135,26 @@ class FactoryBuilder(CodeBuilder):
         name = f"<{self.getter_name}{'_async' if self.async_str else ''}>"
         return cast(CompiledFactory, self.compile(name)[self.getter_name])
 
+    @contextlib.contextmanager
+    def handle_no_dep(self, factory: Factory) -> Iterator[None]:
+        with self.try_():
+            yield
+        with self.except_(NoFactoryError, as_="e"):
+            self.statement(
+                self.call(
+                    "e.add_path",
+                    self.global_(factory),
+                ),
+            )
+            self.statement("raise")
+        with self.except_(NoActiveFactoryError, as_="e"):
+            self.statement(
+                self.call(
+                    "e.add_path",
+                    self.global_(factory),
+                ),
+            )
+            self.statement("raise")
 
 def _sync_factory_body(
     builder: FactoryBuilder,
@@ -356,6 +377,49 @@ def _select_when_dependency(
     return False
 
 
+def _make_body(
+        builder: FactoryBuilder,
+        factory: Factory,
+        compiled_deps: dict[DependencyKey, CompiledFactory],
+) -> None:
+    if factory.type is FactoryType.COLLECTION:
+        _collection_factory_body(builder, factory, compiled_deps)
+    else:
+        has_default = _select_when_dependency(
+            builder, factory, compiled_deps,
+        )
+        if not has_default:
+            source_call = builder.call(
+                builder.global_(factory.source),
+                *(
+                    builder.getter(dep, compiled_deps)
+                    for dep in factory.dependencies
+                ),
+                **{
+                    name: builder.getter(dep, compiled_deps)
+                    for name, dep in factory.kw_dependencies.items()
+                },
+            )
+            body_generator = BODY_GENERATORS[factory.type]
+            if factory.when_dependencies:  # conditions generated
+                with builder.else_():
+                    body_generator(
+                        builder, source_call, factory, compiled_deps,
+                    )
+            else:  # no options at all
+                body_generator(
+                    builder, source_call, factory, compiled_deps,
+                )
+
+
+def _has_deps(factory: Factory) -> bool:
+    return bool(
+        factory.dependencies or
+        factory.kw_dependencies or
+        factory.when_dependencies,
+    )
+
+
 def compile_factory(
     *,
     factory: Factory,
@@ -377,52 +441,11 @@ def compile_factory(
 
     with builder.make_getter():
         builder.return_if_cached(factory)
-
-        with builder.try_():
-            if factory.type is FactoryType.COLLECTION:
-                _collection_factory_body(builder, factory, compiled_deps)
-            else:
-                has_default = _select_when_dependency(
-                    builder, factory, compiled_deps,
-                )
-                if not has_default:
-                    source_call = builder.call(
-                        builder.global_(factory.source),
-                        *(
-                            builder.getter(dep, compiled_deps)
-                            for dep in factory.dependencies
-                        ),
-                        **{
-                            name: builder.getter(dep, compiled_deps)
-                            for name, dep in factory.kw_dependencies.items()
-                        },
-                    )
-                    body_generator = BODY_GENERATORS[factory.type]
-                    if factory.when_dependencies:  # conditions generated
-                        with builder.else_():
-                            body_generator(
-                                builder, source_call, factory, compiled_deps,
-                            )
-                    else:  # no options at all
-                        body_generator(
-                            builder, source_call, factory, compiled_deps,
-                        )
-        with builder.except_(NoFactoryError, as_="e"):
-            builder.statement(
-                builder.call(
-                    "e.add_path",
-                    builder.global_(factory),
-                ),
-            )
-            builder.statement("raise")
-        with builder.except_(NoActiveFactoryError, as_="e"):
-            builder.statement(
-                builder.call(
-                    "e.add_path",
-                    builder.global_(factory),
-                ),
-            )
-            builder.statement("raise")
+        if _has_deps(factory):
+            with builder.handle_no_dep(factory):
+                _make_body(builder, factory, compiled_deps)
+        else:
+            _make_body(builder, factory, compiled_deps)
         builder.cache(factory)
         builder.return_("solved")
 
@@ -449,8 +472,9 @@ def compile_activation(
         if not condition:
             builder.return_(builder.global_(True))
         else:
-            with builder.if_(condition):
-                builder.return_(builder.global_(True))
-            builder.return_(builder.global_(False))
+            with builder.handle_no_dep(factory):
+                with builder.if_(condition):
+                    builder.return_(builder.global_(True))
+                builder.return_(builder.global_(False))
 
     return builder.build_getter()

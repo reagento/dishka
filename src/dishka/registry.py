@@ -158,7 +158,7 @@ class Registry:
         except KeyError:
             factory = self.get_factory(dependency)
             if not factory:
-                self.compiled[dependency] = None
+                self.compiled_async[dependency] = None
                 return None
             compiled = compile_factory(
                 factory=factory,

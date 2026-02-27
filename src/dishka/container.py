@@ -6,7 +6,11 @@ from types import TracebackType
 from typing import Any, TypeVar, overload
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
-from dishka.entities.key import DependencyKey
+from dishka.entities.key import (
+    CompilationKey,
+    DependencyKey,
+    compilation_to_dependency_key,
+)
 from dishka.entities.marker import Has, HasContext
 from dishka.entities.scope import BaseScope, Scope
 from dishka.provider import Provider, activate
@@ -51,13 +55,13 @@ class Container:
     def __init__(
             self,
             registry: Registry,
-            parent_container: "Container | None" = None,
-            context: dict[Any, Any] | None = None,
+            parent_container: "Container | None",
+            context: dict[Any, Any] | None,
             lock_factory: Callable[
                 [], AbstractContextManager[Any],
-            ] | None = None,
-            parent_closer: ExitCallable | None = None,
-            parent_getter: Callable[[DependencyKey], Any] | None = None,
+            ] | None,
+            parent_closer: ExitCallable | None,
+            parent_getter: Callable[[DependencyKey], Any] | None,
     ):
         self.registry = registry
         self._context = context
@@ -162,56 +166,54 @@ class Container:
             component: Component | None = DEFAULT_COMPONENT,
     ) -> Any:
         lock = self.lock
-        if component != DEFAULT_COMPONENT:
-            dependency_type = DependencyKey(dependency_type, component)
-
         try:
             if lock is None:
-                return self._get_unlocked(dependency_type)
+                return self._get_unlocked(
+                    dependency_type if component == DEFAULT_COMPONENT
+                    else DependencyKey(dependency_type, component),
+                )
             with lock:
-                return self._get_unlocked(dependency_type)
+                return self._get_unlocked(
+                    dependency_type if component == DEFAULT_COMPONENT
+                    else DependencyKey(dependency_type, component),
+                )
         except (NoFactoryError, NoActiveFactoryError) as e:
             e.scope = self.scope
             raise
 
-    def _get(self, key: Any) -> Any:
-        """
-        get by typehint for default component or dependency key for others
-        """
+    def _get(self, key: CompilationKey) -> Any:
         lock = self.lock
         if lock is None:
             return self._get_unlocked(key)
         with lock:
             return self._get_unlocked(key)
 
-    def _get_unlocked(self, key: Any) -> Any:
+    def _get_unlocked(self, key: CompilationKey) -> Any:
         compiled = self.registry.get_compiled(key)
         if compiled is None:
             if self.parent_getter is None:
-                if not isinstance(key, DependencyKey):
-                    key = DependencyKey(key, DEFAULT_COMPONENT)
+                dep_key = compilation_to_dependency_key(key)
+
                 abstract_dependencies = (
-                    self.registry.get_more_abstract_factories(key)
+                    self.registry.get_more_abstract_factories(dep_key)
                 )
                 concrete_dependencies = (
-                    self.registry.get_more_concrete_factories(key)
+                    self.registry.get_more_concrete_factories(dep_key)
                 )
-
                 raise NoFactoryError(
-                    key,
+                    dep_key,
                     suggest_abstract_factories=abstract_dependencies,
                     suggest_concrete_factories=concrete_dependencies,
                 )
             try:
                 return self.parent_getter(key)
             except NoFactoryError as ex:
-                if not isinstance(key, DependencyKey):
-                    key = DependencyKey(key, DEFAULT_COMPONENT)
+                dep_key = compilation_to_dependency_key(key)
                 abstract_dependencies = (
-                    self.registry.get_more_abstract_factories(key)
+                    self.registry.get_more_abstract_factories(dep_key)
                 )
                 concrete_dependencies = (
-                    self.registry.get_more_concrete_factories(key)
+                    self.registry.get_more_concrete_factories(dep_key)
                 )
                 ex.suggest_abstract_factories.extend(abstract_dependencies)
                 ex.suggest_concrete_factories.extend(concrete_dependencies)
@@ -289,8 +291,10 @@ class HasProvider(Provider):
         marker: DependencyKey,
         container: Container,
     ) -> bool:
-        key = DependencyKey(marker.type_hint.value, marker.component)
-        return container._has(key)  # noqa: SLF001
+        return container._has(  # noqa: SLF001
+            marker.type_hint.value if marker.component == DEFAULT_COMPONENT
+            else DependencyKey(marker.type_hint.value, marker.component),
+        )
 
     @activate(HasContext)
     def has_context(
@@ -326,6 +330,9 @@ def make_container(
         registries[0],
         context=context,
         lock_factory=lock_factory,
+        parent_getter=None,
+        parent_closer=None,
+        parent_container=None,
     )
     if start_scope is None:
         while container.registry.scope.skip:

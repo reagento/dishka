@@ -6,7 +6,7 @@ from typing import Any, TypeAlias, cast
 from dishka.code_tools.code_builder import CodeBuilder
 from dishka.container_objects import CompiledFactory
 from dishka.dependency_source import Factory
-from dishka.entities.component import Component, DEFAULT_COMPONENT
+from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.marker import (
@@ -82,11 +82,9 @@ class FactoryBuilder(CodeBuilder):
                     "getter", "exits", "cache", "context", "container",
                 ),
             )
-
-        # use raw typehint if available
-        if obj.component == DEFAULT_COMPONENT and obj.depth==0:
-            obj = obj.type_hint
-        return self.await_(self.call("getter", self.global_(obj)))
+        return self.await_(self.call(
+            "getter", self.global_(obj.as_compilation_key()),
+        ))
 
     def cache(self, factory: Factory) -> None:
         if factory.cache and factory.type is not FactoryType.CONTEXT:

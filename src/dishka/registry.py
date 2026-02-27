@@ -23,9 +23,12 @@ from .dependency_source.type_match import (
     get_typevar_replacement,
     is_broader_or_same_type,
 )
-from .entities.component import DEFAULT_COMPONENT
 from .entities.factory_type import FactoryType
-from .entities.key import DependencyKey
+from .entities.key import (
+    CompilationKey,
+    DependencyKey,
+    compilation_to_dependency_key,
+)
 from .entities.marker import Marker, unpack_marker
 from .entities.scope import BaseScope
 
@@ -41,8 +44,8 @@ IGNORE_TYPES: Final = (
     BaseException,
 )
 
-# key is DependencyKey OR raw typehint (for DEFAULT_COMPONENT, depth-0)
-CompiledFactories: TypeAlias = dict[DependencyKey, CompiledFactory | None]
+
+CompiledFactories: TypeAlias = dict[CompilationKey, CompiledFactory | None]
 
 
 class Registry:
@@ -116,8 +119,8 @@ class Registry:
     ) -> dict[DependencyKey, CompiledFactory]:
         res = {}
         for dep in self.collect_deps(factory):
-            compiled = self.get_compiled(dep)
-            if compiled is not None:
+            compiled = self.get_compiled(dep.as_compilation_key())
+            if compiled:
                 res[dep] = compiled
         return res
 
@@ -127,21 +130,18 @@ class Registry:
     ) -> dict[DependencyKey, CompiledFactory]:
         res = {}
         for dep in self.collect_deps(factory):
-            compiled = self.get_compiled_async(dep)
-            if compiled is not None:
+            compiled = self.get_compiled_async(dep.as_compilation_key())
+            if compiled:
                 res[dep] = compiled
         return res
 
     def get_compiled(
-            self, dependency: Any,
+            self, dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled[dependency]
         except KeyError:
-            if isinstance(dependency, DependencyKey):
-                key = dependency
-            else:
-                key = DependencyKey(dependency, DEFAULT_COMPONENT)
+            key = compilation_to_dependency_key(dependency)
             factory = self.get_factory(key)
             if not factory:
                 self.compiled[dependency] = None
@@ -162,10 +162,7 @@ class Registry:
         try:
             return self.compiled_async[dependency]
         except KeyError:
-            if isinstance(dependency, DependencyKey):
-                key = dependency
-            else:
-                key = DependencyKey(dependency, DEFAULT_COMPONENT)
+            key = compilation_to_dependency_key(dependency)
             factory = self.get_factory(key)
             if not factory:
                 self.compiled_async[dependency] = None
@@ -180,13 +177,15 @@ class Registry:
             return compiled
 
     def get_compiled_activation(
-            self, dependency: DependencyKey,
+            self, dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled_activation[dependency]
         except KeyError:
-            factory = self.get_factory(dependency)
+            key = compilation_to_dependency_key(dependency)
+            factory = self.get_factory(key)
             if not factory:
+                self.compiled[dependency] = None
                 return None
 
             compiled = compile_activation(
@@ -199,13 +198,15 @@ class Registry:
             return compiled
 
     def get_compiled_activation_async(
-            self, dependency: DependencyKey,
+            self, dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled_activation_async[dependency]
         except KeyError:
-            factory = self.get_factory(dependency)
+            key = compilation_to_dependency_key(dependency)
+            factory = self.get_factory(key)
             if not factory:
+                self.compiled[dependency] = None
                 return None
             compiled = compile_activation(
                 factory=factory,

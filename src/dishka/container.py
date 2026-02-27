@@ -61,7 +61,7 @@ class Container:
                 [], AbstractContextManager[Any],
             ] | None,
             parent_closer: ExitCallable | None,
-            parent_getter: Callable[[DependencyKey], Any] | None,
+            parent_getter: Callable[[CompilationKey], Any] | None,
     ):
         self.registry = registry
         self._context = context

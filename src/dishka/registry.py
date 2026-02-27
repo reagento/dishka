@@ -120,7 +120,7 @@ class Registry:
         res = {}
         for dep in self.collect_deps(factory):
             compiled = self.get_compiled(dep.as_compilation_key())
-            if compiled:
+            if compiled is not None:
                 res[dep] = compiled
         return res
 
@@ -131,7 +131,7 @@ class Registry:
         res = {}
         for dep in self.collect_deps(factory):
             compiled = self.get_compiled_async(dep.as_compilation_key())
-            if compiled:
+            if compiled is not None:
                 res[dep] = compiled
         return res
 
@@ -157,7 +157,7 @@ class Registry:
             return compiled
 
     def get_compiled_async(
-            self, dependency: Any,
+            self, dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled_async[dependency]

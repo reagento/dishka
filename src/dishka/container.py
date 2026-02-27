@@ -266,7 +266,7 @@ class Container:
         if errors is not None:
             raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
-    def _has(self, marker: DependencyKey) -> bool:
+    def _has(self, marker: CompilationKey) -> bool:
         compiled = self.registry.get_compiled_activation(marker)
         if not compiled:
             if not self.parent_container:

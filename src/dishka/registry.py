@@ -185,7 +185,7 @@ class Registry:
             key = compilation_to_dependency_key(dependency)
             factory = self.get_factory(key)
             if not factory:
-                self.compiled[dependency] = None
+                self.compiled_activation[dependency] = None
                 return None
 
             compiled = compile_activation(
@@ -206,7 +206,7 @@ class Registry:
             key = compilation_to_dependency_key(dependency)
             factory = self.get_factory(key)
             if not factory:
-                self.compiled[dependency] = None
+                self.compiled_activation_async[dependency] = None
                 return None
             compiled = compile_activation(
                 factory=factory,

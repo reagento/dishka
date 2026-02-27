@@ -202,8 +202,6 @@ class AsyncContainer:
         dependency_type: Any,
         component: Component | None = DEFAULT_COMPONENT,
     ) -> Any:
-        if component != DEFAULT_COMPONENT:
-            dependency_type = DependencyKey(dependency_type, component)
         try:
             return self._get_sync(
                 dependency_type if component == DEFAULT_COMPONENT

@@ -82,7 +82,9 @@ class FactoryBuilder(CodeBuilder):
                     "getter", "exits", "cache", "context", "container",
                 ),
             )
-        return self.await_(self.call("getter", self.global_(obj)))
+        return self.await_(self.call(
+            "getter", self.global_(obj.as_compilation_key()),
+        ))
 
     def cache(self, factory: Factory) -> None:
         if factory.cache and factory.type is not FactoryType.CONTEXT:
@@ -155,6 +157,7 @@ class FactoryBuilder(CodeBuilder):
                 ),
             )
             self.statement("raise")
+
 
 def _sync_factory_body(
     builder: FactoryBuilder,

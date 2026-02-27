@@ -6,7 +6,11 @@ from types import TracebackType
 from typing import Any, TypeVar, overload
 
 from dishka.entities.component import DEFAULT_COMPONENT, Component
-from dishka.entities.key import DependencyKey
+from dishka.entities.key import (
+    CompilationKey,
+    DependencyKey,
+    compilation_to_dependency_key,
+)
 from dishka.entities.marker import Has, HasContext
 from dishka.entities.scope import BaseScope, Scope
 from dishka.provider import Provider, activate
@@ -51,13 +55,13 @@ class AsyncContainer:
     def __init__(
             self,
             registry: Registry,
-            parent_container: "AsyncContainer | None" = None,
-            context: dict[Any, Any] | None = None,
+            parent_container: "AsyncContainer | None",
+            context: dict[Any, Any] | None,
             lock_factory: Callable[
                 [], AbstractAsyncContextManager[Any],
-            ] | None = None,
-            parent_closer: ExitCallable | None = None,
-            parent_getter:  Callable[[DependencyKey], Any] | None  = None,
+            ] | None,
+            parent_closer: ExitCallable | None,
+            parent_getter:  Callable[[DependencyKey], Any] | None,
     ):
         self.registry = registry
         self._context = context
@@ -162,12 +166,17 @@ class AsyncContainer:
             component: Component | None = DEFAULT_COMPONENT,
     ) -> Any:
         lock = self.lock
-        key = DependencyKey(dependency_type, component)
         try:
             if lock is None:
-                return await self._get_unlocked(key)
+                return await self._get_unlocked(
+                    dependency_type if component == DEFAULT_COMPONENT
+                    else DependencyKey(dependency_type, component),
+                )
             async with lock:
-                return await self._get_unlocked(key)
+                return await self._get_unlocked(
+                    dependency_type if component == DEFAULT_COMPONENT
+                    else DependencyKey(dependency_type, component),
+                )
         except (NoFactoryError, NoActiveFactoryError) as e:
             e.scope = self.scope
             raise
@@ -193,36 +202,40 @@ class AsyncContainer:
         dependency_type: Any,
         component: Component | None = DEFAULT_COMPONENT,
     ) -> Any:
-        key = DependencyKey(dependency_type, component)
         try:
-            return self._get_sync(key)
+            return self._get_sync(
+                dependency_type if component == DEFAULT_COMPONENT
+                else DependencyKey(dependency_type, component),
+            )
         except (NoFactoryError, NoActiveFactoryError) as e:
             e.scope = self.scope
             raise
 
-    def _get_sync(self, key: DependencyKey) -> Any:
+    def _get_sync(self, key: CompilationKey) -> Any:
         compiled = self.registry.get_compiled(key)
         if compiled is None:
             if self.parent_container is None:
+                dep_key = compilation_to_dependency_key(key)
                 abstract_dependencies = (
-                    self.registry.get_more_abstract_factories(key)
+                    self.registry.get_more_abstract_factories(dep_key)
                 )
                 concrete_dependencies = (
-                    self.registry.get_more_concrete_factories(key)
+                    self.registry.get_more_concrete_factories(dep_key)
                 )
                 raise NoFactoryError(
-                    key,
+                    dep_key,
                     suggest_abstract_factories=abstract_dependencies,
                     suggest_concrete_factories=concrete_dependencies,
                 )
             try:
                 return self.parent_container._get_sync(key)  # noqa: SLF001
             except NoFactoryError as ex:
+                dep_key = compilation_to_dependency_key(key)
                 abstract_dependencies = (
-                    self.registry.get_more_abstract_factories(key)
+                    self.registry.get_more_abstract_factories(dep_key)
                 )
                 concrete_dependencies = (
-                    self.registry.get_more_concrete_factories(key)
+                    self.registry.get_more_concrete_factories(dep_key)
                 )
                 ex.suggest_abstract_factories.extend(abstract_dependencies)
                 ex.suggest_concrete_factories.extend(concrete_dependencies)
@@ -240,36 +253,38 @@ class AsyncContainer:
             self,
         )
 
-    async def _get(self, key: DependencyKey) -> Any:
+    async def _get(self, key: CompilationKey) -> Any:
         lock = self.lock
         if lock is None:
             return await self._get_unlocked(key)
         async with lock:
             return await self._get_unlocked(key)
 
-    async def _get_unlocked(self, key: DependencyKey) -> Any:
+    async def _get_unlocked(self, key: CompilationKey) -> Any:
         compiled = self.registry.get_compiled_async(key)
         if compiled is None:
             if self.parent_getter is None:
+                dep_key = compilation_to_dependency_key(key)
                 abstract_dependencies = (
-                    self.registry.get_more_abstract_factories(key)
+                    self.registry.get_more_abstract_factories(dep_key)
                 )
                 concrete_dependencies = (
-                    self.registry.get_more_concrete_factories(key)
+                    self.registry.get_more_concrete_factories(dep_key)
                 )
                 raise NoFactoryError(
-                    key,
+                    dep_key,
                     suggest_abstract_factories=abstract_dependencies,
                     suggest_concrete_factories=concrete_dependencies,
                 )
             try:
                 return await self.parent_getter(key)
             except NoFactoryError as ex:
+                dep_key = compilation_to_dependency_key(key)
                 abstract_dependencies = (
-                    self.registry.get_more_abstract_factories(key)
+                    self.registry.get_more_abstract_factories(dep_key)
                 )
                 concrete_dependencies = (
-                    self.registry.get_more_concrete_factories(key)
+                    self.registry.get_more_concrete_factories(dep_key)
                 )
                 ex.suggest_abstract_factories.extend(abstract_dependencies)
                 ex.suggest_concrete_factories.extend(concrete_dependencies)
@@ -322,7 +337,7 @@ class AsyncContainer:
         if errors:
             raise ExitError("Cleanup context errors", errors)  # noqa: TRY003
 
-    async def _has(self, marker: Any) -> bool:
+    async def _has(self, marker: CompilationKey) -> bool:
         compiled = self.registry.get_compiled_activation_async(marker)
         if not compiled:
             if not self.parent_container:
@@ -349,8 +364,10 @@ class HasProvider(Provider):
         marker: DependencyKey,
         container: AsyncContainer,
     ) -> bool:
-        key = DependencyKey(marker.type_hint.value, marker.component)
-        return await container._has(key)  # noqa: SLF001
+        return await container._has(  # noqa: SLF001
+            marker.type_hint.value if marker.component == DEFAULT_COMPONENT
+            else DependencyKey(marker.type_hint.value, marker.component),
+        )
 
     @activate(HasContext)
     def has_context(
@@ -389,6 +406,9 @@ def make_async_container(
         registries[0],
         context=context,
         lock_factory=lock_factory,
+        parent_getter=None,
+        parent_closer=None,
+        parent_container=None,
     )
     if start_scope is None:
         while container.registry.scope.skip:

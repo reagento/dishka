@@ -65,7 +65,7 @@ class AsyncContainer:
     ):
         self.registry = registry
         self._context = context
-        self._cache: dict[DependencyKey, object] = {}
+        self._cache: dict[Any, object] = {}
         self.parent_container = parent_container
 
         self.lock: AbstractAsyncContextManager[Any] | None

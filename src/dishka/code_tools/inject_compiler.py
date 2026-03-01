@@ -8,7 +8,7 @@ from inspect import (
     iscoroutinefunction,
     isgeneratorfunction,
 )
-from typing import Any, ParamSpec, Self, TypeAlias, TypeVar
+from typing import Any, ParamSpec, TypeAlias, TypeVar
 
 from dishka.async_container import AsyncContainer
 from dishka.entities.key import DependencyKey
@@ -54,7 +54,7 @@ class InjectedFuncType:
         manage_scope: bool,
         scope: Scope | None,
         provide_context: ProvideContext | None,
-    ) -> Self:
+    ) -> "InjectedFuncType":
         if isasyncgenfunction(func):
             func_type = FunctionType.GENERATOR
             is_async = True

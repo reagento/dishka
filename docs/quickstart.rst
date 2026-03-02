@@ -39,7 +39,8 @@ and create ``UserDAO`` implementation instances on every request (event) our app
 
 3. **Create providers** and specify how to provide dependencies.
 
-Providers are used to set up factories for your objects. To learn more about providers, see :ref:`provider`.
+Providers are used to set up factories for your objects.
+To learn more about providers, see :ref:`provider`.
 
 Use ``Scope.APP`` for dependencies that should be created once for the entire application lifetime,
 and ``Scope.REQUEST`` for those that should be created for each request, event, etc.
@@ -84,9 +85,10 @@ To learn more about containers, see :ref:`container`.
 
     container = make_container(service_provider, ConnectionProvider())
 
-5. **Access dependencies using the container.** It is safe to request the same dependency multiple times.
+5. **Access dependencies using the container.**
 
 Use the ``.get()`` method to access *APP*-scoped dependencies.
+It is safe to request the same dependency multiple times.
 
 .. code-block:: python
 
@@ -95,25 +97,23 @@ Use the ``.get()`` method to access *APP*-scoped dependencies.
     client = container.get(APIClient)
     client = container.get(APIClient)  # the same APIClient instance as above
 
-To access the *REQUEST* scope and its dependencies, use a context manager.
+To access the *REQUEST* scope (sub-container) and its dependencies, use a context manager.
+Higher level scoped dependencies are also available from sub-containers, e.g. ``APIClient``.
 
 .. code-block:: python
 
-    # The sub-container to access shorter-living objects
+    # A sub-container to access shorter-living objects
     with container() as request_container:
         # Service, UserDAO implementation, and Connection are bound to Scope.REQUEST,
-        # so they are accessible here
+        # so they are accessible here. APIClient can also be accessed here
         service = request_container.get(Service)
         service = request_container.get(Service)  # the same Service instance as above
-        user_dao = request_container.get(UserDAO)  # SQLiteUserDAO instance
-        connection = request_container.get(Connection)
-        client = request_container.get(APIClient)  # the same APIClient instance as above
 
     # Since we exited the context manager, the sqlite3 connection is now closed
 
-    # The new sub-container has a new lifespan for request processing
+    # A new sub-container has a new lifespan for request processing
     with container() as request_container:
-        service = request_container.get(Service)  # the new Service instance
+        service = request_container.get(Service)  # a new Service instance
 
 6. **Close the container** when done.
 
@@ -123,7 +123,7 @@ To access the *REQUEST* scope and its dependencies, use a context manager.
 
 .. dropdown:: Full example
 
-   .. literalinclude:: ./quickstart_example_full.py
+   .. literalinclude:: ./quickstart_example.py
       :language: python
 
 7. **(optional) Integrate with your framework.** If you are using a supported framework, add decorators and middleware for it.

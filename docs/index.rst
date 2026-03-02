@@ -3,13 +3,13 @@ dishka
 
 Cute DI framework with scopes and an agreeable API.
 
-This library provides **IoC container** that's genuinely useful.
+This library provides an **IoC container** that's genuinely useful.
 If you're exhausted from endlessly passing objects to create other objects, only to have those objects create even
 more — you're not alone, and ``dishka`` is a solution.
 Not every project requires an IoC container, but take a look at what ``dishka`` offers.
 
 Unlike other tools, ``dishka`` focuses **only**
-on **dependency injection (DI)**  without trying to solve unrelated tasks.
+on :ref:`dependency-injection` (DI)  without trying to solve unrelated tasks.
 It keeps DI in place without cluttering your code with global variables and scattered specifiers.
 
 Key features:
@@ -20,7 +20,7 @@ Key features:
   released. Many frameworks lack this essential feature.
 * **Modular providers**. Instead of creating many separate functions or one large class, you can split factories
   into smaller classes for easier reuse.
-* **Clean dependencies**.  You don’t need to add custom markers to dependency code to make it visible for the framework.
+* **Clean dependencies**.  You don't need to add custom markers to dependency code to make it visible for the library.
 * **Simple API**. Only a few objects are needed to start using the library.
 * **Framework integrations**. Popular frameworks are supported out of the box. You can simply extend it for your needs.
 * **Speed**. The library is fast enough that performance is not a concern. In fact, it outperforms many

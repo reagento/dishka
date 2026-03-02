@@ -45,20 +45,17 @@ container = make_container(service_provider, ConnectionProvider())
 client = container.get(APIClient)
 client = container.get(APIClient)  # the same APIClient instance as above
 
-# The sub-container to access shorter-living objects
+# A sub-container to access shorter-living objects
 with container() as request_container:
     # Service, UserDAO implementation, and Connection are bound to Scope.REQUEST,
-    # so they are accessible here
+    # so they are accessible here. APIClient can also be accessed here
     service = request_container.get(Service)
     service = request_container.get(Service)  # the same Service instance as above
-    user_dao = request_container.get(UserDAO)  # SQLiteUserDAO instance
-    connection = request_container.get(Connection)
-    client = request_container.get(APIClient)  # the same APIClient instance as above
 
 # Since we exited the context manager, the sqlite3 connection is now closed
 
-# The new sub-container has a new lifespan for request processing
+# A new sub-container has a new lifespan for request processing
 with container() as request_container:
-    service = request_container.get(Service)  # the new Service instance
+    service = request_container.get(Service)  # a new Service instance
 
 container.close()

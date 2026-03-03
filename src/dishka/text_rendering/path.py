@@ -92,7 +92,7 @@ class PathRenderer:
         ]
         switch_len = (
             sum(columns_width) +
-            len(space_between) * (columns_count - 1)
+            len(space_between) * (columns_count-1)
         )
         for row in rows:
             if row.dest != prev_dest:

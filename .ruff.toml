@@ -17,13 +17,12 @@ typing-extensions = false
 preview = true
 explicit-preview-rules = true
 
-select = ["ALL"]
+select = ["ALL", "E"]
 extend-select = [
     # PEP8
     # https://peps.python.org/pep-0008
     # https://docs.astral.sh/ruff/rules/#pycodestyle-e-w
-    "E101",
-    "E112",
+    "E2",
     "E112",
     "E113",
     "E114",
@@ -51,7 +50,6 @@ extend-select = [
     "E265",
     "E271",
     "E272",
-    "E272",
     "E273",
     "E274",
     "E301",
@@ -61,7 +59,6 @@ extend-select = [
     "E305",
     "E306",
     "E502",
-    "E703",
     # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
     "RUF047",
     "RUF052",

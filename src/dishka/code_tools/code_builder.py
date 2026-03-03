@@ -27,6 +27,8 @@ class CodeBuilder:
             self.await_str = ""
             self.async_str = ""
 
+        self._is_async = is_async
+
     def _make_global_name(self, obj: Any, name: str | None = None) -> str:
         if name is None:
             name = get_name(obj, include_module=False)
@@ -145,6 +147,12 @@ class CodeBuilder:
     def yield_(self, expr: str) -> None:
         self.statement(f"yield {expr}")
 
+    def yield_from(self, expr: str) -> None:
+        if self._is_async:
+            msg = "Async context does not support 'yield from'"
+            raise ValueError(msg)
+        self.statement(f"yield from {expr}")
+
     @contextmanager
     def def_(self, name: str, args: list[str]) -> Iterator[None]:
         if name in self.globals:
@@ -221,7 +229,7 @@ class CodeBuilder:
             yield None
 
     @contextmanager
-    def for_(self, expr: str, name: str) -> Iterator[None]:
+    def for_(self, name: str, expr: str) -> Iterator[None]:
         self.statement(f"{self.async_str}for {name} in {expr}:")
         with self.block():
             yield None

@@ -146,26 +146,12 @@ def compile_injected_func(
 
         with context:
             resolved_dependencies = {}
-            await_container = (
-                builder.await_
-                if injected_func_type.is_async_container
-                else lambda expr: expr
-            )
             for name, dep in dependencies.items():
-                dep_type_hint = builder.global_(
-                    dep.type_hint,
-                    f"dep_{name}_type_hint",
-                )
-                dep_component = builder.global_(
-                    dep.component,
-                    f"dep_{name}_component",
-                )
-                resolved_dependencies[name] = await_container(
-                    builder.call(
-                        "container.get",
-                        dep_type_hint,
-                        dep_component,
-                    ),
+                resolved_dependencies[name] = _build_container_get(
+                    dependency=dep,
+                    container_name="container",
+                    is_async_container=injected_func_type.is_async_container,
+                    builder=builder,
                 )
 
             call_func = builder.call(
@@ -176,8 +162,11 @@ def compile_injected_func(
             )
 
             if injected_func_type.func_type is FunctionType.GENERATOR:
-                with builder.for_(call_func, "message"):
-                    builder.yield_("message")
+                if injected_func_type.is_async_func:
+                    with builder.for_("message", call_func):
+                        builder.yield_("message")
+                else:
+                    builder.yield_from(call_func)
             elif injected_func_type.func_type is FunctionType.CALLABLE:
                 builder.return_(builder.await_(call_func))
 
@@ -185,3 +174,25 @@ def compile_injected_func(
     globals_names = builder.compile(source_file_name)[injected_func_name]
     compiled_func: InjectFunc[P, T]= globals_names
     return compiled_func
+
+
+def _build_container_get(
+    *,
+    dependency: DependencyKey,
+    container_name: str,
+    is_async_container: bool,
+    builder: CodeBuilder,
+) -> str:
+    if dependency.is_const():
+        return builder.global_(dependency.get_const_value())
+
+    dep_type_hint = builder.global_(dependency.type_hint)
+    dep_component = builder.global_(dependency.component)
+    container_call = builder.call(
+        f"{container_name}.get",
+        dep_type_hint,
+        dep_component,
+    )
+    if is_async_container:
+        container_call = builder.await_(container_call)
+    return container_call

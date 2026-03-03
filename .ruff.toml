@@ -22,7 +22,6 @@ extend-select = [
     # PEP8
     # https://peps.python.org/pep-0008
     # https://docs.astral.sh/ruff/rules/#pycodestyle-e-w
-    "E2",
     "E112",
     "E113",
     "E114",

@@ -99,6 +99,25 @@ def compile_injected_func(
         name=injected_func_name,
         args=["*args", "**kwargs"],
     ):
+        container_getter_name = builder.global_(
+            container_getter,
+            "container_getter",
+        )
+
+        builder.assign_local(
+            "container",
+            builder.call(
+                container_getter_name,
+                "args",
+                "kwargs",
+            ),
+        )
+
+        for param in additional_params:
+            builder.statement(f"kwargs.pop('{param.name}')")
+
+        context: AbstractContextManager[None] = nullcontext()
+
         if injected_func_type.manage_scope:
             if provide_context is not None:
                 provide_context_name = builder.global_(
@@ -115,34 +134,13 @@ def compile_injected_func(
                     value="{}",
                 )
 
-        container_getter_name = builder.global_(
-            container_getter,
-            "container_getter",
-        )
-        scope_name = builder.global_(scope, "scope")
+            scope_name = builder.global_(scope, "scope")
 
-        builder.assign_local(
-            "container",
-            builder.call(
-                container_getter_name,
-                "args",
-                "kwargs",
-            ),
-        )
-
-        for param in additional_params:
-            builder.statement(f"kwargs.pop('{param.name}')")
-
-        enter_scope = builder.with_(
-            f"container(additional_context, scope={scope_name})",
-            "container",
-            is_async=injected_func_type.is_async_container,
-        )
-
-        if injected_func_type.manage_scope:
-            context: AbstractContextManager[None] = enter_scope
-        else:
-            context = nullcontext()
+            context = builder.with_(
+                f"container(additional_context, scope={scope_name})",
+                "container",
+                is_async=injected_func_type.is_async_container,
+            )
 
         with context:
             resolved_dependencies = {}

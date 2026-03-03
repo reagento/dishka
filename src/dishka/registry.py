@@ -2,6 +2,7 @@ import itertools
 from abc import ABC, ABCMeta
 from enum import Enum
 from typing import (
+    Annotated,
     Any,
     Final,
     Generic,
@@ -217,7 +218,7 @@ class Registry:
             self.compiled_activation_async[dependency] = compiled
             return compiled
 
-    def get_factory(self, dependency: DependencyKey) -> Factory | None:
+    def get_factory(self, dependency: DependencyKey) -> Factory | None:  # noqa: PLR0911
         try:
             return self.factories[dependency]
         except KeyError:
@@ -227,7 +228,13 @@ class Registry:
             origin = get_origin(dependency.type_hint)
             if not origin:
                 return None
-
+            if origin is Annotated:
+                cleaned_key = DependencyKey(
+                    get_args(dependency.type_hint)[0],
+                    dependency.component,
+                    dependency.depth,
+                )
+                return self.get_factory(cleaned_key)
             if (origin is type) and self.has_fallback:
                 return self._get_type_var_factory(dependency)
 

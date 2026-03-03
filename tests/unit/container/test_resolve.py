@@ -283,7 +283,6 @@ def test_provide_all_in_class():
     assert math.isclose(fifty, 50.0, abs_tol=1e-9)
 
 
-
 class ClassX:
     def __init__(self, dep: int, s: str) -> None:
         self.dep = dep

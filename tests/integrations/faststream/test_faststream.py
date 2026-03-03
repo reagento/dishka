@@ -156,6 +156,7 @@ async def test_faststream_with_broker(app_provider: AppProvider) -> None:
 
     await container.close()
 
+
 async def handle_for_custom_inject(
     a: FromDishka[AppDep],
     mock: FromDishka[Mock],

@@ -24,6 +24,7 @@ AppFactory: TypeAlias = Callable[
     AbstractContextManager[Flask],
 ]
 
+
 @contextmanager
 def dishka_app(
     view: Callable[..., Any],

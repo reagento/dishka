@@ -32,7 +32,7 @@ bot = telebot.TeleBot(API_TOKEN, use_class_middlewares=True)
 def start(
         message: Message,
         value: FromDishka[int],
-):
+) -> None:
     bot.reply_to(message, f"Hello, {value}!")
 
 

@@ -18,7 +18,7 @@ class FakeDbGateway(DbGateway):
 
 
 class Interactor:
-    def __init__(self, db: DbGateway):
+    def __init__(self, db: DbGateway) -> None:
         self.db = db
 
     def __call__(self) -> str:
@@ -37,7 +37,7 @@ class InteractorProvider(Provider):
 
 @click.group()
 @click.pass_context
-def main(context: click.Context):
+def main(context: click.Context) -> None:
     container = make_container(AdaptersProvider(), InteractorProvider())
     setup_dishka(container=container, context=context, auto_inject=True)
 
@@ -45,7 +45,7 @@ def main(context: click.Context):
 @click.command()
 @click.option("--count", default=1, help="Number of greetings.")
 @click.option("--name", prompt="Your name", help="The person to greet.")
-def hello(count: int, name: str, interactor: FromDishka[Interactor]):
+def hello(count: int, name: str, interactor: FromDishka[Interactor]) -> None:
     """Simple program that greets NAME for a total of COUNT times."""
     for _ in range(count):
         click.echo(f"Hello {name}!")

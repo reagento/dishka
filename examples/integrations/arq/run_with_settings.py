@@ -24,7 +24,7 @@ class GatewayProvider(Provider):
 async def get_content(
     context: dict[Any, Any],
     gateway: FromDishka[Gateway],
-):
+) -> None:
     result = await gateway.get()
     logger.info(result)
 

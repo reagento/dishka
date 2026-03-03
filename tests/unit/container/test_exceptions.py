@@ -363,7 +363,6 @@ async def test_no_active_factory(
         with pytest.raises(NoActiveFactoryError) as e:
             container.get(str)
 
-
     assert str(e.value)
     assert len(e.value.variants) == variants_count
     assert len(e.value.path) == 2

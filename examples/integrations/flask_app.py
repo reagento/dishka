@@ -29,7 +29,7 @@ class FakeDbGateway(DbGateway):
 
 
 class Interactor:
-    def __init__(self, db: DbGateway):
+    def __init__(self, db: DbGateway) -> None:
         self.db = db
 
     def __call__(self) -> str:

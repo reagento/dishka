@@ -59,7 +59,7 @@ class Provider(BaseProvider):
             scope: BaseScope | None = None,
             component: Component | None = None,
             when: BaseMarker | None = None,
-    ):
+    ) -> None:
         super().__init__(component)
         self.scope = scope or self.scope
         self.when = when or self.when
@@ -153,7 +153,7 @@ class Provider(BaseProvider):
         scope: BaseScope | None = None,
         cache: bool = True,
         provides: Any = None,
-    )-> CompositeDependencySource:
+    ) -> CompositeDependencySource:
         composite = collect(
             source,
             scope=scope,

@@ -40,7 +40,7 @@ class MermaidRenderer(Renderer):
             return ""
         name = self._node_type(node) + self._escape(node.name)
         if node.type in (NodeType.SELECTOR, NodeType.COLLECTION):
-            return  f'class {node.id}["{name}"]'
+            return f'class {node.id}["{name}"]'
         source_name = self._escape(node.source_name)
         return "\n".join([
             f'class {node.id}["{name}"]{{',

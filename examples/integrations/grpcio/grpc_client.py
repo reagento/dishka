@@ -3,7 +3,7 @@ from grpcio.pb2.service_pb2 import RequestMessage
 from grpcio.pb2.service_pb2_grpc import ExampleServiceStub
 
 
-def run():
+def run() -> None:
     with grpc.insecure_channel("localhost:50051") as channel:
         stub = ExampleServiceStub(channel)
 

@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class FakeWarehouseClient(WarehouseClient):
-    def __init__(self):
+    def __init__(self) -> None:
         logger.info("init FakeWarehouseClient as %s", self)
         self.products = 0
 

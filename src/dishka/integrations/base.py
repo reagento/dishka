@@ -645,7 +645,7 @@ def is_dishka_injected(func: Callable[..., Any]) -> bool:
 def _add_params(
     params: Sequence[Parameter],
     additional_params: Sequence[Parameter],
-):
+) -> list[Parameter]:
     params_kind_dict: dict[_ParameterKind, list[Parameter]] = {}
 
     for param in params:

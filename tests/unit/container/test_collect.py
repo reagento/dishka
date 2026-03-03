@@ -28,6 +28,7 @@ def test_collect_provides():
     numbers = c.get(Sequence)
     assert numbers == [1, 2]
 
+
 def test_collect_on_class():
     p = Provider()
     p.provide(lambda: 1, provides=int, scope=Scope.APP)
@@ -74,7 +75,6 @@ def test_collect_cache():
     p.provide(lambda: 1, provides=int, scope=Scope.APP)
     p.provide(lambda: 2, provides=int, scope=Scope.APP)
     p.collect(int, cache=False)
-
 
     c = make_container(p)
     numbers = c.get(list[int])

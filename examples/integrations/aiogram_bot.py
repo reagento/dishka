@@ -47,12 +47,12 @@ async def start(
     user: FromDishka[User],
     value: FromDishka[int],
     chat: FromDishka[Chat | None],
-):
+) -> None:
     chat_name = chat.username if chat else None
     await message.answer(f"Hello, {value}, {chat_name}, {user.full_name}!")
 
 
-async def main():
+async def main() -> None:
     # real main
     logging.basicConfig(level=logging.INFO)
     bot = Bot(token=API_TOKEN)

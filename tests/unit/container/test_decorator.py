@@ -423,7 +423,6 @@ def test_decorate_superscope():
         def dec(self, a: A) -> A:
             return ADecorator(a)
 
-
     with pytest.raises(NoFactoryError):
         make_container(MyProvider())
 

@@ -16,23 +16,23 @@ class Gateway(Protocol):
 
 
 class Connection:
-    async def close(self):
+    async def close(self) -> None:
         print("Connection closed")
 
 
 class GatewayImplementation(Gateway):
-    def __init__(self, config: Config, connection: Connection):
+    def __init__(self, config: Config, connection: Connection) -> None:
         self.value = config.value
         self.connection = connection
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"A(value={self.value}, connection={self.connection})"
 
 
 class MyProvider(Provider):
     scope = Scope.REQUEST
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config) -> None:
         super().__init__()
         self.config = config
 
@@ -54,7 +54,7 @@ class MyProvider(Provider):
     base_gw = alias(source=GatewayImplementation, provides=Gateway)
 
 
-async def main():
+async def main() -> None:
     config = Config(1)
     provider = MyProvider(config)
     container = make_async_container(provider)

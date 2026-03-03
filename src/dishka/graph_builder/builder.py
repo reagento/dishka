@@ -45,7 +45,7 @@ class GraphBuilder:
             container_key: DependencyKey,
             skip_validation: bool,
             validation_settings: ValidationSettings,
-    ):
+    ) -> None:
         self.scopes = scopes
         self.container_key = container_key
         self.skip_validation = skip_validation
@@ -428,7 +428,7 @@ class GraphBuilder:
 
         res = tuple(registries.values())
         for i, registry in enumerate(res):
-            if i+1<len(res):
+            if i+1 < len(res):
                 registry.child_registry = res[i+1]
         return res
 

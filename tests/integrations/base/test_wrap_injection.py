@@ -22,7 +22,7 @@ def test_invalid_injected_func_type(
     func: Callable,
     async_container: AsyncContainer,
 ) -> None:
-    with pytest.raises(InvalidInjectedFuncTypeError):
+    with pytest.raises(InvalidInjectedFuncTypeError, match=func.__name__):
         wrap_injection(
             func=func,
             container_getter=lambda *_: async_container,

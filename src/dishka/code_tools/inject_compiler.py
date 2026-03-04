@@ -41,10 +41,6 @@ class InjectedFuncType:
     is_async_func: bool
     func_type: FunctionType
 
-    def __post_init__(self) -> None:
-        if self.is_async_container and not self.is_async_func:
-            raise InvalidInjectedFuncTypeError
-
     @classmethod
     def get_injected_func_type(
         cls,
@@ -57,16 +53,19 @@ class InjectedFuncType:
     ) -> "InjectedFuncType":
         if isasyncgenfunction(func):
             func_type = FunctionType.GENERATOR
-            is_async = True
+            is_async_func = True
         elif isgeneratorfunction(func):
             func_type = FunctionType.GENERATOR
-            is_async = False
+            is_async_func = False
         elif iscoroutinefunction(func):
             func_type = FunctionType.CALLABLE
-            is_async = True
+            is_async_func = True
         else:
             func_type = FunctionType.CALLABLE
-            is_async = False
+            is_async_func = False
+
+        if is_async_container and not is_async_func:
+            raise InvalidInjectedFuncTypeError(func.__name__)
 
         manage_scope = manage_scope or bool(scope)
 
@@ -76,7 +75,7 @@ class InjectedFuncType:
         return cls(
             is_async_container=is_async_container,
             manage_scope=manage_scope,
-            is_async_func=is_async,
+            is_async_func=is_async_func,
             func_type=func_type,
         )
 

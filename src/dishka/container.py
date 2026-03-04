@@ -30,7 +30,6 @@ from .exceptions import (
 )
 from .graph_builder.builder import GraphBuilder
 from .provider import BaseProvider, make_root_context_provider
-from .provider.root_context import cleanup_context
 from .registry import Registry
 
 T = TypeVar("T")
@@ -315,7 +314,6 @@ def make_container(
         start_scope: BaseScope | None = None,
         validation_settings: ValidationSettings = DEFAULT_VALIDATION,
 ) -> Container:
-    context = cleanup_context(context)
     context_provider = make_root_context_provider(providers, context, scopes)
     has_provider = HasProvider()
     builder = GraphBuilder(

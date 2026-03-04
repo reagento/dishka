@@ -29,15 +29,3 @@ def make_root_context_provider(
         if type_hint not in existing_context_vars:
             p.from_context(provides=type_hint, scope=root_scope)
     return p
-
-
-def cleanup_context(context: dict[Any, Any] | None) -> dict[Any, Any] | None:
-    if not context:
-        return context
-    res = {}
-    for key, value in context.items():
-        if get_origin(key) is Annotated:
-            res[get_args(key)[0]] = value
-        else:
-            res[key] = value
-    return res

@@ -114,40 +114,10 @@ def _find_context_param(func: Callable[P, T]) -> str | None:
     return request_hint or websocket_hint
 
 
-def _get_container_with_source(
-    _: tuple,
-    kwargs: dict,
-    *,
-    param_name: str | None,
-) -> ContainerResult:
-    if param_name and param_name in kwargs:
-        return ContainerResult(
-            container=kwargs[param_name].state.dishka_container,
-        )
-
-    if DISHKA_REQUEST_PARAM.name in kwargs:
-        return ContainerResult(
-            container=kwargs[DISHKA_REQUEST_PARAM.name].state.dishka_container,
-            source=ContainerSource.REQUEST,
-        )
-
-    return ContainerResult(
-        container=kwargs[DISHKA_WEBSOCKET_PARAM.name].state.dishka_container,
-        source=ContainerSource.WEBSOCKET,
-    )
-
-
-def _get_additional_params(
-    param_name: str | None,
-    source: ContainerSource,
-) -> list[Parameter]:
-    if param_name:
-        return []
-
-    if source == ContainerSource.REQUEST:
-        return [DISHKA_REQUEST_PARAM]
-
-    return [DISHKA_WEBSOCKET_PARAM]
+def _container_getter(_: Any, kwargs: Any) -> Container | AsyncContainer:
+    request = kwargs.setdefault(DISHKA_REQUEST_PARAM.name)
+    websocket = kwargs.setdefault(DISHKA_WEBSOCKET_PARAM.name)
+    return (request or websocket).state.dishka_container
 
 
 def _wrap_fastapi_injection(
@@ -161,28 +131,17 @@ def _wrap_fastapi_injection(
         [] if param_name else [DISHKA_REQUEST_PARAM, DISHKA_WEBSOCKET_PARAM]
     )
 
-    def container_getter(
-        args: tuple,
-        kwargs: dict,
-    ) -> AsyncContainer | Container:
-        result = _get_container_with_source(
-            args,
-            kwargs,
-            param_name=param_name,
-        )
-
-        additional_params[:] = _get_additional_params(
-            param_name,
-            result.source,
-        )
-
-        return result.container
+    if additional_params:
+        getter = _container_getter
+    else:
+        def getter(_: Any, kwargs: Any) -> Container | AsyncContainer:
+            return kwargs[param_name].state.dishka_container
 
     return wrap_injection(
         func=func,
         is_async=is_async,
         additional_params=additional_params,
-        container_getter=container_getter,
+        container_getter=getter,
     )
 
 

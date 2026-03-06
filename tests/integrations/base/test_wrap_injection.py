@@ -37,9 +37,6 @@ async def async_gen(
     yield
 
 
-
-
-
 @pytest.mark.parametrize("func", [sync_func, sync_gen])
 def test_invalid_injected_func_type(
     func: Callable,

@@ -169,7 +169,7 @@ def compile_injected_func(
 
     source_file_name = f"<{injected_func_name}>"
     globals_names = builder.compile(source_file_name)[injected_func_name]
-    compiled_func: InjectFunc[P, T]= globals_names
+    compiled_func: InjectFunc[P, T] = globals_names
     return compiled_func
 
 

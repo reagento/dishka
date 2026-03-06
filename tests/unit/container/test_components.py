@@ -136,7 +136,7 @@ class ProviderSum(Provider):
             f: Annotated[float, FromComponent("1")],
             c: Annotated[complex, FromComponent("2")],
     ) -> int:
-        return int(10 * c + f)
+        return int(10*c + f)
 
 
 def test_isolated_component():

@@ -47,6 +47,10 @@ jobs:
       run: |
         sg scan
 
+    - name: Run ast-grep tests
+      run: |
+        sg test --test-dir tests/ast-grep
+
     - name: Run ruff
       run: |
         ruff check .

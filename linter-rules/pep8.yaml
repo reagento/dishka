@@ -1,0 +1,34 @@
+id: DISHKA002
+language: python
+message: "PEP8 operator spacing"
+note: "See: https://peps.python.org/pep-0008/#other-recommendations"
+severity: warning
+ignores: [
+  "src/dishka/_adaptix/**.py",
+  "examples/integrations/grpcio/pb2/**.py",
+]
+rule:
+  any:
+    - all:
+        - kind: assignment
+        - regex: '='
+        - not:
+            regex: '^[^=]+\s=\s'
+    - all:
+        - kind: augmented_assignment
+        - not:
+            regex: '^[^\n]+\s(?:\+=|-=|\*=|/=|//=|%=|\*\*=|@=|&=|\|=|\^=|>>=|<<=)\s'
+    - all:
+        - pattern: $A * $B
+        - regex: '^[A-Za-z_][A-Za-z0-9_]*\s\*\s(?:[A-Za-z_][A-Za-z0-9_]*|\d+)$'
+        - inside:
+            kind: binary_operator
+            regex: '\s[+-]\s'
+    - kind: binary_operator
+      regex: '^\([^)]+\s[+-]\s*[^)]+\)\s*\*\s*\([^)]+\s[+-]\s*[^)]+\)$'
+    - all:
+        - kind: binary_operator
+          regex: '^[A-Za-z_][A-Za-z0-9_]*\s(?:\*\*|//|\*|/|%|@)\s(?:[A-Za-z_][A-Za-z0-9_]*|\d+)$'
+        - inside:
+            kind: binary_operator
+            regex: '\s[+-]\s'

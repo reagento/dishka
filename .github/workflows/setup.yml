@@ -65,7 +65,7 @@ jobs:
         uses: astral-sh/setup-uv@5a095e7a2014a4212f075830d4f7277575a9d098 # v7.3.1
         with:
           enable-cache: ${{ !startsWith(github.ref, 'refs/tags/') }} # zizmor: ignore[cache-poisoning]
-      - name: "Install typos"
+      - name: "Install ast-grep"
         run: uv pip install --group ast-grep --system
       - name: "Run ast-grep-cli tests"
         run: sg test --test-dir tests/ast-grep

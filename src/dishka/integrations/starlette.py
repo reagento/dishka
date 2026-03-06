@@ -21,13 +21,7 @@ from .base import wrap_injection
 T = TypeVar("T")
 P = ParamSpec("P")
 
-warnings.warn(
-    "`dishka.integrations.starlette` will be removed in `dishka==2.0`.\n"
-    "Use `starlette-dishka` package instead, as integrations "
-    "are now maintained in separate third-party packages for faster updates.",
-    DeprecationWarning,
-    stacklevel=2,
-)
+
 
 
 def inject(func: Callable[P, T]) -> Callable[P, T]:
@@ -112,5 +106,12 @@ class SyncContainerMiddleware:
 
 
 def setup_dishka(container: AsyncContainer, app: Starlette) -> None:
+    warnings.warn(
+        "`dishka.integrations.starlette` will be removed in `dishka==2.0`.\n"
+        "Use `starlette-dishka` package instead, as integrations "
+        "are now maintained in separate third-party packages for faster updates.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     app.add_middleware(ContainerMiddleware)
     app.state.dishka_container = container

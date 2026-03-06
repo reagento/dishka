@@ -143,6 +143,16 @@ class Registry:
             return self.compiled[dependency]
         except KeyError:
             key = compilation_to_dependency_key(dependency)
+            if get_origin(key.type_hint) is Annotated:
+                new_key = DependencyKey(
+                    get_args(key.type_hint)[0],
+                    key.component,
+                    key.depth
+                )
+                compiled = self.get_compiled(new_key.as_compilation_key())
+                self.compiled[dependency] = compiled
+                return compiled
+
             factory = self.get_factory(key)
             if not factory:
                 self.compiled[dependency] = None
@@ -164,6 +174,16 @@ class Registry:
             return self.compiled_async[dependency]
         except KeyError:
             key = compilation_to_dependency_key(dependency)
+            if get_origin(key.type_hint) is Annotated:
+                new_key = DependencyKey(
+                    get_args(key.type_hint)[0],
+                    key.component,
+                    key.depth
+                )
+                compiled = self.get_compiled_async(new_key.as_compilation_key())
+                self.compiled_async[dependency] = compiled
+                return compiled
+
             factory = self.get_factory(key)
             if not factory:
                 self.compiled_async[dependency] = None
@@ -184,6 +204,16 @@ class Registry:
             return self.compiled_activation[dependency]
         except KeyError:
             key = compilation_to_dependency_key(dependency)
+            if get_origin(key.type_hint) is Annotated:
+                new_key = DependencyKey(
+                    get_args(key.type_hint)[0],
+                    key.component,
+                    key.depth
+                )
+                compiled = self.get_compiled_activation(new_key.as_compilation_key())
+                self.compiled_activation[dependency] = compiled
+                return compiled
+
             factory = self.get_factory(key)
             if not factory:
                 self.compiled_activation[dependency] = None
@@ -205,6 +235,16 @@ class Registry:
             return self.compiled_activation_async[dependency]
         except KeyError:
             key = compilation_to_dependency_key(dependency)
+            if get_origin(key.type_hint) is Annotated:
+                new_key = DependencyKey(
+                    get_args(key.type_hint)[0],
+                    key.component,
+                    key.depth
+                )
+                compiled = self.get_compiled_activation_async(new_key.as_compilation_key())
+                self.compiled_activation_async[dependency] = compiled
+                return compiled
+
             factory = self.get_factory(key)
             if not factory:
                 self.compiled_activation_async[dependency] = None
@@ -228,13 +268,6 @@ class Registry:
             origin = get_origin(dependency.type_hint)
             if not origin:
                 return None
-            if origin is Annotated:
-                cleaned_key = DependencyKey(
-                    get_args(dependency.type_hint)[0],
-                    dependency.component,
-                    dependency.depth,
-                )
-                return self.get_factory(cleaned_key)
             if (origin is type) and self.has_fallback:
                 return self._get_type_var_factory(dependency)
 

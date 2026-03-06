@@ -4,7 +4,7 @@ from arq import create_pool
 from arq.connections import RedisSettings
 
 
-async def main():
+async def main() -> None:
     pool = await create_pool(RedisSettings())
     await pool.enqueue_job("get_content")
 

@@ -26,7 +26,7 @@ class GatewayProvider(Provider):
 async def get_content(
     context: dict[Any, Any],
     gateway: FromDishka[Gateway],
-):
+) -> None:
     result = await gateway.get()
     logger.info(result)
 
@@ -35,7 +35,7 @@ class WorkerSettings:
     functions = [get_content]  # noqa: RUF012
 
 
-async def main():
+async def main() -> None:
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s  %(process)-7s %(module)-20s %(message)s",

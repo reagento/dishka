@@ -12,6 +12,6 @@ router = Router()
 async def start(
         message: Message,
         interactor: FromDishka[AddProductsInteractor],
-):
+) -> None:
     interactor(user_id=1)
     await message.answer("Products added!")

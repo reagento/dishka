@@ -44,7 +44,7 @@ async def endpoint(
     return Response(text=f"gateway data: {data}")
 
 
-async def on_shutdown(app: Application):
+async def on_shutdown(app: Application) -> None:
     await app[DISHKA_CONTAINER_KEY].close()
 
 

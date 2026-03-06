@@ -32,7 +32,7 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
     )
 
 
-def setup_dishka(container: Container, app: Celery):
+def setup_dishka(container: Container, app: Celery) -> None:
     app.conf[CONTAINER_NAME] = container
 
 

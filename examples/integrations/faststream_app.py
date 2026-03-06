@@ -43,10 +43,10 @@ async def handler(
     b: FromDishka[B],
     raw_message: FromDishka[NatsMessage],
     faststream_context: FromDishka[ContextRepo],
-):
+) -> None:
     print(msg, a, b)
 
 
 @app.after_startup
-async def t():
+async def t() -> None:
     await broker.publish("test", "test")

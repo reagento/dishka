@@ -17,7 +17,8 @@ no-lines-before = ["local-folder"]
 [lint.per-file-ignores]
 "integrations/grpcio/pb2/**.py" = ["ALL"]
 "integrations/grpcio/grpc_server.py" = ["N802"]
-"real_world/tests/test_web.py" = [
+"real_world/tests/**.py" = [
+    "ANN",
     "S101",
     "PLR2004",
 ]

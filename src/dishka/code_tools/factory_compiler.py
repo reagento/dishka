@@ -32,7 +32,7 @@ class FactoryBuilder(CodeBuilder):
             is_async: bool,
             getter_prefix: str,
             container_key: DependencyKey,
-    ):
+    ) -> None:
         super().__init__(is_async=is_async)
         self.provides_name = ""
         self.cache_key = ""

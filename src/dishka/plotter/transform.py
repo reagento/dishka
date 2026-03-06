@@ -119,7 +119,7 @@ class Transformer:
 
     def transform(self, container: Container | AsyncContainer) -> list[Group]:
         registries = [container.registry]
-        while registry:=registries[-1].child_registry:
+        while registry := registries[-1].child_registry:
             registries.append(registry)
         result = []
         for registry in registries:

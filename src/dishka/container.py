@@ -40,6 +40,7 @@ ExitCallable = Callable[
     None,
 ]
 
+
 class Container:
     __slots__ = (
         "_cache",
@@ -62,7 +63,7 @@ class Container:
             ] | None,
             parent_closer: ExitCallable | None,
             parent_getter: Callable[[CompilationKey], Any] | None,
-    ):
+    ) -> None:
         self.registry = registry
         self._context = context
         self._cache: dict[Any, object] = {}
@@ -230,7 +231,6 @@ class Container:
     def close(self, exception: BaseException | None = None) -> None:
         self.__exit__(None, exception, None)
 
-
     def __enter__(self) -> "Container":
         return self
 
@@ -344,7 +344,7 @@ def make_container(
                 context=context,
                 lock_factory=lock_factory,
                 parent_closer=container.__exit__,
-                parent_getter=container._get, # noqa: SLF001
+                parent_getter=container._get,  # noqa: SLF001
             )
     else:
         while container.registry.scope is not start_scope:
@@ -359,7 +359,7 @@ def make_container(
                 context=context,
                 lock_factory=lock_factory,
                 parent_closer=container.__exit__,
-                parent_getter=container._get, # noqa: SLF001
+                parent_getter=container._get,  # noqa: SLF001
             )
     return container
 

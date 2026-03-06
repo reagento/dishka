@@ -7,32 +7,90 @@ include = [
     "examples/**.py",
 ]
 exclude = [
-    "src/dishka/_adaptix/**",
+    "src/dishka/_adaptix/",
 ]
-lint.typing-extensions = false
-lint.select = [
-    "ALL"
+
+[lint]
+# Disable `typing_extensions` imports
+typing-extensions = false
+
+preview = true
+explicit-preview-rules = true
+
+select = ["ALL"]
+extend-select = [
+    # PEP8
+    # https://peps.python.org/pep-0008
+    # https://docs.astral.sh/ruff/rules/#pycodestyle-e-w
+    "E112",
+    "E113",
+    "E114",
+    "E115",
+    "E116",
+    "E117",
+    "E201",
+    "E202",
+    "E203",
+    "E204",
+    "E211",
+    "E221",
+    "E223",
+    "E224",
+    "E225",
+    "E227",
+    "E228",
+    "E231",
+    "E241",
+    "E242",
+    "E251",
+    "E252",
+    "E261",
+    "E262",
+    "E265",
+    "E271",
+    "E272",
+    "E273",
+    "E274",
+    "E301",
+    "E302",
+    "E303",
+    "E304",
+    "E305",
+    "E306",
+    "E502",
+    # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
+    "RUF047",
+    "RUF052",
+    "RUF055",
+    "RUF056",
+    "RUF063",
+    "RUF065",
+    "RUF066",
+    "RUF068",
+    "RUF069",
+    "RUF070",
+    # https://docs.astral.sh/ruff/rules/#refurb-furb
+    "FURB118",
+    "FURB148",
+    "FURB152",
+    "FURB156",
 ]
-lint.ignore = [
+ignore = [
     "ARG",
-    "ANN",
+    "ANN401",
     "D",
     "EM101",
     "EM102",
-    "PT001",
-    "PT023",
+    "SIM103",
     "SIM108",
     "RET505",
     "PLR0913",
-    "SIM103",
     "ISC003",
     "PERF401",
     "FBT003",
     "PLW0108",
-
     # identical by code != identical by meaning
     "SIM114",
-
     # awful things, never use.
     # It makes runtime work differently from typechecker
     "TC001",
@@ -43,9 +101,13 @@ lint.ignore = [
 
 [lint.per-file-ignores]
 "tests/**" = [
+    "ANN",
+    "PT001",
+    "PT023",
     "TID252",
     "PLR2004",
     "S101",
+    "S311",
     "TRY003",
     "PLW1641",
     "PYI059"

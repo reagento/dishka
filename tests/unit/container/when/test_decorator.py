@@ -62,7 +62,6 @@ def test_decorate_selector(*, active: bool, value: str):
     assert c.get(str) == value
 
 
-
 def test_decorate_override():
     class MyProvider(Provider):
         @provide

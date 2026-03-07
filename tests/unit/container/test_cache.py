@@ -50,7 +50,6 @@ async def test_cache_async():
         assert await state.get(Annotated[int, "stub"]) == 2
 
 
-
 def test_nocache_sync():
     class MyProvider(Provider):
         value = 0

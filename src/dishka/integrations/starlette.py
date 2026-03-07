@@ -45,21 +45,20 @@ class ContainerMiddleware:
             receive: Receive,
             send: Send,
     ) -> None:
-        if scope["type"] not in ("http", "websocket"):
-            return await self.app(scope, receive, send)
-
+        type_ = scope["type"]
         request: Request | WebSocket
         context: dict[type[Request | WebSocket], Request | WebSocket]
 
-        if scope["type"] == "http":
-            request = Request(scope, receive=receive, send=send)
+        if type_ == "http":
+            request = Request(scope, receive, send)
             context = {Request: request}
             di_scope = DIScope.REQUEST
-
-        else:
+        elif type_ == "websocket":
             request = WebSocket(scope, receive, send)
             context = {WebSocket: request}
             di_scope = DIScope.SESSION
+        else:
+            return await self.app(scope, receive, send)
 
         async with request.app.state.dishka_container(
                 context,

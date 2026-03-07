@@ -1,5 +1,5 @@
 import math
-from typing import Protocol
+from typing import Annotated, Protocol, TypeAlias
 
 import pytest
 
@@ -310,3 +310,28 @@ async def test_sync_in_async():
     assert a
     assert a.dep == 100
     assert a.s == "hello"
+
+
+AnnotatedInt: TypeAlias = Annotated[int, "stub"]
+
+
+def test_get_annotated():
+    p = Provider()
+    p.provide(lambda: 42, provides=int, scope=Scope.APP)
+    c = make_container(p)
+    assert c.get(AnnotatedInt) == 42
+
+
+def test_annotated_provide():
+    class P(Provider):
+        @provide(scope=Scope.APP)
+        def foo(self, x: AnnotatedInt) -> str:
+            return str(x)
+
+        @provide(scope=Scope.APP)
+        def make_int(self) -> AnnotatedInt:
+            return 42
+
+    c = make_container(P())
+    assert c.get(str) == "42"
+

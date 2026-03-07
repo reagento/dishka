@@ -1,3 +1,5 @@
+from typing import Annotated
+
 import pytest
 
 from dishka import (
@@ -45,6 +47,7 @@ async def test_cache_async():
     async with container() as state:
         assert await state.get(int) == 2
         assert await state.get(int) == 2
+        assert await state.get(Annotated[int, "stub"]) == 2
 
 
 def test_nocache_sync():

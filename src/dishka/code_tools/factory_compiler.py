@@ -53,7 +53,10 @@ class FactoryBuilder(CodeBuilder):
     def register_provides(self, provides: DependencyKey) -> None:
         self.provides_name = self.global_(provides)
         # special object to improve dictionary lookup
-        self.cache_key = self.global_(object(), f"{self.provides_name}_cache")
+        self.cache_key = self.global_(
+            provides.as_compilation_key(),
+            f"{self.provides_name}_cache",
+        )
 
     def make_getter(self) -> AbstractContextManager[None]:
         raw_provides_name = self.provides_name.removeprefix("key_")

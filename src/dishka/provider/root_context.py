@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import Annotated, Any, get_args, get_origin
+from typing import Any
 
 from dishka.entities.component import DEFAULT_COMPONENT
 from dishka.entities.scope import BaseScope

@@ -147,9 +147,9 @@ class Registry:
                 new_key = DependencyKey(
                     get_args(key.type_hint)[0],
                     key.component,
-                    key.depth
-                )
-                compiled = self.get_compiled(new_key.as_compilation_key())
+                    key.depth,
+                ).as_compilation_key()
+                compiled = self.get_compiled(new_key)
                 self.compiled[dependency] = compiled
                 return compiled
 
@@ -178,9 +178,9 @@ class Registry:
                 new_key = DependencyKey(
                     get_args(key.type_hint)[0],
                     key.component,
-                    key.depth
-                )
-                compiled = self.get_compiled_async(new_key.as_compilation_key())
+                    key.depth,
+                ).as_compilation_key()
+                compiled = self.get_compiled_async(new_key)
                 self.compiled_async[dependency] = compiled
                 return compiled
 
@@ -208,9 +208,9 @@ class Registry:
                 new_key = DependencyKey(
                     get_args(key.type_hint)[0],
                     key.component,
-                    key.depth
-                )
-                compiled = self.get_compiled_activation(new_key.as_compilation_key())
+                    key.depth,
+                ).as_compilation_key()
+                compiled = self.get_compiled_activation(new_key)
                 self.compiled_activation[dependency] = compiled
                 return compiled
 
@@ -239,9 +239,9 @@ class Registry:
                 new_key = DependencyKey(
                     get_args(key.type_hint)[0],
                     key.component,
-                    key.depth
-                )
-                compiled = self.get_compiled_activation_async(new_key.as_compilation_key())
+                    key.depth,
+                ).as_compilation_key()
+                compiled = self.get_compiled_activation_async(new_key)
                 self.compiled_activation_async[dependency] = compiled
                 return compiled
 
@@ -258,7 +258,7 @@ class Registry:
             self.compiled_activation_async[dependency] = compiled
             return compiled
 
-    def get_factory(self, dependency: DependencyKey) -> Factory | None:  # noqa: PLR0911
+    def get_factory(self, dependency: DependencyKey) -> Factory | None:
         try:
             return self.factories[dependency]
         except KeyError:

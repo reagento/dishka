@@ -33,6 +33,7 @@ Some of the integrations are supported by a community, refer to their documentat
    taskiq
    telebot
    Quart <https://github.com/hrimov/quart-dishka>
+   apscheduler <https://github.com/MikhailWar/apscheduler-dishka>
    adding_new
 
 .. list-table:: Built-in frameworks integrations
@@ -72,7 +73,7 @@ Some of the integrations are supported by a community, refer to their documentat
      -
    * -  :ref:`Sanic`
      -
-     -
+     - `APScheduler <https://github.com/MikhailWar/apscheduler-dishka>`_ (:abbr:`com (Community support)`)
      -
    * -  `Starlette <https://github.com/reagento/starlette-dishka>`_ (:abbr:`com (Community support)`)
      -

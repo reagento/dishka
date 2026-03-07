@@ -1,0 +1,4 @@
+ruleDirs:
+  - linter-rules
+testConfigs:
+  - testDir: tests/ast-grep/

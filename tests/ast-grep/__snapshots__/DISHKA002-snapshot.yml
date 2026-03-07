@@ -1,0 +1,46 @@
+id: DISHKA002
+snapshots:
+  c = (a + b) * (a - b):
+    labels:
+    - source: (a + b) * (a - b)
+      style: primary
+      start: 4
+      end: 21
+  c = (a + b)* (a - b):
+    labels:
+    - source: (a + b)* (a - b)
+      style: primary
+      start: 4
+      end: 20
+  c = (a + b)* (a -b):
+    labels:
+    - source: (a + b)* (a -b)
+      style: primary
+      start: 4
+      end: 19
+  c = (a + b)*(a - b):
+    labels:
+    - source: (a + b)*(a - b)
+      style: primary
+      start: 4
+      end: 19
+  hypot2 = x * x + y * y:
+    labels:
+    - source: x * x
+      style: primary
+      start: 9
+      end: 14
+    - source: x * x + y * y
+      style: secondary
+      start: 9
+      end: 22
+  x = x * 2 - 1:
+    labels:
+    - source: x * 2
+      style: primary
+      start: 4
+      end: 9
+    - source: x * 2 - 1
+      style: secondary
+      start: 4
+      end: 13

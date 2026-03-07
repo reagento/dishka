@@ -27,7 +27,7 @@ else:
                 return super().__class_getitem__(item)  # type: ignore[misc]
 
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # ast-grep-ignore: DISHKA001
     from typing import Union as AnyOf
 else:
     AnyOf = ProvideMultiple

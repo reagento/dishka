@@ -5,6 +5,7 @@ from typing import (
     Any,
     Literal,
     NamedTuple,
+    TypeAlias,
     TypeVar,
     get_args,
     get_origin,
@@ -22,6 +23,11 @@ def FromComponent(  # noqa: N802
     component: Component = DEFAULT_COMPONENT,
 ) -> _FromComponent:
     return _FromComponent(component)
+
+
+# compiled factories identified by simplified key for performance
+# raw type hint for DEFAULT_COMPONENT 0-depth or DependencyKey itself
+CompilationKey: TypeAlias = Any
 
 
 class DependencyKey(NamedTuple):
@@ -62,6 +68,17 @@ class DependencyKey(NamedTuple):
             isinstance(self.type_hint, type) and
             issubclass(self.type_hint, Marker)
         )
+
+    def as_compilation_key(self) -> CompilationKey:
+        if self.component == DEFAULT_COMPONENT and self.depth == 0:
+            return self.type_hint
+        return self
+
+
+def compilation_to_dependency_key(key: CompilationKey) -> DependencyKey:
+    if isinstance(key, DependencyKey):
+        return key
+    return DependencyKey(key, DEFAULT_COMPONENT)
 
 
 def const_dependency_key(value: Any) -> DependencyKey:

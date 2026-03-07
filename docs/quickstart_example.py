@@ -1,62 +1,61 @@
 import sqlite3
-
-from typing import Protocol, Iterable
+from collections.abc import Iterable
 from sqlite3 import Connection
+from typing import Protocol
 
-class DAO(Protocol):
+from dishka import Provider, Scope, make_container, provide
+
+
+class APIClient:
     ...
 
 
-class Service:
-    def __init__(self, dao: DAO):
-        ...
+class UserDAO(Protocol):
+    ...
 
 
-class DAOImpl(DAO):
+class SQLiteUserDAO(UserDAO):
     def __init__(self, connection: Connection):
         ...
 
 
-class SomeClient:
-    ...
-
-
-from dishka import Provider, Scope
+class Service:
+    def __init__(self, client: APIClient, user_dao: UserDAO):
+        ...
 
 
 service_provider = Provider(scope=Scope.REQUEST)
 service_provider.provide(Service)
-service_provider.provide(DAOImpl, provides=DAO)
-service_provider.provide(SomeClient, scope=Scope.APP)  # override provider scope
-
-
-from dishka import Provider, provide, Scope
+service_provider.provide(SQLiteUserDAO, provides=UserDAO)
+service_provider.provide(APIClient, scope=Scope.APP)  # override provider's scope
 
 
 class ConnectionProvider(Provider):
     @provide(scope=Scope.REQUEST)
     def new_connection(self) -> Iterable[Connection]:
-        conn = sqlite3.connect(":memory:")
-        yield conn
-        conn.close()
-
-
-from dishka import make_container
+        connection = sqlite3.connect(":memory:")
+        yield connection
+        connection.close()
 
 
 container = make_container(service_provider, ConnectionProvider())
 
-client = container.get(SomeClient)  # `SomeClient` has Scope.APP, so it is accessible here
-client = container.get(SomeClient)  # same instance of `SomeClient`
+# APIClient is bound to Scope.APP, so it can be accessed here
+# or from any scope inside including Scope.REQUEST
+client = container.get(APIClient)
+client = container.get(APIClient)  # the same APIClient instance as above
 
-# subcontainer to access shorter-living objects
+# A sub-container to access shorter-living objects
 with container() as request_container:
+    # Service, UserDAO implementation, and Connection are bound to Scope.REQUEST,
+    # so they are accessible here. APIClient can also be accessed here
     service = request_container.get(Service)
-    service = request_container.get(Service)  # same service instance
-# since we exited the context manager, the connection is now closed
+    service = request_container.get(Service)  # the same Service instance as above
 
-# new subcontainer to have a new lifespan for request processing
+# Since we exited the context manager, the sqlite3 connection is now closed
+
+# A new sub-container has a new lifespan for request processing
 with container() as request_container:
-    service = request_container.get(Service)  # new service instance
+    service = request_container.get(Service)  # a new Service instance
 
 container.close()

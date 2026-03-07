@@ -85,6 +85,7 @@ async def dishka_custom_auto_inject_app(
     await dp.emit_shutdown()
     await container.close()
 
+
 @asynccontextmanager
 async def dishka_auto_app_with_sub_router(handler, provider):
     dp = Dispatcher()

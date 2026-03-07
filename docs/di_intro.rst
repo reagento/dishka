@@ -1,3 +1,5 @@
+.. _dependency-injection:
+
 Dependency injection
 *************************
 

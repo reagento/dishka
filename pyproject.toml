@@ -31,7 +31,24 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    'exceptiongroup>=1.1.3; python_version<"3.11"',
+    "exceptiongroup>=1.1.3; python_version<'3.11'",
+]
+
+[dependency-groups]
+typos = ["typos==1.44.0"]
+zizmor = ["zizmor==1.22.0"]
+ast-grep = ["ast-grep-cli==0.41.0"]
+ci = [
+    "uv==0.10.7",
+    "ruff==0.15.4",
+    "mypy==1.19.1",
+    "nox==2026.2.9",
+]
+dev = [
+    { include-group = "ci" },
+    { include-group = "typos" },
+    { include-group = "zizmor" },
+    { include-group = "ast-grep" },
 ]
 
 [project.urls]

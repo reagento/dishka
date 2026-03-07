@@ -21,14 +21,6 @@ from .base import wrap_injection
 T = TypeVar("T")
 P = ParamSpec("P")
 
-warnings.warn(
-    "`dishka.integrations.starlette` will be removed in `dishka==2.0`.\n"
-    "Use `starlette-dishka` package instead, as integrations "
-    "are now maintained in separate third-party packages for faster updates.",
-    DeprecationWarning,
-    stacklevel=2,
-)
-
 
 def inject(func: Callable[P, T]) -> Callable[P, T]:
     return wrap_injection(
@@ -48,30 +40,29 @@ class ContainerMiddleware:
         self.app = app
 
     async def __call__(
-        self,
-        scope: Scope,
-        receive: Receive,
-        send: Send,
+            self,
+            scope: Scope,
+            receive: Receive,
+            send: Send,
     ) -> None:
-        if scope["type"] not in ("http", "websocket"):
-            return await self.app(scope, receive, send)
-
+        type_ = scope["type"]
         request: Request | WebSocket
         context: dict[type[Request | WebSocket], Request | WebSocket]
 
-        if scope["type"] == "http":
-            request = Request(scope, receive=receive, send=send)
+        if type_ == "http":
+            request = Request(scope, receive, send)
             context = {Request: request}
             di_scope = DIScope.REQUEST
-
-        else:
+        elif type_ == "websocket":
             request = WebSocket(scope, receive, send)
             context = {WebSocket: request}
             di_scope = DIScope.SESSION
+        else:
+            return await self.app(scope, receive, send)
 
         async with request.app.state.dishka_container(
-            context,
-            scope=di_scope,
+                context,
+                scope=di_scope,
         ) as request_container:
             request.state.dishka_container = request_container
             return await self.app(scope, receive, send)
@@ -82,10 +73,10 @@ class SyncContainerMiddleware:
         self.app = app
 
     async def __call__(
-        self,
-        scope: Scope,
-        receive: Receive,
-        send: Send,
+            self,
+            scope: Scope,
+            receive: Receive,
+            send: Send,
     ) -> None:
         if scope["type"] not in ("http", "websocket"):
             return await self.app(scope, receive, send)
@@ -104,13 +95,21 @@ class SyncContainerMiddleware:
             di_scope = DIScope.SESSION
 
         with request.app.state.dishka_container(
-            context,
-            scope=di_scope,
+                context,
+                scope=di_scope,
         ) as request_container:
             request.state.dishka_container = request_container
             return await self.app(scope, receive, send)
 
 
 def setup_dishka(container: AsyncContainer, app: Starlette) -> None:
+    warnings.warn(
+        "`dishka.integrations.starlette` will be removed in `dishka==2.0`.\n"
+        "Use `starlette-dishka` package instead, as integrations "
+        "are now maintained in separate third-party packages for "
+        "faster updates.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     app.add_middleware(ContainerMiddleware)
     app.state.dishka_container = container

@@ -118,7 +118,9 @@ class Transformer:
         return res
 
     def transform(self, container: Container | AsyncContainer) -> list[Group]:
-        registries = [container.registry, *container.child_registries]
+        registries = [container.registry]
+        while registry := registries[-1].child_registry:
+            registries.append(registry)
         result = []
         for registry in registries:
             if self._is_empty(registry):

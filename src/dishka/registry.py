@@ -1,6 +1,8 @@
+import itertools
 from abc import ABC, ABCMeta
 from enum import Enum
 from typing import (
+    Annotated,
     Any,
     Final,
     Generic,
@@ -23,8 +25,12 @@ from .dependency_source.type_match import (
     is_broader_or_same_type,
 )
 from .entities.factory_type import FactoryType
-from .entities.key import DependencyKey
-from .entities.marker import Marker
+from .entities.key import (
+    CompilationKey,
+    DependencyKey,
+    compilation_to_dependency_key,
+)
+from .entities.marker import Marker, unpack_marker
 from .entities.scope import BaseScope
 
 IGNORE_TYPES: Final = (
@@ -39,21 +45,31 @@ IGNORE_TYPES: Final = (
     BaseException,
 )
 
-CompiledFactories: TypeAlias = dict[DependencyKey, CompiledFactory]
+
+CompiledFactories: TypeAlias = dict[CompilationKey, CompiledFactory | None]
 
 
 class Registry:
     __slots__ = (
+        "child_registry",
         "compiled",
         "compiled_activation",
         "compiled_activation_async",
         "compiled_async",
+        "container_key",
         "factories",
         "has_fallback",
         "scope",
     )
 
-    def __init__(self, scope: BaseScope, *, has_fallback: bool) -> None:
+    def __init__(
+            self,
+            scope: BaseScope,
+            *,
+            has_fallback: bool,
+            container_key: DependencyKey,
+            child_registry: "Registry | None" = None,
+    ) -> None:
         self.scope = scope
         self.factories: dict[DependencyKey, Factory] = {}
         self.compiled: CompiledFactories = {}
@@ -61,6 +77,8 @@ class Registry:
         self.compiled_activation: CompiledFactories = {}
         self.compiled_activation_async: CompiledFactories = {}
         self.has_fallback = has_fallback
+        self.container_key = container_key
+        self.child_registry = child_registry
 
     def add_factory(
             self,
@@ -79,55 +97,164 @@ class Registry:
             )
             self.factories[origin_key] = factory
 
+    def collect_deps(self, factory: Factory) -> list[DependencyKey]:
+        return list(itertools.chain(
+            factory.dependencies,
+            factory.kw_dependencies.values(),
+            (f.provides for f in factory.when_dependencies),
+            (
+                DependencyKey(m, f.when_component)
+                for f in factory.when_dependencies
+                for m in unpack_marker(f.when_override)
+            ),
+            (
+                DependencyKey(m, factory.when_component)
+                for marker in (factory.when_active, factory.when_override)
+                for m in unpack_marker(marker)
+            ),
+        ))
+
+    def _compile_deps(
+        self,
+        factory: Factory,
+    ) -> dict[DependencyKey, CompiledFactory]:
+        res = {}
+        for dep in self.collect_deps(factory):
+            compiled = self.get_compiled(dep.as_compilation_key())
+            if compiled is not None:
+                res[dep] = compiled
+        return res
+
+    def _compile_deps_async(
+        self,
+        factory: Factory,
+    ) -> dict[DependencyKey, CompiledFactory]:
+        res = {}
+        for dep in self.collect_deps(factory):
+            compiled = self.get_compiled_async(dep.as_compilation_key())
+            if compiled is not None:
+                res[dep] = compiled
+        return res
+
     def get_compiled(
-            self, dependency: DependencyKey,
+            self, dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled[dependency]
         except KeyError:
-            factory = self.get_factory(dependency)
+            key = compilation_to_dependency_key(dependency)
+            if get_origin(key.type_hint) is Annotated:
+                new_key = DependencyKey(
+                    get_args(key.type_hint)[0],
+                    key.component,
+                    key.depth,
+                ).as_compilation_key()
+                compiled = self.get_compiled(new_key)
+                self.compiled[dependency] = compiled
+                return compiled
+
+            factory = self.get_factory(key)
             if not factory:
+                self.compiled[dependency] = None
                 return None
-            compiled = compile_factory(factory=factory, is_async=False)
+
+            compiled = compile_factory(
+                factory=factory,
+                is_async=False,
+                compiled_deps=self._compile_deps(factory),
+                container_key=self.container_key,
+            )
             self.compiled[dependency] = compiled
             return compiled
 
     def get_compiled_async(
-            self, dependency: DependencyKey,
+            self, dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled_async[dependency]
         except KeyError:
-            factory = self.get_factory(dependency)
+            key = compilation_to_dependency_key(dependency)
+            if get_origin(key.type_hint) is Annotated:
+                new_key = DependencyKey(
+                    get_args(key.type_hint)[0],
+                    key.component,
+                    key.depth,
+                ).as_compilation_key()
+                compiled = self.get_compiled_async(new_key)
+                self.compiled_async[dependency] = compiled
+                return compiled
+
+            factory = self.get_factory(key)
             if not factory:
+                self.compiled_async[dependency] = None
                 return None
-            compiled = compile_factory(factory=factory, is_async=True)
+            compiled = compile_factory(
+                factory=factory,
+                is_async=True,
+                compiled_deps=self._compile_deps_async(factory),
+                container_key=self.container_key,
+            )
             self.compiled_async[dependency] = compiled
             return compiled
 
     def get_compiled_activation(
-            self, dependency: DependencyKey,
+            self, dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled_activation[dependency]
         except KeyError:
-            factory = self.get_factory(dependency)
+            key = compilation_to_dependency_key(dependency)
+            if get_origin(key.type_hint) is Annotated:
+                new_key = DependencyKey(
+                    get_args(key.type_hint)[0],
+                    key.component,
+                    key.depth,
+                ).as_compilation_key()
+                compiled = self.get_compiled_activation(new_key)
+                self.compiled_activation[dependency] = compiled
+                return compiled
+
+            factory = self.get_factory(key)
             if not factory:
+                self.compiled_activation[dependency] = None
                 return None
-            compiled = compile_activation(factory=factory, is_async=False)
+
+            compiled = compile_activation(
+                factory=factory,
+                is_async=False,
+                compiled_deps=self._compile_deps(factory),
+                container_key=self.container_key,
+            )
             self.compiled_activation[dependency] = compiled
             return compiled
 
     def get_compiled_activation_async(
-            self, dependency: DependencyKey,
+            self, dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled_activation_async[dependency]
         except KeyError:
-            factory = self.get_factory(dependency)
+            key = compilation_to_dependency_key(dependency)
+            if get_origin(key.type_hint) is Annotated:
+                new_key = DependencyKey(
+                    get_args(key.type_hint)[0],
+                    key.component,
+                    key.depth,
+                ).as_compilation_key()
+                compiled = self.get_compiled_activation_async(new_key)
+                self.compiled_activation_async[dependency] = compiled
+                return compiled
+
+            factory = self.get_factory(key)
             if not factory:
+                self.compiled_activation_async[dependency] = None
                 return None
-            compiled = compile_activation(factory=factory, is_async=True)
+            compiled = compile_activation(
+                factory=factory,
+                is_async=True,
+                compiled_deps=self._compile_deps_async(factory),
+                container_key=self.container_key,
+            )
             self.compiled_activation_async[dependency] = compiled
             return compiled
 
@@ -141,7 +268,6 @@ class Registry:
             origin = get_origin(dependency.type_hint)
             if not origin:
                 return None
-
             if (origin is type) and self.has_fallback:
                 return self._get_type_var_factory(dependency)
 

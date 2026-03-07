@@ -25,6 +25,7 @@ Some of the integrations are supported by a community, refer to their documentat
    grpcio
    jobify <https://github.com/C3EQUALZz/dishka-jobify>
    litestar
+   Pyramid <https://github.com/WorkHardes/dishka-pyramid>
    RQ <https://github.com/prepin/dishka-rq>
    sanic
    starlette
@@ -32,6 +33,7 @@ Some of the integrations are supported by a community, refer to their documentat
    taskiq
    telebot
    Quart <https://github.com/hrimov/quart-dishka>
+   apscheduler <https://github.com/MikhailWar/apscheduler-dishka>
    adding_new
 
 .. list-table:: Built-in frameworks integrations
@@ -65,9 +67,13 @@ Some of the integrations are supported by a community, refer to their documentat
      -
      - `RQ <https://github.com/prepin/dishka-rq>`_ (:abbr:`com (Community support)`)
      -
-   * -  :ref:`Sanic`
+   * - `Pyramid <https://github.com/WorkHardes/dishka-pyramid>`_ (:abbr:`com (Community support)`)
      -
      - `Jobify <https://github.com/C3EQUALZz/dishka-jobify>`_ (:abbr:`com (Community support)`)
+     -
+   * -  :ref:`Sanic`
+     -
+     - `APScheduler <https://github.com/MikhailWar/apscheduler-dishka>`_ (:abbr:`com (Community support)`)
      -
    * -  `Starlette <https://github.com/reagento/starlette-dishka>`_ (:abbr:`com (Community support)`)
      -

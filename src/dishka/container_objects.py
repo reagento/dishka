@@ -1,24 +1,23 @@
 from abc import abstractmethod
-from collections.abc import Callable
-from dataclasses import dataclass
-from typing import Any, Protocol
+from collections.abc import AsyncGenerator, Callable, Generator
+from typing import Any, Protocol, TypeAlias
 
-from dishka.entities.factory_type import FactoryType
+from dishka.entities.key import CompilationKey
 
-
-@dataclass(slots=True)
-class Exit:
-    type: FactoryType
-    callable: Callable[..., Any]
+Exit: TypeAlias = tuple[
+    Generator[Any, Any, Any] | None,
+    AsyncGenerator[Any, Any] | None,
+]
 
 
 class CompiledFactory(Protocol):
     @abstractmethod
     def __call__(
             self,
-            getter: Callable[..., Any],
+            getter: Callable[[CompilationKey], Any] | None,
             exits: list[Exit],
             cache: Any,
             context: Any,
+            container: Any,
     ) -> Any:
         raise NotImplementedError

@@ -17,6 +17,7 @@ def test_has(*, register: bool, value: str):
     c = make_container(provider)
     assert c.get(str) == value
 
+
 @pytest.mark.parametrize(("register", "value"), [
     (True, "b"),
     (False, "a"),

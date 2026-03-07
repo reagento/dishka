@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class FakeCommitter(Committer):
-    def __init__(self):
+    def __init__(self) -> None:
         logger.info("init FakeCommitter as %s", self)
 
     def commit(self) -> None:
@@ -17,7 +17,7 @@ class FakeCommitter(Committer):
 
 
 class FakeUserGateway(UserGateway):
-    def __init__(self, committer: FakeCommitter):
+    def __init__(self, committer: FakeCommitter) -> None:
         self.committer = committer
         logger.info("init FakeUserGateway with %s", committer)
 
@@ -27,7 +27,7 @@ class FakeUserGateway(UserGateway):
 
 
 class FakeProductGateway(ProductGateway):
-    def __init__(self, committer: FakeCommitter):
+    def __init__(self, committer: FakeCommitter) -> None:
         self.committer = committer
         logger.info("init FakeProductGateway with %s", committer)
 

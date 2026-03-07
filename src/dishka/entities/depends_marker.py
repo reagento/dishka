@@ -6,12 +6,12 @@ from .key import FromComponent, _FromComponent
 
 T = TypeVar("T")
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # ast-grep-ignore: DISHKA001
     from typing import Union
     FromDishka = Union[T, T]  # noqa: UP007,PYI016
 else:
     class FromDishka:
-        def __init__(self, component: Component = None):
+        def __init__(self, component: Component = None) -> None:
             if component is None:
                 self.component = DEFAULT_COMPONENT
                 warnings.warn(

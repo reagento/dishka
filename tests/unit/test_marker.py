@@ -50,7 +50,6 @@ def test_bool():
     assert false | a == a
 
 
-
 @pytest.mark.parametrize(
     ("marker", "repr_value"),
     [

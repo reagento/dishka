@@ -61,6 +61,7 @@ class InvalidSubfactoryScopeError(InvalidGraphError):
             f"`{sub_name}` with scope {self.subfactory.scope}"
         )
 
+
 class NoActivatorError(InvalidGraphError):
     def __init__(
         self,

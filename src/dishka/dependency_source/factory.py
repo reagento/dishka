@@ -21,6 +21,7 @@ class Special(Enum):
 T = TypeVar("T")
 MayBe: TypeAlias = Special | T
 
+
 def coalesce(a: MayBe[T], b: T) -> T:
     if a is Special.OMITTED:
         return b
@@ -156,8 +157,8 @@ class Factory(FactoryData):
         self,
         scope: MayBe[BaseScope] = Special.OMITTED,
         provides: MayBe[DependencyKey] = Special.OMITTED,
-        when_active: MayBe[BaseMarker|None] = Special.OMITTED,
-        when_override: MayBe[BaseMarker|None] = Special.OMITTED,
+        when_active: MayBe[BaseMarker | None] = Special.OMITTED,
+        when_override: MayBe[BaseMarker | None] = Special.OMITTED,
         when_component: MayBe[Component] = Special.OMITTED,
         when_dependencies: MayBe[Sequence[Factory]] = Special.OMITTED,
     ) -> Factory:

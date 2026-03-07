@@ -22,7 +22,7 @@ class FakeDbGateway(DbGateway):
 
 
 class Interactor:
-    def __init__(self, db: DbGateway):
+    def __init__(self, db: DbGateway) -> None:
         self.db = db
 
     def __call__(self) -> str:
@@ -51,7 +51,7 @@ class MainController(Controller):
         return interactor()
 
 
-def create_app():
+def create_app() -> Litestar:
     logging.basicConfig(
         level=logging.WARNING,
         format="%(asctime)s  %(process)-7s %(module)-20s %(message)s",

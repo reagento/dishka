@@ -27,6 +27,8 @@ class CodeBuilder:
             self.await_str = ""
             self.async_str = ""
 
+        self._is_async = is_async
+
     def _make_global_name(self, obj: Any, name: str | None = None) -> str:
         if name is None:
             name = get_name(obj, include_module=False)
@@ -142,6 +144,15 @@ class CodeBuilder:
     def return_(self, expr: str) -> None:
         self.statement(f"return {expr}")
 
+    def yield_(self, expr: str) -> None:
+        self.statement(f"yield {expr}")
+
+    def yield_from(self, expr: str) -> None:
+        if self._is_async:
+            msg = "Async context does not support 'yield from'"
+            raise ValueError(msg)
+        self.statement(f"yield from {expr}")
+
     @contextmanager
     def def_(self, name: str, args: list[str]) -> Iterator[None]:
         if name in self.globals:
@@ -189,6 +200,42 @@ class CodeBuilder:
 
     def not_(self, expr: str) -> str:
         return f"not ({expr})"
+
+    @contextmanager
+    def with_(
+        self,
+        expr: str,
+        name: str | None = None,
+        *,
+        is_async: bool | None = None,
+    ) -> Iterator[None]:
+        if is_async is None:
+            async_str = self.async_str
+        else:
+            async_str = "async " if is_async else ""
+
+        if name is None:
+            self.statement(f"{async_str}with {expr}:")
+        else:
+            if not name.isidentifier():
+                raise ValueError(  # noqa: TRY003
+                    f"Name {name} is not a valid identifier",
+                )
+            if name in self.globals:
+                raise ValueError(  # noqa: TRY003
+                    f"Name {name} is already defined as global",
+                )
+            self.locals.add(name)
+            self.statement(f"{async_str}with {expr} as {name}:")
+
+        with self.block():
+            yield None
+
+    @contextmanager
+    def for_(self, name: str, expr: str) -> Iterator[None]:
+        self.statement(f"{self.async_str}for {name} in {expr}:")
+        with self.block():
+            yield None
 
     def list_literal(self, *items: str) -> str:
         if len(items) > MAX_ITEMS_PER_LINE:

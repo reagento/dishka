@@ -1,5 +1,6 @@
 import logging
 from abc import abstractmethod
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Protocol
 
@@ -33,7 +34,7 @@ class FakeDbGateway(DbGateway):
 
 
 class Interactor:
-    def __init__(self, db: DbGateway):
+    def __init__(self, db: DbGateway) -> None:
         self.db = db
 
     def __call__(self) -> str:
@@ -77,12 +78,12 @@ async def auto(
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
     await app.state.dishka_container.close()
 
 
-def create_app():
+def create_app() -> FastAPI:
     logging.basicConfig(
         level=logging.WARNING,
         format="%(asctime)s  %(process)-7s %(module)-20s %(message)s",

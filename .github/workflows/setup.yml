@@ -13,6 +13,65 @@ permissions:
   contents: read
 
 jobs:
+  zizmor:
+    name: "zizmor"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+      - name: "Install uv"
+        uses: astral-sh/setup-uv@5a095e7a2014a4212f075830d4f7277575a9d098 # v7.3.1
+        with:
+          enable-cache: ${{ !startsWith(github.ref, 'refs/tags/') }} # zizmor: ignore[cache-poisoning]
+      - name: "Install zizmor"
+        run: uv pip install --group zizmor --system
+      - name: "Run zizmor"
+        run: zizmor .github/
+
+  typos:
+    name: "typos"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+      - name: "Install uv"
+        uses: astral-sh/setup-uv@5a095e7a2014a4212f075830d4f7277575a9d098 # v7.3.1
+        with:
+          enable-cache: ${{ !startsWith(github.ref, 'refs/tags/') }} # zizmor: ignore[cache-poisoning]
+      - name: "Install typos"
+        run: uv pip install --group typos --system
+      - name: "Run typos"
+        run: typos --config .typos.toml
+
+  ast-grep:
+    name: "ast-grep"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+      - name: "Install uv"
+        uses: astral-sh/setup-uv@5a095e7a2014a4212f075830d4f7277575a9d098 # v7.3.1
+        with:
+          enable-cache: ${{ !startsWith(github.ref, 'refs/tags/') }} # zizmor: ignore[cache-poisoning]
+      - name: "Install ast-grep"
+        run: uv pip install --group ast-grep --system
+      - name: "Run ast-grep-cli tests"
+        run: sg test --test-dir tests/ast-grep
+      - name: "Run ast-grep-cli"
+        run: sg scan
+
   testing:
     name: Testing (${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
@@ -41,15 +100,11 @@ jobs:
 
     - name: Install dependencies
       run: |
-        uv pip install . -r requirements_dev.txt --system
-
-    - name: Run ast-grep
-      run: |
-        sg scan
+        uv pip install . --group ci --system
 
     - name: Run ruff
       run: |
-        ruff check .
+        ruff check
 
     - name: Run mypy
       run: |
@@ -60,17 +115,10 @@ jobs:
         nox -t ci
         mv .coverage .coverage.${{ matrix.python-version }}
 
-    - name: Run spell check
-      run: |
-        typos src/ tests/ examples/ docs/ .github/ CONTRIBUTING.md README.md --config .typos.toml
-
     - name: Build doc
       run: |
         uv pip install -r requirements_doc.txt --system
         sphinx-build -M html docs docs-build -W
-
-    - name: Run zizmor
-      run: zizmor .github
 
     - name: Store coverage file
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f

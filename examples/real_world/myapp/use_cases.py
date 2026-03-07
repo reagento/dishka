@@ -54,7 +54,7 @@ class AddProductsInteractor:
         self.committer = committer
         self.warehouse_client = warehouse_client
 
-    def __call__(self, user_id: int):
+    def __call__(self, user_id: int) -> None:
         user = self.user_gateway.get_user(user_id)
         if user is None:
             raise UserNotFoundError

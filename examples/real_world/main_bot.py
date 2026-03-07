@@ -9,7 +9,7 @@ from myapp.ioc import AdaptersProvider, InteractorProvider
 from myapp.presentation_bot import router
 
 
-async def main():
+async def main() -> None:
     # real main
     logging.basicConfig(level=logging.INFO)
     bot = Bot(token=os.getenv("BOT_TOKEN"))

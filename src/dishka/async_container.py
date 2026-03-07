@@ -62,7 +62,7 @@ class AsyncContainer:
             ] | None,
             parent_closer: ExitCallable | None,
             parent_getter:  Callable[[CompilationKey], Any] | None,
-    ):
+    ) -> None:
         self.registry = registry
         self._context = context
         self._cache: dict[Any, object] = {}
@@ -356,7 +356,6 @@ class AsyncContainer:
         return self._context is not None and marker in self._context
 
 
-
 class HasProvider(Provider):
     @activate(Has)
     async def has(
@@ -420,7 +419,7 @@ def make_async_container(
                 context=context,
                 lock_factory=lock_factory,
                 parent_closer=container.__aexit__,
-                parent_getter=container._get, # noqa: SLF001
+                parent_getter=container._get,  # noqa: SLF001
             )
     else:
         while container.registry.scope is not start_scope:
@@ -435,7 +434,7 @@ def make_async_container(
                 context=context,
                 lock_factory=lock_factory,
                 parent_closer=container.__aexit__,
-                parent_getter=container._get, # noqa: SLF001
+                parent_getter=container._get,  # noqa: SLF001
             )
     return container
 

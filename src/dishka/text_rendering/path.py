@@ -9,7 +9,7 @@ from dishka.text_rendering.name import get_key_name, get_name, get_source_name
 
 
 class PathRenderer:
-    def __init__(self, *, cycle: bool):
+    def __init__(self, *, cycle: bool) -> None:
         self.cycle = cycle
 
     def _arrow_cycle(self, index: int, length: int) -> str:
@@ -92,7 +92,7 @@ class PathRenderer:
         ]
         switch_len = (
             sum(columns_width) +
-            len(space_between) * (columns_count - 1)
+            len(space_between) * (columns_count-1)
         )
         for row in rows:
             if row.dest != prev_dest:

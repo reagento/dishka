@@ -38,11 +38,11 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 
-def inject(func: Callable[P, T]):
+def inject(func: Callable[P, T]) -> Callable[P, T]:
     return _inject_wrapper(func, "request", Request)
 
 
-def inject_websocket(func: Callable[P, T]):
+def inject_websocket(func: Callable[P, T]) -> Callable[P, T]:
     return _inject_wrapper(func, "socket", WebSocket)
 
 
@@ -50,7 +50,7 @@ def _inject_wrapper(
         func: Callable[P, T],
         param_name: str,
         param_annotation: type[Request | WebSocket],
-):
+) -> Callable[P, T]:
     hints = get_type_hints(func)
 
     request_param = next(

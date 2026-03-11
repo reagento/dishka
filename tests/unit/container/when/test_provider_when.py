@@ -4,6 +4,7 @@ from dishka import (
     Marker,
     Provider,
     Scope,
+    activate,
     alias,
     decorate,
     make_container,
@@ -341,3 +342,20 @@ def test_alias_combines_when_with_provider(
         DefaultProvider(), ConditionalProvider(), activator,
     )
     assert container.get(float) == expected
+
+
+def test_activate_in_provider_with_when_no_recursion():
+    class TestProvider(Provider):
+        when = Marker("debug")
+        scope = Scope.APP
+
+        @activate(Marker("debug"))
+        def is_debug(self) -> bool:
+            return True
+
+        @provide()
+        def provide_int(self) -> int:
+            return 1
+
+    container = make_container(TestProvider())
+    assert container.get(int) == 1

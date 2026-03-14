@@ -21,8 +21,13 @@ class Activator:
         self.marker_type = marker_type
 
     def __get__(self, instance: Any, owner: Any) -> "Activator":
+        factory = self.factory.__get__(instance, owner)
+        factory = factory.replace(
+            when_active=None,
+            when_override=None,
+        )
         return Activator(
-            factory=self.factory.__get__(instance, owner),
+            factory=factory,
             marker=self.marker,
             marker_type=self.marker_type,
         )

@@ -41,7 +41,7 @@ ast-grep = ["ast-grep-cli==0.41.0"]
 ci = [
     "uv==0.10.7",
     "ruff==0.15.4",
-    "mypy==1.19.1",
+    "mypy[mypyc, faster-cache]==1.19.1",
     "nox==2026.2.9",
 ]
 dev = [

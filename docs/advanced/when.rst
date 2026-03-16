@@ -154,12 +154,21 @@ In case you want to activate some features when specific objects are available y
 * it is activated
 * if it actually presents in context while being registered as ``from_context``
 
+``Has(T)`` does not register ``T`` automatically.
+
+Use ``from_context(T, ...)`` when ``Has(T)`` should become true only after a real
+context value is passed.
+
+Use ``declare(T, ...)`` when you only need to register the type in graph without
+adding a real source for it. This helps graph validation, but ``Has(T)`` still
+stays false until some real provider or context value is available.
+
 
 For example:
 
 .. code-block:: python
 
-    from dishka import Provider, provide, Scope
+    from dishka import Provider, from_context, provide, Scope
 
     class MyProvider(Provider)
         config = from_context(RedisConfig, scope=Scope.APP)
@@ -185,3 +194,7 @@ In this case,
 * ``memcached_impl`` is not used because no factory for ``MemcachedConfig`` is provided
 * ``redis_impl`` is not used while it is registered as ``from_context`` but no real value is provided.
 * ``base_impl`` is used as a default one, because none of later is active
+
+If ``config`` were declared with ``declare(RedisConfig, scope=Scope.APP)`` instead,
+the graph would know about ``RedisConfig``, but ``Has(RedisConfig)`` would still
+be false with empty context.

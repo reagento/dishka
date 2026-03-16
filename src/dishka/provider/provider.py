@@ -22,7 +22,7 @@ from .exceptions import (
 )
 from .make_activator import activate_on_instance
 from .make_alias import alias
-from .make_context_var import from_context
+from .make_context_var import declare, from_context
 from .make_decorator import decorate_on_instance
 from .make_factory import (
     provide_all_on_instance,
@@ -255,6 +255,21 @@ class Provider(BaseProvider):
             override: bool = False,
     ) -> CompositeDependencySource:
         composite = from_context(
+            provides=provides,
+            scope=scope or self.scope,
+            override=override,
+        )
+        self._add_dependency_sources(sources=composite.dependency_sources)
+        return composite
+
+    def declare(
+        self,
+        provides: Any,
+        *,
+        scope: BaseScope | None = None,
+        override: bool = False,
+    ) -> CompositeDependencySource:
+        composite = declare(
             provides=provides,
             scope=scope or self.scope,
             override=override,

@@ -6,7 +6,6 @@ from dishka import (
     Has,
     Provider,
     Scope,
-    declare,
     make_async_container,
     make_container,
     provide,
@@ -65,17 +64,20 @@ def test_has_chained(*, register: bool, value: str):
     ("enable_conditional_provider", "successful"), [
         (False, False),
         (True, True),
-    ], )
-def test_has_with_declared_context_dependency(*, enable_conditional_provider: bool, successful: bool):
+    ],
+)
+def test_has_with_declared_context_dependency(
+    *, enable_conditional_provider: bool, successful: bool,
+):
     class StringProvider(Provider):
-        int_config_declaration = declare(int, scope=Scope.APP)
-
         @provide(when=Has(int), scope=Scope.APP)
         def setup(self, cfg: int) -> str:
             return "ok"
 
     class IntProvider(Provider):
-        int_config_instance = provide(source=lambda self: 42, provides=int, scope=Scope.APP)
+        int_config_instance = provide(
+            source=lambda self: 42, provides=int, scope=Scope.APP,
+        )
 
     providers: list[Any] = [StringProvider()]
     if enable_conditional_provider:
@@ -101,10 +103,9 @@ def test_has_with_declared_context_dependency(*, enable_conditional_provider: bo
     ],
 )
 async def test_provider_declare_method_does_not_make_has_active(
-        *, is_async: bool, register_int: bool, value: str
+        *, is_async: bool, register_int: bool, value: str,
 ):
     provider = Provider(scope=Scope.APP)
-    provider.declare(int)
     provider.provide(lambda: "a", provides=str)
     provider.provide(lambda: "b", provides=str, when=Has(int))
 
@@ -131,7 +132,7 @@ async def test_provider_declare_method_does_not_make_has_active(
     ],
 )
 async def test_from_context_requires_real_context_value_for_has(
-        *, is_async: bool, register_ctx: bool, value: str
+        *, is_async: bool, register_ctx: bool, value: str,
 ):
     provider = Provider(scope=Scope.APP)
     provider.from_context(int)

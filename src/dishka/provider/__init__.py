@@ -5,7 +5,6 @@ __all__ = [
     "activate",
     "alias",
     "collect",
-    "declare",
     "decorate",
     "from_context",
     "make_root_context_provider",
@@ -16,7 +15,7 @@ __all__ = [
 from .base_provider import BaseProvider, ProviderWrapper
 from .make_activator import activate
 from .make_alias import alias
-from .make_context_var import declare, from_context
+from .make_context_var import from_context
 from .make_decorator import decorate
 from .make_factory import provide, provide_all
 from .make_union_mode import collect

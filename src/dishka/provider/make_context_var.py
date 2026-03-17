@@ -16,12 +16,11 @@ from dishka.entities.type_alias_type import (
 from dishka.provider.make_factory import calc_override
 
 
-def _make_context_source(
-    provides: Any,
-    *,
-    scope: BaseScope | None = None,
-    override: bool = False,
-    requires_value: bool,
+def from_context(
+        provides: Any,
+        *,
+        scope: BaseScope | None = None,
+        override: bool = False,
 ) -> CompositeDependencySource:
     composite = CompositeDependencySource(origin=context_stub)
     composite.dependency_sources.append(
@@ -32,7 +31,6 @@ def _make_context_source(
                 type_hint=provides,
                 component=DEFAULT_COMPONENT,
             ),
-            requires_value=requires_value,
         ),
     )
 
@@ -49,31 +47,3 @@ def _make_context_source(
             ),
         )
     return composite
-
-
-def from_context(
-    provides: Any,
-    *,
-    scope: BaseScope | None = None,
-    override: bool = False,
-) -> CompositeDependencySource:
-    return _make_context_source(
-        provides=provides,
-        scope=scope,
-        override=override,
-        requires_value=True,
-    )
-
-
-def declare(
-    provides: Any,
-    *,
-    scope: BaseScope | None = None,
-    override: bool = False,
-) -> CompositeDependencySource:
-    return _make_context_source(
-        provides=provides,
-        scope=scope,
-        override=override,
-        requires_value=False,
-    )

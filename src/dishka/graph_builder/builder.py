@@ -1,6 +1,6 @@
 import itertools
 from collections import defaultdict
-from collections.abc import Collection, Sequence
+from collections.abc import Collection, Iterator, Sequence
 from typing import cast
 
 from dishka.dependency_source import (
@@ -14,7 +14,7 @@ from dishka.dependency_source import (
 from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryData, FactoryType
 from dishka.entities.key import DependencyKey
-from dishka.entities.marker import unpack_marker
+from dishka.entities.marker import BoolMarker, Has, Marker, unpack_marker
 from dishka.entities.scope import BaseScope, InvalidScopes
 from dishka.entities.validation_settings import ValidationSettings
 from dishka.exception_base import InvalidMarkerError
@@ -537,11 +537,52 @@ class GraphBuilder:
                 requester_scope=root_scope,
             )
 
+    def _iter_factory_markers(self, factory: Factory) -> Iterator[Marker]:
+        yield from unpack_marker(factory.when_active)
+        yield from unpack_marker(factory.when_override)
+        for subfactory in factory.when_dependencies:
+            yield from self._iter_factory_markers(subfactory)
+
+    def _make_implicit_has_factory(
+        self,
+        key: DependencyKey,
+    ) -> Factory:
+        return Factory(
+            scope=next(iter(self.scopes)),
+            source=key.type_hint,
+            provides=key,
+            is_to_bind=False,
+            dependencies=[],
+            kw_dependencies={},
+            type_=FactoryType.CONTEXT,
+            cache=False,
+            when_override=None,
+            when_active=BoolMarker(False),
+            when_component=key.component,
+            when_dependencies=[],
+        )
+
+    def _add_implicit_has_factories(
+        self,
+        factories: dict[DependencyKey, Factory],
+    ) -> None:
+        missing: dict[DependencyKey, Factory] = {}
+        for factory in tuple(factories.values()):
+            for marker in self._iter_factory_markers(factory):
+                if not isinstance(marker, Has):
+                    continue
+                key = DependencyKey(marker.value, factory.when_component)
+                if key in factories or key in missing:
+                    continue
+                missing[key] = self._make_implicit_has_factory(key)
+        factories.update(missing)
+
     def build(self) -> Sequence[Registry]:
         self._check_markers()
         factories: dict[DependencyKey, Factory] = {
             f.provides: f for f in self._collect_prepared_factories()
         }
+        self._add_implicit_has_factories(factories)
         self._fix_missing_scopes(factories)
         fixed_factories = list(factories.values())
 

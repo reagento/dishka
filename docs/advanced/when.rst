@@ -28,9 +28,9 @@ To set conditional activation you create special ``Marker`` objects and use them
 
 .. code-block:: python
 
-    from dishka import Provider, provide, Scope
+    from dishka import Marker, Provider, Scope, provide
 
-    class MyProvider(Provider)
+    class MyProvider(Provider):
         @provide(scope=Scope.APP)
         def base_impl(self) -> Cache:
             return NormalCacheImpl()
@@ -49,9 +49,9 @@ It can be the same or another provider while you pass when creating a container.
 
 .. code-block:: python
 
-    from dishka import activate, Provider
+    from dishka import Marker, Provider, activate
 
-    class MyProvider(Provider)
+    class MyProvider(Provider):
         @activate(Marker("debug"))
         def is_debug(self) -> bool:
             return False
@@ -60,7 +60,7 @@ This function can use other objects as well. For example, we can pass config usi
 
 .. code-block:: python
 
-    class MyProvider(Provider)
+    class MyProvider(Provider):
         config = from_context(Config, scope=Scope.APP)
 
         @activate(Marker("debug"))
@@ -78,7 +78,7 @@ More general pattern is to create own marker type and register a single activato
         pass
 
 
-    class MyProvider(Provider)
+    class MyProvider(Provider):
         config = from_context(Config, scope=Scope.APP)
 
         @activate(EnvMarker)
@@ -154,9 +154,8 @@ In case you want to activate some features when specific objects are available y
 * it is activated
 * if it actually presents in context while being registered as ``from_context``
 
-``Has(T)`` implicitly registers ``T`` for graph validation.
-
-Use ``from_context(T, ...)`` when ``Has(T)`` should become true only after a real
+``Has(T)`` implicitly registers ``T`` for graph validation. Use
+``from_context(T, ...)`` when ``Has(T)`` should become true only after a real
 context value is passed.
 
 The implicit registration only helps validation. ``Has(T)`` still stays false
@@ -167,9 +166,9 @@ For example:
 
 .. code-block:: python
 
-    from dishka import Provider, from_context, provide, Scope
+    from dishka import Has, Provider, Scope, from_context, make_container, provide
 
-    class MyProvider(Provider)
+    class MyProvider(Provider):
         config = from_context(RedisConfig, scope=Scope.APP)
 
         @provide(scope=Scope.APP)

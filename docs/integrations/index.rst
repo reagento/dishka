@@ -23,7 +23,7 @@ Some of the integrations are supported by a community, refer to their documentat
    flask
    flet <https://github.com/C3EQUALZz/dishka-flet>
    grpcio
-   jobify <https://github.com/C3EQUALZz/dishka-jobify>
+   jobify <https://github.com/Jobify-Community/dishka-jobify>
    litestar
    Pyramid <https://github.com/WorkHardes/dishka-pyramid>
    RQ <https://github.com/prepin/dishka-rq>

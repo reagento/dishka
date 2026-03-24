@@ -133,9 +133,10 @@ class CodeBuilder:
         args_list.extend(f"{name}={value}" for name, value in kwargs.items())
 
         if len(args_list) > MAX_ITEMS_PER_LINE:
-            args_str = ",\n".join(args_list)
+            sep = ",\n " + self.indent_str + " "*8
         else:
-            args_str = ", ".join(args_list)
+            sep = ", "
+        args_str = sep.join(args_list)
         return f"{func}({args_str})"
 
     def await_(self, expr: str) -> str:
@@ -239,16 +240,18 @@ class CodeBuilder:
 
     def list_literal(self, *items: str) -> str:
         if len(items) > MAX_ITEMS_PER_LINE:
-            items_str = "\n, ".join(items)
+            sep = ",\n " + self.indent_str + " "*8
         else:
-            items_str = ", ".join(items)
+            sep = ", "
+        items_str = sep.join(items)
         return f"[{items_str}]"
 
     def tuple_literal(self, *items: str) -> str:
         if len(items) > MAX_ITEMS_PER_LINE:
-            items_str = "\n, ".join(items)
+            sep = ",\n " + self.indent_str + " "*8
         else:
-            items_str = ", ".join(items)
+            sep = ", "
+        items_str = sep.join(items)
         return f"({items_str})"
 
     def compile(self, source_file_name: str) -> dict[str, Any]:

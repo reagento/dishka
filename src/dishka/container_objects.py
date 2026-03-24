@@ -19,5 +19,6 @@ class CompiledFactory(Protocol):
             cache: Any,
             context: Any,
             container: Any,
+            has: Callable[[CompilationKey], bool],
     ) -> Any:
         raise NotImplementedError

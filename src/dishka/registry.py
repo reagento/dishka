@@ -30,7 +30,7 @@ from .entities.key import (
     DependencyKey,
     compilation_to_dependency_key,
 )
-from .entities.marker import Marker, unpack_marker
+from .entities.marker import Has, HasContext, Marker, unpack_marker
 from .entities.scope import BaseScope
 
 IGNORE_TYPES: Final = (
@@ -106,11 +106,13 @@ class Registry:
                 DependencyKey(m, f.when_component)
                 for f in factory.when_dependencies
                 for m in unpack_marker(f.when_override)
+                if not isinstance(m, (Has, HasContext))
             ),
             (
                 DependencyKey(m, factory.when_component)
                 for marker in (factory.when_active, factory.when_override)
                 for m in unpack_marker(marker)
+                if not isinstance(m, (Has, HasContext))
             ),
         ))
 
@@ -158,14 +160,17 @@ class Registry:
                 self.compiled[dependency] = None
                 return None
 
-            compiled = compile_factory(
-                factory=factory,
-                is_async=False,
-                compiled_deps=self._compile_deps(factory),
-                container_key=self.container_key,
-            )
+            compiled = self._compile_factory(factory)
             self.compiled[dependency] = compiled
             return compiled
+
+    def _compile_factory(self, factory: Factory) -> CompiledFactory:
+        return compile_factory(
+            factory=factory,
+            is_async=False,
+            compiled_deps=self._compile_deps(factory),
+            container_key=self.container_key,
+        )
 
     def get_compiled_async(
             self, dependency: CompilationKey,
@@ -196,6 +201,14 @@ class Registry:
             )
             self.compiled_async[dependency] = compiled
             return compiled
+
+    def _compile_factory_async(self, factory: Factory) -> CompiledFactory:
+        return compile_factory(
+            factory=factory,
+            is_async=True,
+            compiled_deps=self._compile_deps(factory),
+            container_key=self.container_key,
+        )
 
     def get_compiled_activation(
             self, dependency: CompilationKey,
@@ -350,10 +363,10 @@ class Registry:
             dependencies=[],
             kw_dependencies={},
             provides=DependencyKey(type[typevar], dependency.component),
-            type_=FactoryType.FACTORY,
+            type_=FactoryType.VALUE,
             is_to_bind=False,
             cache=False,
-            source=lambda: typevar,
+            source=typevar,
             when_override=None,
             when_active=None,
             when_component=None,

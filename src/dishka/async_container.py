@@ -251,6 +251,7 @@ class AsyncContainer:
             self._cache,
             self._context,
             self,
+            self._has_sync,
         )
 
     async def _get(self, key: CompilationKey) -> Any:
@@ -296,6 +297,7 @@ class AsyncContainer:
             self._cache,
             self._context,
             self,
+            self._has,
         )
 
     async def close(self, exception: BaseException | None = None) -> None:
@@ -350,6 +352,23 @@ class AsyncContainer:
             self._cache,
             self._context,
             self,
+            self._has,
+        ))
+
+    def _has_sync(self, marker: CompilationKey) -> bool:
+        compiled = self.registry.get_compiled_activation(marker)
+        if not compiled:
+            if not self.parent_container:
+                return False
+            return self.parent_container._has_sync(marker)  # noqa: SLF001
+
+        return bool(compiled(
+            self._get_unlocked,
+            self._exits,
+            self._cache,
+            self._context,
+            self,
+            self._has_sync,
         ))
 
     def _has_context(self, marker: Any) -> bool:
@@ -395,6 +414,7 @@ def make_async_container(
         container_key=CONTAINER_KEY,
         skip_validation=skip_validation,
         validation_settings=validation_settings,
+        root_context=context,
     )
     builder.add_multicomponent_providers(has_provider)
     builder.add_providers(*providers)

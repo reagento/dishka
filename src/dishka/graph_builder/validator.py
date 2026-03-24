@@ -1,8 +1,10 @@
 import itertools
 from collections.abc import Sequence
+from typing import Any
 
 from dishka.dependency_source import Factory
 from dishka.entities.key import DependencyKey
+from dishka.entities.marker import BoolMarker
 from dishka.exceptions import (
     CycleDependenciesError,
     GraphMissingFactoryError,
@@ -10,11 +12,18 @@ from dishka.exceptions import (
     NoFactoryError,
 )
 from dishka.registry import Registry
+from ..dependency_source.activator import StaticEvaluationUnavailable
+from .activation_container import ActivationContainer, static_registry
 
 
 class GraphValidator:
-    def __init__(self, registries: Sequence[Registry]) -> None:
+    def __init__(self, registries: Sequence[Registry], root_context: dict[Any, Any], container_key: DependencyKey) -> None:
         self.registries = registries
+        self.activation_container = ActivationContainer(
+            root_context,
+            static_registry(registries[0]),
+            container_key,
+        )
         self.path: dict[DependencyKey, Factory] = {}
         self.valid_keys: dict[DependencyKey, bool] = {}
 
@@ -54,9 +63,25 @@ class GraphValidator:
             suggest_concrete_factories=suggest_concrete_factories,
         )
 
+    def _eval_activation(self, factory: Factory) -> None:
+        try:
+            active = self.activation_container.is_active(factory)
+        except StaticEvaluationUnavailable:
+            return
+        if factory.when_override == factory.when_active:
+            factory.when_override = BoolMarker(active)
+        factory.when_active = BoolMarker(active)
+
     def _validate_factory(
             self, factory: Factory, registry_index: int,
     ) -> None:
+        self._eval_activation(factory)
+        if (
+            factory.when_active == BoolMarker(False) and
+            factory.when_override == BoolMarker(False)
+        ):
+            return  # do not validate disabled factories
+
         self.path[factory.provides] = factory
         if (
             factory.provides in factory.kw_dependencies.values() or

@@ -7,6 +7,10 @@ from dishka.entities.scope import BaseScope
 from .factory import Factory
 
 
+class StaticEvaluationUnavailable(Exception):
+    pass
+
+
 class Activator:
     __slots__ = ("factory", "marker", "marker_type")
 

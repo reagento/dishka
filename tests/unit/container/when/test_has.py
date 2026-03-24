@@ -69,8 +69,9 @@ def provide_with_dep(a: int) -> str:
     return str(a)
 
 
-def test_has_no_dep():
-    provider = Provider(scope=Scope.RUNTIME)
+@pytest.mark.parametrize("scope", [Scope.RUNTIME, Scope.APP])
+def test_has_no_dep(scope):
+    provider = Provider(scope=scope)
     provider.provide(lambda: "a", provides=str)
     provider.provide(provide_with_dep, provides=str, when=Has(float))
 

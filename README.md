@@ -309,3 +309,5 @@ specified otherwise.
 
 This structure allows you to build different parts of the application separately without worrying about using the same
 types.
+
+![Angry Birds](https://i.pinimg.com/736x/24/2d/5a/242d5a4a9ae45fc0011140b78ed9ccf3.jpg)

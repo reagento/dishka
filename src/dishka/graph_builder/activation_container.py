@@ -10,18 +10,25 @@ from dishka.entities.key import (
     DependencyKey,
     compilation_to_dependency_key,
 )
-from dishka.entities.marker import BoolMarker
+from dishka.entities.marker import BoolMarker, Marker
 from dishka.registry import Registry
 
 
 class StaticRegistry(Registry):
+    def _is_static_allowed(self, factory: Factory) -> bool:
+        if factory.type in (FactoryType.VALUE, FactoryType.ALIAS, FactoryType.CONTEXT):
+            return True
+        if isinstance(factory.provides.type_hint, Marker) and factory.type is FactoryType.FACTORY:
+            return True
+        return False
+
     def _compile_factory(self, factory: Factory) -> CompiledFactory:
-        if factory.type not in (FactoryType.VALUE, FactoryType.CONTEXT, FactoryType.ALIAS):
+        if not self._is_static_allowed(factory):
             raise StaticEvaluationUnavailable
         return super()._compile_factory(factory)
 
     def _compile_factory_async(self, factory: Factory) -> CompiledFactory:
-        if factory.type not in (FactoryType.VALUE, FactoryType.CONTEXT, FactoryType.ALIAS):
+        if not self._is_static_allowed(factory):
             raise StaticEvaluationUnavailable
         return super()._compile_factory_async(factory)
 

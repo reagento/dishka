@@ -63,19 +63,9 @@ class GraphValidator:
             suggest_concrete_factories=suggest_concrete_factories,
         )
 
-    def _eval_activation(self, factory: Factory) -> None:
-        try:
-            active = self.activation_container.is_active(factory)
-        except StaticEvaluationUnavailable:
-            return
-        if factory.when_override == factory.when_active:
-            factory.when_override = BoolMarker(active)
-        factory.when_active = BoolMarker(active)
-
     def _validate_factory(
             self, factory: Factory, registry_index: int,
     ) -> None:
-        self._eval_activation(factory)
         if (
             factory.when_active == BoolMarker(False) and
             factory.when_override == BoolMarker(False)

@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Any
 
 from dishka.container_objects import CompiledFactory
@@ -9,6 +10,7 @@ from dishka.entities.key import (
     DependencyKey,
     compilation_to_dependency_key,
 )
+from dishka.entities.marker import BoolMarker
 from dishka.registry import Registry
 
 
@@ -85,3 +87,33 @@ class ActivationContainer:
             if factory is not None:
                 return True
         return False
+
+
+class StaticEvaluator:
+    def __init__(
+        self,
+        registries: Sequence[Registry],
+        context: dict[Any, Any],
+        container_key: DependencyKey,
+    ) -> None:
+        self.registries = registries
+        self.activation_container = ActivationContainer(
+            registry=static_registry(registries[0]),
+            container_key=container_key,
+            context=context,
+        )
+
+    def _eval_activation(self, factory: Factory) -> None:
+        try:
+            active = self.activation_container.is_active(factory)
+        except StaticEvaluationUnavailable:
+            return
+        if factory.when_override == factory.when_active:
+            factory.when_override = BoolMarker(active)
+        factory.when_active = BoolMarker(active)
+
+
+    def evaluate_static(self) -> None:
+        for registry in self.registries:
+            for factory in list(registry.factories.values()):
+                self._eval_activation(factory)

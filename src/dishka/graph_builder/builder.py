@@ -29,6 +29,7 @@ from dishka.exceptions import (
 from dishka.provider import BaseProvider, ProviderWrapper
 from dishka.registry import Registry
 from dishka.text_rendering.name import get_source_name
+from .activation_container import StaticEvaluator
 from .moved_objects_tracker import MovedObjectsTracker
 from .uniter import (
     CollectionGroupProcessor,
@@ -552,6 +553,7 @@ class GraphBuilder:
             self._get_activator_factories(fixed_factories, found_markers),
         )
         registries = self._make_registries(fixed_factories)
+        StaticEvaluator(registries, self.root_context, self.container_key).evaluate_static()
         if not self.skip_validation:
             GraphValidator(registries, self.root_context, self.container_key).validate()
         return registries

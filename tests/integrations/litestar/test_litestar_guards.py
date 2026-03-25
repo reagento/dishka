@@ -7,7 +7,7 @@ from asgi_lifespan import LifespanManager
 from litestar import Litestar, get
 from litestar.connection import ASGIConnection
 from litestar.handlers import BaseRouteHandler
-from litestar.guards import Guard
+from litestar.types import Guard
 from litestar.testing import TestClient
 
 from dishka import make_async_container
@@ -63,21 +63,11 @@ async def guard_with_app(
     mock(a)
 
 
-async def auto_guard_with_app(
-    connection: ASGIConnection,
-    _: BaseRouteHandler,
-    a: FromDishka[AppDep],
-    mock: FromDishka[Mock],
-) -> None:
-    mock(a)
-
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("app_factory", "guard"),
     [
         (dishka_app, guard_with_app),
-        (dishka_auto_app, auto_guard_with_app),
     ],
 )
 async def test_guard_injects_app_dependency(

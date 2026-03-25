@@ -3,6 +3,7 @@ __all__ = [
     "FromDishka",
     "LitestarProvider",
     "inject",
+    "inject_asgi",
     "inject_websocket",
     "setup_dishka",
 ]
@@ -20,7 +21,6 @@ from litestar.handlers import (
     WebsocketListener,
 )
 from litestar.connection import ASGIConnection
-
 from litestar.handlers.websocket_handlers import WebsocketListenerRouteHandler
 from litestar.handlers.websocket_handlers._utils import ListenerHandler
 from litestar.routes import BaseRoute
@@ -53,72 +53,49 @@ def inject(func: Callable[P, T], /) -> Callable[P, T]: ...
 
 
 def inject(func: Callable[P, T]) -> Callable[P, T]:
-    return _inject_wrapper(func)
+    return _inject_wrapper(func, "request", Request)
+
+
+def inject_asgi(func: Callable[P, T]) -> Callable[P, T]:
+    return _inject_wrapper(func, "connection", ASGIConnection)
 
 
 def inject_websocket(func: Callable[P, T]) -> Callable[P, T]:
-    return inject(func)
+    return _inject_wrapper(func, "socket", WebSocket)
 
 
-def _inject_wrapper(func: Callable[P, T]) -> Callable[P, T]:
+def _inject_wrapper(
+    func: Callable[P, T],
+    param_name: str,
+    param_annotation: type[Request | WebSocket | ASGIConnection],
+) -> Callable[P, T]:
     hints = get_type_hints(func)
-    func_signature = signature(func)
 
-    param_name, param_annotation = _find_connection_parameter(hints)
+    request_param = next(
+        (name for name in hints if name == param_name),
+        None,
+    )
 
-    additional_params = []
-    if param_name not in hints:
-        additional_params = [
-            Parameter(
-                name=param_name,
-                annotation=param_annotation,
-                kind=Parameter.KEYWORD_ONLY,
-            ),
-        ]
+    if request_param:
+        additional_params = []
+    else:
+        additional_params = [Parameter(
+            name=param_name,
+            annotation=param_annotation,
+            kind=Parameter.KEYWORD_ONLY,
+        )]
+
+    if param_name == "connection":
+        container_getter = lambda args, _: args[0].state.dishka_container
+    else:
+        container_getter = lambda _, kwargs: kwargs[param_name].state.dishka_container
 
     return wrap_injection(
         func=func,
         is_async=True,
         additional_params=additional_params,
-        container_getter=_build_container_getter(
-            func_signature=func_signature,
-            param_name=param_name,
-        ),
+        container_getter=container_getter,
     )
-
-
-def _find_connection_parameter(
-    hints: dict[str, Any],
-) -> tuple[str, type[Request | WebSocket | ASGIConnection]]:
-    for param_name, param_annotation in (
-        ("request", Request),
-        ("socket", WebSocket),
-        ("connection", ASGIConnection),
-    ):
-        if param_name in hints:
-            return param_name, param_annotation
-
-    return "connection", ASGIConnection
-
-
-def _build_container_getter(
-    *,
-    func_signature: Signature,
-    param_name: str,
-    ) -> Callable[[tuple[Any, ...], dict[str, Any]], AsyncContainer]:
-    def container_getter(
-        args: tuple[Any, ...],
-        kwargs: dict[str, Any],
-    ) -> AsyncContainer:
-        if param_name in kwargs:
-            connection = kwargs[param_name]
-        else:
-            bound = func_signature.bind_partial(*args, **kwargs)
-            connection = bound.arguments[param_name]
-
-        return connection.state.dishka_container
-
-    return container_getter
 
 
 def _inject_based_on_handler_type(

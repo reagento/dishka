@@ -1,8 +1,19 @@
 import itertools
 from collections.abc import Sequence
+from enum import Enum
 
 from dishka.dependency_source import Factory
+from dishka.entities.component import Component
 from dishka.entities.key import DependencyKey
+from dishka.entities.marker import (
+    AndMarker,
+    BaseMarker,
+    BoolMarker,
+    Has,
+    Marker,
+    NotMarker,
+    OrMarker,
+)
 from dishka.exceptions import (
     CycleDependenciesError,
     GraphMissingFactoryError,
@@ -12,11 +23,114 @@ from dishka.exceptions import (
 from dishka.registry import Registry
 
 
+class MarkerValue(Enum):
+    TRUE = True
+    FALSE = False
+    UNKNOWN = None
+
+
 class GraphValidator:
     def __init__(self, registries: Sequence[Registry]) -> None:
         self.registries = registries
         self.path: dict[DependencyKey, Factory] = {}
         self.valid_keys: dict[DependencyKey, bool] = {}
+
+    def _get_factory(
+        self,
+        key: DependencyKey,
+        registry_index: int,
+    ) -> Factory | None:
+        for index in range(registry_index + 1):
+            factory = self.registries[index].get_factory(key)
+            if factory is not None:
+                return factory
+        return None
+
+    def _has_reachable_factory(
+        self,
+        key: DependencyKey,
+        registry_index: int,
+    ) -> bool:
+        return self._get_factory(key, registry_index) is not None
+
+    def _marker_component(self, component: Component | None) -> Component:
+        if component is None:
+            raise TypeError
+        return component
+
+    def _invert_marker_value(self, value: MarkerValue) -> MarkerValue:
+        if value is MarkerValue.TRUE:
+            return MarkerValue.FALSE
+        if value is MarkerValue.FALSE:
+            return MarkerValue.TRUE
+        return MarkerValue.UNKNOWN
+
+    def _and_marker_values(
+        self,
+        left: MarkerValue,
+        right: MarkerValue,
+    ) -> MarkerValue:
+        if MarkerValue.FALSE in (left, right):
+            return MarkerValue.FALSE
+        if MarkerValue.TRUE == left == right:
+            return MarkerValue.TRUE
+        return MarkerValue.UNKNOWN
+
+    def _or_marker_values(
+        self,
+        left: MarkerValue,
+        right: MarkerValue,
+    ) -> MarkerValue:
+        if MarkerValue.TRUE in (left, right):
+            return MarkerValue.TRUE
+        if MarkerValue.FALSE == left == right:
+            return MarkerValue.FALSE
+        return MarkerValue.UNKNOWN
+
+    def _eval_marker(
+        self,
+        marker: BaseMarker | None,
+        component: Component | None,
+        registry_index: int,
+    ) -> MarkerValue:
+        result = MarkerValue.UNKNOWN
+        match marker:
+            case None | BoolMarker(True):
+                result = MarkerValue.TRUE
+            case BoolMarker(False):
+                result = MarkerValue.FALSE
+            case AndMarker():
+                result = self._and_marker_values(
+                    self._eval_marker(marker.left, component, registry_index),
+                    self._eval_marker(marker.right, component, registry_index),
+                )
+            case OrMarker():
+                result = self._or_marker_values(
+                    self._eval_marker(marker.left, component, registry_index),
+                    self._eval_marker(marker.right, component, registry_index),
+                )
+            case NotMarker():
+                result = self._invert_marker_value(
+                    self._eval_marker(
+                        marker.marker,
+                        component,
+                        registry_index,
+                    ),
+                )
+            case Has():
+                key = DependencyKey(
+                    marker.value,
+                    self._marker_component(component),
+                )
+                if self._has_reachable_factory(key, registry_index):
+                    result = MarkerValue.UNKNOWN
+                else:
+                    result = MarkerValue.FALSE
+            case Marker():
+                result = MarkerValue.UNKNOWN
+            case _:
+                result = MarkerValue.UNKNOWN
+        return result
 
     def _validate_key(
         self,
@@ -65,13 +179,19 @@ class GraphValidator:
             raise CycleDependenciesError([factory])
 
         try:
-            for dep in itertools.chain(
-                factory.dependencies,
-                factory.kw_dependencies.values(),
-            ):
-                # ignore TypeVar and const parameters
-                if not dep.is_type_var() and not dep.is_const():
-                    self._validate_key(dep, registry_index)
+            when_active = self._eval_marker(
+                factory.when_active,
+                factory.when_component,
+                registry_index,
+            )
+            if when_active is not MarkerValue.FALSE:
+                for dep in itertools.chain(
+                    factory.dependencies,
+                    factory.kw_dependencies.values(),
+                ):
+                    # ignore TypeVar and const parameters
+                    if not dep.is_type_var() and not dep.is_const():
+                        self._validate_key(dep, registry_index)
         except NoFactoryError as e:
             e.add_path(factory)
             raise

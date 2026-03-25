@@ -6,11 +6,12 @@ from dishka import (
     Has,
     Provider,
     Scope,
+    from_context,
     make_async_container,
     make_container,
     provide,
 )
-from dishka.exceptions import NoActiveFactoryError
+from dishka.exceptions import GraphMissingFactoryError, NoActiveFactoryError
 
 
 @pytest.mark.parametrize(("register", "value"), [
@@ -92,6 +93,18 @@ def test_has_with_declared_context_dependency(
             container.get(str)
 
 
+def test_not_has_with_missing_dependency_fails_validation():
+    class StringProvider(Provider):
+        scope = Scope.APP
+
+        @provide(when=~Has(int))
+        def setup(self, cfg: int) -> str:
+            return "ok"
+
+    with pytest.raises(GraphMissingFactoryError):
+        make_container(StringProvider(), context={})
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("is_async", "register_int", "value"),
@@ -149,3 +162,46 @@ async def test_from_context_requires_real_context_value_for_has(
     else:
         container = make_container(provider, context=ctx)
         assert container.get(str) == value
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("is_async", "register_ctx", "successful"),
+    [
+        (False, True, True),
+        (False, False, False),
+        (True, True, True),
+        (True, False, False),
+    ],
+)
+async def test_from_context_keeps_has_runtime_dependent(
+    *,
+    is_async: bool,
+    register_ctx: bool,
+    successful: bool,
+):
+    class StringProvider(Provider):
+        scope = Scope.APP
+
+        cfg = from_context(int)
+
+        @provide(when=Has(int))
+        def setup(self, cfg: int) -> str:
+            return "ok"
+
+    ctx = {int: 42} if register_ctx else {}
+
+    if is_async:
+        container = make_async_container(StringProvider(), context=ctx)
+        if successful:
+            assert await container.get(str) == "ok"
+        else:
+            with pytest.raises(NoActiveFactoryError):
+                await container.get(str)
+    else:
+        container = make_container(StringProvider(), context=ctx)
+        if successful:
+            assert container.get(str) == "ok"
+        else:
+            with pytest.raises(NoActiveFactoryError):
+                container.get(str)

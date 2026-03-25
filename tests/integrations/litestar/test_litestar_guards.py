@@ -7,8 +7,8 @@ from asgi_lifespan import LifespanManager
 from litestar import Litestar, get
 from litestar.connection import ASGIConnection
 from litestar.handlers import BaseRouteHandler
-from litestar.types import Guard
 from litestar.testing import TestClient
+from litestar.types import Guard
 
 from dishka import make_async_container
 from dishka.integrations.litestar import (
@@ -25,7 +25,8 @@ from ..common import (
 
 
 @asynccontextmanager
-async def dishka_app(guard: Guard, provider: AppProvider) -> AsyncGenerator[TestClient, None]:
+async def dishka_app(
+    guard: Guard, provider: AppProvider) -> AsyncGenerator[TestClient, None]:
     @get("/", guards=[guard])
     async def endpoint() -> dict:
         return {"status": "ok"}
@@ -39,7 +40,8 @@ async def dishka_app(guard: Guard, provider: AppProvider) -> AsyncGenerator[Test
 
 
 @asynccontextmanager
-async def dishka_auto_app(guard: Guard, provider: AppProvider) -> AsyncGenerator[TestClient, None]:
+async def dishka_auto_app(
+    guard: Guard, provider: AppProvider) -> AsyncGenerator[TestClient, None]:
     @get("/")
     async def endpoint() -> dict:
         return {"status": "ok"}

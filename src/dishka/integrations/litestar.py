@@ -10,17 +10,17 @@ __all__ = [
 
 from collections.abc import Callable
 from functools import wraps
-from inspect import Parameter, Signature, signature
-from typing import Any, ParamSpec, TypeVar, get_type_hints, overload
+from inspect import Parameter
+from typing import Any, ParamSpec, TypeVar, get_type_hints
 
 from litestar import Controller, Litestar, Request, Router, WebSocket
+from litestar.connection import ASGIConnection
 from litestar.enums import ScopeType
 from litestar.handlers import (
     BaseRouteHandler,
     HTTPRouteHandler,
     WebsocketListener,
 )
-from litestar.connection import ASGIConnection
 from litestar.handlers.websocket_handlers import WebsocketListenerRouteHandler
 from litestar.handlers.websocket_handlers._utils import ListenerHandler
 from litestar.routes import BaseRoute
@@ -41,23 +41,14 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 
-@overload
-def inject(
-    func: Callable[[ASGIConnection, BaseRouteHandler, GuardDependencyT], T],
-    /,
-    ) -> Callable[[ASGIConnection, BaseRouteHandler], T]: ...
-
-
-@overload
-def inject(func: Callable[P, T], /) -> Callable[P, T]: ...
-
-
 def inject(func: Callable[P, T]) -> Callable[P, T]:
     return _inject_wrapper(func, "request", Request)
 
 
-def inject_asgi(func: Callable[P, T]) -> Callable[P, T]:
-    return _inject_wrapper(func, "connection", ASGIConnection)
+def inject_asgi(
+    func: Callable[[ASGIConnection, BaseRouteHandler, GuardDependencyT], T],
+) -> Callable[[ASGIConnection, BaseRouteHandler], T]:
+    return _inject_wrapper(func, "connection", ASGIConnection)  # type: ignore[invalid-return-type]
 
 
 def inject_websocket(func: Callable[P, T]) -> Callable[P, T]:
@@ -79,16 +70,25 @@ def _inject_wrapper(
     if request_param:
         additional_params = []
     else:
-        additional_params = [Parameter(
-            name=param_name,
-            annotation=param_annotation,
-            kind=Parameter.KEYWORD_ONLY,
-        )]
+        additional_params = [
+            Parameter(
+                name=param_name,
+                annotation=param_annotation,
+                kind=Parameter.KEYWORD_ONLY,
+            ),
+        ]
 
     if param_name == "connection":
-        container_getter = lambda args, _: args[0].state.dishka_container
+        def container_getter(
+            args: tuple[ASGIConnection], _: Any,
+        ) -> AsyncContainer:
+            return args[0].state.dishka_container
     else:
-        container_getter = lambda _, kwargs: kwargs[param_name].state.dishka_container
+        def container_getter(
+            _: Any,
+            kwargs: dict[str, Request | WebSocket],
+        ) -> AsyncContainer:
+            return kwargs[param_name].state.dishka_container
 
     return wrap_injection(
         func=func,
@@ -176,7 +176,8 @@ def make_add_request_container_middleware(app: ASGIApp) -> ASGIApp:
             di_scope = DIScope.SESSION
 
         async with request.app.state.dishka_container(
-            context, scope=di_scope,
+            context,
+            scope=di_scope,
         ) as request_container:
             request.state.dishka_container = request_container
             await app(scope, receive, send)

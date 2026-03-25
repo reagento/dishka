@@ -126,3 +126,22 @@ or with class-based handler:
             async with container() as request_container:
                 b = await request_container.get(B)  # object with Scope.REQUEST
             return {"key": "value"}
+
+
+Guards
+******
+
+For ``Guard`` functions (which receive ``ASGIConnection`` instead of ``Request``), use the ``@inject_asgi`` decorator:
+
+>> code-block:: python
+
+>>   from litestar import ASGIConnection, BaseRouteHandler
+>>   from dishka.integrations.litestar import FromDishka, inject_asgi
+>>   
+>>   @inject_asgi
+>>   async def my_guard(
+>>       connection: ASGIConnection,
+>>       _: BaseRouteHandler,
+>>       config: FromDishka[Config],
+>>   ) -> None:
+       >>>       >>> ...

@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from functools import partial
+from logging import getLogger
 from typing import Any
 
 from dishka.container_objects import CompiledFactory
@@ -13,6 +14,8 @@ from dishka.entities.key import (
 from dishka.entities.marker import BoolMarker, Marker
 from dishka.entities.scope import BaseScope
 from dishka.registry import Registry
+
+logger = getLogger(__name__)
 
 
 class StaticRegistry(Registry):
@@ -31,7 +34,7 @@ class StaticRegistry(Registry):
         self.is_root = is_root
 
     def _is_static_allowed(self, factory: Factory) -> bool:
-        if factory.type in (FactoryType.VALUE, FactoryType.ALIAS):
+        if factory.type in (FactoryType.VALUE, FactoryType.ALIAS, FactoryType.SELECTOR):
             return True
         if self.is_root and factory.type == FactoryType.CONTEXT:
             return True
@@ -41,12 +44,12 @@ class StaticRegistry(Registry):
 
     def _compile_factory(self, factory: Factory) -> CompiledFactory:
         if not self._is_static_allowed(factory):
-            raise StaticEvaluationUnavailable
+            raise StaticEvaluationUnavailable(factory)
         return super()._compile_factory(factory)
 
     def _compile_factory_async(self, factory: Factory) -> CompiledFactory:
         if not self._is_static_allowed(factory):
-            raise StaticEvaluationUnavailable
+            raise StaticEvaluationUnavailable(factory)
         return super()._compile_factory_async(factory)
 
 
@@ -155,7 +158,12 @@ class StaticEvaluator:
     def _eval_activation(self, factory: Factory) -> None:
         try:
             active = self.activation_container.is_active(factory)
-        except StaticEvaluationUnavailable:
+        except StaticEvaluationUnavailable as e:
+            logger.debug(
+                "Static evaluation for %s is not available: %s",
+                factory.provides,
+                e,
+            )
             return
         if factory.when_override == factory.when_active:
             factory.when_override = BoolMarker(active)

@@ -1,3 +1,5 @@
+from typing import NewType
+
 import pytest
 
 from dishka import Marker, Provider, Scope, make_container
@@ -158,3 +160,17 @@ def test_activation_with_param_dynamic(number, string):
     c = make_container(provider)
     with c({int: number}) as request_c:
         assert request_c.get(str) == string
+
+
+def test_activation_with_selector_alias_inactive():
+    int1 = NewType("int1", int)
+    int2 = NewType("int2", int)
+    provider = Provider(scope=Scope.APP)
+    provider.provide(lambda: "a", provides=str)
+    provider.provide(provide_with_dep, provides=str, when=Marker("ZERO"))
+    provider.activate(lambda: True, Marker("another"))
+    provider.alias(int1, provides=int)
+    provider.alias(int2, provides=int, when=Marker("another"))
+    provider.activate(activate_zero, Marker("ZERO"))
+    c = make_container(provider, context={int1: 1, int2: 2})
+    assert c.get(str) == "a"

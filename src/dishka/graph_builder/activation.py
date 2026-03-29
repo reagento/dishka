@@ -34,11 +34,18 @@ class StaticRegistry(Registry):
         self.is_root = is_root
 
     def _is_static_allowed(self, factory: Factory) -> bool:
-        if factory.type in (FactoryType.VALUE, FactoryType.ALIAS, FactoryType.SELECTOR):
+        if factory.type in (
+            FactoryType.VALUE,
+            FactoryType.ALIAS,
+            FactoryType.SELECTOR,
+        ):
             return True
         if self.is_root and factory.type == FactoryType.CONTEXT:
             return True
-        if isinstance(factory.provides.type_hint, Marker) and factory.type is FactoryType.FACTORY:
+        if (
+            isinstance(factory.provides.type_hint, Marker)
+            and factory.type is FactoryType.FACTORY
+        ):
             return True
         return False
 
@@ -53,7 +60,10 @@ class StaticRegistry(Registry):
         return super()._compile_factory_async(factory)
 
 
-def static_registry(registry: Registry, start_scope: BaseScope) -> StaticRegistry:
+def static_registry(
+    registry: Registry,
+    start_scope: BaseScope,
+) -> StaticRegistry:
     new = StaticRegistry(
         registry.scope,
         has_fallback=False,
@@ -70,7 +80,7 @@ class ActivationContainer:
         context: dict[Any, Any],
         registries: dict[BaseScope, Registry],
         container_key: DependencyKey,
-    ):
+    ) -> None:
         self._context = context
         self._registries = registries
         self._container_key = container_key.as_compilation_key()
@@ -103,7 +113,7 @@ class ActivationContainer:
         registry = self._registries[factory.scope]
         compiled = registry.get_compiled_activation(marker)
         if not compiled:
-            raise ValueError("Factory is not compiled")
+            raise RuntimeError
         return bool(compiled(
             partial(self._get, scope=factory.scope),
             [],

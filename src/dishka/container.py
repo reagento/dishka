@@ -287,6 +287,10 @@ class Container:
 
 
 class HasProvider(Provider):
+    """
+    This provider is used only for direct access on Has/HasContext.
+    Basic implementation is inlined in code builder.
+    """
     @activate(Has)
     def has(
         self,

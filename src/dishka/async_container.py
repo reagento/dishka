@@ -363,7 +363,7 @@ class AsyncContainer:
             return self.parent_container._has_sync(marker)  # noqa: SLF001
 
         return bool(compiled(
-            self._get_unlocked,
+            self._get_sync,
             self._exits,
             self._cache,
             self._context,
@@ -376,6 +376,10 @@ class AsyncContainer:
 
 
 class HasProvider(Provider):
+    """
+    This provider is used only for direct access on Has/HasContext.
+    Basic implementation is inlined in code builder.
+    """
     @activate(Has)
     async def has(
         self,

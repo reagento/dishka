@@ -106,7 +106,7 @@ class FactoryBuilder(CodeBuilder):
     def _has_context(self, type_: str) -> str:
         return f"(context is not None and {type_} in context)"
 
-    def when(
+    def when(  # noqa: PLR0911
         self,
         marker: BaseMarker | None,
         component: Component | None,

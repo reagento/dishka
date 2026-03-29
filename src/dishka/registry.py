@@ -81,9 +81,9 @@ class Registry:
         self.child_registry = child_registry
 
     def add_factory(
-            self,
-            factory: Factory,
-            provides: DependencyKey | None = None,
+        self,
+        factory: Factory,
+        provides: DependencyKey | None = None,
     ) -> None:
         if provides is None:
             provides = factory.provides
@@ -100,7 +100,7 @@ class Registry:
     def collect_deps(
         self,
         factory: Factory,
-        activation_only: bool,
+        activation_only: bool,  # noqa: FBT001
     ) -> list[DependencyKey]:
         activation_deps = (
             DependencyKey(m, f.when_component)
@@ -127,7 +127,7 @@ class Registry:
     def _compile_deps(
         self,
         factory: Factory,
-        activation_only: bool,
+        activation_only: bool,  # noqa: FBT001
     ) -> dict[DependencyKey, CompiledFactory]:
         res = {}
         for dep in self.collect_deps(factory, activation_only):
@@ -139,7 +139,7 @@ class Registry:
     def _compile_deps_async(
         self,
         factory: Factory,
-        activation_only: bool,
+        activation_only: bool,  # noqa: FBT001
     ) -> dict[DependencyKey, CompiledFactory]:
         res = {}
         for dep in self.collect_deps(factory, activation_only):
@@ -149,7 +149,8 @@ class Registry:
         return res
 
     def get_compiled(
-            self, dependency: CompilationKey,
+        self,
+        dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled[dependency]
@@ -183,7 +184,8 @@ class Registry:
         )
 
     def get_compiled_async(
-            self, dependency: CompilationKey,
+            self,
+            dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled_async[dependency]
@@ -216,7 +218,7 @@ class Registry:
         return compile_factory(
             factory=factory,
             is_async=True,
-            compiled_deps=self._compile_deps(factory, False),
+            compiled_deps=self._compile_deps_async(factory, False),
             container_key=self.container_key,
         )
 

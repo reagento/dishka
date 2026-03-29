@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from collections.abc import AsyncGenerator, Callable, Generator
+from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
 from typing import Any, Protocol, TypeAlias
 
 from dishka.entities.key import CompilationKey
@@ -19,6 +19,6 @@ class CompiledFactory(Protocol):
             cache: Any,
             context: Any,
             container: Any,
-            has: Callable[[CompilationKey], bool],
+            has: Callable[[CompilationKey], bool | Awaitable[bool]],
     ) -> Any:
         raise NotImplementedError

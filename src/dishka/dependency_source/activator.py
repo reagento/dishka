@@ -1,19 +1,20 @@
 from typing import Any
 
 from dishka.entities.component import Component
+from dishka.entities.factory_type import FactoryData
 from dishka.entities.key import DependencyKey, const_dependency_key
 from dishka.entities.marker import Marker
 from dishka.entities.scope import BaseScope
-from ..entities.factory_type import FactoryData
 from .factory import Factory
 
 
-class StaticEvaluationUnavailable(Exception):
+class StaticEvaluationUnavailable(Exception):  # noqa: N818
     def __init__(self, factory: FactoryData) -> None:
         self.factory = factory
 
-    def __str__(self):
-        return f"StaticEvaluationUnavailable({self.factory.provides}, type={self.factory.type})"
+    def __str__(self) -> str:
+        return (f"StaticEvaluationUnavailable({self.factory.provides},"
+                f" type={self.factory.type})")
 
 
 class Activator:

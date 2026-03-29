@@ -103,4 +103,10 @@ def decorate_on_instance(
         scope: BaseScope | None,
         when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
-    return _decorate(source, provides, scope=scope, is_in_class=False, when=when)
+    return _decorate(
+        source,
+        provides,
+        scope=scope,
+        is_in_class=False,
+        when=when,
+    )

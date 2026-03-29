@@ -321,6 +321,7 @@ def make_container(
     builder = GraphBuilder(
         root_context=context,
         scopes=scopes,
+        start_scope=start_scope,
         container_key=CONTAINER_KEY,
         skip_validation=skip_validation,
         validation_settings=validation_settings,

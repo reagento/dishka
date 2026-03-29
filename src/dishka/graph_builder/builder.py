@@ -43,6 +43,7 @@ class GraphBuilder:
             self,
             *,
             scopes: type[BaseScope],
+            start_scope: BaseScope,
             container_key: DependencyKey,
             skip_validation: bool,
             validation_settings: ValidationSettings,
@@ -50,6 +51,7 @@ class GraphBuilder:
     ) -> None:
         self.root_context = root_context
         self.scopes = scopes
+        self.start_scope = start_scope
         self.container_key = container_key
         self.skip_validation = skip_validation
         self.validation_settings = validation_settings
@@ -553,7 +555,13 @@ class GraphBuilder:
             self._get_activator_factories(fixed_factories, found_markers),
         )
         registries = self._make_registries(fixed_factories)
-        StaticEvaluator(registries, self.root_context, self.container_key).evaluate_static()
+        StaticEvaluator(
+            registries,
+            self.root_context,
+            self.container_key,
+            self.scopes,
+            self.start_scope,
+        ).evaluate_static()
         if not self.skip_validation:
-            GraphValidator(registries, self.root_context, self.container_key).validate()
+            GraphValidator(registries).validate()
         return registries

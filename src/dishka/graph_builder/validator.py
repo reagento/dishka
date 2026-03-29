@@ -1,6 +1,5 @@
 import itertools
 from collections.abc import Sequence
-from typing import Any
 
 from dishka.dependency_source import Factory
 from dishka.entities.key import DependencyKey
@@ -12,18 +11,11 @@ from dishka.exceptions import (
     NoFactoryError,
 )
 from dishka.registry import Registry
-from ..dependency_source.activator import StaticEvaluationUnavailable
-from .activation_container import ActivationContainer, static_registry
 
 
 class GraphValidator:
-    def __init__(self, registries: Sequence[Registry], root_context: dict[Any, Any], container_key: DependencyKey) -> None:
+    def __init__(self, registries: Sequence[Registry]) -> None:
         self.registries = registries
-        self.activation_container = ActivationContainer(
-            root_context,
-            static_registry(registries[0]),
-            container_key,
-        )
         self.path: dict[DependencyKey, Factory] = {}
         self.valid_keys: dict[DependencyKey, bool] = {}
 

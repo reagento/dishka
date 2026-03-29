@@ -77,3 +77,13 @@ def test_has_no_dep(scope):
 
     c = make_container(provider)
     assert c.get(str) == "a"
+
+
+def test_has_wrong_scope():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(lambda: "a", provides=str)
+    provider.provide(lambda: 1.0, provides=float, scope=Scope.STEP)
+    provider.provide(provide_with_dep, provides=str, when=Has(float))
+
+    c = make_container(provider)
+    assert c.get(str) == "a"

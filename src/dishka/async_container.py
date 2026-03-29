@@ -411,6 +411,7 @@ def make_async_container(
     has_provider = HasProvider()
     builder = GraphBuilder(
         scopes=scopes,
+        start_scope=start_scope,
         container_key=CONTAINER_KEY,
         skip_validation=skip_validation,
         validation_settings=validation_settings,

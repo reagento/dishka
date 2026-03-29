@@ -9,7 +9,6 @@ from dishka.entities.factory_type import FactoryType
 from dishka.entities.key import (
     CompilationKey,
     DependencyKey,
-    compilation_to_dependency_key,
 )
 from dishka.entities.marker import BoolMarker, Marker
 from dishka.entities.scope import BaseScope
@@ -64,38 +63,46 @@ def static_registry(registry: Registry, start_scope: BaseScope) -> StaticRegistr
 
 class ActivationContainer:
     def __init__(
-            self,
-            context: dict[Any, Any],
-            registries: dict[BaseScope, Registry],
-            container_key: DependencyKey,
-            parent_container: "ActivationContainer | None",
+        self,
+        context: dict[Any, Any],
+        registries: dict[BaseScope, Registry],
+        container_key: DependencyKey,
     ):
         self._context = context
         self._registries = registries
         self._container_key = container_key.as_compilation_key()
-        self._parent_container = parent_container
 
-    @property
-    def scope(self) -> BaseScope:
-        return self._registry.scope
+        self._parent_scopes: dict[BaseScope, BaseScope | None] = {}
+        prev_scope = None
+        for scope in registries:
+            self._parent_scopes[scope] = prev_scope
+            prev_scope = scope
 
-    def _get(self, dep: CompilationKey) -> Any:
-        raise StaticEvaluationUnavailable
+    def _get(self, dep: CompilationKey, scope: BaseScope) -> Any:
+        registry = self._registries[scope]
+        compiled = registry.get_compiled(dep)
+        if not compiled:
+            scope = self._parent_scopes[scope]
+            if scope is None:
+                return False
+            return self._get(dep, scope)
+        return bool(compiled(
+            partial(self._get, scope=scope),
+            [],
+            {},
+            self._context,
+            self,
+            partial(self._has, scope=scope),
+        ))
 
     def is_active(self, factory: Factory) -> bool:
         marker = factory.provides.as_compilation_key()
         registry = self._registries[factory.scope]
         compiled = registry.get_compiled_activation(marker)
         if not compiled:
-            if self._has_nested(marker):
-                print("has nested", marker, registry.scope)
-                raise StaticEvaluationUnavailable
-            if self._parent_container:  # FIXME
-                return self._parent_container.is_active(factory)
-            return False
-
+            raise ValueError("Factory is not compiled")
         return bool(compiled(
-            self._get,
+            partial(self._get, scope=factory.scope),
             [],
             {},
             self._context,
@@ -109,25 +116,18 @@ class ActivationContainer:
         registry = self._registries[scope]
         compiled = registry.get_compiled_activation(marker)
         if not compiled:
-            if self._parent_container:
-                return self._parent_container._has(marker, scope)
-            return False
+            scope = self._parent_scopes[scope]
+            if scope is None:
+                return False
+            return self._has(marker, scope)
         return bool(compiled(
-            self._get,
+            partial(self._get, scope=scope),
             [],
             {},
             self._context,
             self,
             partial(self._has, scope=scope),
         ))
-
-    def _has_nested(self, key: CompilationKey) -> bool:
-        registry = self._registry
-        while registry := registry.child_registry:
-            factory = registry.get_factory(compilation_to_dependency_key(key))
-            if factory is not None:
-                return True
-        return False
 
 
 class StaticEvaluator:
@@ -149,7 +149,6 @@ class StaticEvaluator:
             registries=self.registries,
             container_key=container_key,
             context=context,
-            parent_container=None,
         )
         self.activation_container = activation_container
 

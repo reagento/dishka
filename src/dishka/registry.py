@@ -97,31 +97,40 @@ class Registry:
             )
             self.factories[origin_key] = factory
 
-    def collect_deps(self, factory: Factory) -> list[DependencyKey]:
+    def collect_deps(
+        self,
+        factory: Factory,
+        activation_only: bool,
+    ) -> list[DependencyKey]:
+        activation_deps = (
+            DependencyKey(m, f.when_component)
+            for f in factory.when_dependencies
+            for m in unpack_marker(f.when_override)
+            if not isinstance(m, (Has, HasContext))
+        )
+        if activation_only:
+            return list(activation_deps)
         return list(itertools.chain(
             factory.dependencies,
             factory.kw_dependencies.values(),
             (f.provides for f in factory.when_dependencies),
-            (
-                DependencyKey(m, f.when_component)
-                for f in factory.when_dependencies
-                for m in unpack_marker(f.when_override)
-                if not isinstance(m, (Has, HasContext))
-            ),
+            activation_deps,
             (
                 DependencyKey(m, factory.when_component)
                 for marker in (factory.when_active, factory.when_override)
                 for m in unpack_marker(marker)
                 if not isinstance(m, (Has, HasContext))
-            ),
+            )
+            ,
         ))
 
     def _compile_deps(
         self,
         factory: Factory,
+        activation_only: bool,
     ) -> dict[DependencyKey, CompiledFactory]:
         res = {}
-        for dep in self.collect_deps(factory):
+        for dep in self.collect_deps(factory, activation_only):
             compiled = self.get_compiled(dep.as_compilation_key())
             if compiled is not None:
                 res[dep] = compiled
@@ -130,9 +139,10 @@ class Registry:
     def _compile_deps_async(
         self,
         factory: Factory,
+        activation_only: bool,
     ) -> dict[DependencyKey, CompiledFactory]:
         res = {}
-        for dep in self.collect_deps(factory):
+        for dep in self.collect_deps(factory, activation_only):
             compiled = self.get_compiled_async(dep.as_compilation_key())
             if compiled is not None:
                 res[dep] = compiled
@@ -168,7 +178,7 @@ class Registry:
         return compile_factory(
             factory=factory,
             is_async=False,
-            compiled_deps=self._compile_deps(factory),
+            compiled_deps=self._compile_deps(factory, False),
             container_key=self.container_key,
         )
 
@@ -196,7 +206,7 @@ class Registry:
             compiled = compile_factory(
                 factory=factory,
                 is_async=True,
-                compiled_deps=self._compile_deps_async(factory),
+                compiled_deps=self._compile_deps_async(factory, False),
                 container_key=self.container_key,
             )
             self.compiled_async[dependency] = compiled
@@ -206,7 +216,7 @@ class Registry:
         return compile_factory(
             factory=factory,
             is_async=True,
-            compiled_deps=self._compile_deps(factory),
+            compiled_deps=self._compile_deps(factory, False),
             container_key=self.container_key,
         )
 
@@ -235,7 +245,7 @@ class Registry:
             compiled = compile_activation(
                 factory=factory,
                 is_async=False,
-                compiled_deps=self._compile_deps(factory),
+                compiled_deps=self._compile_deps(factory, True),
                 container_key=self.container_key,
             )
             self.compiled_activation[dependency] = compiled
@@ -265,7 +275,7 @@ class Registry:
             compiled = compile_activation(
                 factory=factory,
                 is_async=True,
-                compiled_deps=self._compile_deps_async(factory),
+                compiled_deps=self._compile_deps_async(factory, True),
                 container_key=self.container_key,
             )
             self.compiled_activation_async[dependency] = compiled

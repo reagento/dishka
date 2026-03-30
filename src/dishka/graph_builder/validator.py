@@ -19,6 +19,13 @@ class GraphValidator:
         self.path: dict[DependencyKey, Factory] = {}
         self.valid_keys: dict[DependencyKey, bool] = {}
 
+    @staticmethod
+    def _can_validate_now(factory: Factory) -> bool:
+        return (
+                factory.when_active in (None, BoolMarker(True))
+                and factory.when_override in (None, BoolMarker(True))
+        )
+
     def _validate_key(
         self,
         key: DependencyKey,
@@ -56,13 +63,12 @@ class GraphValidator:
         )
 
     def _validate_factory(
-            self, factory: Factory, registry_index: int,
+        self,
+        factory: Factory,
+        registry_index: int,
     ) -> None:
-        if (
-            factory.when_active == BoolMarker(False) and
-            factory.when_override == BoolMarker(False)
-        ):
-            return  # do not validate disabled factories
+        if not self._can_validate_now(factory):
+            return
 
         self.path[factory.provides] = factory
         if (

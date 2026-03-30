@@ -12,6 +12,41 @@ from dishka.exceptions import (
 )
 
 
+def is_zero(value: int) -> bool:
+    return value == 0
+
+
+def fallback() -> str:
+    return "a"
+
+
+def needs_float(value: float) -> str:
+    return str(value)
+
+
+@pytest.mark.parametrize( ("number", "expected", "raises"), [
+    (1, "a", False),
+    (0, None, True),
+])
+def test_unresolved_conditional_branch_is_validated_at_runtime(
+    *,
+    number: int,
+    expected: str | None,
+    raises: bool,
+):
+    provider = Provider(scope=Scope.APP)
+    provider.activate(is_zero, Marker("ZERO"))
+    provider.provide(lambda: number, provides=int)
+    provider.provide(fallback, provides=str)
+    provider.provide(needs_float, provides=str, when=Marker("ZERO"))
+    container = make_container(provider)
+    if raises:
+        with pytest.raises(NoFactoryError):
+            container.get(str)
+    else:
+        assert container.get(str) == expected
+
+
 @pytest.mark.parametrize(("value", "b_is_active"), [
     ("a", False),
     ("b", True),

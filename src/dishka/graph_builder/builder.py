@@ -563,5 +563,5 @@ class GraphBuilder:
             self.start_scope,
         ).evaluate_static()
         if not self.skip_validation:
-            GraphValidator(registries).validate()
+            GraphValidator(registries, self.validation_settings).validate()
         return registries

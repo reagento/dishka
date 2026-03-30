@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from dishka.dependency_source import Factory
 from dishka.entities.key import DependencyKey
 from dishka.entities.marker import BoolMarker
+from dishka.entities.validation_settings import ValidationSettings
 from dishka.exceptions import (
     CycleDependenciesError,
     GraphMissingFactoryError,
@@ -14,17 +15,27 @@ from dishka.registry import Registry
 
 
 class GraphValidator:
-    def __init__(self, registries: Sequence[Registry]) -> None:
+    def __init__(
+        self,
+        registries: Sequence[Registry],
+        validation_settings: ValidationSettings,
+    ) -> None:
         self.registries = registries
+        self.validation_settings = validation_settings
         self.path: dict[DependencyKey, Factory] = {}
         self.valid_keys: dict[DependencyKey, bool] = {}
 
-    @staticmethod
-    def _can_validate_now(factory: Factory) -> bool:
-        return (
-                factory.when_active in (None, BoolMarker(True))
-                and factory.when_override in (None, BoolMarker(True))
+    def _can_validate_now(self, factory: Factory) -> bool:
+        return self._is_resolved(factory.when_active) and self._is_resolved(
+            factory.when_override,
         )
+
+    def _is_resolved(self, when: object) -> bool:
+        if when == BoolMarker(True):
+            return True
+        if when is None:
+            return self.validation_settings.validate_unconditional_when
+        return False
 
     def _validate_key(
         self,

@@ -9,6 +9,8 @@ class ValidationSettings:
     implicit_override: bool = False
     # check if decorator was not applied to any factory
     nothing_decorated: bool = True
+    # validate factories without explicit `when` conditions at build time
+    validate_unconditional_when: bool = True
 
 
 DEFAULT_VALIDATION = ValidationSettings()

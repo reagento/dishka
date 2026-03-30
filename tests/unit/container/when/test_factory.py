@@ -2,7 +2,7 @@ from typing import NewType
 
 import pytest
 
-from dishka import Marker, Provider, Scope, make_container
+from dishka import Marker, Provider, Scope, ValidationSettings, make_container
 from dishka.exception_base import InvalidMarkerError
 from dishka.exceptions import (
     ActivatorOverrideError,
@@ -45,6 +45,24 @@ def test_unresolved_conditional_branch_is_validated_at_runtime(
             container.get(str)
     else:
         assert container.get(str) == expected
+
+
+def test_validate_unconditional_when_setting():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(needs_float, provides=str)
+
+    with pytest.raises(NoFactoryError):
+        make_container(provider)
+
+    container = make_container(
+        provider,
+        validation_settings=ValidationSettings(
+            validate_unconditional_when=False,
+        ),
+    )
+
+    with pytest.raises(NoFactoryError):
+        container.get(str)
 
 
 @pytest.mark.parametrize(("value", "b_is_active"), [

@@ -47,22 +47,29 @@ def test_unresolved_conditional_branch_is_validated_at_runtime(
         assert container.get(str) == expected
 
 
-def test_validate_unconditional_when_setting():
+@pytest.mark.parametrize("validate_unconditional_when", [False, True])
+def test_validate_unconditional_when_setting(*, validate_unconditional_when: bool,):
     provider = Provider(scope=Scope.APP)
     provider.provide(needs_float, provides=str)
 
-    with pytest.raises(NoFactoryError):
-        make_container(provider)
+    if validate_unconditional_when:
+        with pytest.raises(NoFactoryError):
+            make_container(
+                provider,
+                validation_settings=ValidationSettings(
+                    validate_unconditional_when=True,
+                ),
+            )
+    else:
+        container = make_container(
+            provider,
+            validation_settings=ValidationSettings(
+                validate_unconditional_when=False,
+            ),
+        )
 
-    container = make_container(
-        provider,
-        validation_settings=ValidationSettings(
-            validate_unconditional_when=False,
-        ),
-    )
-
-    with pytest.raises(NoFactoryError):
-        container.get(str)
+        with pytest.raises(NoFactoryError):
+            container.get(str)
 
 
 @pytest.mark.parametrize(("value", "b_is_active"), [

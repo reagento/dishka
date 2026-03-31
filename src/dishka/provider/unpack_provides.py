@@ -41,6 +41,7 @@ def unpack_factory(factory: Factory) -> Sequence[DependencySource]:
             scope=factory.scope,
             is_to_bind=factory.is_to_bind,
             cache=factory.cache,
+            validate_unconditional_when=factory.validate_unconditional_when,
             provides=hint_to_dependency_key(
                 provides_first,
             ).with_component(factory.provides.component),

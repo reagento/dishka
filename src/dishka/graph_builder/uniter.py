@@ -83,6 +83,7 @@ class SelectorGroupProcessor:
             type_=FactoryType.SELECTOR,
             kw_dependencies={},
             source=None,
+            validate_unconditional_when=None,
             when_override=None,
             when_active=or_markers(*(
                 factory.when_active

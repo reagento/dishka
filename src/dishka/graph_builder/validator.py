@@ -24,6 +24,7 @@ class GraphValidator:
         self.validation_settings = validation_settings
         self.path: dict[DependencyKey, Factory] = {}
         self.valid_keys: dict[DependencyKey, bool] = {}
+        self.current_factory: Factory | None = None
 
     def _can_validate_now(self, factory: Factory) -> bool:
         return self._is_resolved(factory.when_active) and self._is_resolved(
@@ -34,6 +35,11 @@ class GraphValidator:
         if when == BoolMarker(True):
             return True
         if when is None:
+            if self.current_factory is None:
+                return self.validation_settings.validate_unconditional_when
+            factory_override = self.current_factory.validate_unconditional_when
+            if factory_override is not None:
+                return factory_override
             return self.validation_settings.validate_unconditional_when
         return False
 
@@ -78,6 +84,7 @@ class GraphValidator:
         factory: Factory,
         registry_index: int,
     ) -> None:
+        self.current_factory = factory
         if not self._can_validate_now(factory):
             return
 

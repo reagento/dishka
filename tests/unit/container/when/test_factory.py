@@ -72,6 +72,48 @@ def test_validate_unconditional_when_setting(*, validate_unconditional_when: boo
             container.get(str)
 
 
+@pytest.mark.parametrize(
+    ("global_setting", "factory_override", "build_fails"),
+    [
+        (False, None, False),
+        (True, None, True),
+        (False, True, True),
+        (True, False, False),
+    ],
+)
+def test_validate_unconditional_when_factory_override(
+    *,
+    global_setting: bool,
+    factory_override: bool | None,
+    build_fails: bool,
+):
+    provider = Provider(scope=Scope.APP)
+    provider.provide(
+        needs_float,
+        provides=str,
+        validate_unconditional_when=factory_override,
+    )
+
+    if build_fails:
+        with pytest.raises(NoFactoryError):
+            make_container(
+                provider,
+                validation_settings=ValidationSettings(
+                    validate_unconditional_when=global_setting,
+                ),
+            )
+    else:
+        container = make_container(
+            provider,
+            validation_settings=ValidationSettings(
+                validate_unconditional_when=global_setting,
+            ),
+        )
+
+        with pytest.raises(NoFactoryError):
+            container.get(str)
+
+
 @pytest.mark.parametrize(("value", "b_is_active"), [
     ("a", False),
     ("b", True),

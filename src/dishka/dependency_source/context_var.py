@@ -31,7 +31,7 @@ class ContextVariable:
     def as_factory(
             self, component: Component,
     ) -> Factory:
-        override = (BoolMarker(True) if self.override else None)
+        override = BoolMarker(True) if self.override else None
 
         if component == DEFAULT_COMPONENT:
             return Factory(
@@ -43,6 +43,7 @@ class ContextVariable:
                 kw_dependencies={},
                 type_=FactoryType.CONTEXT,
                 cache=False,
+                validate_unconditional_when=None,
                 when_override=override,
                 when_active=HasContext(self.provides.type_hint),
                 when_component=component,

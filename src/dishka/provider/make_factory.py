@@ -266,6 +266,7 @@ def _make_factory_by_class(
         cache: bool,
         override: bool,
         when: BaseMarker | None,
+        validate_unconditional_when: bool | None,
 ) -> Factory:
     if not provides:
         provides = source
@@ -293,6 +294,7 @@ def _make_factory_by_class(
         provides=hint_to_dependency_key(provides),
         is_to_bind=False,
         cache=cache,
+        validate_unconditional_when=validate_unconditional_when,
         when_override=calc_override(when=when, override=override),
         when_active=when,
         when_component=None,
@@ -328,6 +330,7 @@ def _make_factory_by_function(
         override: bool,
         check_self_name: bool,
         when: BaseMarker | None,
+        validate_unconditional_when: bool | None,
 ) -> Factory:
     # typing.cast is applied as unwrap takes a Callable object
     raw_source = unwrap(cast(Callable[..., Any], source))
@@ -369,6 +372,7 @@ def _make_factory_by_function(
         provides=hint_to_dependency_key(provides),
         is_to_bind=is_in_class,
         cache=cache,
+        validate_unconditional_when=validate_unconditional_when,
         when_override=calc_override(when=when, override=override),
         when_active=when,
         when_component=None,
@@ -384,6 +388,7 @@ def _make_factory_by_static_method(
         cache: bool,
         override: bool,
         when: BaseMarker | None,
+        validate_unconditional_when: bool | None,
 ) -> Factory:
     if missing_hints := _params_without_hints(source, skip_self=False):
         raise MissingHintsError(source, missing_hints)
@@ -413,6 +418,7 @@ def _make_factory_by_static_method(
         provides=hint_to_dependency_key(provides),
         is_to_bind=False,
         cache=cache,
+        validate_unconditional_when=validate_unconditional_when,
         when_override=calc_override(when=when, override=override),
         when_active=when,
         when_component=None,
@@ -440,12 +446,13 @@ def _make_factory_by_other_callable(
         cache: bool,
         override: bool,
         when: BaseMarker | None,
+        validate_unconditional_when: bool | None,
 ) -> Factory:
     if _is_bound_method(source):
         to_check = source.__func__  # type: ignore[attr-defined]
         is_in_class = True
     else:
-        call_method = source.__call__   # type: ignore[operator]
+        call_method = source.__call__  # type: ignore[operator]
         if _is_bound_method(call_method):
             to_check = call_method.__func__
             is_in_class = True
@@ -461,6 +468,7 @@ def _make_factory_by_other_callable(
         override=override,
         check_self_name=False,
         when=when,
+        validate_unconditional_when=validate_unconditional_when,
     )
     if factory.is_to_bind:
         dependencies = factory.dependencies[1:]  # remove `self`
@@ -476,6 +484,7 @@ def _make_factory_by_other_callable(
         provides=factory.provides,
         is_to_bind=False,
         cache=cache,
+        validate_unconditional_when=validate_unconditional_when,
         when_override=calc_override(when=when, override=override),
         when_active=when,
         when_component=None,
@@ -509,6 +518,7 @@ def make_factory(
         is_in_class: bool,
         override: bool,
         when: BaseMarker | None = None,
+        validate_unconditional_when: bool | None,
 ) -> Factory:
     provides, source = _extract_source(provides, source)
 
@@ -528,6 +538,7 @@ def make_factory(
             cache=cache,
             override=override,
             when=when,
+            validate_unconditional_when=validate_unconditional_when,
         )
     elif isfunction(source) or isinstance(source, classmethod):
         return _make_factory_by_function(
@@ -539,6 +550,7 @@ def make_factory(
             override=override,
             check_self_name=True,
             when=when,
+            validate_unconditional_when=validate_unconditional_when,
         )
     elif isbuiltin(source):
         return _make_factory_by_function(
@@ -550,6 +562,7 @@ def make_factory(
             override=override,
             check_self_name=False,
             when=when,
+            validate_unconditional_when=validate_unconditional_when,
         )
     elif isinstance(source, staticmethod):
         return _make_factory_by_static_method(
@@ -559,6 +572,7 @@ def make_factory(
             cache=cache,
             override=override,
             when=when,
+            validate_unconditional_when=validate_unconditional_when,
         )
     elif callable(source) and not source_origin:
         return _make_factory_by_other_callable(
@@ -568,6 +582,7 @@ def make_factory(
             cache=cache,
             override=override,
             when=when,
+            validate_unconditional_when=validate_unconditional_when,
         )
     else:
         raise NotAFactoryError(source)
@@ -583,16 +598,20 @@ def _provide(
         recursive: bool = False,
         override: bool = False,
         when: BaseMarker | None = None,
+        validate_unconditional_when: bool | None,
 ) -> CompositeDependencySource:
     if when and override:
         raise WhenOverrideConflictError
     composite = ensure_composite(source)
     factory = make_factory(
-        provides=provides, scope=scope,
-        source=composite.origin, cache=cache,
+        provides=provides,
+        scope=scope,
+        source=composite.origin,
+        cache=cache,
         is_in_class=is_in_class,
         override=override,
         when=when,
+        validate_unconditional_when=validate_unconditional_when,
     )
     composite.dependency_sources.extend(unpack_factory(factory))
     if not recursive:
@@ -612,6 +631,7 @@ def _provide(
                 is_in_class=is_in_class,
                 override=override,
                 when=when,
+                validate_unconditional_when=validate_unconditional_when,
             )
             additional_sources.extend(additional.dependency_sources)
     composite.dependency_sources.extend(additional_sources)
@@ -627,12 +647,18 @@ def provide_on_instance(
         recursive: bool = False,
         override: bool = False,
         when: BaseMarker | None = None,
+        validate_unconditional_when: bool | None,
 ) -> CompositeDependencySource:
     return _provide(
-        provides=provides, scope=scope, source=source, cache=cache,
+        provides=provides,
+        scope=scope,
+        source=source,
+        cache=cache,
         is_in_class=False,
-        recursive=recursive, override=override,
+        recursive=recursive,
+        override=override,
         when=when,
+        validate_unconditional_when=validate_unconditional_when,
     )
 
 
@@ -645,6 +671,7 @@ def provide(
         recursive: bool = False,
         override: bool = False,
         when: BaseMarker | None = None,
+        validate_unconditional_when: bool | None,
 ) -> Callable[[Callable[..., Any]], CompositeDependencySource]:
     ...
 
@@ -659,6 +686,7 @@ def provide(
         recursive: bool = False,
         override: bool = False,
         when: BaseMarker | None = None,
+        validate_unconditional_when: bool | None,
 ) -> CompositeDependencySource:
     ...
 
@@ -672,6 +700,7 @@ def provide(
         recursive: bool = False,
         override: bool = False,
         when: BaseMarker | None = None,
+        validate_unconditional_when: bool | None,
 ) -> CompositeDependencySource | Callable[
     [Callable[..., Any]], CompositeDependencySource,
 ]:
@@ -701,14 +730,14 @@ def provide(
         return _provide(
             provides=provides, scope=scope, source=source, cache=cache,
             is_in_class=True, recursive=recursive, override=override,
-            when=when,
+            when=when, validate_unconditional_when=validate_unconditional_when,
         )
 
     def scoped(func: Callable[..., Any]) -> CompositeDependencySource:
         return _provide(
             provides=provides, scope=scope, source=func, cache=cache,
             is_in_class=True, recursive=recursive, override=override,
-            when=when,
+            when=when, validate_unconditional_when=validate_unconditional_when,
         )
 
     return scoped
@@ -723,6 +752,7 @@ def _provide_all(
         recursive: bool,
         override: bool = False,
         when: BaseMarker | None = None,
+        validate_unconditional_when: bool | None = None,
 ) -> CompositeDependencySource:
     composite = CompositeDependencySource(None)
     for single_provides in provides:
@@ -735,6 +765,7 @@ def _provide_all(
             recursive=recursive,
             override=override,
             when=when,
+            validate_unconditional_when=validate_unconditional_when,
         )
         composite.dependency_sources.extend(source.dependency_sources)
     return composite
@@ -747,12 +778,13 @@ def provide_all(
         recursive: bool = False,
         override: bool = False,
         when: BaseMarker | None = None,
+        validate_unconditional_when: bool | None = None,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,
         cache=cache, is_in_class=True,
         recursive=recursive, override=override,
-        when=when,
+        when=when, validate_unconditional_when=validate_unconditional_when,
     )
 
 
@@ -763,10 +795,11 @@ def provide_all_on_instance(
         recursive: bool = False,
         override: bool = False,
         when: BaseMarker | None = None,
+        validate_unconditional_when: bool | None = None,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,
         cache=cache, is_in_class=False,
         recursive=recursive, override=override,
-        when=when,
+        when=when, validate_unconditional_when=validate_unconditional_when,
     )

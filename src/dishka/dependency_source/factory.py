@@ -35,6 +35,7 @@ class Factory(FactoryData):
         "dependencies",
         "is_to_bind",
         "kw_dependencies",
+        "validate_unconditional_when",
         "when_active",
         "when_component",
         "when_dependencies",
@@ -51,6 +52,7 @@ class Factory(FactoryData):
         type_: FactoryType,
         is_to_bind: bool,
         cache: bool,
+        validate_unconditional_when: bool | None,
         when_override: BaseMarker | None,
         when_active: BaseMarker | None,
         when_component: Component | None,
@@ -82,6 +84,7 @@ class Factory(FactoryData):
         self.kw_dependencies = kw_dependencies
         self.is_to_bind = is_to_bind
         self.cache = cache
+        self.validate_unconditional_when = validate_unconditional_when
         self.when_active = when_active
         self.when_component = when_component
         self.when_dependencies = when_dependencies
@@ -106,6 +109,7 @@ class Factory(FactoryData):
             type_=self.type,
             is_to_bind=False,
             cache=self.cache,
+            validate_unconditional_when=self.validate_unconditional_when,
             when_override=when_override,
             when_active=when_active,
             when_component=self.when_component,
@@ -127,6 +131,7 @@ class Factory(FactoryData):
             is_to_bind=self.is_to_bind,
             cache=self.cache,
             type_=self.type,
+            validate_unconditional_when=self.validate_unconditional_when,
             when_override=self.when_override,
             when_active=self.when_active,
             when_component=(
@@ -147,6 +152,7 @@ class Factory(FactoryData):
             is_to_bind=self.is_to_bind,
             cache=self.cache,
             type_=self.type,
+            validate_unconditional_when=self.validate_unconditional_when,
             when_override=self.when_override,
             when_active=self.when_active,
             when_component=self.when_component,
@@ -171,6 +177,7 @@ class Factory(FactoryData):
             is_to_bind=self.is_to_bind,
             cache=self.cache,
             type_=self.type,
+            validate_unconditional_when=self.validate_unconditional_when,
             when_override=coalesce(when_override, self.when_override),
             when_active=coalesce(when_active, self.when_active),
             when_component=coalesce(when_component, self.when_component),

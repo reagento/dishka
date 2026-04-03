@@ -419,7 +419,7 @@ def make_async_container(
         container_key=CONTAINER_KEY,
         skip_validation=skip_validation,
         validation_settings=validation_settings,
-        root_context=context,
+        root_context=context or {},
     )
     builder.add_multicomponent_providers(has_provider)
     builder.add_providers(*providers)

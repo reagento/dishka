@@ -323,7 +323,7 @@ def make_container(
     context_provider = make_root_context_provider(providers, context, scopes)
     has_provider = HasProvider()
     builder = GraphBuilder(
-        root_context=context,
+        root_context=context or {},
         scopes=scopes,
         start_scope=start_scope,
         container_key=CONTAINER_KEY,

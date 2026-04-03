@@ -13,7 +13,9 @@ from dishka.entities.key import (
 )
 from dishka.entities.marker import BoolMarker, Marker
 from dishka.entities.scope import BaseScope
+from dishka.exception_base import DishkaError
 from dishka.registry import Registry
+from dishka.text_rendering.name import get_source_name
 
 logger = getLogger(__name__)
 
@@ -95,10 +97,10 @@ class ActivationContainer:
         registry = self._registries[scope]
         compiled = registry.get_compiled(dep)
         if not compiled:
-            scope = self._parent_scopes[scope]
-            if scope is None:
+            parent_scope = self._parent_scopes[scope]
+            if parent_scope is None:
                 return False
-            return self._get(dep, scope)
+            return self._get(dep, parent_scope)
         return bool(compiled(
             partial(self._get, scope=scope),
             [],
@@ -110,6 +112,9 @@ class ActivationContainer:
 
     def is_active(self, factory: Factory) -> bool:
         marker = factory.provides.as_compilation_key()
+        if factory.scope is None:
+            error = f"{get_source_name(factory)} as not scope"
+            raise DishkaError(error)
         registry = self._registries[factory.scope]
         compiled = registry.get_compiled_activation(marker)
         if not compiled:
@@ -129,10 +134,10 @@ class ActivationContainer:
         registry = self._registries[scope]
         compiled = registry.get_compiled_activation(marker)
         if not compiled:
-            scope = self._parent_scopes[scope]
-            if scope is None:
+            parent_scope = self._parent_scopes[scope]
+            if parent_scope is None:
                 return False
-            return self._has(marker, scope)
+            return self._has(marker, parent_scope)
         return bool(compiled(
             partial(self._get, scope=scope),
             [],
@@ -149,12 +154,12 @@ class StaticEvaluator:
         registries: Sequence[Registry],
         context: dict[Any, Any],
         container_key: DependencyKey,
-        scopes: Sequence[BaseScope],
+        scopes: type[BaseScope],
         start_scope: BaseScope | None,
     ) -> None:
         if start_scope is None:
             start_scope = next(s for s in scopes if not s.skip)
-        self.registries = {
+        self.registries: dict[BaseScope, Registry] = {
             registry.scope: static_registry(registry, start_scope)
             for registry in registries
         }

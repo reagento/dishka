@@ -29,7 +29,7 @@ from dishka.exceptions import (
 from dishka.provider import BaseProvider, ProviderWrapper
 from dishka.registry import Registry
 from dishka.text_rendering.name import get_source_name
-from .activation_container import StaticEvaluator
+from .activation import StaticEvaluator
 from .moved_objects_tracker import MovedObjectsTracker
 from .uniter import (
     CollectionGroupProcessor,
@@ -43,7 +43,7 @@ class GraphBuilder:
             self,
             *,
             scopes: type[BaseScope],
-            start_scope: BaseScope,
+            start_scope: BaseScope | None,
             container_key: DependencyKey,
             skip_validation: bool,
             validation_settings: ValidationSettings,

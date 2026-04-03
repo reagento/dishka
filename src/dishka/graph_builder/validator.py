@@ -3,6 +3,7 @@ from collections.abc import Sequence
 
 from dishka.dependency_source import Factory
 from dishka.entities.key import DependencyKey
+from dishka.entities.marker import BoolMarker
 from dishka.exceptions import (
     CycleDependenciesError,
     GraphMissingFactoryError,
@@ -57,6 +58,12 @@ class GraphValidator:
     def _validate_factory(
             self, factory: Factory, registry_index: int,
     ) -> None:
+        if (
+            factory.when_active == BoolMarker(False) and
+            factory.when_override == BoolMarker(False)
+        ):
+            return  # do not validate disabled factories
+
         self.path[factory.provides] = factory
         if (
             factory.provides in factory.kw_dependencies.values() or

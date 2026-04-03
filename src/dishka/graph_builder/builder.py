@@ -1,7 +1,7 @@
 import itertools
 from collections import defaultdict
 from collections.abc import Collection, Sequence
-from typing import cast
+from typing import Any, cast
 
 from dishka.dependency_source import (
     Activator,
@@ -29,6 +29,7 @@ from dishka.exceptions import (
 from dishka.provider import BaseProvider, ProviderWrapper
 from dishka.registry import Registry
 from dishka.text_rendering.name import get_source_name
+from .activation import StaticEvaluator
 from .moved_objects_tracker import MovedObjectsTracker
 from .uniter import (
     CollectionGroupProcessor,
@@ -42,11 +43,15 @@ class GraphBuilder:
             self,
             *,
             scopes: type[BaseScope],
+            start_scope: BaseScope | None,
             container_key: DependencyKey,
             skip_validation: bool,
             validation_settings: ValidationSettings,
+            root_context: dict[Any, Any],
     ) -> None:
+        self.root_context = root_context
         self.scopes = scopes
+        self.start_scope = start_scope
         self.container_key = container_key
         self.skip_validation = skip_validation
         self.validation_settings = validation_settings
@@ -550,6 +555,13 @@ class GraphBuilder:
             self._get_activator_factories(fixed_factories, found_markers),
         )
         registries = self._make_registries(fixed_factories)
+        StaticEvaluator(
+            registries,
+            self.root_context,
+            self.container_key,
+            self.scopes,
+            self.start_scope,
+        ).evaluate_static()
         if not self.skip_validation:
             GraphValidator(registries).validate()
         return registries

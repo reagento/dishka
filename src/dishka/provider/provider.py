@@ -218,6 +218,7 @@ class Provider(BaseProvider):
             cache: bool = True,
             component: Component | None = None,
             override: bool = False,
+            when: BaseMarker | None = None,
     ) -> CompositeDependencySource:
         composite = alias(
             source=source,
@@ -225,6 +226,7 @@ class Provider(BaseProvider):
             cache=cache,
             component=component,
             override=override,
+            when=when,
         )
         self._add_dependency_sources(composite.dependency_sources)
         return composite
@@ -235,11 +237,13 @@ class Provider(BaseProvider):
             *,
             provides: Any = None,
             scope: BaseScope | None = None,
+            when: BaseMarker | None = None,
     ) -> CompositeDependencySource:
         composite = decorate_on_instance(
             source=source,
             provides=provides,
             scope=scope,
+            when=when,
         )
         self._add_dependency_sources(composite.dependency_sources)
         return composite

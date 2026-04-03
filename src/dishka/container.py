@@ -226,6 +226,7 @@ class Container:
             self._cache,
             self._context,
             self,
+            self._has,
         )
 
     def close(self, exception: BaseException | None = None) -> None:
@@ -278,6 +279,7 @@ class Container:
             self._cache,
             self._context,
             self,
+            self._has,
         ))
 
     def _has_context(self, marker: Any) -> bool:
@@ -285,6 +287,10 @@ class Container:
 
 
 class HasProvider(Provider):
+    """
+    This provider is used only for direct access on Has/HasContext.
+    Basic implementation is inlined in code builder.
+    """
     @activate(Has)
     def has(
         self,
@@ -317,7 +323,9 @@ def make_container(
     context_provider = make_root_context_provider(providers, context, scopes)
     has_provider = HasProvider()
     builder = GraphBuilder(
+        root_context=context or {},
         scopes=scopes,
+        start_scope=start_scope,
         container_key=CONTAINER_KEY,
         skip_validation=skip_validation,
         validation_settings=validation_settings,

@@ -28,6 +28,7 @@ class CodeBuilder:
             self.async_str = ""
 
         self._is_async = is_async
+        self.is_async = is_async
 
     def _make_global_name(self, obj: Any, name: str | None = None) -> str:
         if name is None:
@@ -175,7 +176,7 @@ class CodeBuilder:
 
     def except_(
         self,
-        exception: type[Exception],
+        exception: type[BaseException],
         as_: str = "",
     ) -> AbstractContextManager[None]:
         name = self.global_(exception)

@@ -29,9 +29,9 @@ To set conditional activation you create special ``Marker`` objects and use them
 
 .. code-block:: python
 
-    from dishka import Provider, provide, Scope
+    from dishka import Marker, Provider, provide, Scope
 
-    class MyProvider(Provider)
+    class MyProvider(Provider):
         @provide(scope=Scope.APP)
         def base_impl(self) -> Cache:
             return NormalCacheImpl()
@@ -50,9 +50,9 @@ It can be the same or another provider while you pass when creating a container.
 
 .. code-block:: python
 
-    from dishka import activate, Provider
+    from dishka import activate, Marker, Provider
 
-    class MyProvider(Provider)
+    class MyProvider(Provider):
         @activate(Marker("debug"))
         def is_debug(self) -> bool:
             return False
@@ -61,7 +61,7 @@ This function can use other objects as well. For example, we can pass config usi
 
 .. code-block:: python
 
-    class MyProvider(Provider)
+    class MyProvider(Provider):
         config = from_context(Config, scope=Scope.APP)
 
         @activate(Marker("debug"))
@@ -79,7 +79,7 @@ More general pattern is to create own marker type and register a single activato
         pass
 
 
-    class MyProvider(Provider)
+    class MyProvider(Provider):
         config = from_context(Config, scope=Scope.APP)
 
         @activate(EnvMarker)
@@ -162,7 +162,7 @@ For example:
 
     from dishka import Provider, provide, Scope
 
-    class MyProvider(Provider)
+    class MyProvider(Provider):
         config = from_context(RedisConfig, scope=Scope.APP)
 
         @provide(scope=Scope.APP)
@@ -201,7 +201,7 @@ For example, in the following code ``redis_impl`` is never called because ``Redi
 
     from dishka import Provider, provide, Scope
 
-    class MyProvider(Provider)
+    class MyProvider(Provider):
         config = from_context(RedisConfig, scope=Scope.APP)
 
         @provide(when=Has(RedisConfig), scope=Scope.APP)

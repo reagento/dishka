@@ -23,7 +23,8 @@ logger = getLogger(__name__)
 class StaticRegistry(Registry):
     def __init__(
             self,
-            scope: BaseScope, *,
+            scope: BaseScope,
+            *,
             has_fallback: bool,
             container_key: DependencyKey,
             is_root: bool,

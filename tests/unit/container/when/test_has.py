@@ -79,6 +79,17 @@ def test_has_no_dep(scope):
     assert c.get(str) == "a"
 
 
+@pytest.mark.parametrize("scope", [Scope.RUNTIME, Scope.APP])
+def test_has_no_dep_nested_scope(scope):
+    provider = Provider(scope=scope)
+    provider.provide(lambda: "a", provides=str)
+    provider.provide(provide_with_dep, provides=str, when=Has(float))
+
+    c = make_container(provider)
+    with c() as request_c:
+        assert request_c.get(str) == "a"
+
+
 def test_has_wrong_scope():
     provider = Provider(scope=Scope.APP)
     provider.provide(lambda: "a", provides=str)

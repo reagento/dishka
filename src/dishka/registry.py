@@ -63,12 +63,12 @@ class Registry:
     )
 
     def __init__(
-            self,
-            scope: BaseScope,
-            *,
-            has_fallback: bool,
-            container_key: DependencyKey,
-            child_registry: "Registry | None" = None,
+        self,
+        scope: BaseScope,
+        *,
+        has_fallback: bool,
+        container_key: DependencyKey,
+        child_registry: "Registry | None" = None,
     ) -> None:
         self.scope = scope
         self.factories: dict[DependencyKey, Factory] = {}
@@ -81,9 +81,9 @@ class Registry:
         self.child_registry = child_registry
 
     def add_factory(
-            self,
-            factory: Factory,
-            provides: DependencyKey | None = None,
+        self,
+        factory: Factory,
+        provides: DependencyKey | None = None,
     ) -> None:
         if provides is None:
             provides = factory.provides
@@ -98,21 +98,23 @@ class Registry:
             self.factories[origin_key] = factory
 
     def collect_deps(self, factory: Factory) -> list[DependencyKey]:
-        return list(itertools.chain(
-            factory.dependencies,
-            factory.kw_dependencies.values(),
-            (f.provides for f in factory.when_dependencies),
-            (
-                DependencyKey(m, f.when_component)
-                for f in factory.when_dependencies
-                for m in unpack_marker(f.when_override)
-            ),
-            (
-                DependencyKey(m, factory.when_component)
-                for marker in (factory.when_active, factory.when_override)
-                for m in unpack_marker(marker)
-            ),
-        ))
+        return list(
+            itertools.chain(
+                factory.dependencies,
+                factory.kw_dependencies.values(),
+                (f.provides for f in factory.when_dependencies),
+                (
+                    DependencyKey(m, f.when_component)
+                    for f in factory.when_dependencies
+                    for m in unpack_marker(f.when_override)
+                ),
+                (
+                    DependencyKey(m, factory.when_component)
+                    for marker in (factory.when_active, factory.when_override)
+                    for m in unpack_marker(marker)
+                ),
+            )
+        )
 
     def _compile_deps(
         self,
@@ -137,7 +139,8 @@ class Registry:
         return res
 
     def get_compiled(
-            self, dependency: CompilationKey,
+        self,
+        dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled[dependency]
@@ -167,8 +170,42 @@ class Registry:
             self.compiled[dependency] = compiled
             return compiled
 
+    def _get_transitive_dep_keys(
+        self,
+        dep_key: DependencyKey,
+        visited: set[DependencyKey] | None = None,
+    ) -> set[DependencyKey]:
+        if visited is None:
+            visited = set()
+        if dep_key in visited:
+            return visited
+        factory = self.get_factory(dep_key)
+        if factory is None:
+            return visited
+        visited.add(dep_key)
+        for sub_dep in self.collect_deps(factory):
+            self._get_transitive_dep_keys(sub_dep, visited)
+        return visited
+
+    def _can_gather_deps(self, factory: Factory) -> bool:
+        all_deps = list(factory.dependencies) + list(
+            factory.kw_dependencies.values(),
+        )
+        resolvable = [
+            d
+            for d in all_deps
+            if not d.is_const()
+            and d.type_hint is not DependencyKey
+            and d != self.container_key
+        ]
+        if len(resolvable) < 2:  # noqa: PLR2004
+            return False
+
+        return True
+
     def get_compiled_async(
-            self, dependency: CompilationKey,
+        self,
+        dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled_async[dependency]
@@ -193,12 +230,14 @@ class Registry:
                 is_async=True,
                 compiled_deps=self._compile_deps_async(factory),
                 container_key=self.container_key,
+                can_gather=self._can_gather_deps(factory),
             )
             self.compiled_async[dependency] = compiled
             return compiled
 
     def get_compiled_activation(
-            self, dependency: CompilationKey,
+        self,
+        dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled_activation[dependency]
@@ -229,7 +268,8 @@ class Registry:
             return compiled
 
     def get_compiled_activation_async(
-            self, dependency: CompilationKey,
+        self,
+        dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled_activation_async[dependency]
@@ -278,12 +318,9 @@ class Registry:
             )
             factory = self.factories.get(origin_key)
 
-            if (
-                not factory or
-                not is_broader_or_same_type(
-                    factory.provides.type_hint,
-                    dependency.type_hint,
-                )
+            if not factory or not is_broader_or_same_type(
+                factory.provides.type_hint,
+                dependency.type_hint,
             ):
                 return None
             factory = self._specialize_generic(factory, dependency)
@@ -361,7 +398,9 @@ class Registry:
         )
 
     def _specialize_generic(
-            self, factory: Factory, dependency_key: DependencyKey,
+        self,
+        factory: Factory,
+        dependency_key: DependencyKey,
     ) -> Factory:
         params_replacement = get_typevar_replacement(
             factory.provides.type_hint,
@@ -373,25 +412,29 @@ class Registry:
             if isinstance(hint, TypeVar):
                 hint = params_replacement[hint]
             elif get_origin(hint) and (type_vars := get_type_vars(hint)):
-                hint = hint[tuple(
-                    params_replacement[param]
-                    for param in type_vars
-                )]
-            new_dependencies.append(DependencyKey(
-                hint, source_dependency.component, source_dependency.depth,
-            ))
+                hint = hint[
+                    tuple(params_replacement[param] for param in type_vars)
+                ]
+            new_dependencies.append(
+                DependencyKey(
+                    hint,
+                    source_dependency.component,
+                    source_dependency.depth,
+                )
+            )
         new_kw_dependencies: dict[str, DependencyKey] = {}
         for name, source_dependency in factory.kw_dependencies.items():
             hint = source_dependency.type_hint
             if isinstance(hint, TypeVar):
                 hint = params_replacement[hint]
             elif get_origin(hint) and (type_vars := get_type_vars(hint)):
-                hint = hint[tuple(
-                    params_replacement[param]
-                    for param in type_vars
-                )]
+                hint = hint[
+                    tuple(params_replacement[param] for param in type_vars)
+                ]
             new_kw_dependencies[name] = DependencyKey(
-                hint, source_dependency.component, source_dependency.depth,
+                hint,
+                source_dependency.component,
+                source_dependency.depth,
             )
         return Factory(
             source=factory.source,

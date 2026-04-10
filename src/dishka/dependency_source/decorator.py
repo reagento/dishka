@@ -69,6 +69,7 @@ class Decorator:
             },
             type_=self.factory.type,
             cache=cache,
+            validate_unconditional_when=None,
             when_override=self.when,
             when_active=self.when,
             when_component=self.factory.when_component or component,

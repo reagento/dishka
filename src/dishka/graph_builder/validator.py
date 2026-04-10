@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from dishka.dependency_source import Factory
 from dishka.entities.key import DependencyKey
 from dishka.entities.marker import BoolMarker
+from dishka.entities.validation_settings import ValidationSettings
 from dishka.exceptions import (
     CycleDependenciesError,
     GraphMissingFactoryError,
@@ -14,10 +15,33 @@ from dishka.registry import Registry
 
 
 class GraphValidator:
-    def __init__(self, registries: Sequence[Registry]) -> None:
+    def __init__(
+        self,
+        registries: Sequence[Registry],
+        validation_settings: ValidationSettings,
+    ) -> None:
         self.registries = registries
+        self.validation_settings = validation_settings
         self.path: dict[DependencyKey, Factory] = {}
         self.valid_keys: dict[DependencyKey, bool] = {}
+        self.current_factory: Factory | None = None
+
+    def _can_validate_now(self, factory: Factory) -> bool:
+        return self._is_resolved(factory.when_active) and self._is_resolved(
+            factory.when_override,
+        )
+
+    def _is_resolved(self, when: object) -> bool:
+        if when == BoolMarker(True):
+            return True
+        if when is None:
+            if self.current_factory is None:
+                return self.validation_settings.validate_unconditional_when
+            factory_override = self.current_factory.validate_unconditional_when
+            if factory_override is not None:
+                return factory_override
+            return self.validation_settings.validate_unconditional_when
+        return False
 
     def _validate_key(
         self,
@@ -56,13 +80,13 @@ class GraphValidator:
         )
 
     def _validate_factory(
-            self, factory: Factory, registry_index: int,
+        self,
+        factory: Factory,
+        registry_index: int,
     ) -> None:
-        if (
-            factory.when_active == BoolMarker(False) and
-            factory.when_override == BoolMarker(False)
-        ):
-            return  # do not validate disabled factories
+        self.current_factory = factory
+        if not self._can_validate_now(factory):
+            return
 
         self.path[factory.provides] = factory
         if (

@@ -2,7 +2,7 @@ from typing import NewType
 
 import pytest
 
-from dishka import Marker, Provider, Scope, make_container
+from dishka import Marker, Provider, Scope, ValidationSettings, make_container
 from dishka.exception_base import InvalidMarkerError
 from dishka.exceptions import (
     ActivatorOverrideError,
@@ -10,6 +10,108 @@ from dishka.exceptions import (
     NoFactoryError,
     WhenOverrideConflictError,
 )
+
+
+def is_zero(value: int) -> bool:
+    return value == 0
+
+
+def fallback() -> str:
+    return "a"
+
+
+def needs_float(value: float) -> str:
+    return str(value)
+
+
+@pytest.mark.parametrize( ("number", "expected", "raises"), [
+    (1, "a", False),
+    (0, None, True),
+])
+def test_unresolved_conditional_branch_is_validated_at_runtime(
+    *,
+    number: int,
+    expected: str | None,
+    raises: bool,
+):
+    provider = Provider(scope=Scope.APP)
+    provider.activate(is_zero, Marker("ZERO"))
+    provider.provide(lambda: number, provides=int)
+    provider.provide(fallback, provides=str)
+    provider.provide(needs_float, provides=str, when=Marker("ZERO"))
+    container = make_container(provider)
+    if raises:
+        with pytest.raises(NoFactoryError):
+            container.get(str)
+    else:
+        assert container.get(str) == expected
+
+
+@pytest.mark.parametrize("validate_unconditional_when", [False, True])
+def test_validate_unconditional_when_setting(*, validate_unconditional_when: bool,):
+    provider = Provider(scope=Scope.APP)
+    provider.provide(needs_float, provides=str)
+
+    if validate_unconditional_when:
+        with pytest.raises(NoFactoryError):
+            make_container(
+                provider,
+                validation_settings=ValidationSettings(
+                    validate_unconditional_when=True,
+                ),
+            )
+    else:
+        container = make_container(
+            provider,
+            validation_settings=ValidationSettings(
+                validate_unconditional_when=False,
+            ),
+        )
+
+        with pytest.raises(NoFactoryError):
+            container.get(str)
+
+
+@pytest.mark.parametrize(
+    ("global_setting", "factory_override", "build_fails"),
+    [
+        (False, None, False),
+        (True, None, True),
+        (False, True, True),
+        (True, False, False),
+    ],
+)
+def test_validate_unconditional_when_factory_override(
+    *,
+    global_setting: bool,
+    factory_override: bool | None,
+    build_fails: bool,
+):
+    provider = Provider(scope=Scope.APP)
+    provider.provide(
+        needs_float,
+        provides=str,
+        validate_unconditional_when=factory_override,
+    )
+
+    if build_fails:
+        with pytest.raises(NoFactoryError):
+            make_container(
+                provider,
+                validation_settings=ValidationSettings(
+                    validate_unconditional_when=global_setting,
+                ),
+            )
+    else:
+        container = make_container(
+            provider,
+            validation_settings=ValidationSettings(
+                validate_unconditional_when=global_setting,
+            ),
+        )
+
+        with pytest.raises(NoFactoryError):
+            container.get(str)
 
 
 @pytest.mark.parametrize(("value", "b_is_active"), [

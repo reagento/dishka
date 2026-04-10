@@ -172,6 +172,8 @@ class StaticEvaluator:
         self.activation_container = activation_container
 
     def _eval_activation(self, factory: Factory) -> None:
+        if factory.when_active is None and factory.when_override is None:
+            return
         try:
             active = self.activation_container.is_active(factory)
         except StaticEvaluationUnavailable as e:

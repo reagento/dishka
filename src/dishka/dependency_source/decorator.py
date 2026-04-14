@@ -9,7 +9,13 @@ from .type_match import get_typevar_replacement, is_broader_or_same_type
 
 
 class Decorator:
-    __slots__ = ("allow_static_evaluation", "factory", "generic", "provides", "scope", "when")
+    __slots__ = (
+        "allow_static_evaluation",
+        "factory",
+        "generic",
+        "provides",
+        "scope",
+        "when")
 
     def __init__(
             self,
@@ -17,6 +23,7 @@ class Decorator:
             provides: DependencyKey | None = None,
             scope: BaseScope | None = None,
             when: BaseMarker | None = None,
+            *,
             allow_static_evaluation: bool = False,
     ) -> None:
         self.factory = factory

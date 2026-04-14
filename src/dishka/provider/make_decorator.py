@@ -76,6 +76,7 @@ def decorate(
         provides: Any = None,
         scope: BaseScope | None = None,
         when: BaseMarker | None = None,
+        *,
         allow_static_evaluation: bool = False,
 ) -> CompositeDependencySource | Callable[
     [Callable[..., Any]], CompositeDependencySource,
@@ -108,6 +109,7 @@ def decorate_on_instance(
         provides: Any,
         scope: BaseScope | None,
         when: BaseMarker | None = None,
+        *,
         allow_static_evaluation: bool = False,
 ) -> CompositeDependencySource:
     return _decorate(

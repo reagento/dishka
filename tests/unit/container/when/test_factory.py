@@ -204,8 +204,9 @@ def test_static_evaluation_reuses_cached_factory_value_in_container():
     assert calls == 1
 
 
-@pytest.mark.parametrize( ("number", "expected", "raises", "allow_static_evaluation"), [
-    (1, "a" , False, True),
+@pytest.mark.parametrize(
+    ("number", "expected", "raises", "allow_static_evaluation"), [
+    (1, "a", False, True),
     (1, None, True, False),
     (0, None, True, False),
     (0, None, True, True),
@@ -219,11 +220,17 @@ def test_conditional_factory_is_deferred_without_static_resolution(
 ):
 
     provider = Provider(scope=Scope.APP)
+
     def is_zero(value: int) -> bool:
         return value == 0
     provider.activate(is_zero, Marker("ZERO"))
-    provider.provide(lambda: number, provides=int, allow_static_evaluation=allow_static_evaluation)  # provide constant for activation
+    # provide constant for activation
+    provider.provide(
+        lambda: number,
+        provides=int,
+        allow_static_evaluation=allow_static_evaluation)
     provider.provide(lambda: "a", provides=str)
+
     def needs_float(value: float) -> str:
         return str(value)
     provider.provide(needs_float, provides=str, when=Marker("ZERO"))

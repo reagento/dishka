@@ -12,10 +12,13 @@ from dishka.exceptions import (
 )
 
 
-@pytest.mark.parametrize(("value", "b_is_active"), [
-    ("a", False),
-    ("b", True),
-])
+@pytest.mark.parametrize(
+    ("value", "b_is_active"),
+    [
+        ("a", False),
+        ("b", True),
+    ],
+)
 def test_when_active(*, value: str, b_is_active: bool):
     provider = Provider(scope=Scope.APP)
     provider.provide(lambda: "a", provides=str)  # default
@@ -147,10 +150,44 @@ def test_activation_with_param_static_active_no_dep():
         make_container(provider, context={int: 0})
 
 
-@pytest.mark.parametrize(("number", "string"), [
-    (0, "b"),
-    (1, "a"),
-])
+@pytest.mark.parametrize(
+    ("number", "expected", "raises"),
+    [
+        (1, "a", False),
+        (0, None, True),
+    ],
+)
+def test_activation_with_static_evaluation_opt_in(
+    *,
+    number: int,
+    expected: str | None,
+    raises: bool,
+):
+    provider = Provider(scope=Scope.APP)
+    provider.provide(
+        lambda: number,
+        provides=int,
+        allow_static_evaluation=True,
+    )
+    provider.provide(lambda: "a", provides=str)
+    provider.provide(provide_with_dep, provides=str, when=Marker("ZERO"))
+    provider.activate(activate_zero, Marker("ZERO"))
+
+    if raises:
+        with pytest.raises(NoFactoryError):
+            make_container(provider)
+    else:
+        container = make_container(provider)
+        assert container.get(str) == expected
+
+
+@pytest.mark.parametrize(
+    ("number", "string"),
+    [
+        (0, "b"),
+        (1, "a"),
+    ],
+)
 def test_activation_with_param_dynamic(number, string):
     provider = Provider(scope=Scope.REQUEST)
     provider.provide(lambda: "a", provides=str)

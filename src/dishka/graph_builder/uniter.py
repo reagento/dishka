@@ -68,9 +68,9 @@ class SelectorGroupProcessor:
             new_factory = factory.replace(provides=new_provides)
             res_factories.append(new_factory)
         if (
-                len(res_factories) == 1 and
-                prev_factory and  # at least one factory found
-                prev_factory.when_override in (None, BoolMarker(True))
+            len(res_factories) == 1
+            and prev_factory  # at least one factory found
+            and prev_factory.when_override in (None, BoolMarker(True))
         ):
             return [prev_factory]
 
@@ -83,6 +83,7 @@ class SelectorGroupProcessor:
             type_=FactoryType.SELECTOR,
             kw_dependencies={},
             source=None,
+            allow_static_evaluation=False,
             when_override=None,
             when_active=or_markers(*(
                 factory.when_active

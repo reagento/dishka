@@ -30,6 +30,7 @@ def coalesce(a: MayBe[T], b: T) -> T:
 
 class Factory(FactoryData):
     __slots__ = (
+        "allow_static_evaluation",
         "cache",
         "connected_factories",
         "dependencies",
@@ -51,6 +52,7 @@ class Factory(FactoryData):
         type_: FactoryType,
         is_to_bind: bool,
         cache: bool,
+        allow_static_evaluation: bool,
         when_override: BaseMarker | None,
         when_active: BaseMarker | None,
         when_component: Component | None,
@@ -82,6 +84,7 @@ class Factory(FactoryData):
         self.kw_dependencies = kw_dependencies
         self.is_to_bind = is_to_bind
         self.cache = cache
+        self.allow_static_evaluation = allow_static_evaluation
         self.when_active = when_active
         self.when_component = when_component
         self.when_dependencies = when_dependencies
@@ -106,6 +109,7 @@ class Factory(FactoryData):
             type_=self.type,
             is_to_bind=False,
             cache=self.cache,
+            allow_static_evaluation=self.allow_static_evaluation,
             when_override=when_override,
             when_active=when_active,
             when_component=self.when_component,
@@ -127,6 +131,7 @@ class Factory(FactoryData):
             is_to_bind=self.is_to_bind,
             cache=self.cache,
             type_=self.type,
+            allow_static_evaluation=self.allow_static_evaluation,
             when_override=self.when_override,
             when_active=self.when_active,
             when_component=(
@@ -147,6 +152,7 @@ class Factory(FactoryData):
             is_to_bind=self.is_to_bind,
             cache=self.cache,
             type_=self.type,
+            allow_static_evaluation=self.allow_static_evaluation,
             when_override=self.when_override,
             when_active=self.when_active,
             when_component=self.when_component,
@@ -171,6 +177,7 @@ class Factory(FactoryData):
             is_to_bind=self.is_to_bind,
             cache=self.cache,
             type_=self.type,
+            allow_static_evaluation=self.allow_static_evaluation,
             when_override=coalesce(when_override, self.when_override),
             when_active=coalesce(when_active, self.when_active),
             when_component=coalesce(when_component, self.when_component),

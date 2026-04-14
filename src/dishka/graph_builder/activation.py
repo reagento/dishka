@@ -43,6 +43,11 @@ class StaticRegistry(Registry):
             FactoryType.SELECTOR,
         ):
             return True
+        if (
+            factory.allow_static_evaluation
+            and factory.type is FactoryType.FACTORY
+        ):
+            return True
         if self.is_root and factory.type == FactoryType.CONTEXT:
             return True
         if (

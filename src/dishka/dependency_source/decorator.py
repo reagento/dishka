@@ -12,11 +12,11 @@ class Decorator:
     __slots__ = ("factory", "generic", "provides", "scope", "when")
 
     def __init__(
-            self,
-            factory: Factory,
-            provides: DependencyKey | None = None,
-            scope: BaseScope | None = None,
-            when: BaseMarker | None = None,
+        self,
+        factory: Factory,
+        provides: DependencyKey | None = None,
+        scope: BaseScope | None = None,
+        when: BaseMarker | None = None,
     ) -> None:
         self.factory = factory
         if provides:
@@ -69,6 +69,7 @@ class Decorator:
             },
             type_=self.factory.type,
             cache=cache,
+            allow_static_evaluation=False,
             when_override=self.when,
             when_active=self.when,
             when_component=self.factory.when_component or component,

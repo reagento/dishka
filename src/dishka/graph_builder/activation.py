@@ -111,16 +111,14 @@ class ActivationContainer:
             if parent_scope is None:
                 return False
             return self._get(dep, parent_scope)
-        return bool(
-            compiled(
-                partial(self._get, scope=scope),
-                [],
-                cache,
-                self._context,
-                self,
-                partial(self._has, scope=scope),
-            ),
-        )
+        return bool(compiled(
+            partial(self._get, scope=scope),
+            [],
+            cache,
+            self._context,
+            self,
+            partial(self._has, scope=scope),
+        ))
 
     def is_active(self, factory: Factory) -> bool:
         marker = factory.provides.as_compilation_key()
@@ -132,16 +130,14 @@ class ActivationContainer:
         compiled = registry.get_compiled_activation(marker)
         if not compiled:
             raise RuntimeError
-        return bool(
-            compiled(
-                partial(self._get, scope=factory.scope),
-                [],
-                cache,
-                self._context,
-                self,
-                partial(self._has, scope=factory.scope),
-            ),
-        )
+        return bool(compiled(
+            partial(self._get, scope=factory.scope),
+            [],
+            cache,
+            self._context,
+            self,
+            partial(self._has, scope=factory.scope),
+        ))
 
     def _has(self, marker: CompilationKey, scope: BaseScope) -> bool:
         if marker == self._container_key:
@@ -154,16 +150,14 @@ class ActivationContainer:
             if parent_scope is None:
                 return False
             return self._has(marker, parent_scope)
-        return bool(
-            compiled(
-                partial(self._get, scope=scope),
-                [],
-                cache,
-                self._context,
-                self,
-                partial(self._has, scope=scope),
-            ),
-        )
+        return bool(compiled(
+            partial(self._get, scope=scope),
+            [],
+            cache,
+            self._context,
+            self,
+            partial(self._has, scope=scope),
+        ))
 
     def export_caches(self) -> dict[BaseScope, dict[Any, object]]:
         return {

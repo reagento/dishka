@@ -64,6 +64,9 @@ def unpack_decorator(decorator: Decorator) -> Sequence[DependencySource]:
             provides=hint_to_dependency_key(
                 provides,
             ).with_component(decorator.provides.component),
+            scope=decorator.scope,
+            when=decorator.when,
+            allow_static_evaluation=decorator.allow_static_evaluation,
         )
         for provides in get_args(decorator.provides.type_hint)
     ]

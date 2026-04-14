@@ -469,6 +469,17 @@ def test_decorator():
     assert factory.factory.dependencies == expected_deps
 
 
+def test_decorator_allow_static_evaluation():
+    def sync_func_a(self: ClassA, dep: int) -> ClassA:
+        return ClassA(dep)
+
+    provider = Provider(scope=Scope.REQUEST)
+    foo = provider.decorate(sync_func_a, allow_static_evaluation=True)
+    factory = foo.dependency_sources[0]
+
+    assert factory.allow_static_evaluation is True
+
+
 def test_invalid_decorator():
     def decorator(self, param: int) -> str:
         return "hello"

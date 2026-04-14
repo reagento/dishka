@@ -8,7 +8,7 @@ from dishka.exceptions import (
     ActivatorOverrideError,
     NoActivatorError,
     NoFactoryError,
-    WhenOverrideConflictError,
+    WhenOverrideConflictError, GraphMissingFactoryError,
 )
 
 
@@ -158,10 +158,10 @@ def test_activation_with_param_static_active_no_dep():
     ],
 )
 def test_activation_with_static_evaluation_opt_in(
-    *,
-    number: int,
-    expected: str | None,
-    raises: bool,
+        *,
+        number: int,
+        expected: str | None,
+        raises: bool,
 ):
     provider = Provider(scope=Scope.APP)
     provider.provide(
@@ -181,13 +181,45 @@ def test_activation_with_static_evaluation_opt_in(
         assert container.get(str) == expected
 
 
-@pytest.mark.parametrize(
-    ("number", "string"),
-    [
-        (0, "b"),
-        (1, "a"),
-    ],
-)
+
+
+
+@pytest.mark.parametrize( ("number", "expected", "raises", "allow_static_evaluation"), [
+    (1, "a" , False, True),
+    (1, None, True, False),
+    (0, None, True, False),
+    (0, None, True, True),
+])
+def test_unresolved_conditional_branch_is_validated_at_runtime(
+        *,
+        number: int,
+        expected: str | None,
+        raises: bool,
+        allow_static_evaluation: bool
+):
+
+
+    provider = Provider(scope=Scope.APP)
+    def is_zero(value: int) -> bool:
+        return value == 0
+    provider.activate(is_zero, Marker("ZERO"))
+    provider.provide(lambda: number, provides=int, allow_static_evaluation=allow_static_evaluation)  # provide constant for activation
+    provider.provide(lambda: "a", provides=str)
+    def needs_float(value: float) -> str:
+        return str(value)
+    provider.provide(needs_float, provides=str, when=Marker("ZERO"))
+    if raises:
+        with pytest.raises(GraphMissingFactoryError):
+            make_container(provider)
+    else:
+        container = make_container(provider)
+        assert container.get(str) == expected
+
+
+@pytest.mark.parametrize(("number", "string"), [
+    (0, "b"),
+    (1, "a"),
+])
 def test_activation_with_param_dynamic(number, string):
     provider = Provider(scope=Scope.REQUEST)
     provider.provide(lambda: "a", provides=str)

@@ -186,8 +186,8 @@ class Registry:
         )
 
     def get_compiled_async(
-        self,
-        dependency: CompilationKey,
+            self,
+            dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled_async[dependency]
@@ -225,8 +225,7 @@ class Registry:
         )
 
     def get_compiled_activation(
-        self,
-        dependency: CompilationKey,
+            self, dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled_activation[dependency]
@@ -257,8 +256,7 @@ class Registry:
             return compiled
 
     def get_compiled_activation_async(
-        self,
-        dependency: CompilationKey,
+            self, dependency: CompilationKey,
     ) -> CompiledFactory | None:
         try:
             return self.compiled_activation_async[dependency]
@@ -307,9 +305,12 @@ class Registry:
             )
             factory = self.factories.get(origin_key)
 
-            if not factory or not is_broader_or_same_type(
-                factory.provides.type_hint,
-                dependency.type_hint,
+            if (
+                    not factory or
+                    not is_broader_or_same_type(
+                        factory.provides.type_hint,
+                        dependency.type_hint,
+                    )
             ):
                 return None
             factory = self._specialize_generic(factory, dependency)
@@ -388,9 +389,7 @@ class Registry:
         )
 
     def _specialize_generic(
-        self,
-        factory: Factory,
-        dependency_key: DependencyKey,
+            self, factory: Factory, dependency_key: DependencyKey,
     ) -> Factory:
         params_replacement = get_typevar_replacement(
             factory.provides.type_hint,

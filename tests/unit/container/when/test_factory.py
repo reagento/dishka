@@ -154,7 +154,7 @@ def test_activation_with_param_static_active_no_dep():
         (0, None, True),
     ],
 )
-def test_activation_with_static_evaluation_opt_in(
+def test_conditional_factory_is_pruned_when_activation_is_statically_resolved(
         *,
         number: int,
         expected: str | None,
@@ -187,7 +187,7 @@ def test_activation_with_static_evaluation_opt_in(
     (0, None, True, False),
     (0, None, True, True),
 ])
-def test_unresolved_conditional_branch_is_validated_at_runtime(
+def test_conditional_factory_is_deferred_when_activation_cannot_be_statically_resolved(
         *,
         number: int,
         expected: str | None,

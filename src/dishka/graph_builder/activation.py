@@ -92,6 +92,9 @@ class ActivationContainer:
         self._context = context
         self._registries = registries
         self._container_key = container_key.as_compilation_key()
+        self._cache_by_scope: dict[BaseScope, dict[Any, object]] = {
+            scope: {} for scope in registries
+        }
 
         self._parent_scopes: dict[BaseScope, BaseScope | None] = {}
         prev_scope = None
@@ -101,20 +104,23 @@ class ActivationContainer:
 
     def _get(self, dep: CompilationKey, scope: BaseScope) -> Any:
         registry = self._registries[scope]
+        cache = self._cache_by_scope[scope]
         compiled = registry.get_compiled(dep)
         if not compiled:
             parent_scope = self._parent_scopes[scope]
             if parent_scope is None:
                 return False
             return self._get(dep, parent_scope)
-        return bool(compiled(
-            partial(self._get, scope=scope),
-            [],
-            {},
-            self._context,
-            self,
-            partial(self._has, scope=scope),
-        ))
+        return bool(
+            compiled(
+                partial(self._get, scope=scope),
+                [],
+                cache,
+                self._context,
+                self,
+                partial(self._has, scope=scope),
+            ),
+        )
 
     def is_active(self, factory: Factory) -> bool:
         marker = factory.provides.as_compilation_key()
@@ -122,36 +128,48 @@ class ActivationContainer:
             error = f"{get_source_name(factory)} as not scope"
             raise DishkaError(error)
         registry = self._registries[factory.scope]
+        cache = self._cache_by_scope[factory.scope]
         compiled = registry.get_compiled_activation(marker)
         if not compiled:
             raise RuntimeError
-        return bool(compiled(
-            partial(self._get, scope=factory.scope),
-            [],
-            {},
-            self._context,
-            self,
-            partial(self._has, scope=factory.scope),
-        ))
+        return bool(
+            compiled(
+                partial(self._get, scope=factory.scope),
+                [],
+                cache,
+                self._context,
+                self,
+                partial(self._has, scope=factory.scope),
+            ),
+        )
 
     def _has(self, marker: CompilationKey, scope: BaseScope) -> bool:
         if marker == self._container_key:
             return True
         registry = self._registries[scope]
+        cache = self._cache_by_scope[scope]
         compiled = registry.get_compiled_activation(marker)
         if not compiled:
             parent_scope = self._parent_scopes[scope]
             if parent_scope is None:
                 return False
             return self._has(marker, parent_scope)
-        return bool(compiled(
-            partial(self._get, scope=scope),
-            [],
-            {},
-            self._context,
-            self,
-            partial(self._has, scope=scope),
-        ))
+        return bool(
+            compiled(
+                partial(self._get, scope=scope),
+                [],
+                cache,
+                self._context,
+                self,
+                partial(self._has, scope=scope),
+            ),
+        )
+
+    def export_caches(self) -> dict[BaseScope, dict[Any, object]]:
+        return {
+            scope: cache.copy()
+            for scope, cache in self._cache_by_scope.items()
+        }
 
 
 class StaticEvaluator:
@@ -163,6 +181,9 @@ class StaticEvaluator:
         scopes: type[BaseScope],
         start_scope: BaseScope | None,
     ) -> None:
+        self._source_registries = {
+            registry.scope: registry for registry in registries
+        }
         if start_scope is None:
             start_scope = next(s for s in scopes if not s.skip)
         self.registries: dict[BaseScope, Registry] = {
@@ -194,3 +215,5 @@ class StaticEvaluator:
         for registry in self.registries.values():
             for factory in list(registry.factories.values()):
                 self._eval_activation(factory)
+        for scope, cache in self.activation_container.export_caches().items():
+            self._source_registries[scope].runtime_cache = cache

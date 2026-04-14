@@ -6,9 +6,10 @@ from dishka import Marker, Provider, Scope, make_container
 from dishka.exception_base import InvalidMarkerError
 from dishka.exceptions import (
     ActivatorOverrideError,
+    GraphMissingFactoryError,
     NoActivatorError,
     NoFactoryError,
-    WhenOverrideConflictError, GraphMissingFactoryError,
+    WhenOverrideConflictError,
 )
 
 
@@ -178,7 +179,29 @@ def test_conditional_factory_is_pruned_when_activation_is_statically_resolved(
         assert container.get(str) == expected
 
 
+def test_static_evaluation_reuses_cached_factory_value_in_container():
+    provider = Provider(scope=Scope.APP)
+    calls = 0
 
+    def provide_number() -> int:
+        nonlocal calls
+        calls += 1
+        return 1
+
+    provider.provide(
+        provide_number,
+        provides=int,
+        allow_static_evaluation=True,
+    )
+    provider.provide(lambda: "a", provides=str)
+    provider.provide(provide_with_dep, provides=str, when=Marker("ZERO"))
+    provider.activate(activate_zero, Marker("ZERO"))
+
+    container = make_container(provider)
+
+    assert calls == 1
+    assert container.get(int) == 1
+    assert calls == 1
 
 
 @pytest.mark.parametrize( ("number", "expected", "raises", "allow_static_evaluation"), [
@@ -187,14 +210,13 @@ def test_conditional_factory_is_pruned_when_activation_is_statically_resolved(
     (0, None, True, False),
     (0, None, True, True),
 ])
-def test_conditional_factory_is_deferred_when_activation_cannot_be_statically_resolved(
-        *,
-        number: int,
-        expected: str | None,
-        raises: bool,
-        allow_static_evaluation: bool
+def test_conditional_factory_is_deferred_without_static_resolution(
+    *,
+    number: int,
+    expected: str | None,
+    raises: bool,
+    allow_static_evaluation: bool,
 ):
-
 
     provider = Provider(scope=Scope.APP)
     def is_zero(value: int) -> bool:

@@ -61,11 +61,14 @@ class AsyncContainer:
                 [], AbstractAsyncContextManager[Any],
             ] | None,
             parent_closer: ExitCallable | None,
-            parent_getter:  Callable[[CompilationKey], Any] | None,
+            parent_getter: Callable[[CompilationKey], Any] | None,
+            initial_cache: dict[Any, object] | None = None,
     ) -> None:
         self.registry = registry
         self._context = context
-        self._cache: dict[Any, object] = {}
+        self._cache: dict[Any, object] = (
+            {} if initial_cache is None else dict(initial_cache)
+        )
         self.parent_container = parent_container
 
         self.lock: AbstractAsyncContextManager[Any] | None
@@ -204,7 +207,8 @@ class AsyncContainer:
     ) -> Any:
         try:
             return self._get_sync(
-                dependency_type if component == DEFAULT_COMPONENT
+                dependency_type
+                if component == DEFAULT_COMPONENT
                 else DependencyKey(dependency_type, component),
             )
         except (NoFactoryError, NoActiveFactoryError) as e:
@@ -433,6 +437,7 @@ def make_async_container(
         parent_getter=None,
         parent_closer=None,
         parent_container=None,
+        initial_cache=registries[0].runtime_cache,
     )
     if start_scope is None:
         while container.registry.scope.skip:
@@ -445,6 +450,7 @@ def make_async_container(
                 lock_factory=lock_factory,
                 parent_closer=container.__aexit__,
                 parent_getter=container._get,  # noqa: SLF001
+                initial_cache=container.registry.child_registry.runtime_cache,
             )
     else:
         while container.registry.scope is not start_scope:
@@ -460,6 +466,7 @@ def make_async_container(
                 lock_factory=lock_factory,
                 parent_closer=container.__aexit__,
                 parent_getter=container._get,  # noqa: SLF001
+                initial_cache=container.registry.child_registry.runtime_cache,
             )
     return container
 

@@ -12,13 +12,10 @@ from dishka.exceptions import (
 )
 
 
-@pytest.mark.parametrize(
-    ("value", "b_is_active"),
-    [
-        ("a", False),
-        ("b", True),
-    ],
-)
+@pytest.mark.parametrize(("value", "b_is_active"), [
+    ("a", False),
+    ("b", True),
+])
 def test_when_active(*, value: str, b_is_active: bool):
     provider = Provider(scope=Scope.APP)
     provider.provide(lambda: "a", provides=str)  # default

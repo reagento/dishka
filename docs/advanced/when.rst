@@ -18,6 +18,11 @@ This can be achieved with "activation" approach. Key concepts here:
 
 Activators can be called preliminary or multiple times, so avoid acquiring resources or doing heavy calculations, if necessary, move such things into factories or context data.
 
+Sync non-generator factories can also participate in preliminary activation
+evaluation when they are registered with ``allow_static_evaluation=True``.
+If such a factory is cached, the computed value is reused later by the runtime
+container instead of calling the factory again.
+
 .. note::
 
     The activation feature makes the application harder to analyze and can also affect performance, so use it wisely.
@@ -210,3 +215,35 @@ For example, in the following code ``redis_impl`` is never called because ``Redi
 
     container = make_container(MyProvider, context={})
 
+If an activator depends on another factory, static evaluation is disabled by
+default. You can opt in for a sync non-generator factory using
+``allow_static_evaluation=True``:
+
+.. code-block:: python
+
+    from dishka import Marker, Provider, Scope, activate, provide
+
+    class MyProvider(Provider):
+        @provide(scope=Scope.APP, allow_static_evaluation=True)
+        def build_flag(self) -> int:
+            return 1
+
+        @provide(scope=Scope.APP)
+        def fallback_cache(self) -> Cache:
+            return InMemoryCache()
+
+        @provide(scope=Scope.APP, when=Marker("redis"))
+        def redis_cache(self, config: RedisConfig) -> Cache:
+            return RedisCache(config)
+
+        @activate(Marker("redis"))
+        def use_redis(self, flag: int) -> bool:
+            return flag == 0
+
+In this example Dishka can call ``build_flag`` during container creation to
+resolve ``Marker("redis")``. Because the condition becomes known during graph
+building, unreachable conditional branches can be skipped during validation.
+
+When ``build_flag`` is cached, the value created during static evaluation is
+stored in the runtime container cache and reused on later ``container.get(...)``
+calls.

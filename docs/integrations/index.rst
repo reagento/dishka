@@ -12,6 +12,7 @@ Some of the integrations are supported by a community, refer to their documentat
 .. toctree::
    :hidden:
 
+   ag2 <https://github.com/C3EQUALZz/dishka-ag2>
    aiogram
    aiogram_dialog
    aiohttp
@@ -57,7 +58,7 @@ Some of the integrations are supported by a community, refer to their documentat
    * - :ref:`Fastapi`
      - :ref:`pyTelegramBotAPI<telebot>`
      - :ref:`TaskIq`
-     -
+     - `ag2 <https://github.com/C3EQUALZz/dishka-ag2>`_ (:abbr:`com (Community support)`)
 
    * - :ref:`Flask`
      -

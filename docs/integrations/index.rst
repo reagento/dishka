@@ -12,7 +12,7 @@ Some of the integrations are supported by a community, refer to their documentat
 .. toctree::
    :hidden:
 
-   ag2
+   ag2 <https://github.com/C3EQUALZz/dishka-ag2>
    aiogram
    aiogram_dialog
    aiohttp

@@ -59,7 +59,6 @@ class Registry:
         "container_key",
         "factories",
         "has_fallback",
-        "runtime_cache",
         "scope",
     )
 
@@ -77,7 +76,6 @@ class Registry:
         self.compiled_async: CompiledFactories = {}
         self.compiled_activation: CompiledFactories = {}
         self.compiled_activation_async: CompiledFactories = {}
-        self.runtime_cache: dict[Any, object] = {}
         self.has_fallback = has_fallback
         self.container_key = container_key
         self.child_registry = child_registry

@@ -191,11 +191,10 @@ class AsyncContainer:
 
     @overload
     def get_sync(
-            self,
-            dependency_type: Any,
-            component: Component | None = DEFAULT_COMPONENT,
-    ) -> Any:
-        ...
+        self,
+        dependency_type: Any,
+        component: Component | None = DEFAULT_COMPONENT,
+    ) -> Any: ...
 
     def get_sync(
         self,
@@ -425,7 +424,8 @@ def make_async_container(
     builder.add_multicomponent_providers(has_provider)
     builder.add_providers(*providers)
     builder.add_providers(context_provider)
-    registries = builder.build()
+    build_result = builder.build()
+    registries = build_result.registries
 
     container = AsyncContainer(
         registries[0],
@@ -435,7 +435,9 @@ def make_async_container(
         parent_closer=None,
         parent_container=None,
     )
-    container._cache.update(registries[0].runtime_cache)  # noqa: SLF001
+    container._cache.update(  # noqa: SLF001
+        build_result.runtime_caches.get(registries[0].scope, {}),
+    )
     if start_scope is None:
         while container.registry.scope.skip:
             if container.registry.child_registry is None:
@@ -448,7 +450,9 @@ def make_async_container(
                 parent_closer=container.__aexit__,
                 parent_getter=container._get,  # noqa: SLF001
             )
-            container._cache.update(container.registry.runtime_cache)  # noqa: SLF001
+            container._cache.update(  # noqa: SLF001
+                build_result.runtime_caches.get(container.registry.scope, {}),
+            )
     else:
         while container.registry.scope is not start_scope:
             if container.registry.child_registry is None:
@@ -464,7 +468,9 @@ def make_async_container(
                 parent_closer=container.__aexit__,
                 parent_getter=container._get,  # noqa: SLF001
             )
-            container._cache.update(container.registry.runtime_cache)  # noqa: SLF001
+            container._cache.update(  # noqa: SLF001
+                build_result.runtime_caches.get(container.registry.scope, {}),
+            )
     return container
 
 

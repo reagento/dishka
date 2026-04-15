@@ -176,9 +176,6 @@ class StaticEvaluator:
         scopes: type[BaseScope],
         start_scope: BaseScope | None,
     ) -> None:
-        self._source_registries = {
-            registry.scope: registry for registry in registries
-        }
         if start_scope is None:
             start_scope = next(s for s in scopes if not s.skip)
         self.registries: dict[BaseScope, Registry] = {
@@ -206,9 +203,8 @@ class StaticEvaluator:
             factory.when_override = BoolMarker(active)
         factory.when_active = BoolMarker(active)
 
-    def evaluate_static(self) -> None:
+    def evaluate_static(self) -> dict[BaseScope, dict[Any, object]]:
         for registry in self.registries.values():
             for factory in list(registry.factories.values()):
                 self._eval_activation(factory)
-        for scope, cache in self.activation_container.export_caches().items():
-            self._source_registries[scope].runtime_cache = cache
+        return self.activation_container.export_caches()

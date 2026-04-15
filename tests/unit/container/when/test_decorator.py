@@ -102,3 +102,34 @@ def test_decorate_override_implicit():
             MyProvider(scope=Scope.APP),
             validation_settings=STRICT_VALIDATION,
         )
+
+
+def test_decorator_static_evaluation_reuses_cached_value_in_container():
+    calls = 0
+
+    class MyProvider(Provider):
+        scope = Scope.APP
+
+        @provide(allow_static_evaluation=True)
+        def make_str(self) -> str:
+            return "a"
+
+        @decorate(allow_static_evaluation=True)
+        def decorate_str(self, old_value: str) -> str:
+            nonlocal calls
+            calls += 1
+            return old_value + "d"
+
+        @activate(Marker("A"))
+        def is_active(self, decorated: str) -> bool:
+            return decorated == "ad"
+
+        @provide(when=Marker("A"))
+        def make_int(self) -> int:
+            return 1
+
+    container = make_container(MyProvider())
+
+    assert calls == 1
+    assert container.get(str) == "ad"
+    assert calls == 1

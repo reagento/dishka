@@ -83,6 +83,7 @@ class SelectorGroupProcessor:
             type_=FactoryType.SELECTOR,
             kw_dependencies={},
             source=None,
+            allow_static_evaluation=False,
             when_override=None,
             when_active=or_markers(*(
                 factory.when_active

@@ -37,10 +37,16 @@ class StaticRegistry(Registry):
         self.is_root = is_root
 
     def _is_static_allowed(self, factory: Factory) -> bool:
-        if factory.type in (
-            FactoryType.VALUE,
-            FactoryType.ALIAS,
-            FactoryType.SELECTOR,
+        if factory.type in (FactoryType.VALUE, FactoryType.ALIAS):
+            return True
+        if factory.type is FactoryType.SELECTOR:
+            return all(
+                self._is_static_allowed(nested_factory)
+                for nested_factory in factory.when_dependencies
+            )
+        if (
+            factory.allow_static_evaluation
+            and factory.type is FactoryType.FACTORY
         ):
             return True
         if self.is_root and factory.type == FactoryType.CONTEXT:
@@ -87,6 +93,9 @@ class ActivationContainer:
         self._context = context
         self._registries = registries
         self._container_key = container_key.as_compilation_key()
+        self._cache_by_scope: dict[BaseScope, dict[Any, object]] = {
+            scope: {} for scope in registries
+        }
 
         self._parent_scopes: dict[BaseScope, BaseScope | None] = {}
         prev_scope = None
@@ -96,6 +105,7 @@ class ActivationContainer:
 
     def _get(self, dep: CompilationKey, scope: BaseScope) -> Any:
         registry = self._registries[scope]
+        cache = self._cache_by_scope[scope]
         compiled = registry.get_compiled(dep)
         if not compiled:
             parent_scope = self._parent_scopes[scope]
@@ -105,7 +115,7 @@ class ActivationContainer:
         return bool(compiled(
             partial(self._get, scope=scope),
             [],
-            {},
+            cache,
             self._context,
             self,
             partial(self._has, scope=scope),
@@ -117,13 +127,14 @@ class ActivationContainer:
             error = f"{get_source_name(factory)} as not scope"
             raise DishkaError(error)
         registry = self._registries[factory.scope]
+        cache = self._cache_by_scope[factory.scope]
         compiled = registry.get_compiled_activation(marker)
         if not compiled:
             raise RuntimeError
         return bool(compiled(
             partial(self._get, scope=factory.scope),
             [],
-            {},
+            cache,
             self._context,
             self,
             partial(self._has, scope=factory.scope),
@@ -133,6 +144,7 @@ class ActivationContainer:
         if marker == self._container_key:
             return True
         registry = self._registries[scope]
+        cache = self._cache_by_scope[scope]
         compiled = registry.get_compiled_activation(marker)
         if not compiled:
             parent_scope = self._parent_scopes[scope]
@@ -142,11 +154,17 @@ class ActivationContainer:
         return bool(compiled(
             partial(self._get, scope=scope),
             [],
-            {},
+            cache,
             self._context,
             self,
             partial(self._has, scope=scope),
         ))
+
+    def export_caches(self) -> dict[BaseScope, dict[Any, object]]:
+        return {
+            scope: cache.copy()
+            for scope, cache in self._cache_by_scope.items()
+        }
 
 
 class StaticEvaluator:
@@ -185,7 +203,8 @@ class StaticEvaluator:
             factory.when_override = BoolMarker(active)
         factory.when_active = BoolMarker(active)
 
-    def evaluate_static(self) -> None:
+    def evaluate_static(self) -> dict[BaseScope, dict[Any, object]]:
         for registry in self.registries.values():
             for factory in list(registry.factories.values()):
                 self._eval_activation(factory)
+        return self.activation_container.export_caches()

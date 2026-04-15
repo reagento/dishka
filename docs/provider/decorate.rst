@@ -73,3 +73,27 @@ Decorator can change the **Scope** of an object to more narrow one, just pass ``
 The limitation is that you cannot use ``decorate`` in the same provider as you declare factory or alias for dependency. But you won't need it because you can update the factory code.
 
 The idea of ``decorate`` is to postprocess dependencies provided by some external source, when you combine multiple ``Provider`` objects into one container.
+
+If a sync non-generator decorator is used by an activator dependency, you can opt
+in to static evaluation with ``allow_static_evaluation=True``:
+
+.. code-block:: python
+
+    from dishka import Marker, Provider, Scope, activate, decorate, provide
+
+    class MyProvider(Provider):
+        @provide(scope=Scope.APP)
+        def base_cache(self) -> Cache:
+            return InMemoryCache()
+
+        @decorate(scope=Scope.APP, allow_static_evaluation=True)
+        def tagged_cache(self, cache: Cache) -> Cache:
+            cache.name = "tagged"
+            return cache
+
+        @activate(Marker("tagged"))
+        def use_tagged(self, cache: Cache) -> bool:
+            return cache.name == "tagged"
+
+When the decorator is cached through the decorated dependency, the value created
+during static evaluation is reused by the runtime container.

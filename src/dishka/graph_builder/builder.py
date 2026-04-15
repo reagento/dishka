@@ -1,6 +1,7 @@
 import itertools
 from collections import defaultdict
 from collections.abc import Collection, Sequence
+from dataclasses import dataclass
 from typing import Any, cast
 
 from dishka.dependency_source import (
@@ -36,6 +37,12 @@ from .uniter import (
     SelectorGroupProcessor,
 )
 from .validator import GraphValidator
+
+
+@dataclass(frozen=True)
+class BuildResult:
+    registries: Sequence[Registry]
+    runtime_caches: dict[BaseScope, dict[Any, object]]
 
 
 class GraphBuilder:
@@ -143,9 +150,9 @@ class GraphBuilder:
         self._add_factory(factory)
 
     def _process_context_var(
-            self,
-            component: Component,
-            src: ContextVariable,
+        self,
+        component: Component,
+        src: ContextVariable,
     ) -> None:
         factory = src.as_factory(component)
         if not isinstance(src.scope, self.scopes):
@@ -542,7 +549,7 @@ class GraphBuilder:
                 requester_scope=root_scope,
             )
 
-    def build(self) -> Sequence[Registry]:
+    def build(self) -> BuildResult:
         self._check_markers()
         factories: dict[DependencyKey, Factory] = {
             f.provides: f for f in self._collect_prepared_factories()
@@ -555,7 +562,7 @@ class GraphBuilder:
             self._get_activator_factories(fixed_factories, found_markers),
         )
         registries = self._make_registries(fixed_factories)
-        StaticEvaluator(
+        runtime_caches = StaticEvaluator(
             registries,
             self.root_context,
             self.container_key,
@@ -564,4 +571,7 @@ class GraphBuilder:
         ).evaluate_static()
         if not self.skip_validation:
             GraphValidator(registries).validate()
-        return registries
+        return BuildResult(
+            registries=registries,
+            runtime_caches=runtime_caches,
+        )

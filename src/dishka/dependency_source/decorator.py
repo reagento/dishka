@@ -9,7 +9,13 @@ from .type_match import get_typevar_replacement, is_broader_or_same_type
 
 
 class Decorator:
-    __slots__ = ("factory", "generic", "provides", "scope", "when")
+    __slots__ = (
+        "allow_static_evaluation",
+        "factory",
+        "generic",
+        "provides",
+        "scope",
+        "when")
 
     def __init__(
             self,
@@ -17,6 +23,8 @@ class Decorator:
             provides: DependencyKey | None = None,
             scope: BaseScope | None = None,
             when: BaseMarker | None = None,
+            *,
+            allow_static_evaluation: bool = False,
     ) -> None:
         self.factory = factory
         if provides:
@@ -26,6 +34,7 @@ class Decorator:
         self.scope = scope
         self.generic = self.is_generic()
         self.when = when
+        self.allow_static_evaluation = allow_static_evaluation
 
     def is_generic(self) -> bool:
         return (
@@ -69,6 +78,7 @@ class Decorator:
             },
             type_=self.factory.type,
             cache=cache,
+            allow_static_evaluation=self.allow_static_evaluation,
             when_override=self.when,
             when_active=self.when,
             when_component=self.factory.when_component or component,
@@ -104,4 +114,5 @@ class Decorator:
             self.factory.__get__(instance, owner),
             scope=self.scope,
             when=combined_when,
+            allow_static_evaluation=self.allow_static_evaluation,
         )

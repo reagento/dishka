@@ -304,11 +304,11 @@ class Registry:
             factory = self.factories.get(origin_key)
 
             if (
-                not factory or
-                not is_broader_or_same_type(
-                    factory.provides.type_hint,
-                    dependency.type_hint,
-                )
+                    not factory or
+                    not is_broader_or_same_type(
+                        factory.provides.type_hint,
+                        dependency.type_hint,
+                    )
             ):
                 return None
             factory = self._specialize_generic(factory, dependency)
@@ -379,6 +379,7 @@ class Registry:
             is_to_bind=False,
             cache=False,
             source=typevar,
+            allow_static_evaluation=False,
             when_override=None,
             when_active=None,
             when_component=None,
@@ -427,6 +428,7 @@ class Registry:
             type_=factory.type,
             scope=factory.scope,
             cache=factory.cache,
+            allow_static_evaluation=factory.allow_static_evaluation,
             when_override=factory.when_override,
             when_active=factory.when_active,
             when_component=factory.when_component,

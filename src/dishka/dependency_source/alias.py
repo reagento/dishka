@@ -52,6 +52,7 @@ class Alias:
             kw_dependencies={},
             type_=FactoryType.ALIAS,
             cache=self.cache,
+            allow_static_evaluation=False,
             when_override=self.when_override,
             when_active=self.when_active,
             when_component=(

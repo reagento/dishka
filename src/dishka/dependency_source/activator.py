@@ -87,6 +87,7 @@ class Activator:
             },
             type_=factory.type,
             cache=factory.cache,
+            allow_static_evaluation=factory.allow_static_evaluation,
             when_override=factory.when_override,
             when_active=factory.when_active,
             when_component=factory.when_component,

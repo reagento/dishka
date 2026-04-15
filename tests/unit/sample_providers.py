@@ -62,6 +62,7 @@ def sync_typing_gen_a(self, dep: int) -> TypingGenerator[ClassA, None, None]:
 
 
 if HAS_TV_DEFAULT:
+
     def sync_typing_gen_a_short(self, dep: int) -> TypingGenerator[ClassA]:
         a = ClassA(dep)
         yield a
@@ -106,6 +107,7 @@ async def async_typing_gen_a(
 
 
 if HAS_TV_DEFAULT:
+
     async def async_typing_gen_a_short(
         self,
         dep: int,
@@ -125,6 +127,7 @@ value_factory = Factory(
     scope=Scope.APP,
     is_to_bind=False,
     cache=False,
+    allow_static_evaluation=False,
     when_override=None,
     when_active=None,
     when_component=None,

@@ -7,12 +7,10 @@ from typing import Any
 def _replace_type(type_hint: Any, old: Any, new: Any) -> Any:  # noqa: PLR0911
     if type_hint == old:
         return new
-    if type_hint in (..., None):
-        return type_hint
-
-    origin = typing.get_origin(type_hint)
-    args = typing.get_args(type_hint)
-    if origin is None or not args:
+    if (
+        (origin := typing.get_origin(type_hint)) is None
+        or not (args := typing.get_args(type_hint))
+    ):
         return type_hint
 
     if origin is typing.Annotated:

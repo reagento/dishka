@@ -32,8 +32,8 @@ class MyGeneric(Generic[T]):
         (tuple[Self, ...], tuple[Dummy, ...]),
         (type[Self], type[Dummy]),
         (Self | None, Dummy | None),
-        (Union[Self, None], Union[Dummy, None]),
-        (Optional[Self], Optional[Dummy]),
+        (Union[Self, None], Union[Dummy, None]),  # noqa: UP007
+        (Optional[Self], Optional[Dummy]),  # noqa: UP045
         (MyGeneric[Self], MyGeneric[Dummy]),
         (MyGeneric[int], MyGeneric[int]),
         (list[Self | int], list[Dummy | int]),

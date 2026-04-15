@@ -11,6 +11,7 @@ from dishka import (
     make_container,
     provide,
 )
+from dishka._adaptix.feature_requirement import HAS_PY_311
 from dishka.provider import provide_all
 from ..sample_providers import (
     A_VALUE,
@@ -23,6 +24,9 @@ from ..sample_providers import (
     sync_iter_a,
     value_source,
 )
+
+if HAS_PY_311:
+    from typing import Self
 
 
 @pytest.mark.parametrize(
@@ -335,3 +339,37 @@ def test_annotated_provide():
     c = make_container(P())
     assert c.get(str) == "42"
 
+
+if HAS_PY_311:
+    class SelfFactory:
+        def method(self) -> Self:
+            return self
+
+        @classmethod
+        def classmethod(cls) -> Self:
+            return SelfFactory()
+
+        @classmethod
+        def collect_self(cls, arg: Self) -> list[Self]:
+            return [arg]
+
+    @pytest.mark.parametrize(
+        "factory", [
+            SelfFactory().method,
+            SelfFactory.classmethod,
+        ],
+    )
+    def test_self(factory):
+        p = Provider(scope=Scope.APP)
+        p.provide(factory)
+        container = make_container(p)
+        obj = container.get(SelfFactory)
+        assert isinstance(obj, SelfFactory)
+
+    def test_self_arg():
+        p = Provider(scope=Scope.APP)
+        p.provide(SelfFactory.classmethod)
+        p.provide(SelfFactory.collect_self)
+        container = make_container(p)
+        obj = container.get(list[SelfFactory])
+        assert isinstance(obj[0], SelfFactory)

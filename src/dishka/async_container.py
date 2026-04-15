@@ -62,13 +62,10 @@ class AsyncContainer:
             ] | None,
             parent_closer: ExitCallable | None,
             parent_getter: Callable[[CompilationKey], Any] | None,
-            initial_cache: dict[Any, object] | None = None,
     ) -> None:
         self.registry = registry
         self._context = context
-        self._cache: dict[Any, object] = (
-            {} if initial_cache is None else dict(initial_cache)
-        )
+        self._cache: dict[Any, object] = {}
         self.parent_container = parent_container
 
         self.lock: AbstractAsyncContextManager[Any] | None
@@ -437,8 +434,8 @@ def make_async_container(
         parent_getter=None,
         parent_closer=None,
         parent_container=None,
-        initial_cache=registries[0].runtime_cache,
     )
+    container._cache.update(registries[0].runtime_cache)  # noqa: SLF001
     if start_scope is None:
         while container.registry.scope.skip:
             if container.registry.child_registry is None:
@@ -450,8 +447,8 @@ def make_async_container(
                 lock_factory=lock_factory,
                 parent_closer=container.__aexit__,
                 parent_getter=container._get,  # noqa: SLF001
-                initial_cache=container.registry.child_registry.runtime_cache,
             )
+            container._cache.update(container.registry.runtime_cache)  # noqa: SLF001
     else:
         while container.registry.scope is not start_scope:
             if container.registry.child_registry is None:
@@ -466,8 +463,8 @@ def make_async_container(
                 lock_factory=lock_factory,
                 parent_closer=container.__aexit__,
                 parent_getter=container._get,  # noqa: SLF001
-                initial_cache=container.registry.child_registry.runtime_cache,
             )
+            container._cache.update(container.registry.runtime_cache)  # noqa: SLF001
     return container
 
 

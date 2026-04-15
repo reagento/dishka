@@ -269,3 +269,45 @@ def test_activation_with_selector_alias_inactive():
     provider.activate(activate_zero, Marker("ZERO"))
     c = make_container(provider, context={int1: 1, int2: 2})
     assert c.get(str) == "a"
+
+
+@pytest.mark.parametrize(
+    ("allow_static_evaluation", "raises"),
+    [
+        (False, True),
+        (True, False),
+    ],
+)
+def test_selector_static_evaluation_depends_on_nested_factories(
+    *,
+    allow_static_evaluation: bool,
+    raises: bool,
+):
+    def is_a(value: str) -> bool:
+        return value == "a"
+
+    def marker_a() -> bool:
+        return True
+
+    def provide_bytes() -> bytes:
+        return b"ok"
+
+    provider = Provider(scope=Scope.APP)
+    provider.provide(
+        lambda: 1,
+        provides=int,
+        allow_static_evaluation=allow_static_evaluation,
+    )
+    provider.provide(lambda: "a", provides=str)
+    provider.provide(provide_with_dep, provides=str, when=Marker("ZERO"))
+    provider.activate(activate_zero, Marker("ZERO"))
+    provider.provide(is_a, provides=bool)
+    provider.activate(marker_a, Marker("A"))
+    provider.provide(provide_bytes, provides=bytes, when=Marker("A"))
+
+    if raises:
+        with pytest.raises(GraphMissingFactoryError):
+            make_container(provider)
+    else:
+        container = make_container(provider)
+        assert container.get(bytes) == b"ok"

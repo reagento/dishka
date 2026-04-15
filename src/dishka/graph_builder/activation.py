@@ -37,12 +37,13 @@ class StaticRegistry(Registry):
         self.is_root = is_root
 
     def _is_static_allowed(self, factory: Factory) -> bool:
-        if factory.type in (
-            FactoryType.VALUE,
-            FactoryType.ALIAS,
-            FactoryType.SELECTOR,
-        ):
+        if factory.type in (FactoryType.VALUE, FactoryType.ALIAS):
             return True
+        if factory.type is FactoryType.SELECTOR:
+            return all(
+                self._is_static_allowed(nested_factory)
+                for nested_factory in factory.when_dependencies
+            )
         if (
             factory.allow_static_evaluation
             and factory.type is FactoryType.FACTORY

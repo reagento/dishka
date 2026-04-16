@@ -14,11 +14,15 @@ from dishka import (
     make_container,
     provide,
 )
+from dishka._adaptix.feature_requirement import HAS_PY_311
 from dishka.exceptions import (
     CycleDependenciesError,
     ImplicitOverrideDetectedError,
     NoFactoryError,
 )
+
+if HAS_PY_311:
+    from typing import Self
 
 
 class A:
@@ -467,3 +471,24 @@ def test_decorate_override_implicit():
             MyProvider(scope=Scope.APP),
             validation_settings=STRICT_VALIDATION,
         )
+
+
+if HAS_PY_311:
+    class SelfDecorator:
+        def __init__(self, inner: object) -> None:
+            self.inner = inner
+
+        @classmethod
+        def wrap(cls, self: Self) -> Self:
+            return SelfDecorator(self)
+
+        def __eq__(self, other: object) -> bool:
+            return type(self) is type(other) and self.inner == other.inner
+
+    def test_self():
+        p = Provider(scope=Scope.APP)
+        p.provide(lambda: SelfDecorator(None), provides=SelfDecorator)
+        p.decorate(SelfDecorator.wrap)
+        container = make_container(p)
+        obj = container.get(SelfDecorator)
+        assert obj == SelfDecorator(SelfDecorator(None))

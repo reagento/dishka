@@ -15,7 +15,11 @@ from dishka import (
     make_container,
     provide,
 )
+from dishka._adaptix.feature_requirement import HAS_PY_311
 from dishka.exceptions import CycleDependenciesError, NoFactoryError
+
+if HAS_PY_311:
+    from typing import Self
 
 
 class AliasProvider(Provider):
@@ -149,3 +153,16 @@ def test_union_alias():
     container = make_container(provider)
     assert container.get(float) == 42
     assert container.get(complex) == 42
+
+
+if HAS_PY_311:
+    class SelfFactory:
+        @classmethod
+        def new(cls) -> AnyOf[object, Self]:
+            return SelfFactory()
+
+    def test_self():
+        p = Provider(scope=Scope.APP)
+        p.provide(SelfFactory.new)
+        container = make_container(p)
+        assert container.get(SelfFactory) is container.get(object)

@@ -5,6 +5,7 @@ from dishka.entities.key import DependencyKey
 from dishka.entities.marker import BaseMarker, combine_when
 from dishka.entities.scope import BaseScope
 from .factory import Factory
+from .maybe import MayBe, Special, coalesce
 from .type_match import get_typevar_replacement, is_broader_or_same_type
 
 
@@ -104,4 +105,18 @@ class Decorator:
             self.factory.__get__(instance, owner),
             scope=self.scope,
             when=combined_when,
+        )
+
+    def replace(
+        self,
+        factory: MayBe[Factory] = Special.OMITTED,
+        provides: MayBe[DependencyKey | None] = Special.OMITTED,
+        scope: MayBe[BaseScope | None] = Special.OMITTED,
+        when: MayBe[DependencyKey | None] = Special.OMITTED,
+    ) -> "Decorator":
+        return Decorator(
+            factory=coalesce(factory, self.factory),
+            provides=coalesce(provides, self.provides),
+            scope=coalesce(scope, self.scope),
+            when=coalesce(when, self.when),
         )

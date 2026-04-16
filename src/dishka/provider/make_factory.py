@@ -35,6 +35,14 @@ from typing import (
     overload,
 )
 
+from .norm_type import normalize_sources_self
+
+try:
+    from typing import Self
+except ImportError:
+    Self = None
+
+
 from dishka._adaptix.type_tools.basic_utils import (  # type: ignore[attr-defined]
     get_type_vars,
     is_bare_generic,
@@ -594,7 +602,9 @@ def _provide(
         override=override,
         when=when,
     )
-    composite.dependency_sources.extend(unpack_factory(factory))
+    composite.dependency_sources.extend(
+        normalize_sources_self(factory.source, unpack_factory(factory)),
+    )
     if not recursive:
         return composite
 

@@ -342,11 +342,11 @@ def test_annotated_provide():
 
 if HAS_PY_311:
     class SelfFactory:
-        def method(self) -> Self:
+        def copy(self) -> Self:
             return self
 
         @classmethod
-        def classmethod(cls) -> Self:
+        def new(cls) -> Self:
             return SelfFactory()
 
         @classmethod
@@ -355,8 +355,8 @@ if HAS_PY_311:
 
     @pytest.mark.parametrize(
         "factory", [
-            SelfFactory().method,
-            SelfFactory.classmethod,
+            SelfFactory().copy,
+            SelfFactory.new,
         ],
     )
     def test_self(factory):
@@ -368,7 +368,7 @@ if HAS_PY_311:
 
     def test_self_arg():
         p = Provider(scope=Scope.APP)
-        p.provide(SelfFactory.classmethod)
+        p.provide(SelfFactory.new)
         p.provide(SelfFactory.collect_self)
         container = make_container(p)
         obj = container.get(list[SelfFactory])

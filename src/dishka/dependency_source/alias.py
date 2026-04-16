@@ -6,6 +6,7 @@ from dishka.entities.key import DependencyKey
 from dishka.entities.marker import BaseMarker, combine_when
 from dishka.entities.scope import BaseScope
 from .factory import Factory
+from .maybe import MayBe, Special, coalesce
 
 
 def _identity(x: Any) -> Any:
@@ -73,4 +74,23 @@ class Alias:
             when_active=combine_when(provider_when, self.when_active),
             when_override=combine_when(provider_when, self.when_override),
             when_component=self.when_component,
+        )
+
+    def replace(
+        self,
+        *,
+        source: MayBe[DependencyKey] = Special.OMITTED,
+        provides: MayBe[DependencyKey] = Special.OMITTED,
+        cache: MayBe[bool] = Special.OMITTED,
+        when_active: MayBe[BaseMarker | None] = Special.OMITTED,
+        when_override: MayBe[BaseMarker | None] = Special.OMITTED,
+        when_component: MayBe[Component] = Special.OMITTED,
+    ) -> "Alias":
+        return Alias(
+            source=coalesce(source, self.source),
+            provides=coalesce(provides, self.provides),
+            cache=coalesce(cache, self.cache),
+            when_active=coalesce(when_active, self.when_active),
+            when_override=coalesce(when_override, self.when_override),
+            when_component=coalesce(when_component, self.when_component),
         )

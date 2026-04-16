@@ -112,7 +112,7 @@ class Decorator:
         factory: MayBe[Factory] = Special.OMITTED,
         provides: MayBe[DependencyKey | None] = Special.OMITTED,
         scope: MayBe[BaseScope | None] = Special.OMITTED,
-        when: MayBe[DependencyKey | None] = Special.OMITTED,
+        when: MayBe[BaseMarker | None] = Special.OMITTED,
     ) -> "Decorator":
         return Decorator(
             factory=coalesce(factory, self.factory),

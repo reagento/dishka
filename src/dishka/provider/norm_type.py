@@ -1,12 +1,11 @@
+from collections.abc import Sequence
 from inspect import ismethod
 from typing import Any
 
-from mypyc.ir.ops import Sequence
-
 try:
-    from typing import Self
+    from typing import Self  # type: ignore[attr-defined, unused-ignore]
 except ImportError:
-    Self = None
+    Self = None  # type: ignore[assignment,unused-ignore]
 
 from dishka.dependency_source import (
     Alias,
@@ -44,7 +43,7 @@ def normalize_factory_self(self: Any, factory: Factory) -> Factory:
             name: dep.replace(
                 replace_type(dep.type_hint, Self, self),
             )
-            for name, dep in factory.kw_dependencies
+            for name, dep in factory.kw_dependencies.items()
         },
     )
 
@@ -76,7 +75,7 @@ def normalize_sources_self(
     if Self is None or (self := _get_self_type(source)) is None:
         return dep_sources
 
-    res = []
+    res: list[DependencySource] = []
     for dep_source in dep_sources:
         match dep_source:
             case Factory():

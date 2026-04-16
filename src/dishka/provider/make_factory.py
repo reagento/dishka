@@ -35,14 +35,6 @@ from typing import (
     overload,
 )
 
-from .norm_type import normalize_sources_self
-
-try:
-    from typing import Self
-except ImportError:
-    Self = None
-
-
 from dishka._adaptix.type_tools.basic_utils import (  # type: ignore[attr-defined]
     get_type_vars,
     is_bare_generic,
@@ -84,6 +76,7 @@ from .exceptions import (
     UndefinedTypeAnalysisError,
     UnsupportedGeneratorReturnTypeError,
 )
+from .norm_type import normalize_sources_self
 from .unpack_provides import unpack_factory
 
 _empty = signature(lambda a: 0).parameters["a"].annotation

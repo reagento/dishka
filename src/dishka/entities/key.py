@@ -44,6 +44,13 @@ class DependencyKey(NamedTuple):
             depth=self.depth,
         )
 
+    def replace(self, new_hint: Any) -> DependencyKey:
+        return DependencyKey(
+            type_hint=new_hint,
+            component=self.component,
+            depth=self.depth,
+        )
+
     def __str__(self) -> str:
         if self.depth == 0:
             return f"({self.type_hint}, component={self.component!r})"

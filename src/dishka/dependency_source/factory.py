@@ -4,28 +4,14 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
-from enum import Enum
-from typing import Any, TypeAlias, TypeVar
+from typing import Any
 
 from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryData, FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.marker import BaseMarker, combine_when
 from dishka.entities.scope import BaseScope
-
-
-class Special(Enum):
-    OMITTED = "omitted"
-
-
-T = TypeVar("T")
-MayBe: TypeAlias = Special | T
-
-
-def coalesce(a: MayBe[T], b: T) -> T:
-    if a is Special.OMITTED:
-        return b
-    return a
+from .maybe import MayBe, Special, coalesce
 
 
 class Factory(FactoryData):
@@ -162,6 +148,8 @@ class Factory(FactoryData):
     def replace(
         self,
         scope: MayBe[BaseScope] = Special.OMITTED,
+        dependencies: MayBe[Sequence[DependencyKey]] = Special.OMITTED,
+        kw_dependencies: MayBe[Mapping[str, DependencyKey]] = Special.OMITTED,
         provides: MayBe[DependencyKey] = Special.OMITTED,
         when_active: MayBe[BaseMarker | None] = Special.OMITTED,
         when_override: MayBe[BaseMarker | None] = Special.OMITTED,
@@ -169,8 +157,10 @@ class Factory(FactoryData):
         when_dependencies: MayBe[Sequence[Factory]] = Special.OMITTED,
     ) -> Factory:
         return Factory(
-            dependencies=list(self.dependencies),
-            kw_dependencies=dict(self.kw_dependencies),
+            dependencies=list(coalesce(dependencies, self.dependencies)),
+            kw_dependencies=dict(
+                coalesce(kw_dependencies, self.kw_dependencies),
+            ),
             source=self.source,
             provides=coalesce(provides, self.provides),
             scope=coalesce(scope, self.scope),

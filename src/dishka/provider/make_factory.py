@@ -76,6 +76,7 @@ from .exceptions import (
     UndefinedTypeAnalysisError,
     UnsupportedGeneratorReturnTypeError,
 )
+from .norm_type import normalize_sources_self
 from .unpack_provides import unpack_factory
 
 _empty = signature(lambda a: 0).parameters["a"].annotation
@@ -611,7 +612,9 @@ def _provide(
         when=when,
         allow_static_evaluation=allow_static_evaluation,
     )
-    composite.dependency_sources.extend(unpack_factory(factory))
+    composite.dependency_sources.extend(
+        normalize_sources_self(factory.source, unpack_factory(factory)),
+    )
     if not recursive:
         return composite
 

@@ -41,9 +41,10 @@ def _decorate(
         unpack_decorator(decorator),
     )
     for decorator in sources:
+        factory = decorator.factory
         if (
-            decorator.provides not in decorator.factory.kw_dependencies.values()
-            and decorator.provides not in decorator.factory.dependencies
+            decorator.provides not in factory.kw_dependencies.values()
+            and decorator.provides not in factory.dependencies
         ):
             raise IndependentDecoratorError(source)
 

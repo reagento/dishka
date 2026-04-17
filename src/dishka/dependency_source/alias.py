@@ -84,7 +84,7 @@ class Alias:
         cache: MayBe[bool] = Special.OMITTED,
         when_active: MayBe[BaseMarker | None] = Special.OMITTED,
         when_override: MayBe[BaseMarker | None] = Special.OMITTED,
-        when_component: MayBe[Component] = Special.OMITTED,
+        when_component: MayBe[Component | None] = Special.OMITTED,
     ) -> "Alias":
         return Alias(
             source=coalesce(source, self.source),

@@ -10,7 +10,6 @@ from dishka.entities.marker import BaseMarker
 from dishka.entities.scope import BaseScope
 from .exceptions import IndependentDecoratorError
 from .make_factory import make_factory
-from .norm_type import normalize_sources_self
 from .unpack_provides import unpack_decorator
 
 
@@ -42,12 +41,7 @@ def _decorate(
     ):
         raise IndependentDecoratorError(source)
 
-    composite.dependency_sources.extend(
-        normalize_sources_self(
-            decorator.factory.source,
-            unpack_decorator(decorator),
-        ),
-    )
+    composite.dependency_sources.extend(unpack_decorator(decorator))
     return composite
 
 

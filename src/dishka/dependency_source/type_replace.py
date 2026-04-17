@@ -18,7 +18,7 @@ def _replace_type(type_hint: Any, old: Any, new: Any) -> Any:  # noqa: PLR0911
         args = _replace_type(base, old, new), *meta
         return typing.Annotated[args]
 
-    if origin in (typing.Union, types.UnionType):
+    if origin is types.UnionType:
         new_args = tuple(_replace_type(arg, old, new) for arg in args)
         out = new_args[0]
         for arg in new_args[1:]:

@@ -109,6 +109,7 @@ class Decorator:
 
     def replace(
         self,
+        *,
         factory: MayBe[Factory] = Special.OMITTED,
         provides: MayBe[DependencyKey | None] = Special.OMITTED,
         scope: MayBe[BaseScope | None] = Special.OMITTED,

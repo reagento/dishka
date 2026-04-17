@@ -446,6 +446,9 @@ def compile_factory(
     compiled_deps: dict[DependencyKey, CompiledFactory],
     container_key: DependencyKey,
 ) -> CompiledFactory:
+    if factory.type is FactoryType.ALIAS and factory.source in compiled_deps:
+        return compiled_deps[factory.source]
+
     if not is_async and factory.type in ASYNC_TYPES:
         raise UnsupportedFactoryError(factory)
     if factory.type not in BODY_GENERATORS:

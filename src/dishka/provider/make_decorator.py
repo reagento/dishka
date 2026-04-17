@@ -40,7 +40,9 @@ def _decorate(
         decorator.factory.source,
         unpack_decorator(decorator),
     )
-    for decorator in sources:
+    for new_source in sources:
+        if not isinstance(new_source, Decorator):
+            continue
         factory = decorator.factory
         if (
             decorator.provides not in factory.kw_dependencies.values()

@@ -10,6 +10,7 @@ from dishka.entities.marker import BaseMarker
 from dishka.entities.scope import BaseScope
 from .exceptions import IndependentDecoratorError
 from .make_factory import make_factory
+from .norm_type import normalize_sources_self
 from .unpack_provides import unpack_decorator
 
 
@@ -20,6 +21,7 @@ def _decorate(
         *,
         is_in_class: bool = True,
         when: BaseMarker | None = None,
+        allow_static_evaluation: bool = False,
 ) -> CompositeDependencySource:
     composite = ensure_composite(source)
     decorator = Decorator(
@@ -34,14 +36,23 @@ def _decorate(
         ),
         scope=scope,
         when=when,
+        allow_static_evaluation=allow_static_evaluation,
     )
-    if (
-        decorator.provides not in decorator.factory.kw_dependencies.values()
-        and decorator.provides not in decorator.factory.dependencies
-    ):
-        raise IndependentDecoratorError(source)
+    sources = normalize_sources_self(
+        decorator.factory.source,
+        unpack_decorator(decorator),
+    )
+    for new_source in sources:
+        if not isinstance(new_source, Decorator):
+            continue
+        factory = decorator.factory
+        if (
+            decorator.provides not in factory.kw_dependencies.values()
+            and decorator.provides not in factory.dependencies
+        ):
+            raise IndependentDecoratorError(source)
 
-    composite.dependency_sources.extend(unpack_decorator(decorator))
+    composite.dependency_sources.extend(sources)
     return composite
 
 
@@ -51,6 +62,7 @@ def decorate(
         provides: Any = None,
         scope: BaseScope | None = None,
         when: BaseMarker | None = None,
+        allow_static_evaluation: bool = False,
 ) -> Callable[
     [Callable[..., Any]], CompositeDependencySource,
 ]:
@@ -64,8 +76,8 @@ def decorate(
         provides: Any = None,
         scope: BaseScope | None = None,
         when: BaseMarker | None = None,
-) -> CompositeDependencySource:
-    ...
+        allow_static_evaluation: bool = False,
+) -> CompositeDependencySource: ...
 
 
 def decorate(
@@ -73,6 +85,8 @@ def decorate(
         provides: Any = None,
         scope: BaseScope | None = None,
         when: BaseMarker | None = None,
+        *,
+        allow_static_evaluation: bool = False,
 ) -> CompositeDependencySource | Callable[
     [Callable[..., Any]], CompositeDependencySource,
 ]:
@@ -83,6 +97,7 @@ def decorate(
             scope=scope,
             is_in_class=True,
             when=when,
+            allow_static_evaluation=allow_static_evaluation,
         )
 
     def scoped(func: Callable[..., Any]) -> CompositeDependencySource:
@@ -92,6 +107,7 @@ def decorate(
             scope=scope,
             is_in_class=True,
             when=when,
+            allow_static_evaluation=allow_static_evaluation,
         )
 
     return scoped
@@ -101,5 +117,15 @@ def decorate_on_instance(
         source: Callable[..., Any] | type,
         provides: Any,
         scope: BaseScope | None,
+        when: BaseMarker | None = None,
+        *,
+        allow_static_evaluation: bool = False,
 ) -> CompositeDependencySource:
-    return _decorate(source, provides, scope=scope, is_in_class=False)
+    return _decorate(
+        source,
+        provides,
+        scope=scope,
+        is_in_class=False,
+        when=when,
+        allow_static_evaluation=allow_static_evaluation,
+    )

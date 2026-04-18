@@ -138,9 +138,9 @@ class Provider(BaseProvider):
                     )
 
     def activate(
-            self,
-            source: Callable[..., Any],
-            *markers: Marker | type[Marker],
+        self,
+        source: Callable[..., Any],
+        *markers: Marker | type[Marker],
     ) -> CompositeDependencySource:
         composite = activate_on_instance(source, *markers)
         self._add_dependency_sources(composite.dependency_sources)
@@ -173,6 +173,7 @@ class Provider(BaseProvider):
             recursive: bool = False,
             override: bool = False,
             when: BaseMarker | None = None,
+            allow_static_evaluation: bool = False,
     ) -> CompositeDependencySource:
         if scope is None:
             scope = self.scope
@@ -184,6 +185,7 @@ class Provider(BaseProvider):
             recursive=recursive,
             override=override,
             when=when,
+            allow_static_evaluation=allow_static_evaluation,
         )
         self._add_dependency_sources(composite.dependency_sources)
         return composite
@@ -196,6 +198,7 @@ class Provider(BaseProvider):
             recursive: bool = False,
             override: bool = False,
             when: BaseMarker | None = None,
+            allow_static_evaluation: bool = False,
     ) -> CompositeDependencySource:
         if scope is None:
             scope = self.scope
@@ -206,6 +209,7 @@ class Provider(BaseProvider):
             recursive=recursive,
             override=override,
             when=when,
+            allow_static_evaluation=allow_static_evaluation,
         )
         self._add_dependency_sources(composite.dependency_sources)
         return composite
@@ -218,6 +222,7 @@ class Provider(BaseProvider):
             cache: bool = True,
             component: Component | None = None,
             override: bool = False,
+            when: BaseMarker | None = None,
     ) -> CompositeDependencySource:
         composite = alias(
             source=source,
@@ -225,6 +230,7 @@ class Provider(BaseProvider):
             cache=cache,
             component=component,
             override=override,
+            when=when,
         )
         self._add_dependency_sources(composite.dependency_sources)
         return composite
@@ -235,11 +241,15 @@ class Provider(BaseProvider):
             *,
             provides: Any = None,
             scope: BaseScope | None = None,
+            when: BaseMarker | None = None,
+            allow_static_evaluation: bool = False,
     ) -> CompositeDependencySource:
         composite = decorate_on_instance(
             source=source,
             provides=provides,
             scope=scope,
+            when=when,
+            allow_static_evaluation=allow_static_evaluation,
         )
         self._add_dependency_sources(composite.dependency_sources)
         return composite

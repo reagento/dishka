@@ -4,32 +4,19 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
-from enum import Enum
-from typing import Any, TypeAlias, TypeVar
+from typing import Any
 
 from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryData, FactoryType
 from dishka.entities.key import DependencyKey
 from dishka.entities.marker import BaseMarker, combine_when
 from dishka.entities.scope import BaseScope
-
-
-class Special(Enum):
-    OMITTED = "omitted"
-
-
-T = TypeVar("T")
-MayBe: TypeAlias = Special | T
-
-
-def coalesce(a: MayBe[T], b: T) -> T:
-    if a is Special.OMITTED:
-        return b
-    return a
+from .maybe import MayBe, Special, coalesce
 
 
 class Factory(FactoryData):
     __slots__ = (
+        "allow_static_evaluation",
         "cache",
         "connected_factories",
         "dependencies",
@@ -51,6 +38,7 @@ class Factory(FactoryData):
         type_: FactoryType,
         is_to_bind: bool,
         cache: bool,
+        allow_static_evaluation: bool,
         when_override: BaseMarker | None,
         when_active: BaseMarker | None,
         when_component: Component | None,
@@ -82,6 +70,7 @@ class Factory(FactoryData):
         self.kw_dependencies = kw_dependencies
         self.is_to_bind = is_to_bind
         self.cache = cache
+        self.allow_static_evaluation = allow_static_evaluation
         self.when_active = when_active
         self.when_component = when_component
         self.when_dependencies = when_dependencies
@@ -106,6 +95,7 @@ class Factory(FactoryData):
             type_=self.type,
             is_to_bind=False,
             cache=self.cache,
+            allow_static_evaluation=self.allow_static_evaluation,
             when_override=when_override,
             when_active=when_active,
             when_component=self.when_component,
@@ -127,6 +117,7 @@ class Factory(FactoryData):
             is_to_bind=self.is_to_bind,
             cache=self.cache,
             type_=self.type,
+            allow_static_evaluation=self.allow_static_evaluation,
             when_override=self.when_override,
             when_active=self.when_active,
             when_component=(
@@ -147,6 +138,7 @@ class Factory(FactoryData):
             is_to_bind=self.is_to_bind,
             cache=self.cache,
             type_=self.type,
+            allow_static_evaluation=self.allow_static_evaluation,
             when_override=self.when_override,
             when_active=self.when_active,
             when_component=self.when_component,
@@ -156,6 +148,8 @@ class Factory(FactoryData):
     def replace(
         self,
         scope: MayBe[BaseScope] = Special.OMITTED,
+        dependencies: MayBe[Sequence[DependencyKey]] = Special.OMITTED,
+        kw_dependencies: MayBe[Mapping[str, DependencyKey]] = Special.OMITTED,
         provides: MayBe[DependencyKey] = Special.OMITTED,
         when_active: MayBe[BaseMarker | None] = Special.OMITTED,
         when_override: MayBe[BaseMarker | None] = Special.OMITTED,
@@ -163,14 +157,17 @@ class Factory(FactoryData):
         when_dependencies: MayBe[Sequence[Factory]] = Special.OMITTED,
     ) -> Factory:
         return Factory(
-            dependencies=list(self.dependencies),
-            kw_dependencies=dict(self.kw_dependencies),
+            dependencies=list(coalesce(dependencies, self.dependencies)),
+            kw_dependencies=dict(
+                coalesce(kw_dependencies, self.kw_dependencies),
+            ),
             source=self.source,
             provides=coalesce(provides, self.provides),
             scope=coalesce(scope, self.scope),
             is_to_bind=self.is_to_bind,
             cache=self.cache,
             type_=self.type,
+            allow_static_evaluation=self.allow_static_evaluation,
             when_override=coalesce(when_override, self.when_override),
             when_active=coalesce(when_active, self.when_active),
             when_component=coalesce(when_component, self.when_component),

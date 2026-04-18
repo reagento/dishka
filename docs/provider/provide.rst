@@ -187,6 +187,36 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
     dao = container.get(UserDAO)  # UserDAOMock
 
 
+* Do you want to allow a sync factory to be called while Dishka statically resolves activation conditions? Use ``allow_static_evaluation=True``:
+
+.. code-block:: python
+
+    from dishka import Marker, Provider, Scope, provide, activate
+
+    class MyProvider(Provider):
+        @provide(scope=Scope.APP, allow_static_evaluation=True)
+        def build_flag(self) -> int:
+            return 1
+
+        @provide(scope=Scope.APP)
+        def fallback_cache(self) -> Cache:
+            return InMemoryCache()
+
+        @provide(scope=Scope.APP, when=Marker("redis"))
+        def redis_cache(self, config: RedisConfig) -> Cache:
+            return RedisCache(config)
+
+        @activate(Marker("redis"))
+        def use_redis(self, flag: int) -> bool:
+            return flag == 0
+
+This is useful when an activator depends on another factory instead of root
+context. If the factory is cached, the value computed during static evaluation is
+reused by the runtime container.
+
+Only sync non-generator factories participate in static evaluation.
+
+
 * You can use factory with Generic classes:
 
 .. code-block:: python
@@ -195,4 +225,3 @@ WithParents generates only one factory and many aliases and is equivalent to ``A
         @provide
         def make_a(self, type_: type[T]) -> A[T]:
             ...
-

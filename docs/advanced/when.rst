@@ -16,6 +16,12 @@ This can be achieved with "activation" approach. Key concepts here:
 * **Activator** or **activation function** - special function registered in provider and taking decision if marker is active or not.
 * **activation condition** - expression with marker objects set in dependency source dynamically associated with activators to select between multiple implementations or enable decorators
 
+Activators can be called preliminary or multiple times, so avoid acquiring resources or doing heavy calculations, if necessary, move such things into factories or context data.
+
+Sync non-generator factories can also participate in preliminary activation
+evaluation when they are registered with ``allow_static_evaluation=True``.
+If such a factory is cached, the computed value is reused later by the runtime
+container instead of calling the factory again.
 
 .. note::
 
@@ -28,9 +34,9 @@ To set conditional activation you create special ``Marker`` objects and use them
 
 .. code-block:: python
 
-    from dishka import Provider, provide, Scope
+    from dishka import Marker, Provider, provide, Scope
 
-    class MyProvider(Provider)
+    class MyProvider(Provider):
         @provide(scope=Scope.APP)
         def base_impl(self) -> Cache:
             return NormalCacheImpl()
@@ -49,9 +55,9 @@ It can be the same or another provider while you pass when creating a container.
 
 .. code-block:: python
 
-    from dishka import activate, Provider
+    from dishka import activate, Marker, Provider
 
-    class MyProvider(Provider)
+    class MyProvider(Provider):
         @activate(Marker("debug"))
         def is_debug(self) -> bool:
             return False
@@ -60,7 +66,7 @@ This function can use other objects as well. For example, we can pass config usi
 
 .. code-block:: python
 
-    class MyProvider(Provider)
+    class MyProvider(Provider):
         config = from_context(Config, scope=Scope.APP)
 
         @activate(Marker("debug"))
@@ -78,7 +84,7 @@ More general pattern is to create own marker type and register a single activato
         pass
 
 
-    class MyProvider(Provider)
+    class MyProvider(Provider):
         config = from_context(Config, scope=Scope.APP)
 
         @activate(EnvMarker)
@@ -161,7 +167,7 @@ For example:
 
     from dishka import Provider, provide, Scope
 
-    class MyProvider(Provider)
+    class MyProvider(Provider):
         config = from_context(RedisConfig, scope=Scope.APP)
 
         @provide(scope=Scope.APP)
@@ -185,3 +191,59 @@ In this case,
 * ``memcached_impl`` is not used because no factory for ``MemcachedConfig`` is provided
 * ``redis_impl`` is not used while it is registered as ``from_context`` but no real value is provided.
 * ``base_impl`` is used as a default one, because none of later is active
+
+
+Preliminary (static) evaluation and graph validation
+------------------------------------------------------------
+
+In certain cases activator can be called during graph building step, this allows avoid unnecessary calls in runtime and ignore errors on factories which are never called.
+
+Static evaluation is enabled only if activator a sync non-generator function with dependencies retrieved from root context or without dependencies at all.
+For example, in the following code ``redis_impl`` is never called because ``RedisConfig`` is not passed, so it won't be validated at all.
+
+
+.. code-block:: python
+
+    from dishka import Provider, provide, Scope
+
+    class MyProvider(Provider):
+        config = from_context(RedisConfig, scope=Scope.APP)
+
+        @provide(when=Has(RedisConfig), scope=Scope.APP)
+        def redis_impl(self, config: RedisConfig) -> Cache:
+            return RedisCache(config)
+
+    container = make_container(MyProvider, context={})
+
+If an activator depends on another factory, static evaluation is disabled by
+default. You can opt in for a sync non-generator factory using
+``allow_static_evaluation=True``:
+
+.. code-block:: python
+
+    from dishka import Marker, Provider, Scope, activate, provide
+
+    class MyProvider(Provider):
+        @provide(scope=Scope.APP, allow_static_evaluation=True)
+        def build_flag(self) -> int:
+            return 1
+
+        @provide(scope=Scope.APP)
+        def fallback_cache(self) -> Cache:
+            return InMemoryCache()
+
+        @provide(scope=Scope.APP, when=Marker("redis"))
+        def redis_cache(self, config: RedisConfig) -> Cache:
+            return RedisCache(config)
+
+        @activate(Marker("redis"))
+        def use_redis(self, flag: int) -> bool:
+            return flag == 0
+
+In this example Dishka can call ``build_flag`` during container creation to
+resolve ``Marker("redis")``. Because the condition becomes known during graph
+building, unreachable conditional branches can be skipped during validation.
+
+When ``build_flag`` is cached, the value created during static evaluation is
+stored in the runtime container cache and reused on later ``container.get(...)``
+calls.

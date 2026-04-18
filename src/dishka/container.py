@@ -226,6 +226,7 @@ class Container:
             self._cache,
             self._context,
             self,
+            self._has,
         )
 
     def close(self, exception: BaseException | None = None) -> None:
@@ -278,6 +279,7 @@ class Container:
             self._cache,
             self._context,
             self,
+            self._has,
         ))
 
     def _has_context(self, marker: Any) -> bool:
@@ -285,6 +287,10 @@ class Container:
 
 
 class HasProvider(Provider):
+    """
+    This provider is used only for direct access on Has/HasContext.
+    Basic implementation is inlined in code builder.
+    """
     @activate(Has)
     def has(
         self,
@@ -317,7 +323,9 @@ def make_container(
     context_provider = make_root_context_provider(providers, context, scopes)
     has_provider = HasProvider()
     builder = GraphBuilder(
+        root_context=context or {},
         scopes=scopes,
+        start_scope=start_scope,
         container_key=CONTAINER_KEY,
         skip_validation=skip_validation,
         validation_settings=validation_settings,
@@ -325,7 +333,8 @@ def make_container(
     builder.add_multicomponent_providers(has_provider)
     builder.add_providers(*providers)
     builder.add_providers(context_provider)
-    registries = builder.build()
+    build_result = builder.build()
+    registries = build_result.registries
     container = Container(
         registries[0],
         context=context,
@@ -333,6 +342,9 @@ def make_container(
         parent_getter=None,
         parent_closer=None,
         parent_container=None,
+    )
+    container._cache.update(  # noqa: SLF001
+        build_result.runtime_caches.get(registries[0].scope, {}),
     )
     if start_scope is None:
         while container.registry.scope.skip:
@@ -345,6 +357,9 @@ def make_container(
                 lock_factory=lock_factory,
                 parent_closer=container.__exit__,
                 parent_getter=container._get,  # noqa: SLF001
+            )
+            container._cache.update(  # noqa: SLF001
+                build_result.runtime_caches.get(container.registry.scope, {}),
             )
     else:
         while container.registry.scope is not start_scope:
@@ -360,6 +375,9 @@ def make_container(
                 lock_factory=lock_factory,
                 parent_closer=container.__exit__,
                 parent_getter=container._get,  # noqa: SLF001
+            )
+            container._cache.update(  # noqa: SLF001
+                build_result.runtime_caches.get(container.registry.scope, {}),
             )
     return container
 

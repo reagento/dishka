@@ -76,6 +76,7 @@ from .exceptions import (
     UndefinedTypeAnalysisError,
     UnsupportedGeneratorReturnTypeError,
 )
+from .norm_type import normalize_sources_self
 from .unpack_provides import unpack_factory
 
 _empty = signature(lambda a: 0).parameters["a"].annotation
@@ -266,6 +267,7 @@ def _make_factory_by_class(
         cache: bool,
         override: bool,
         when: BaseMarker | None,
+        allow_static_evaluation: bool,
 ) -> Factory:
     if not provides:
         provides = source
@@ -293,6 +295,7 @@ def _make_factory_by_class(
         provides=hint_to_dependency_key(provides),
         is_to_bind=False,
         cache=cache,
+        allow_static_evaluation=allow_static_evaluation,
         when_override=calc_override(when=when, override=override),
         when_active=when,
         when_component=None,
@@ -328,6 +331,7 @@ def _make_factory_by_function(
         override: bool,
         check_self_name: bool,
         when: BaseMarker | None,
+        allow_static_evaluation: bool,
 ) -> Factory:
     # typing.cast is applied as unwrap takes a Callable object
     raw_source = unwrap(cast(Callable[..., Any], source))
@@ -369,6 +373,7 @@ def _make_factory_by_function(
         provides=hint_to_dependency_key(provides),
         is_to_bind=is_in_class,
         cache=cache,
+        allow_static_evaluation=allow_static_evaluation,
         when_override=calc_override(when=when, override=override),
         when_active=when,
         when_component=None,
@@ -384,6 +389,7 @@ def _make_factory_by_static_method(
         cache: bool,
         override: bool,
         when: BaseMarker | None,
+        allow_static_evaluation: bool,
 ) -> Factory:
     if missing_hints := _params_without_hints(source, skip_self=False):
         raise MissingHintsError(source, missing_hints)
@@ -413,6 +419,7 @@ def _make_factory_by_static_method(
         provides=hint_to_dependency_key(provides),
         is_to_bind=False,
         cache=cache,
+        allow_static_evaluation=allow_static_evaluation,
         when_override=calc_override(when=when, override=override),
         when_active=when,
         when_component=None,
@@ -440,6 +447,7 @@ def _make_factory_by_other_callable(
         cache: bool,
         override: bool,
         when: BaseMarker | None,
+        allow_static_evaluation: bool,
 ) -> Factory:
     if _is_bound_method(source):
         to_check = source.__func__  # type: ignore[attr-defined]
@@ -461,6 +469,7 @@ def _make_factory_by_other_callable(
         override=override,
         check_self_name=False,
         when=when,
+        allow_static_evaluation=allow_static_evaluation,
     )
     if factory.is_to_bind:
         dependencies = factory.dependencies[1:]  # remove `self`
@@ -476,6 +485,7 @@ def _make_factory_by_other_callable(
         provides=factory.provides,
         is_to_bind=False,
         cache=cache,
+        allow_static_evaluation=allow_static_evaluation,
         when_override=calc_override(when=when, override=override),
         when_active=when,
         when_component=None,
@@ -509,6 +519,7 @@ def make_factory(
         is_in_class: bool,
         override: bool,
         when: BaseMarker | None = None,
+        allow_static_evaluation: bool = False,
 ) -> Factory:
     provides, source = _extract_source(provides, source)
 
@@ -528,6 +539,7 @@ def make_factory(
             cache=cache,
             override=override,
             when=when,
+            allow_static_evaluation=allow_static_evaluation,
         )
     elif isfunction(source) or isinstance(source, classmethod):
         return _make_factory_by_function(
@@ -539,6 +551,7 @@ def make_factory(
             override=override,
             check_self_name=True,
             when=when,
+            allow_static_evaluation=allow_static_evaluation,
         )
     elif isbuiltin(source):
         return _make_factory_by_function(
@@ -550,6 +563,7 @@ def make_factory(
             override=override,
             check_self_name=False,
             when=when,
+            allow_static_evaluation=allow_static_evaluation,
         )
     elif isinstance(source, staticmethod):
         return _make_factory_by_static_method(
@@ -559,6 +573,7 @@ def make_factory(
             cache=cache,
             override=override,
             when=when,
+            allow_static_evaluation=allow_static_evaluation,
         )
     elif callable(source) and not source_origin:
         return _make_factory_by_other_callable(
@@ -568,6 +583,7 @@ def make_factory(
             cache=cache,
             override=override,
             when=when,
+            allow_static_evaluation=allow_static_evaluation,
         )
     else:
         raise NotAFactoryError(source)
@@ -583,6 +599,7 @@ def _provide(
         recursive: bool = False,
         override: bool = False,
         when: BaseMarker | None = None,
+        allow_static_evaluation: bool = False,
 ) -> CompositeDependencySource:
     if when and override:
         raise WhenOverrideConflictError
@@ -593,8 +610,11 @@ def _provide(
         is_in_class=is_in_class,
         override=override,
         when=when,
+        allow_static_evaluation=allow_static_evaluation,
     )
-    composite.dependency_sources.extend(unpack_factory(factory))
+    composite.dependency_sources.extend(
+        normalize_sources_self(factory.source, unpack_factory(factory)),
+    )
     if not recursive:
         return composite
 
@@ -612,6 +632,7 @@ def _provide(
                 is_in_class=is_in_class,
                 override=override,
                 when=when,
+                allow_static_evaluation=allow_static_evaluation,
             )
             additional_sources.extend(additional.dependency_sources)
     composite.dependency_sources.extend(additional_sources)
@@ -627,12 +648,14 @@ def provide_on_instance(
         recursive: bool = False,
         override: bool = False,
         when: BaseMarker | None = None,
+        allow_static_evaluation: bool = False,
 ) -> CompositeDependencySource:
     return _provide(
         provides=provides, scope=scope, source=source, cache=cache,
         is_in_class=False,
         recursive=recursive, override=override,
         when=when,
+        allow_static_evaluation=allow_static_evaluation,
     )
 
 
@@ -645,8 +668,8 @@ def provide(
         recursive: bool = False,
         override: bool = False,
         when: BaseMarker | None = None,
-) -> Callable[[Callable[..., Any]], CompositeDependencySource]:
-    ...
+        allow_static_evaluation: bool = False,
+) -> Callable[[Callable[..., Any]], CompositeDependencySource]: ...
 
 
 @overload
@@ -659,8 +682,8 @@ def provide(
         recursive: bool = False,
         override: bool = False,
         when: BaseMarker | None = None,
-) -> CompositeDependencySource:
-    ...
+        allow_static_evaluation: bool = False,
+) -> CompositeDependencySource: ...
 
 
 def provide(
@@ -672,6 +695,7 @@ def provide(
         recursive: bool = False,
         override: bool = False,
         when: BaseMarker | None = None,
+        allow_static_evaluation: bool = False,
 ) -> CompositeDependencySource | Callable[
     [Callable[..., Any]], CompositeDependencySource,
 ]:
@@ -695,6 +719,8 @@ def provide(
     :param cache: save created object to scope cache or not
     :param recursive: register dependencies as factories as well
     :param override: dependency override
+    :param allow_static_evaluation: allow calling this sync factory while
+        statically resolving activation conditions during graph building
     :return: instance of Factory or a decorator returning it
     """
     if source is not None:
@@ -702,6 +728,7 @@ def provide(
             provides=provides, scope=scope, source=source, cache=cache,
             is_in_class=True, recursive=recursive, override=override,
             when=when,
+            allow_static_evaluation=allow_static_evaluation,
         )
 
     def scoped(func: Callable[..., Any]) -> CompositeDependencySource:
@@ -709,6 +736,7 @@ def provide(
             provides=provides, scope=scope, source=func, cache=cache,
             is_in_class=True, recursive=recursive, override=override,
             when=when,
+            allow_static_evaluation=allow_static_evaluation,
         )
 
     return scoped
@@ -723,6 +751,7 @@ def _provide_all(
         recursive: bool,
         override: bool = False,
         when: BaseMarker | None = None,
+        allow_static_evaluation: bool = False,
 ) -> CompositeDependencySource:
     composite = CompositeDependencySource(None)
     for single_provides in provides:
@@ -735,6 +764,7 @@ def _provide_all(
             recursive=recursive,
             override=override,
             when=when,
+            allow_static_evaluation=allow_static_evaluation,
         )
         composite.dependency_sources.extend(source.dependency_sources)
     return composite
@@ -747,12 +777,14 @@ def provide_all(
         recursive: bool = False,
         override: bool = False,
         when: BaseMarker | None = None,
+        allow_static_evaluation: bool = False,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,
         cache=cache, is_in_class=True,
         recursive=recursive, override=override,
         when=when,
+        allow_static_evaluation=allow_static_evaluation,
     )
 
 
@@ -763,10 +795,12 @@ def provide_all_on_instance(
         recursive: bool = False,
         override: bool = False,
         when: BaseMarker | None = None,
+        allow_static_evaluation: bool = False,
 ) -> CompositeDependencySource:
     return _provide_all(
         provides=provides, scope=scope,
         cache=cache, is_in_class=False,
         recursive=recursive, override=override,
         when=when,
+        allow_static_evaluation=allow_static_evaluation,
     )

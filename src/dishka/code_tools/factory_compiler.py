@@ -13,6 +13,8 @@ from dishka.entities.marker import (
     AndMarker,
     BaseMarker,
     BoolMarker,
+    Has,
+    HasContext,
     NotMarker,
     OrMarker,
 )
@@ -63,7 +65,7 @@ class FactoryBuilder(CodeBuilder):
         self.getter_name = self.getter_prefix + raw_provides_name
         return self.def_(
             self.getter_name,
-            ["getter", "exits", "cache", "context", "container"],
+            ["getter", "exits", "cache", "context", "container", "has"],
         )
 
     def getter(
@@ -82,7 +84,7 @@ class FactoryBuilder(CodeBuilder):
             return self.await_(
                 self.call(
                     factory,
-                    "getter", "exits", "cache", "context", "container",
+                    "getter", "exits", "cache", "context", "container", "has",
                 ),
             )
         return self.await_(self.call(
@@ -101,7 +103,10 @@ class FactoryBuilder(CodeBuilder):
     def assign_solved(self, expr: str) -> None:
         self.assign_local("solved", expr)
 
-    def when(
+    def _has_context(self, type_: str) -> str:
+        return f"(context is not None and {type_} in context)"
+
+    def when(  # noqa: PLR0911
         self,
         marker: BaseMarker | None,
         component: Component | None,
@@ -126,6 +131,14 @@ class FactoryBuilder(CodeBuilder):
                 )
             case BoolMarker(False):
                 return self.global_(marker.value)
+            case Has():
+                key = DependencyKey(marker.value, component)
+                return self.await_(self.call(
+                    "has",
+                    self.global_(key.as_compilation_key()),
+                ))
+            case HasContext():
+                return self._has_context(self.global_(marker.value))
             case _:
                 if component is None:
                     raise TypeError(  # noqa: TRY003
@@ -433,6 +446,13 @@ def compile_factory(
     compiled_deps: dict[DependencyKey, CompiledFactory],
     container_key: DependencyKey,
 ) -> CompiledFactory:
+    if (
+        factory.type is FactoryType.ALIAS
+        and factory.dependencies[0] in compiled_deps
+        and not factory.cache
+    ):
+        return compiled_deps[factory.dependencies[0]]
+
     if not is_async and factory.type in ASYNC_TYPES:
         raise UnsupportedFactoryError(factory)
     if factory.type not in BODY_GENERATORS:

@@ -12,6 +12,7 @@ Some of the integrations are supported by a community, refer to their documentat
 .. toctree::
    :hidden:
 
+   ag2 <https://github.com/C3EQUALZz/dishka-ag2>
    aiogram
    aiogram_dialog
    aiohttp
@@ -23,7 +24,7 @@ Some of the integrations are supported by a community, refer to their documentat
    flask
    flet <https://github.com/C3EQUALZz/dishka-flet>
    grpcio
-   jobify <https://github.com/C3EQUALZz/dishka-jobify>
+   jobify <https://github.com/Jobify-Community/dishka-jobify>
    litestar
    Pyramid <https://github.com/WorkHardes/dishka-pyramid>
    RQ <https://github.com/prepin/dishka-rq>
@@ -57,7 +58,7 @@ Some of the integrations are supported by a community, refer to their documentat
    * - :ref:`Fastapi`
      - :ref:`pyTelegramBotAPI<telebot>`
      - :ref:`TaskIq`
-     -
+     - `ag2 <https://github.com/C3EQUALZz/dishka-ag2>`_ (:abbr:`com (Community support)`)
 
    * - :ref:`Flask`
      -
@@ -69,7 +70,7 @@ Some of the integrations are supported by a community, refer to their documentat
      -
    * - `Pyramid <https://github.com/WorkHardes/dishka-pyramid>`_ (:abbr:`com (Community support)`)
      -
-     - `Jobify <https://github.com/C3EQUALZz/dishka-jobify>`_ (:abbr:`com (Community support)`)
+     - `Jobify <https://github.com/Jobify-Community/dishka-jobify>`_ (:abbr:`com (Community support)`)
      -
    * -  :ref:`Sanic`
      -

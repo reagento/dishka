@@ -7,7 +7,7 @@ from dishka.dependency_source import (
 )
 from dishka.entities.component import Component
 from dishka.entities.key import hint_to_dependency_key
-from dishka.entities.marker import Marker
+from dishka.entities.marker import BaseMarker, Marker
 from dishka.exception_base import DishkaError
 from dishka.exceptions import WhenOverrideConflictError
 from .make_factory import calc_override
@@ -34,7 +34,7 @@ def alias(
         cache: bool = True,
         component: Component | None = None,
         override: bool = False,
-        when: Marker | None = None,
+        when: BaseMarker | None = None,
 ) -> CompositeDependencySource:
     if component is provides is None:
         raise ValueError(  # noqa: TRY003

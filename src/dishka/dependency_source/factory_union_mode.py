@@ -53,6 +53,7 @@ class FactoryUnionMode:
             when_active=None,
             when_override=None,
             cache=self.cache,
+            allow_static_evaluation=False,
             when_component=self.provides.component,
             is_to_bind=False,
             type_=FactoryType.COLLECTION,

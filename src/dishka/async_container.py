@@ -61,7 +61,7 @@ class AsyncContainer:
                 [], AbstractAsyncContextManager[Any],
             ] | None,
             parent_closer: ExitCallable | None,
-            parent_getter:  Callable[[CompilationKey], Any] | None,
+            parent_getter: Callable[[CompilationKey], Any] | None,
     ) -> None:
         self.registry = registry
         self._context = context
@@ -191,11 +191,10 @@ class AsyncContainer:
 
     @overload
     def get_sync(
-            self,
-            dependency_type: Any,
-            component: Component | None = DEFAULT_COMPONENT,
-    ) -> Any:
-        ...
+        self,
+        dependency_type: Any,
+        component: Component | None = DEFAULT_COMPONENT,
+    ) -> Any: ...
 
     def get_sync(
         self,
@@ -204,7 +203,8 @@ class AsyncContainer:
     ) -> Any:
         try:
             return self._get_sync(
-                dependency_type if component == DEFAULT_COMPONENT
+                dependency_type
+                if component == DEFAULT_COMPONENT
                 else DependencyKey(dependency_type, component),
             )
         except (NoFactoryError, NoActiveFactoryError) as e:
@@ -251,6 +251,7 @@ class AsyncContainer:
             self._cache,
             self._context,
             self,
+            self._has_sync,
         )
 
     async def _get(self, key: CompilationKey) -> Any:
@@ -296,6 +297,7 @@ class AsyncContainer:
             self._cache,
             self._context,
             self,
+            self._has,
         )
 
     async def close(self, exception: BaseException | None = None) -> None:
@@ -350,6 +352,23 @@ class AsyncContainer:
             self._cache,
             self._context,
             self,
+            self._has,
+        ))
+
+    def _has_sync(self, marker: CompilationKey) -> bool:
+        compiled = self.registry.get_compiled_activation(marker)
+        if not compiled:
+            if not self.parent_container:
+                return False
+            return self.parent_container._has_sync(marker)  # noqa: SLF001
+
+        return bool(compiled(
+            self._get_sync,
+            self._exits,
+            self._cache,
+            self._context,
+            self,
+            self._has_sync,
         ))
 
     def _has_context(self, marker: Any) -> bool:
@@ -357,6 +376,10 @@ class AsyncContainer:
 
 
 class HasProvider(Provider):
+    """
+    This provider is used only for direct access on Has/HasContext.
+    Basic implementation is inlined in code builder.
+    """
     @activate(Has)
     async def has(
         self,
@@ -392,14 +415,17 @@ def make_async_container(
     has_provider = HasProvider()
     builder = GraphBuilder(
         scopes=scopes,
+        start_scope=start_scope,
         container_key=CONTAINER_KEY,
         skip_validation=skip_validation,
         validation_settings=validation_settings,
+        root_context=context or {},
     )
     builder.add_multicomponent_providers(has_provider)
     builder.add_providers(*providers)
     builder.add_providers(context_provider)
-    registries = builder.build()
+    build_result = builder.build()
+    registries = build_result.registries
 
     container = AsyncContainer(
         registries[0],
@@ -408,6 +434,9 @@ def make_async_container(
         parent_getter=None,
         parent_closer=None,
         parent_container=None,
+    )
+    container._cache.update(  # noqa: SLF001
+        build_result.runtime_caches.get(registries[0].scope, {}),
     )
     if start_scope is None:
         while container.registry.scope.skip:
@@ -420,6 +449,9 @@ def make_async_container(
                 lock_factory=lock_factory,
                 parent_closer=container.__aexit__,
                 parent_getter=container._get,  # noqa: SLF001
+            )
+            container._cache.update(  # noqa: SLF001
+                build_result.runtime_caches.get(container.registry.scope, {}),
             )
     else:
         while container.registry.scope is not start_scope:
@@ -435,6 +467,9 @@ def make_async_container(
                 lock_factory=lock_factory,
                 parent_closer=container.__aexit__,
                 parent_getter=container._get,  # noqa: SLF001
+            )
+            container._cache.update(  # noqa: SLF001
+                build_result.runtime_caches.get(container.registry.scope, {}),
             )
     return container
 

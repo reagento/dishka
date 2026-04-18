@@ -234,7 +234,7 @@ container.close()
 </details>
 
 7. **(optional) Integrate with your framework.** If you are using a supported framework, add decorators and middleware for it.
-   For more details, see [Using with frameworks](http://localhost:63342/dishka-fork/docs-build/html/integrations/index.html).
+   For more details, see [Using with frameworks](https://dishka.readthedocs.io/en/stable/integrations/index.html).
 
 ```python
 from fastapi import APIRouter, FastAPI

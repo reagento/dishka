@@ -13,6 +13,7 @@ from dishka.entities.key import (
 )
 from dishka.entities.marker import Has, HasContext
 from dishka.entities.scope import BaseScope, Scope
+from dishka.entities.type_form import TypeForm
 from dishka.provider import Provider, activate
 from .container_objects import Exit
 from .context_proxy import ContextProxy
@@ -148,7 +149,7 @@ class Container:
     @overload
     def get(
             self,
-            dependency_type: type[T],
+            dependency_type: TypeForm[T],
             component: Component | None = DEFAULT_COMPONENT,
     ) -> T:
         ...

@@ -81,6 +81,16 @@ INTEGRATIONS = [
 
 
 @nox.session(tags=["ci"])
+def type_checking(session: nox.Session) -> None:
+    session.install(
+        *EDITABLE_INSTALL,
+        "-r", "requirements/typing_check.txt",
+        silent=False,
+    )
+    session.run("mypy", "tests/type_checking")
+
+
+@nox.session(tags=["ci"])
 def integrations_base(session: nox.Session) -> None:
     session.install(
         *EDITABLE_INSTALL,

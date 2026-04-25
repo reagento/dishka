@@ -9,10 +9,12 @@ from .factory import Factory
 
 
 class StaticEvaluationUnavailable(Exception):  # noqa: N818
-    def __init__(self, factory: FactoryData) -> None:
+    def __init__(self, factory: FactoryData | None) -> None:
         self.factory = factory
 
     def __str__(self) -> str:
+        if self.factory is None:
+            return "StaticEvaluationUnavailable(...)"
         return (f"StaticEvaluationUnavailable({self.factory.provides},"
                 f" type={self.factory.type})")
 

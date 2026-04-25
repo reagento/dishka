@@ -1,7 +1,7 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from functools import partial
 from logging import getLogger
-from typing import Any
+from typing import Any, NoReturn
 
 from dishka.container_objects import CompiledFactory
 from dishka.dependency_source import Factory
@@ -18,6 +18,24 @@ from dishka.registry import Registry
 from dishka.text_rendering.name import get_source_name
 
 logger = getLogger(__name__)
+
+
+class InaccessibleContext(Mapping[Any, Any]):  # noqa: PLW1641
+    def _inaccessible(self, *args: Any, **kwargs: Any) -> NoReturn:
+        raise StaticEvaluationUnavailable(None)
+
+    items = _inaccessible
+    keys = _inaccessible
+    values = _inaccessible
+    __eq__ = _inaccessible
+    __iter__ = _inaccessible
+    __len__ = _inaccessible
+    __getitem__ = _inaccessible
+    __contains__ = _inaccessible
+    get = _inaccessible
+
+
+INACCESSIBLE_CONTEXT = InaccessibleContext()
 
 
 class StaticRegistry(Registry):
@@ -89,6 +107,7 @@ class ActivationContainer:
         context: dict[Any, Any],
         registries: dict[BaseScope, Registry],
         container_key: DependencyKey,
+        start_scope: BaseScope,
     ) -> None:
         self._context = context
         self._registries = registries
@@ -96,6 +115,7 @@ class ActivationContainer:
         self._cache_by_scope: dict[BaseScope, dict[Any, object]] = {
             scope: {} for scope in registries
         }
+        self._start_scope = start_scope
 
         self._parent_scopes: dict[BaseScope, BaseScope | None] = {}
         prev_scope = None
@@ -116,7 +136,7 @@ class ActivationContainer:
             partial(self._get, scope=scope),
             [],
             cache,
-            self._context,
+            self._get_context(scope),
             self,
             partial(self._has, scope=scope),
         ))
@@ -135,10 +155,15 @@ class ActivationContainer:
             partial(self._get, scope=factory.scope),
             [],
             cache,
-            self._context,
+            self._get_context(factory.scope),
             self,
             partial(self._has, scope=factory.scope),
         ))
+
+    def _get_context(self, scope: BaseScope) -> Any:
+        if scope > self._start_scope:
+            return INACCESSIBLE_CONTEXT
+        return self._context
 
     def _has(self, marker: CompilationKey, scope: BaseScope) -> bool:
         if marker == self._container_key:
@@ -155,7 +180,7 @@ class ActivationContainer:
             partial(self._get, scope=scope),
             [],
             cache,
-            self._context,
+            self._get_context(scope),
             self,
             partial(self._has, scope=scope),
         ))
@@ -186,6 +211,7 @@ class StaticEvaluator:
             registries=self.registries,
             container_key=container_key,
             context=context,
+            start_scope=start_scope,
         )
         self.activation_container = activation_container
 

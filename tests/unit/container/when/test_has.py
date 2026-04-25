@@ -1,6 +1,7 @@
 import pytest
 
 from dishka import Has, Provider, Scope, make_async_container, make_container
+from dishka.entities.marker import HasContext
 
 
 @pytest.mark.parametrize(("register", "value"), [
@@ -88,6 +89,38 @@ def test_has_no_dep_nested_scope(scope):
     c = make_container(provider)
     with c() as request_c:
         assert request_c.get(str) == "a"
+
+
+@pytest.mark.parametrize(("pass_context", "expected_value"), [
+    (True, "b"),
+    (False, "a"),
+])
+def test_has_no_dep_nested_scope_context(pass_context, expected_value):
+    provider = Provider(scope=Scope.REQUEST)
+    provider.provide(lambda: "a", provides=str)
+    provider.from_context(float)
+    provider.provide(lambda: "b", provides=str, when=Has(float))
+
+    c = make_container(provider)
+    context = {float: 1} if pass_context else {}
+    with c(context=context) as request_c:
+        assert request_c.get(str) == expected_value
+
+
+@pytest.mark.parametrize(("pass_context", "expected_value"), [
+    (True, "b"),
+    (False, "a"),
+])
+def test_hascontext_no_dep_nested_scope_context(pass_context, expected_value):
+    provider = Provider(scope=Scope.REQUEST)
+    provider.provide(lambda: "a", provides=str)
+    provider.from_context(float)
+    provider.provide(lambda: "b", provides=str, when=HasContext(float))
+
+    c = make_container(provider)
+    context = {float: 1} if pass_context else {}
+    with c(context=context) as request_c:
+        assert request_c.get(str) == expected_value
 
 
 def test_has_wrong_scope():

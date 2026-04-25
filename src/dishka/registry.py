@@ -205,12 +205,7 @@ class Registry:
             if not factory:
                 self.compiled_async[dependency] = None
                 return None
-            compiled = compile_factory(
-                factory=factory,
-                is_async=True,
-                compiled_deps=self._compile_deps_async(factory, False),
-                container_key=self.container_key,
-            )
+            compiled = self._compile_factory_async(factory)
             self.compiled_async[dependency] = compiled
             return compiled
 

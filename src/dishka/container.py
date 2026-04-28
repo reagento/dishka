@@ -1,3 +1,4 @@
+import sys
 import warnings
 from collections.abc import Callable, MutableMapping
 from contextlib import AbstractContextManager
@@ -11,7 +12,7 @@ from dishka.entities.key import (
     DependencyKey,
     compilation_to_dependency_key,
 )
-from dishka.entities.marker import Has, HasContext
+from dishka.entities.marker import Has, HasContext, Marker
 from dishka.entities.scope import BaseScope, Scope
 from dishka.entities.type_form import TypeForm
 from dishka.provider import Provider, activate
@@ -149,18 +150,27 @@ class Container:
     @overload
     def get(
             self,
-            dependency_type: TypeForm[T],
+            dependency_type: Marker,
             component: Component | None = DEFAULT_COMPONENT,
-    ) -> T:
+    ) -> bool:
         ...
 
-    @overload
-    def get(
-            self,
-            dependency_type: Any,
-            component: Component | None = DEFAULT_COMPONENT,
-    ) -> Any:
-        ...
+    if sys.version_info >= (3, 15):
+        @overload
+        def get(
+                self,
+                dependency_type: TypeForm[T],
+                component: Component | None = DEFAULT_COMPONENT,
+        ) -> T:
+            ...
+    else:
+        @overload
+        def get(
+                self,
+                dependency_type: Any,
+                component: Component | None = DEFAULT_COMPONENT,
+        ) -> Any:
+            ...
 
     def get(
             self,

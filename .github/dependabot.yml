@@ -5,14 +5,3 @@ updates:
     schedule:
       interval: "monthly"
     target-branch: develop
-
-  - package-ecosystem: "pip" # zizmor: ignore[dependabot-cooldown]
-    directory: "/"
-    file: "requirements_dev.txt"
-    schedule:
-      interval: "weekly"
-    target-branch: develop
-    groups:
-      python-packages:
-        patterns:
-          - "*"

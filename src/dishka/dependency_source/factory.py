@@ -128,23 +128,6 @@ class Factory(FactoryData):
             when_dependencies=self.when_dependencies,
         )
 
-    def with_scope(self, scope: BaseScope) -> Factory:
-        return Factory(
-            dependencies=tuple(self.dependencies),
-            kw_dependencies=dict(self.kw_dependencies),
-            source=self.source,
-            provides=self.provides,
-            scope=self.scope or scope,
-            is_to_bind=self.is_to_bind,
-            cache=self.cache,
-            type_=self.type,
-            allow_static_evaluation=self.allow_static_evaluation,
-            when_override=self.when_override,
-            when_active=self.when_active,
-            when_component=self.when_component,
-            when_dependencies=self.when_dependencies,
-        )
-
     def replace(
         self,
         scope: MayBe[BaseScope] = Special.OMITTED,

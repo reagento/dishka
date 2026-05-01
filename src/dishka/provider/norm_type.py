@@ -16,10 +16,6 @@ from dishka.dependency_source import (
 from dishka.dependency_source.type_replace import replace_type
 
 
-def is_bound_method(obj: Any) -> bool:
-    return ismethod(obj) and bool(obj.__self__)
-
-
 def _get_self_type(source: Any) -> Any:
     if not ismethod(source):
         return None

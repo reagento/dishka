@@ -719,6 +719,7 @@ def provide(
     :param cache: save created object to scope cache or not
     :param recursive: register dependencies as factories as well
     :param override: dependency override
+    :param when: condition for enabling this factory
     :param allow_static_evaluation: allow calling this sync factory while
         statically resolving activation conditions during graph building
     :return: instance of Factory or a decorator returning it

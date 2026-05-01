@@ -54,7 +54,9 @@ class Factory(FactoryData):
         :param type_:
         :param is_to_bind: use first dependency as class instance on __get__
         :param cache: add result to container cache
-        :param when_override:  condition to override
+        :param allow_static_evaluation: allow calling this sync factory while
+            statically resolving activation conditions during graph building
+        :param when_override: condition to override
         :param when_active: condition to check availability
         :param when_component: component of conditions
         :param when_dependencies: deps for conditional creation

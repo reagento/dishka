@@ -430,7 +430,11 @@ class GraphBuilder:
                 override=False,
             )
             for component in self.components:
-                registry.add_factory(context_var.as_factory(component))
+                registry.add_factory(context_var.as_factory(component).replace(
+                    # Container is always available
+                    when_active=None,
+                    when_override=None,
+                ))
             registries[scope] = registry
             has_fallback = False
 

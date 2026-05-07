@@ -11,7 +11,6 @@ The main points are:
 2. Find a place to enter and exit request scope and how to pass the container to a handler. Usually, it is entered in a middleware and container is stored in some kind of request context. 
 
    Alternatively, you can use the ``wrap_injection`` function with ``manage_scope=True`` to automate entering and exiting the request scope without relying on middleware. When enabled, ``manage_scope`` ensures that the container passed to ``wrap_injection`` enters and exits the next scope.
-   **Custom Scope Targeting**
 
    For more complex cases, you can pass a ``scope`` argument to ``wrap_injection`` to specify a custom scope to enter on function call.
    For example, you can create decorators that target specific scopes in the dependency hierarchy:

@@ -156,8 +156,10 @@ class ParentsResolver:
 
 
 if TYPE_CHECKING:  # ast-grep-ignore: DISHKA001
+    from typing import Annotated
+
     T = TypeVar("T")
-    WithParents: TypeAlias = T
+    WithParents: TypeAlias = Annotated[T, "WithParents"]
 else:
     class WithParents:
         def __class_getitem__(cls, item: TypeHint) -> TypeHint:

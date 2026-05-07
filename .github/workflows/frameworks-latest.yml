@@ -37,7 +37,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install . -r requirements_dev.txt --system
+          uv pip install . --group ci --system
 
       - name: Run tests
         run: |

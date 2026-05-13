@@ -10,6 +10,7 @@ build:
     - asdf install uv latest
     - asdf global uv latest
     - asdf which python
+    - export UV_LINK_MODE=copy
     - uv venv $READTHEDOCS_VIRTUALENV_PATH
     - uv pip install -r requirements_doc.txt
     - uv pip install .

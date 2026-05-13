@@ -8,9 +8,10 @@ build:
 python:
   install:
     - method: uv
+      command: pip
       path: .
-      command: pip # uv pip install -r requirements_doc.txt
-      requirements: requirements_doc.txt
+
+    - requirements: requirements_doc.txt
 
 sphinx:
   configuration: docs/conf.py

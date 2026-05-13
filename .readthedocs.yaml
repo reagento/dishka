@@ -8,6 +8,7 @@ build:
 python:
   install:
     - method: uv
+      path: .
       command: pip # uv pip install -r requirements_doc.txt
       requirements: requirements_doc.txt
 

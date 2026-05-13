@@ -5,7 +5,6 @@ build:
   tools:
     python: "3.14"
   commands:
-    - asdf global python 3.14.0
     - asdf plugin add uv
     - asdf install uv latest
     - asdf global uv latest

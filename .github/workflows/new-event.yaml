@@ -1,4 +1,4 @@
-name: Event Notifier
+name: "Event Notifier"
 
 on:
   issues:
@@ -19,7 +19,7 @@ jobs:
     name: "Telegram notification"
     runs-on: ubuntu-latest
     steps:
-      - name: Send Telegram notification for new issue or pull request
+      - name: "Send Telegram notification for new issue or pull request"
         uses: reagento/relator@4b1531359edba1228db0906e8931b0da2aef69cd # v1.7.0
         with:
           tg-bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}

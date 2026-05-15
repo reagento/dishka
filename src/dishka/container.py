@@ -174,18 +174,18 @@ class Container:
 
     def get(
             self,
-            dependency_type: Any,
+            dependency_type: TypeForm[T] | Marker,
             component: Component | None = DEFAULT_COMPONENT,
-    ) -> Any:
+    ) -> T | bool:
         lock = self.lock
         try:
             if lock is None:
-                return self._get_unlocked(
+                return self._get_unlocked(  # type: ignore[no-any-return]
                     dependency_type if component == DEFAULT_COMPONENT
                     else DependencyKey(dependency_type, component),
                 )
             with lock:
-                return self._get_unlocked(
+                return self._get_unlocked(  # type: ignore[no-any-return]
                     dependency_type if component == DEFAULT_COMPONENT
                     else DependencyKey(dependency_type, component),
                 )

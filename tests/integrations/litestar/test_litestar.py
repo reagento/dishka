@@ -1,3 +1,4 @@
+import importlib.util
 from contextlib import asynccontextmanager
 from unittest.mock import Mock
 
@@ -7,6 +8,12 @@ from asgi_lifespan import LifespanManager
 from litestar import Request, get, websocket_listener
 from litestar.contrib.htmx.request import HTMXRequest
 from litestar.testing import TestClient
+
+try:
+    importlib.util.find_spec("litestar.plugins.InitPlugin")
+    HAS_PLUGINS = True
+except ImportError:
+    HAS_PLUGINS = False
 
 from dishka import make_async_container
 from dishka.integrations.litestar import (
@@ -39,6 +46,22 @@ async def dishka_app(
         yield TestClient(app)
     await container.close()
 
+@asynccontextmanager
+async def dishka_plugin_app(
+        view,
+        provider,
+        request_class: type[Request] = Request,
+) -> TestClient:
+    from dishka.integrations.litestar import DishkaPlugin
+
+    container = make_async_container(provider)
+    app = litestar.Litestar(request_class=request_class,
+                            plugins=[DishkaPlugin(container)])
+    app.register(get("/")(inject(view)))
+    app.register(websocket_listener("/ws")(websocket_handler))
+    async with LifespanManager(app):
+        yield TestClient(app)
+    await container.close()
 
 @asynccontextmanager
 async def dishka_auto_app(
@@ -90,6 +113,10 @@ def get_with_request(request_class: type[Request]):
         (HTMXRequest, dishka_app),
         (Request, dishka_auto_app),
         (HTMXRequest, dishka_auto_app),
+        *((
+            (Request, dishka_plugin_app),
+            (HTMXRequest, dishka_plugin_app),
+        ) if HAS_PLUGINS else ()),
     ],
 )
 @pytest.mark.asyncio
@@ -116,6 +143,10 @@ async def test_app_dependency(
         (HTMXRequest, dishka_app),
         (Request, dishka_auto_app),
         (HTMXRequest, dishka_auto_app),
+        *((
+            (Request, dishka_plugin_app),
+            (HTMXRequest, dishka_plugin_app),
+        ) if HAS_PLUGINS else ()),
     ],
 )
 @pytest.mark.asyncio
@@ -141,6 +172,10 @@ async def test_request_dependency(
         (HTMXRequest, dishka_app),
         (Request, dishka_auto_app),
         (HTMXRequest, dishka_auto_app),
+        *((
+            (Request, dishka_plugin_app),
+            (HTMXRequest, dishka_plugin_app),
+        ) if HAS_PLUGINS else ()),
     ],
 )
 @pytest.mark.asyncio

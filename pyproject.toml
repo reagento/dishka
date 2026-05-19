@@ -50,6 +50,8 @@ dev = [
     { include-group = "zizmor" },
     { include-group = "ast-grep" },
 ]
+[project.entry-points.pytest11]
+dishka = "dishka.integrations.pytest"
 
 [project.urls]
 "Source" = "https://github.com/reagento/dishka"

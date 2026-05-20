@@ -66,6 +66,7 @@ from dishka.entities.type_alias_type import (
     is_type_alias_type,
     unwrap_type_alias,
 )
+from dishka.entities.type_form import TypeForm
 from dishka.exceptions import WhenOverrideConflictError
 from dishka.text_rendering import get_name
 from .exceptions import (
@@ -593,7 +594,7 @@ def _provide(
         *,
         source: ProvideSource | None = None,
         scope: BaseScope | None = None,
-        provides: Any = None,
+        provides: TypeForm[Any] | None = None,
         cache: bool = True,
         is_in_class: bool = True,
         recursive: bool = False,
@@ -643,7 +644,7 @@ def provide_on_instance(
         *,
         source: ProvideSource | None = None,
         scope: BaseScope | None = None,
-        provides: Any = None,
+        provides: TypeForm[Any] | Any = None,
         cache: bool = True,
         recursive: bool = False,
         override: bool = False,
@@ -663,7 +664,7 @@ def provide_on_instance(
 def provide(
         *,
         scope: BaseScope | None = None,
-        provides: Any = None,
+        provides: TypeForm[Any] | None = None,
         cache: bool = True,
         recursive: bool = False,
         override: bool = False,
@@ -677,7 +678,7 @@ def provide(
         source: ProvideSource | None,
         *,
         scope: BaseScope | None = None,
-        provides: Any = None,
+        provides: TypeForm[Any] | None = None,
         cache: bool = True,
         recursive: bool = False,
         override: bool = False,
@@ -690,7 +691,7 @@ def provide(
         source: ProvideSource | None = None,
         *,
         scope: BaseScope | None = None,
-        provides: Any = None,
+        provides: TypeForm[Any] | None = None,
         cache: bool = True,
         recursive: bool = False,
         override: bool = False,

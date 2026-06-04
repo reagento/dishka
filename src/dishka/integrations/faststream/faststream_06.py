@@ -41,8 +41,10 @@ Application: TypeAlias = FastStream | AsgiFastStream
 
 try:
     # import works only if fastapi is installed
-    from faststream._internal.fastapi import Context as FastAPIContext
-    from faststream._internal.fastapi import StreamRouter
+    from faststream._internal.fastapi import (
+        Context as FastAPIContext,
+        StreamRouter,
+    )
 
 except ImportError:
     ContextAnnotation: TypeAlias = Annotated[ContextRepo, Context("context")]

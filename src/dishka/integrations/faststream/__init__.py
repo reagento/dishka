@@ -15,12 +15,11 @@ warnings.warn(
     stacklevel=2,
 )
 
-FASTSTREAM_05 = FASTSTREAM_VERSION.startswith("0.5")
-FASTSTREAM_06 = FASTSTREAM_VERSION.startswith("0.6")
-
-if FASTSTREAM_05:
+if FASTSTREAM_VERSION.startswith("0.5"):
     from .faststream_05 import FastStreamProvider, inject, setup_dishka
-elif FASTSTREAM_06:
+elif (
+    FASTSTREAM_VERSION.startswith(("0.6", "0.7"))
+):
     from .faststream_06 import (  # type: ignore[assignment]
         FastStreamProvider,
         inject,

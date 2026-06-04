@@ -57,6 +57,7 @@ INTEGRATIONS = [
     IntegrationEnv("faststream", "050", python_version_less(3, 13)),
     IntegrationEnv("faststream", "0529", python_version_less(3, 14)),
     IntegrationEnv("faststream", "060"),
+    IntegrationEnv("faststream", "070"),
     IntegrationEnv("faststream", "latest"),
     IntegrationEnv("flask", "302"),
     IntegrationEnv("flask", "latest"),

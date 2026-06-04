@@ -27,7 +27,7 @@ FASTSTREAM_VERSION = version("faststream")
 
 # `broker.request` was introduced in FastStream 0.5.19
 # `broker.publish(..., rpc=True)` was removed in FastStream 0.6.0rc0
-if FASTSTREAM_VERSION.startswith("0.6"):
+if FASTSTREAM_VERSION.startswith(("0.6", "0.7")):
     pytestmark = pytest.mark.skip(
         reason="These tests is not compatible with FastStream 0.6",
     )

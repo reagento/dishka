@@ -1,4 +1,18 @@
 [default.extend-words]
+# error: `asend` should be `ascend`
+#    --> .\src\dishka\async_container.py:331:32
+#     |
+# 331 |                     await agen.asend(exception)
+#     |                                ^^^^^
 asend = "asend"
 # Remove after dishka 2.0!!!
+# error: `settigs` should be `settings`
+#   |
+# 1 | .\src\dishka\entities\validation_settigs.py
+#   |                                  ^^^^^^^
+# error: `settigs` should be `settings`
+#   --> .\src\dishka\entities\validation_settigs.py:10:34
+#    |
+# 10 |     "`dishka.entities.validation_settigs`"
+#    |                                  ^^^^^^^
 settigs = "settigs"

@@ -25,7 +25,7 @@ def get_name(hint: Any, *, include_module: bool) -> str:
         return f"{type(hint).__name__}({value_name})"
     if hint is ...:
         return "..."
-    if func := getattr(object, "__func__", None):
+    if func := getattr(hint, "__func__", None):
         return get_name(func, include_module=include_module)
 
     if include_module:

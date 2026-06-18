@@ -44,8 +44,8 @@ jobs:
     environment:
       name: pypi
     permissions:
+      # Used to sign the release's artifacts and upload to PyPI using trusted publisher
       id-token: write
-      contents: read
 
     steps:
       - name: "Download artifact"

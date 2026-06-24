@@ -16,6 +16,7 @@ Some of the integrations are supported by a community, refer to their documentat
    aiogram
    aiogram_dialog
    aiohttp
+   airflow <https://github.com/C3EQUALZz/dishka-airflow>
    arq
    celery
    click
@@ -78,7 +79,7 @@ Some of the integrations are supported by a community, refer to their documentat
      -
    * -  `Starlette <https://github.com/reagento/starlette-dishka>`_ (:abbr:`com (Community support)`)
      -
-     -
+     - `Airflow <https://github.com/C3EQUALZz/dishka-airflow>`_ (:abbr:`com (Community support)`)
      -
    * - `Strawberry <https://github.com/aryadovoy/dishka-strawberry>`_ (:abbr:`com (Community support)`)
      -

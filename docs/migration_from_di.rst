@@ -63,13 +63,7 @@ Any dependency scoped to ``Scope.APP`` is created once and reused across all
 requests, just like a ``Singleton`` — but you set this per-dependency rather
 than choosing a different provider class.
 
-.. note::
 
-   More patterns (configuration, resources/finalization, wiring, and test
-   overrides) will be added to this guide as they are written. See
-   `issue #402 <https://github.com/reagento/dishka/issues/402>`_ for the
-   full list of planned sections.
-```
 Configuration
 --------------
 
@@ -163,3 +157,64 @@ Dishka calls the cleanup code automatically when the relevant scope exits
 (for example, when a ``with container() as request_container:`` block
 ends) — you don't need to register finalizers separately, the same
 function handles both creation and teardown.
+Wiring (injecting dependencies into functions)
+-------------------------------------------------
+
+``dependency-injector`` uses the ``@inject`` decorator together with
+``Provide[Container.x]`` markers to inject dependencies into function
+parameters:
+
+.. code-block:: python
+
+    # dependency-injector
+    from dependency_injector.wiring import inject, Provide
+
+    @inject
+    def process(service: Service = Provide[Container.service]) -> None:
+        ...
+
+    Container.wire(modules=[__name__])
+
+Dishka also uses ``@inject``, but instead of a default-value marker tied to
+a specific container, it uses a type annotation (``FromDishka[X]``) that
+works independently of any one container instance:
+
+.. code-block:: python
+
+    # dishka
+    from dishka import FromDishka
+    from dishka.integrations.fastapi import inject
+
+    @inject
+    async def process(service: FromDishka[Service]) -> None:
+        ...
+
+For web frameworks, Dishka also provides a ``setup_dishka()`` call that
+wires the container into the framework automatically (see the Quickstart
+example with FastAPI) — there's no separate manual ``wire(modules=...)``
+step.
+
+Overriding dependencies for tests
+------------------------------------
+
+``dependency-injector`` lets you override a provider directly for testing:
+
+.. code-block:: python
+
+    # dependency-injector
+    with Container.api_client.override(providers.Object(FakeAPIClient())):
+        ...
+
+In Dishka, you build a container with a test-specific provider in place of
+the real one, since providers are just passed into ``make_container()``:
+
+.. code-block:: python
+
+    # dishka
+    test_provider = Provider(scope=Scope.APP)
+    test_provider.provide(FakeAPIClient, provides=APIClient)
+
+    container = make_container(test_provider, ConnectionProvider())
+
+This keeps the override explicit and scoped to the test container you
+build, rather than mutating shared global container state.

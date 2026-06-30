@@ -119,3 +119,47 @@ resulting object like any other dependency:
 Dishka resolves it from ``ConfigProvider`` automatically — there's no
 separate configuration "tree" to populate, since config is just another
 typed dependency.
+
+Resources and finalization
+----------------------------
+
+``dependency-injector`` has a ``providers.Resource`` type for dependencies
+that need explicit setup and teardown — like a database connection that
+must be closed when the app shuts down:
+
+.. code-block:: python
+
+    # dependency-injector
+    from dependency_injector import containers, providers
+
+    def init_connection():
+        connection = sqlite3.connect(":memory:")
+        yield connection
+        connection.close()
+
+    class Container(containers.DeclarativeContainer):
+        connection = providers.Resource(init_connection)
+
+In Dishka, there's no separate provider type for this — any ``@provide``
+method can be written as a generator that ``yield``s the dependency, and
+whatever code runs after the ``yield`` is treated as cleanup:
+
+.. code-block:: python
+
+    # dishka
+    import sqlite3
+    from collections.abc import Iterable
+    from sqlite3 import Connection
+    from dishka import Provider, Scope, provide
+
+    class ConnectionProvider(Provider):
+        @provide(scope=Scope.REQUEST)
+        def new_connection(self) -> Iterable[Connection]:
+            connection = sqlite3.connect(":memory:")
+            yield connection
+            connection.close()
+
+Dishka calls the cleanup code automatically when the relevant scope exits
+(for example, when a ``with container() as request_container:`` block
+ends) — you don't need to register finalizers separately, the same
+function handles both creation and teardown.

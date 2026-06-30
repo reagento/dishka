@@ -70,3 +70,52 @@ than choosing a different provider class.
    `issue #402 <https://github.com/reagento/dishka/issues/402>`_ for the
    full list of planned sections.
 ```
+Configuration
+--------------
+
+``dependency-injector`` ships a dedicated ``providers.Configuration`` object
+that can be populated from environment variables, YAML, or dictionaries, and
+then injected into other providers:
+
+.. code-block:: python
+
+    # dependency-injector
+    from dependency_injector import containers, providers
+
+    class Container(containers.DeclarativeContainer):
+        config = providers.Configuration()
+        api_client = providers.Factory(
+            APIClient,
+            base_url=config.api.base_url,
+        )
+
+    container = Container()
+    container.config.from_env("API_BASE_URL", as_=str)
+    # or: container.config.from_yaml("config.yml")
+
+Dishka has no dedicated configuration provider. Instead, you load your
+configuration however you'd normally do it in plain Python (environment
+variables, a settings library, a YAML loader, etc.), and provide the
+resulting object like any other dependency:
+
+.. code-block:: python
+
+    # dishka
+    from dataclasses import dataclass
+    from dishka import Provider, Scope, provide
+
+    @dataclass
+    class ApiConfig:
+        base_url: str
+
+    class ConfigProvider(Provider):
+        @provide(scope=Scope.APP)
+        def get_config(self) -> ApiConfig:
+            return ApiConfig(base_url=os.environ["API_BASE_URL"])
+
+    service_provider.provide(APIClient)  # APIClient.__init__ takes ApiConfig
+
+``APIClient`` simply declares ``ApiConfig`` as a constructor parameter, and
+Dishka resolves it from ``ConfigProvider`` automatically — there's no
+separate configuration "tree" to populate, since config is just another
+typed dependency.

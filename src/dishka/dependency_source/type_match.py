@@ -100,11 +100,6 @@ class _TypeMatcher:
                 if self._is_literal_same_types(t2, constraints1):
                     return True
                 return False
-            if _is_union(t2):
-                return all(
-                    self._is_constraint_broader(t1, arg)
-                    for arg in get_args(t2)
-                )
             return t2 in constraints1
         if t2.__constraints__:
             constraints2 = eval_maybe_forward_many(t2.__constraints__, t2)

@@ -87,10 +87,9 @@ TSubCCD = TypeVar("TSubCCD", "C", SubC, D)
         # union member satisfies the bound.
         (TC, SubC | SubC2, True),
         (TC, SubC | D, False),
-        # bare union vs a constrained TypeVar: broader iff every member is
-        # exactly one of the constraints (invariant, not subclassing).
-        (TCD, C | D, True),
-        (TCD, C | SubC2, False),
+        # a constrained TypeVar is invariant: it can only be one exact
+        # constraint, never a union of them.
+        (TCD, C | D, False),
     ],
 )
 def test_is_broader_or_same_type(*, first: T, second: T, match: bool):

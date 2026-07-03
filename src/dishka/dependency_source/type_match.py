@@ -1,28 +1,38 @@
 from __future__ import annotations
 
 import sys
+import types
 from collections.abc import Iterable, Sequence
 from typing import (
     Any,
     ForwardRef,
     Literal,
     TypeVar,
+    Union,
     get_args,
     get_origin,
 )
 
 from dishka._adaptix.type_tools.basic_utils import eval_forward_ref, is_generic
+from dishka.entities.type_alias_type import unwrap_type_alias
 from dishka.exception_base import DishkaError
 
 
+def _is_union(t: Any) -> bool:
+    return get_origin(t) in (Union, types.UnionType)
+
+
 def eval_maybe_forward(t: Any, wrapper: Any) -> Any:
+    t = unwrap_type_alias(t)
     if isinstance(t, str):
         t = ForwardRef(t)
     elif not isinstance(t, ForwardRef):
         return t
-    return eval_forward_ref(
-        vars(sys.modules[wrapper.__module__]),
-        t,
+    return unwrap_type_alias(
+        eval_forward_ref(
+            vars(sys.modules[wrapper.__module__]),
+            t,
+        ),
     )
 
 
@@ -46,9 +56,9 @@ class _TypeMatcher:
         if len(args1) != len(params1):
             args1 += params1[len(args1):]
         args2 = eval_maybe_forward_many(get_args(t2), t2)
-        params2 = t1.__parameters__
+        params2 = t2.__parameters__
         if len(args2) != len(params2):
-            args2 += params1[len(args2):]
+            args2 += params2[len(args2):]
 
         if len(args1) != len(args2):
             return False
@@ -61,28 +71,40 @@ class _TypeMatcher:
         bound1 = eval_maybe_forward(t1.__bound__, t1)
         if get_origin(bound1):
             raise UnsupportedGenericBoundsError(t1)
+        t2 = unwrap_type_alias(t2)
         if not isinstance(t2, TypeVar):
             origin2 = get_origin(t2)
             if origin2 == Literal:
                 if self._is_literal_same_types(t2, [bound1]):
                     return True
                 return False
+            if _is_union(t2):
+                return all(
+                    self._is_bound_broader(t1, arg)
+                    for arg in get_args(t2)
+                )
             if origin2:
                 t2 = origin2
-            return issubclass(t2, bound1)
+            return isinstance(t2, type) and issubclass(t2, bound1)
         if t2.__bound__:
             bound2 = eval_maybe_forward(t2.__bound__, t2)
-            return issubclass(bound2, bound1)
+            return isinstance(bound2, type) and issubclass(bound2, bound1)
         return False
 
     def _is_constraint_broader(self, t1: TypeVar, t2: Any) -> bool:
         constraints1 = eval_maybe_forward_many(t1.__constraints__, t1)
+        t2 = unwrap_type_alias(t2)
         if not isinstance(t2, TypeVar):
             origin2 = get_origin(t2)
             if origin2 == Literal:
                 if self._is_literal_same_types(t2, constraints1):
                     return True
                 return False
+            if _is_union(t2):
+                return all(
+                    self._is_constraint_broader(t1, arg)
+                    for arg in get_args(t2)
+                )
             return t2 in constraints1
         if t2.__constraints__:
             constraints2 = eval_maybe_forward_many(t2.__constraints__, t2)
@@ -113,6 +135,8 @@ class _TypeMatcher:
         )
 
     def is_broader_or_same_type(self, t1: Any, t2: Any) -> bool:
+        t1 = unwrap_type_alias(t1)
+        t2 = unwrap_type_alias(t2)
         if t1 == t2:
             return True
         if get_origin(t1) is not None or is_generic(t1):

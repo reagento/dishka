@@ -27,7 +27,11 @@ elif (
     )
 else:
     raise RuntimeError(  # noqa: TRY003
-        f"FastStream {FASTSTREAM_VERSION} version not supported",
+        f"FastStream {FASTSTREAM_VERSION} version not supported. "
+        "The integration has been moved to the dishka-faststream package"
+        " and will be removed in future versions."
+        "\n`pip install dishka-faststream`"
+        "\nhttps://github.com/faststream-community/dishka-faststream",
     )
 
 __all__ = (

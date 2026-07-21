@@ -28,8 +28,8 @@ __all__ = [
     "provide_all",
 ]
 
+from ._adaptix.type_tools.type_evaler import exec_type_checking
 from .async_container import AsyncContainer, make_async_container
-from .code_tools.type_tools import exec_type_checking
 from .container import Container, make_container
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.depends_marker import FromDishka

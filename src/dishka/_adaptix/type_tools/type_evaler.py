@@ -4,7 +4,8 @@ from collections.abc import Callable, Sequence
 from types import ModuleType
 
 
-def make_fragments_collector(*, typing_modules: Sequence[str]) -> Callable[[ast.Module], list[ast.stmt]]:
+def make_fragments_collector(*, typing_modules: Sequence[str]) \
+    -> Callable[[ast.Module], list[ast.stmt]]:
     def check_condition(expr: ast.expr) -> bool:
         # searches for `TYPE_CHECKING`
         if (
@@ -15,7 +16,7 @@ def make_fragments_collector(*, typing_modules: Sequence[str]) -> Callable[[ast.
             return True
 
         # searches for `typing.TYPE_CHECKING`
-        if (  # noqa: SIM103
+        if (
             isinstance(expr, ast.Attribute)
             and expr.attr == "TYPE_CHECKING"
             and isinstance(expr.ctx, ast.Load)
@@ -26,10 +27,12 @@ def make_fragments_collector(*, typing_modules: Sequence[str]) -> Callable[[ast.
             return True
         return False
 
-    def collect_type_checking_only_fragments(module: ast.Module) -> list[ast.stmt]:
+    def collect_type_checking_only_fragments(module: ast.Module) \
+        -> list[ast.stmt]:
         fragments = []
         for stmt in module.body:
-            if isinstance(stmt, ast.If) and not stmt.orelse and check_condition(stmt.test):
+            if isinstance(stmt, ast.If) \
+                and not stmt.orelse and check_condition(stmt.test):
                 fragments.extend(stmt.body)
 
         return fragments
@@ -46,9 +49,10 @@ def exec_type_checking(
     collector: Callable[[ast.Module], list[ast.stmt]] = default_collector,
 ) -> None:
     """This function scans module source code,
-    collects fragments under ``if TYPE_CHECKING`` and ``if typing.TYPE_CHECKING``
-    and executes them in the context of module.
-    After these, all imports and type definitions became available at runtime for analysis.
+    collects fragments under ``if TYPE_CHECKING``
+    and ``if typing.TYPE_CHECKING`` and executes them in the context of module.
+    After these, all imports and type definitions became
+    available at runtime for analysis.
 
     By default, it ignores ``if`` with ``else`` branch.
 
@@ -57,7 +61,8 @@ def exec_type_checking(
     """
     source = inspect.getsource(module)
     fragments = collector(ast.parse(source))
-    code = compile(ast.Module(fragments, type_ignores=[]), f"<exec_type_checking of {module}>", "exec")
+    code = compile(ast.Module(fragments, type_ignores=[]),
+                   f"<exec_type_checking of {module}>", "exec")
     namespace = module.__dict__.copy()
     exec(code, namespace)  # noqa: S102
     for k, v in namespace.items():

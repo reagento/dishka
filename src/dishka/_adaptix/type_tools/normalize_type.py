@@ -5,7 +5,7 @@ import types
 import typing
 from abc import ABC, abstractmethod
 from collections import abc as c_abc, defaultdict
-from collections.abc import Hashable, Iterable, Sequence
+from collections.abc import Callable, Hashable, Iterable, Sequence
 from copy import copy
 from dataclasses import InitVar, dataclass
 from enum import Enum, EnumMeta
@@ -13,7 +13,6 @@ from functools import lru_cache, partial
 from typing import (
     Annotated,
     Any,
-    Callable,
     ClassVar,
     Final,
     ForwardRef,
@@ -21,6 +20,11 @@ from typing import (
     NewType,
     NoReturn,
     Optional,
+    ParamSpec,
+    ParamSpecArgs,
+    ParamSpecKwargs,
+    TypeAlias,
+    TypeGuard,
     TypeVar,
     Union,
     overload,
@@ -28,15 +32,12 @@ from typing import (
 
 from ..common import TypeHint, VarTuple
 from ..feature_requirement import (
-    HAS_PARAM_SPEC,
-    HAS_PY_310,
     HAS_PY_311,
+    HAS_PY_313,
     HAS_SELF_TYPE,
+    HAS_TV_DEFAULT,
     HAS_TV_SYNTAX,
     HAS_TV_TUPLE,
-    HAS_TYPE_ALIAS,
-    HAS_TYPE_GUARD,
-    HAS_TYPE_UNION_OP,
     HAS_TYPED_DICT_REQUIRED,
     HAS_UNPACK,
 )
@@ -66,7 +67,7 @@ T = TypeVar("T")
 
 
 class _BasicNormType(BaseNormType, ABC):
-    __slots__ = ("_source", "_args")
+    __slots__ = ("_args", "_source")
 
     def __init__(self, args: VarTuple[Any], *, source: TypeHint):
         self._source = source
@@ -135,7 +136,7 @@ def _type_and_value_iter(args):
     return [(type(arg), arg) for arg in args]
 
 
-LiteralArg = Union[str, int, bytes, Enum]
+LiteralArg = str | int | bytes | Enum
 
 
 class _LiteralNormType(_BasicNormType):
@@ -212,65 +213,11 @@ class Constraints:
     value: VarTuple[BaseNormType]
 
 
-TypeVarLimit = Union[Bound, Constraints]
+TypeVarLimit = Bound | Constraints
 
 
-class NormTV(BaseNormType):
-    __slots__ = ("_var", "_limit", "_variance", "_source")
-
-    def __init__(self, var: Any, limit: TypeVarLimit, *, source: TypeHint):
-        self._var = var
-        self._source = source
-        self._limit = limit
-
-        if var.__covariant__:
-            self._variance = Variance.COVARIANT
-        if var.__contravariant__:
-            self._variance = Variance.CONTRAVARIANT
-        if getattr(var, "__infer_variance__", False):
-            self._variance = Variance.INFERRED
-        self._variance = Variance.INVARIANT
-
-    @property
-    def origin(self) -> Any:
-        return self._var
-
-    @property
-    def args(self) -> tuple[()]:
-        return ()
-
-    @property
-    def source(self) -> TypeHint:
-        return self._source
-
-    @property
-    def name(self) -> str:
-        return self._var.__name__
-
-    @property
-    def variance(self) -> Variance:
-        return self._variance
-
-    @property
-    def limit(self) -> TypeVarLimit:
-        return self._limit
-
-    def __repr__(self):
-        return f"<{type(self).__name__}({self._var})>"
-
-    def __hash__(self):
-        return hash(self._var)
-
-    def __eq__(self, other):
-        if isinstance(other, NormTV):
-            return self._var == other._var
-        if isinstance(other, BaseNormType):
-            return False
-        return NotImplemented
-
-
-class NormTVTuple(BaseNormType):
-    __slots__ = ("_var", "_source")
+class _BaseNormTypeVarLike(BaseNormType):
+    __slots__ = ("_source", "_var")
 
     def __init__(self, var: Any, *, source: TypeHint):
         self._var = var
@@ -299,11 +246,69 @@ class NormTVTuple(BaseNormType):
         return hash(self._var)
 
     def __eq__(self, other):
-        if isinstance(other, NormTVTuple):
+        if isinstance(other, type(self)):
             return self._var == other._var
         if isinstance(other, BaseNormType):
             return False
         return NotImplemented
+
+
+class NormTV(_BaseNormTypeVarLike):
+    __slots__ = (*_BaseNormTypeVarLike.__slots__, "_limit", "_variance", "_default")
+
+    def __init__(self, var: Any, limit: TypeVarLimit, *, source: TypeHint, default: BaseNormType | None):
+        super().__init__(var, source=source)
+        self._limit = limit
+
+        if var.__covariant__:
+            self._variance = Variance.COVARIANT
+        if var.__contravariant__:
+            self._variance = Variance.CONTRAVARIANT
+        if getattr(var, "__infer_variance__", False):
+            self._variance = Variance.INFERRED
+        self._variance = Variance.INVARIANT
+        self._default = default
+
+    @property
+    def variance(self) -> Variance:
+        return self._variance
+
+    @property
+    def limit(self) -> TypeVarLimit:
+        return self._limit
+
+    @property
+    def default(self) -> BaseNormType | None:
+        return self._default
+
+
+class NormTVTuple(_BaseNormTypeVarLike):
+    __slots__ = (*_BaseNormTypeVarLike.__slots__, "_default")
+
+    def __init__(self, var: Any, *, source: TypeHint, default: tuple[BaseNormType, ...] | None):
+        super().__init__(var, source=source)
+        self._default = default
+
+    @property
+    def default(self) -> tuple[BaseNormType, ...] | None:
+        return self._default
+
+
+class NormParamSpec(_BaseNormTypeVarLike):
+    __slots__ = (*_BaseNormTypeVarLike.__slots__, "_limit", "_default")
+
+    def __init__(self, var: Any, limit: TypeVarLimit, *, source: TypeHint, default: tuple[BaseNormType, ...] | None):
+        super().__init__(var, source=source)
+        self._default = default
+        self._limit = limit
+
+    @property
+    def limit(self) -> TypeVarLimit:
+        return self._limit
+
+    @property
+    def default(self) -> tuple[BaseNormType, ...] | None:
+        return self._default
 
 
 class NormParamSpecMarker(BaseNormType, ABC):
@@ -314,7 +319,7 @@ class NormParamSpecMarker(BaseNormType, ABC):
         self._source = source
 
     @property
-    def param_spec(self) -> NormTV:
+    def param_spec(self) -> NormParamSpec:
         return self._param_spec
 
     @property
@@ -348,16 +353,17 @@ class _NormParamSpecKwargs(NormParamSpecMarker):
         return typing.ParamSpecKwargs
 
 
-AnyNormTypeVarLike = Union[NormTV, NormTVTuple]
+AnyNormTypeVarLike = NormTV | NormTVTuple | NormParamSpec
 
 
 class NormTypeAlias(BaseNormType):
-    __slots__ = ("_type_alias", "_args", "_norm_type_vars")
+    __slots__ = ("_args", "_norm_type_vars", "_source", "_type_alias")
 
-    def __init__(self, type_alias, args: VarTuple[BaseNormType], type_vars: VarTuple[AnyNormTypeVarLike]):
+    def __init__(self, type_alias, args: VarTuple[BaseNormType], type_vars: VarTuple[AnyNormTypeVarLike], source):
         self._type_alias = type_alias
         self._args = args
         self._type_vars = type_vars
+        self._source = source
 
     @property
     def origin(self) -> Any:
@@ -369,7 +375,7 @@ class NormTypeAlias(BaseNormType):
 
     @property
     def source(self) -> TypeHint:
-        return self._type_alias
+        return self._source
 
     @property
     def value(self):
@@ -394,7 +400,10 @@ class NormTypeAlias(BaseNormType):
         return hash(self._type_alias)
 
 
-_PARAM_SPEC_MARKER_TYPES = (typing.ParamSpecArgs, typing.ParamSpecKwargs) if HAS_PARAM_SPEC else ()
+_SPECIAL_CONSTRUCTOR_TYPE = (
+    TypeVar, ParamSpecArgs, ParamSpecKwargs, ParamSpec,
+    *((typing.TypeVarTuple,) if HAS_TV_TUPLE else ()),
+)
 
 
 def make_norm_type(
@@ -413,11 +422,7 @@ def make_norm_type(
         return _LiteralNormType(args, source=source)
     if origin == Annotated:
         return _AnnotatedNormType(args, source=source)
-    if isinstance(origin, TypeVar):
-        raise TypeError
-    if HAS_PARAM_SPEC and (
-        isinstance(origin, _PARAM_SPEC_MARKER_TYPES) or isinstance(source, _PARAM_SPEC_MARKER_TYPES)
-    ):
+    if isinstance(origin, _SPECIAL_CONSTRUCTOR_TYPE) or isinstance(source, _SPECIAL_CONSTRUCTOR_TYPE):
         raise TypeError
     return _NormType(origin, args, source=source)
 
@@ -450,7 +455,7 @@ def _create_norm_literal(args: Iterable):
 
 def _replace_source(norm: BaseNormType, *, source: TypeHint) -> BaseNormType:
     norm_copy = copy(norm)
-    norm_copy._source = source  # type: ignore[attr-defined, unused-ignore]
+    norm_copy._source = source  # type: ignore[attr-defined]
     return norm_copy
 
 
@@ -461,7 +466,7 @@ def _replace_source_with_union(norm: BaseNormType, sources: list) -> BaseNormTyp
     )
 
 
-NormAspect = Callable[["TypeNormalizer", Any, Any, tuple], Optional[BaseNormType]]
+NormAspect = Callable[["TypeNormalizer", Any, Any, tuple], BaseNormType | None]
 
 
 class AspectStorage(list[str]):
@@ -473,7 +478,7 @@ class AspectStorage(list[str]):
     def add(self, func: NormAspect) -> NormAspect:
         ...
 
-    def add(self, func: Optional[NormAspect] = None, *, condition: object = True) -> Any:
+    def add(self, func: NormAspect | None = None, *, condition: object = True) -> Any:
         if func is None:
             return partial(self.add, condition=condition)
 
@@ -496,7 +501,7 @@ TN = TypeVar("TN", bound="TypeNormalizer")
 class TypeNormalizer:
     def __init__(self, implicit_params_getter: ImplicitParamsGetter):
         self.implicit_params_getter = implicit_params_getter
-        self._namespace: Optional[dict[str, Any]] = None
+        self._namespace: dict[str, Any] | None = None
 
     def _with_namespace(self: TN, namespace: dict[str, Any]) -> TN:
         self_copy = copy(self)
@@ -534,19 +539,24 @@ class TypeNormalizer:
         raise RuntimeError
 
     def _norm_forward_ref(self, tp):
-        if self._namespace is not None:
-            if isinstance(tp, str):
-                return _replace_source(
-                    self.normalize(ForwardRef(tp)),
-                    source=tp,
-                )
-            if isinstance(tp, ForwardRef):
-                return _replace_source(
-                    self.normalize(eval_forward_ref(self._namespace, tp)),
-                    source=tp,
-                )
-        elif isinstance(tp, (str, ForwardRef)):
-            raise ValueError(f"Can not normalize value {tp!r}, there are no namespace to evaluate types")
+        if isinstance(tp, str):
+            fwd_ref = ForwardRef(tp)
+        elif isinstance(tp, ForwardRef):
+            fwd_ref = tp
+        else:
+            return None
+
+        if fwd_ref.__forward_module__ is not None:
+            ns = fwd_ref.__forward_module__.__dict__
+        elif self._namespace is not None:
+            ns = self._namespace
+        else:
+            raise ValueError(f"Cannot normalize value {tp!r}, there are no namespace to evaluate types")
+
+        return _replace_source(
+            self.normalize(eval_forward_ref(ns, fwd_ref)),
+            source=tp,
+        )
 
     _aspect_storage = AspectStorage()
 
@@ -556,12 +566,12 @@ class TypeNormalizer:
     MUST_SUBSCRIBED_ORIGINS = [
         ClassVar, Final, Literal,
         Union, Optional, InitVar,
-        Annotated,
+        Annotated, TypeGuard,
     ]
-    if HAS_TYPE_GUARD:
-        MUST_SUBSCRIBED_ORIGINS.append(typing.TypeGuard)
     if HAS_TYPED_DICT_REQUIRED:
         MUST_SUBSCRIBED_ORIGINS.extend([typing.Required, typing.NotRequired])
+    if HAS_PY_313:
+        MUST_SUBSCRIBED_ORIGINS.extend([typing.ReadOnly, typing.TypeIs])  # type: ignore[attr-defined]
 
     @_aspect_storage.add
     def _check_bad_input(self, tp, origin, args):
@@ -606,14 +616,17 @@ class TypeNormalizer:
                 if origin.__constraints__ else
                 namespaced._get_bound(origin)
             )
-            return NormTV(var=origin, limit=limit, source=tp)
+            default = namespaced.normalize(origin.__default__) if HAS_TV_DEFAULT and origin.has_default() else None
+            return NormTV(var=origin, limit=limit, source=tp, default=default)
 
     @_aspect_storage.add(condition=HAS_TV_TUPLE)
     def _norm_type_var_tuple(self, tp, origin, args):
         if isinstance(origin, typing.TypeVarTuple):
-            return NormTVTuple(var=origin, source=tp)
+            namespaced = self._with_module_namespace(origin.__module__)
+            default = namespaced._norm_iter(origin.__default__) if HAS_TV_DEFAULT and origin.has_default() else None
+            return NormTVTuple(var=origin, source=tp, default=default)
 
-    @_aspect_storage.add(condition=HAS_PARAM_SPEC)
+    @_aspect_storage.add
     def _norm_param_spec(self, tp, origin, args):
         if isinstance(tp, typing.ParamSpecArgs):
             return _NormParamSpecArgs(param_spec=self.normalize(origin), source=tp)
@@ -623,19 +636,22 @@ class TypeNormalizer:
 
         if isinstance(origin, typing.ParamSpec):
             namespaced = self._with_module_namespace(origin.__module__)
-            return NormTV(
+            default = namespaced._norm_iter(origin.__default__) if HAS_TV_DEFAULT and origin.has_default() else None
+            return NormParamSpec(
                 var=origin,
                 limit=namespaced._get_bound(origin),
                 source=tp,
+                default=default,
             )
 
     @_aspect_storage.add(condition=HAS_TV_SYNTAX)
     def _norm_type_alias_type(self, tp, origin, args):
         if isinstance(origin, typing.TypeAliasType):
             return NormTypeAlias(
-                origin,
-                self._norm_iter(args),
-                self._norm_iter(tp.__type_params__),
+                type_alias=origin,
+                args=self._norm_iter(args),
+                type_vars=self._norm_iter(tp.__type_params__),
+                source=tp,
             )
 
     @_aspect_storage.add
@@ -709,7 +725,7 @@ class TypeNormalizer:
                 )
 
             if args[0] is Ellipsis:
-                call_args: Any = ...
+                call_args = ...
             elif isinstance(args[0], list):
                 call_args = self._norm_iter(args[0])
                 if HAS_TV_TUPLE:
@@ -775,9 +791,7 @@ class TypeNormalizer:
             result.append(_create_norm_literal(lit_args))
         return result
 
-    _UNION_ORIGINS: list[Any] = [Union]
-    if HAS_TYPE_UNION_OP:
-        _UNION_ORIGINS.append(types.UnionType)
+    _UNION_ORIGINS: list[Any] = [Union, types.UnionType]
 
     @_aspect_storage.add
     def _norm_union(self, tp, origin, args):
@@ -806,11 +820,7 @@ class TypeNormalizer:
                     source=tp,
                 )
 
-    ALLOWED_ZERO_PARAMS_ORIGINS: set[Any] = {Any, NoReturn}
-    if HAS_TYPE_ALIAS:
-        ALLOWED_ZERO_PARAMS_ORIGINS.add(typing.TypeAlias)
-    if HAS_PY_310:
-        ALLOWED_ZERO_PARAMS_ORIGINS.add(dataclasses.KW_ONLY)
+    ALLOWED_ZERO_PARAMS_ORIGINS: set[Any] = {Any, NoReturn, TypeAlias, dataclasses.KW_ONLY}
     if HAS_PY_311:
         ALLOWED_ZERO_PARAMS_ORIGINS.add(typing.Never)
     if HAS_SELF_TYPE:
@@ -844,7 +854,7 @@ class TypeNormalizer:
             or isinstance(origin, type)
             or origin in self.ALLOWED_ZERO_PARAMS_ORIGINS
         ):
-            raise ValueError(f"Can not normalize value {tp!r}")
+            raise ValueError(f"Cannot normalize value {tp!r}")
 
         return _NormType(
             origin,

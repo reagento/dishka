@@ -8,11 +8,11 @@ Analysis of such type hints is not available at runtime.
 
 Let's imagine that we have two files:
 
-.. literalinclude:: /examples/dealing_with_type_checking/chat.py
+.. literalinclude:: examples/dealing_with_type_checking/chat.py
    :caption: File ``chat.py``
    :lines: 2-
 
-.. literalinclude:: /examples/dealing_with_type_checking/message.py
+.. literalinclude:: examples/dealing_with_type_checking/message.py
    :caption: File ``message.py``
    :lines: 2-
 

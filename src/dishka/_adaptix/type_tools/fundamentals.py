@@ -4,7 +4,7 @@ from typing import TypeVar, get_args, get_origin, get_type_hints
 from ..common import TypeHint, VarTuple
 from ..feature_requirement import HAS_SUPPORTED_PYDANTIC_PKG
 
-__all__ = ("is_pydantic_class", "strip_alias", "get_type_vars", "get_generic_args", "get_all_type_hints")
+__all__ = ("get_all_type_hints", "get_generic_args", "get_type_vars", "is_pydantic_class", "strip_alias")
 
 
 if HAS_SUPPORTED_PYDANTIC_PKG:

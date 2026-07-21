@@ -105,7 +105,7 @@ def is_generic_class(cls: type) -> bool:
         cls in BUILTIN_ORIGIN_TO_TYPEVARS
         or (
             issubclass(cls, Generic)
-            and bool(cls.__parameters__) 
+            and bool(cls.__parameters__)
         )
     )
 
@@ -115,8 +115,8 @@ def get_type_vars_of_parametrized(tp: TypeHint) -> VarTuple[TypeVar]:
     if not params:
         return ()
     if isinstance(tp, type):
-        if isinstance(tp, types.GenericAlias):  
-            return params 
+        if isinstance(tp, types.GenericAlias):
+            return params
         return ()
     if strip_alias(tp) != tp and get_generic_args(tp) == ():
         return ()
@@ -125,9 +125,10 @@ def get_type_vars_of_parametrized(tp: TypeHint) -> VarTuple[TypeVar]:
 
 if HAS_PY_314:
     def eval_forward_ref(namespace: dict[str, Any], forward_ref: ForwardRef):
-        return forward_ref.evaluate(globals=namespace) 
+        return forward_ref.evaluate(globals=namespace)
 elif HAS_PY_313:
     def eval_forward_ref(namespace: dict[str, Any], forward_ref: ForwardRef):
         return forward_ref._evaluate(namespace, None, (), recursive_guard=frozenset())
+else:
     def eval_forward_ref(namespace: dict[str, Any], forward_ref: ForwardRef):
         return forward_ref._evaluate(namespace, None, recursive_guard=frozenset())

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .message import Message
@@ -9,4 +9,4 @@ if TYPE_CHECKING:
 class Chat:
     id: int
     name: str
-    messages: List["Message"]
+    messages: list["Message"]

@@ -49,7 +49,7 @@ Usually, it must be at ``main`` module.
 
 .. code-block:: python
 
-   from typing import List, get_type_hints
+   from typing import get_type_hints
 
    from dishka import exec_type_checking
 
@@ -63,7 +63,7 @@ Usually, it must be at ``main`` module.
    assert get_type_hints(chat.Chat) == {
       "id": int,
       "name": str,
-      "messages": List[message.Message],
+      "messages": list[message.Message],
    }
    assert get_type_hints(chat.Message) == {
       "id": int,

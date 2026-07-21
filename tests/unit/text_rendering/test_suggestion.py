@@ -8,7 +8,9 @@ def test_suggest_abstract_factories() -> None:
     expected = (
         "\n * Try use `AnyOf` "
         "or changing the requested dependency to a more abstract. "
-        "Found factories for more abstract dependencies: (object, int);"
+        "Found factories for more abstract dependencies: (object, int)."
+        "\n * If you suggest that error might be due to "
+        "`if TYPE_CHECKING`, try use exec_type_checking();"
     )
     suggest_abstract_factories = [
         FactoryData(
@@ -35,7 +37,9 @@ def test_suggest_concrete_factories() -> None:
     expected = (
         "\n * Try use `WithParents` "
         "or changing `provides` to `object`. "
-        "Found factories for more concrete dependencies: (float, int);"
+        "Found factories for more concrete dependencies: (float, int)."
+        "\n * If you suggest that error might be due to "
+        "`if TYPE_CHECKING`, try use exec_type_checking();"
     )
     suggest_concrete_factories = [
         FactoryData(

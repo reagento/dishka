@@ -455,7 +455,7 @@ def _create_norm_literal(args: Iterable):
 
 def _replace_source(norm: BaseNormType, *, source: TypeHint) -> BaseNormType:
     norm_copy = copy(norm)
-    norm_copy._source = source  # type: ignore[attr-defined]
+    norm_copy._source = source  
     return norm_copy
 
 
@@ -571,7 +571,7 @@ class TypeNormalizer:
     if HAS_TYPED_DICT_REQUIRED:
         MUST_SUBSCRIBED_ORIGINS.extend([typing.Required, typing.NotRequired])
     if HAS_PY_313:
-        MUST_SUBSCRIBED_ORIGINS.extend([typing.ReadOnly, typing.TypeIs])  # type: ignore[attr-defined]
+        MUST_SUBSCRIBED_ORIGINS.extend([typing.ReadOnly, typing.TypeIs])  
 
     @_aspect_storage.add
     def _check_bad_input(self, tp, origin, args):

@@ -34,7 +34,7 @@ class ImplicitParamsGetter:
     def _get_default_tuple(self, type_var) -> VarTuple[TypeHint]:
         if HAS_TV_DEFAULT and type_var.has_default():
             if isinstance(type_var, TypeVar):
-                return (type_var.__default__, )  # type: ignore[attr-defined]
+                return (type_var.__default__, )  
             return type_var.__default__
         return (self._derive_default(type_var), )
 

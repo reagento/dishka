@@ -19,6 +19,7 @@ __all__ = [
     "alias",
     "collect",
     "decorate",
+    "exec_type_checking",
     "from_context",
     "make_async_container",
     "make_container",
@@ -28,6 +29,7 @@ __all__ = [
 ]
 
 from .async_container import AsyncContainer, make_async_container
+from .code_tools.type_tools import exec_type_checking
 from .container import Container, make_container
 from .entities.component import DEFAULT_COMPONENT, Component
 from .entities.depends_marker import FromDishka

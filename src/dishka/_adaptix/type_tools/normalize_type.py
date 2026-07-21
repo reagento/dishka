@@ -727,11 +727,11 @@ class TypeNormalizer:
             if args[0] is Ellipsis:
                 call_args = ...
             elif isinstance(args[0], list):
-                call_args = self._norm_iter(args[0])
+                call_args = self._norm_iter(args[0]) # type: ignore[assignment]
                 if HAS_TV_TUPLE:
-                    call_args = self._unpack_generic_elements(call_args)
+                    call_args = self._unpack_generic_elements(call_args) # type: ignore[assignment]
             else:
-                call_args = normalize_type(args[0])
+                call_args = normalize_type(args[0]) # type: ignore[assignment]
             return _NormType(
                 c_abc.Callable, (call_args, self.normalize(args[-1])), source=tp,
             )

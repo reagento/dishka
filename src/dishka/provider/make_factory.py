@@ -523,7 +523,7 @@ def make_factory(
 ) -> Factory:
     provides, source = _extract_source(provides, source)
 
-    if source and is_protocol(source):
+    if source and is_protocol(source): # type: ignore[no-untyped-call]
         raise CannotUseProtocolError(source)
 
     source_origin = get_origin(source)

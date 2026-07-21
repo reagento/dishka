@@ -10,7 +10,7 @@ _TYPE_TAGS = [Final, ClassVar, InitVar, Annotated]
 if HAS_TYPED_DICT_REQUIRED:
     _TYPE_TAGS.extend([typing.Required, typing.NotRequired])
 if HAS_PY_313:
-    _TYPE_TAGS.extend([typing.ReadOnly, typing.TypeIs])  # type: ignore[attr-defined]
+    _TYPE_TAGS.extend([typing.ReadOnly, typing.TypeIs]) 
 
 
 def strip_tags(norm: BaseNormType) -> BaseNormType:

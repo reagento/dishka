@@ -14,7 +14,7 @@ def render_suggestions_for_missing(
     suggest_concrete_factories: Sequence[FactoryData],
 ) -> str:
     type_checking_suggestion = (
-        "\n * If you suggest that errror might be due to "
+        "\n * If you suggest that error might be due to "
         "`if TYPE_CHECKING`, try use exec_type_checking()."
     )
     suggestion = ""

@@ -128,7 +128,7 @@ if HAS_PY_314:
         return forward_ref.evaluate(globals=namespace) 
 elif HAS_PY_313:
     def eval_forward_ref(namespace: dict[str, Any], forward_ref: ForwardRef):
-        return forward_ref._evaluate(namespace, None, (), recursive_guard=frozenset())  
+        return forward_ref._evaluate(namespace, None, (), recursive_guard=frozenset())  # type: ignore
 else:
     def eval_forward_ref(namespace: dict[str, Any], forward_ref: ForwardRef):
         return forward_ref._evaluate(namespace, None, recursive_guard=frozenset())

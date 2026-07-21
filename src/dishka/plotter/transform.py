@@ -79,7 +79,7 @@ class Transformer:
                 name=node_name,
                 dependencies=[],
                 type=self._node_type(factory),
-                is_protocol=is_protocol(factory.provides.type_hint),  # type: ignore[no-untyped-call]
+                is_protocol=is_protocol(factory.provides.type_hint),
                 source_name=source_name,
             )
             self.nodes[key, scope] = node

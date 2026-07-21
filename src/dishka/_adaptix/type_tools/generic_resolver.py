@@ -1,8 +1,8 @@
 import typing
-from collections.abc import Callable, Collection, Hashable, Mapping
+from collections.abc import Collection, Hashable, Mapping
 from dataclasses import dataclass, replace
 from itertools import chain
-from typing import Generic, TypeVar
+from typing import Callable, Generic, TypeVar
 
 from ..common import TypeHint
 from ..feature_requirement import HAS_TV_TUPLE, HAS_UNPACK
@@ -50,7 +50,8 @@ class GenericResolver(Generic[K, M]):
 
     def _unpack_args(self, args):
         if HAS_UNPACK and any(strip_alias(arg) == typing.Unpack for arg in args):
-            return tuple(arg.source for arg in normalize_type(tuple[args]).args) # type: ignore[valid-type]
+            subscribed = tuple[args]  # type: ignore[valid-type]
+            return tuple(arg.source for arg in normalize_type(subscribed).args)
         return args
 
     def _get_type_var_to_actual(self, type_vars, args):

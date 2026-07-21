@@ -18,7 +18,7 @@ def _false():
 
 
 class Requirement(ABC):
-    __slots__ = ("__bool__", "__dict__", "is_met")
+    __slots__ = ("is_met", "__bool__", "__dict__")
 
     def __init__(self):
         self.is_met = self._evaluate()
@@ -45,19 +45,6 @@ class PythonVersionRequirement(Requirement):
     @property
     def fail_reason(self) -> str:
         return f'Python >= {".".join(map(str, self.min_version))} is required'
-
-
-class MaxPythonVersionRequirement(Requirement):
-    def __init__(self, max_version: VarTuple[int]):
-        self.max_version = max_version
-        super().__init__()
-
-    def _evaluate(self) -> bool:
-        return sys.version_info <= self.max_version
-
-    @property
-    def fail_reason(self) -> str:
-        return f'Python <= {".".join(map(str, self.max_version))} is required'
 
 
 class DistributionRequirement(Requirement):
@@ -162,6 +149,12 @@ class PythonImplementationRequirement(Requirement):
         return f"{self.implementation_name} is required"
 
 
+HAS_PY_310 = PythonVersionRequirement((3, 10))
+HAS_TYPE_UNION_OP = HAS_PY_310
+HAS_TYPE_GUARD = HAS_PY_310
+HAS_TYPE_ALIAS = HAS_PY_310
+HAS_PARAM_SPEC = HAS_PY_310
+
 HAS_PY_311 = PythonVersionRequirement((3, 11))
 HAS_NATIVE_EXC_GROUP = HAS_PY_311
 HAS_TYPED_DICT_REQUIRED = HAS_PY_311
@@ -170,29 +163,18 @@ HAS_TV_TUPLE = HAS_PY_311
 HAS_UNPACK = HAS_PY_311
 
 HAS_PY_312 = PythonVersionRequirement((3, 12))
-MAX_PY_312 = MaxPythonVersionRequirement((3, 12))
 HAS_TV_SYNTAX = HAS_PY_312
-HAS_TYPE_ALIAS_SYNTAX = HAS_PY_312
 
 HAS_PY_313 = PythonVersionRequirement((3, 13))
-MAX_PY_313 = MaxPythonVersionRequirement((3, 13))
-HAS_BYTE_STRING = MAX_PY_313
 HAS_TV_DEFAULT = HAS_PY_313
-
-HAS_PY_314 = PythonVersionRequirement((3, 14))
-MAX_PY_314 = MaxPythonVersionRequirement((3, 14))
-HAS_UNION_TYPE_MERGED = HAS_PY_314
 
 HAS_SUPPORTED_ATTRS_PKG = DistributionVersionRequirement("attrs", "21.3.0")
 HAS_ATTRS_PKG = DistributionRequirement("attrs")
 
-HAS_SUPPORTED_MSGSPEC_PKG = DistributionVersionRequirement("msgspec", "0.14.0")
-HAS_MSGSPEC_PKG = DistributionRequirement("msgspec")
-
 HAS_SUPPORTED_SQLALCHEMY_PKG = DistributionVersionRequirement("sqlalchemy", "2.0.0")
 HAS_SQLALCHEMY_PKG = DistributionRequirement("sqlalchemy")
 
-HAS_SUPPORTED_PYDANTIC_PKG = DistributionVersionRequirement("pydantic", "2.1.0")
+HAS_SUPPORTED_PYDANTIC_PKG = DistributionVersionRequirement("pydantic", "2.0.0")
 HAS_PYDANTIC_PKG = DistributionRequirement("pydantic")
 
 IS_CPYTHON = PythonImplementationRequirement("cpython")

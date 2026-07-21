@@ -16,7 +16,6 @@ from .norm_utils import is_class_var, strip_tags
 from .normalize_type import (
     AnyNormTypeVarLike,
     BaseNormType,
-    NormParamSpec,
     NormParamSpecMarker,
     NormTV,
     NormTVTuple,

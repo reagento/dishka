@@ -3,7 +3,7 @@ import typing
 from typing import Annotated, Any, ForwardRef, Generic, NewType, Protocol, TypedDict, TypeVar, Union
 
 from ..common import TypeHint, VarTuple
-from ..feature_requirement import HAS_PY_312, HAS_PY_313, HAS_PY_314
+from ..feature_requirement import HAS_PY_312
 from .constants import BUILTIN_ORIGIN_TO_TYPEVARS
 from .fundamentals import get_generic_args, get_type_vars, strip_alias
 
@@ -43,15 +43,15 @@ def is_named_tuple_class(tp) -> bool:
     )
 
 
-def is_protocol(tp):
+def is_protocol(tp: object) -> bool:
     if not isinstance(tp, type):
         return False
 
-    return Protocol in tp.__bases__ # type: ignore[comparison-overlap]
+    return Protocol in tp.__bases__  # type: ignore[comparison-overlap]
 
 
 def create_union(args: tuple):
-    return Union[args]  # noqa: UP007
+    return Union[args]
 
 
 def is_parametrized(tp: TypeHint) -> bool:
@@ -64,7 +64,7 @@ if HAS_PY_312:
             bool(get_type_vars(tp))
             and (
                 is_subclass_soft(strip_alias(tp), Generic)
-                or isinstance(tp, typing.TypeAliasType) 
+                or isinstance(tp, typing.TypeAliasType)  # type: ignore[attr-defined, unused-ignore]
             )
         )
 else:
@@ -94,7 +94,17 @@ def is_generic(tp: TypeHint) -> bool:
 
 def is_bare_generic(tp: TypeHint) -> bool:
     """Check if the type could be parameterized, excluding type aliases (list[T] etc.)"""
-    return is_generic(tp) and not is_parametrized(tp)
+    return (
+        (
+            is_generic(strip_alias(tp))
+            # for 3.8 and List (list is not generic)
+            or is_generic(tp)
+            # at 3.8 list is bare_generic but not generic
+            # (this function only needs to create predicate)
+            or tp in BUILTIN_ORIGIN_TO_TYPEVARS
+        )
+        and not is_parametrized(tp)
+    )
 
 
 def is_generic_class(cls: type) -> bool:
@@ -105,7 +115,7 @@ def is_generic_class(cls: type) -> bool:
         cls in BUILTIN_ORIGIN_TO_TYPEVARS
         or (
             issubclass(cls, Generic)
-            and bool(cls.__parameters__) 
+            and bool(cls.__parameters__)  # type: ignore[attr-defined, unused-ignore]
         )
     )
 
@@ -115,20 +125,13 @@ def get_type_vars_of_parametrized(tp: TypeHint) -> VarTuple[TypeVar]:
     if not params:
         return ()
     if isinstance(tp, type):
-        if isinstance(tp, types.GenericAlias):  
-            return params  
+        if isinstance(tp, types.GenericAlias):
+            return params
         return ()
     if strip_alias(tp) != tp and get_generic_args(tp) == ():
         return ()
     return params
 
 
-if HAS_PY_314:
-    def eval_forward_ref(namespace: dict[str, Any], forward_ref: ForwardRef):
-        return forward_ref.evaluate(globals=namespace) 
-elif HAS_PY_313:
-    def eval_forward_ref(namespace: dict[str, Any], forward_ref: ForwardRef):
-        return forward_ref._evaluate(namespace, None, (), recursive_guard=frozenset())  # type: ignore[unused-ignore, misc, arg-type]
-else:
-    def eval_forward_ref(namespace: dict[str, Any], forward_ref: ForwardRef):
-        return forward_ref._evaluate(namespace, None, recursive_guard=frozenset())
+def eval_forward_ref(namespace: dict[str, Any], forward_ref: ForwardRef):
+    return forward_ref._evaluate(namespace, None, recursive_guard=frozenset())

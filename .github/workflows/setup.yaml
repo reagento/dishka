@@ -31,7 +31,7 @@ jobs:
 
           - name: "ast-grep"
             commands: |
-              ast-grep --test-dir tests/ast-grep
+              ast-grep test --test-dir tests/ast-grep
               ast-grep scan
 
     name: ${{ matrix.name }}

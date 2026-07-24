@@ -89,10 +89,12 @@ ignore = [
     "PERF401",
     "FBT003",
     "PLW0108",
+    # check missing copyright notice at top of file
+    "CPY001",
     # identical by code != identical by meaning
     "SIM114",
-    # awful things, never use.
-    # It makes runtime work differently from typechecker
+    # awful things, never use
+    # it makes runtime work differently from typechecker
     "TC001",
     "TC002",
     "TC003",

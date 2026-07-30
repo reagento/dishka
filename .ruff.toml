@@ -1,6 +1,8 @@
 line-length = 79
 target-version = "py310"
 
+output-prefer-rule-codes = true
+
 include = [
     "src/**.py",
     "tests/**.py",
@@ -16,8 +18,6 @@ typing-extensions = false
 
 preview = true
 explicit-preview-rules = true
-
-output-prefer-rule-codes = true
 
 select = ["ALL"]
 extend-select = [

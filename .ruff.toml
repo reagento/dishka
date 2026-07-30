@@ -17,6 +17,8 @@ typing-extensions = false
 preview = true
 explicit-preview-rules = true
 
+output-prefer-rule-codes = true
+
 select = ["ALL"]
 extend-select = [
     # PEP8

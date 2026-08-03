@@ -17,14 +17,13 @@ Getting started
 
 .. code-block::
 
-    python3 -m venv .venv
+    python3 -m venv --upgrade-deps .venv
     source .venv/bin/activate
 
 3. Install development tools and project itself:
 
 .. code-block::
 
-    pip install --upgrade pip  # --group requires pip>=25.1
     pip install --group dev
     uv pip install -e .
 

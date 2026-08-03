@@ -24,6 +24,7 @@ Getting started
 
 .. code-block::
 
+    pip install --upgrade pip  # --group requires pip>=25.1
     pip install --group dev
     uv pip install -e .
 

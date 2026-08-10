@@ -1,12 +1,11 @@
 ## dishka (stands for "cute DI" in Russian)
 
-[![PyPI version](https://badge.fury.io/py/dishka.svg)](https://pypi.python.org/pypi/dishka)
-[![Supported versions](https://img.shields.io/pypi/pyversions/dishka.svg)](https://pypi.python.org/pypi/dishka)
-[![Downloads](https://img.shields.io/pypi/dm/dishka.svg)](https://pypistats.org/packages/dishka)
-[![License](https://img.shields.io/github/license/reagento/dishka)](https://github.com/reagento/dishka/blob/master/LICENSE)
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/reagento/dishka/setup.yaml)](https://github.com/reagento/dishka/actions)
-[![Doc](https://readthedocs.org/projects/dishka/badge/?version=latest&style=flat)](https://dishka.readthedocs.io)
-[![Telegram](https://img.shields.io/badge/💬-Telegram-blue)](https://t.me/reagento_ru)
+![PyPI version](https://shieldcn.dev/badge/dynamic/json.svg?url=https%3A%2F%2Fpypi.org%2Fpypi%2Fdishka%2Fjson&query=%24.info.version&variant=branded&size=xs&mode=light&logo=python&label=pypi+version)
+![PyPI requires python](https://shieldcn.dev/badge/dynamic/json.svg?url=https%3A%2F%2Fpypi.org%2Fpypi%2Fdishka%2Fjson&query=%24.info.requires_python&size=xs&mode=light&logo=python&logoColor=ffffff&label=requires+python&color=3775A9)
+![PyPI downloads](https://shieldcn.dev/badge/dynamic/json.svg?url=https%3A%2F%2Fpypistats.org%2Fapi%2Fpackages%2Fdishka%2Frecent&query=%24.data.last_month&suffix=%2Fmonth&size=xs&mode=light&logo=python&logoColor=ffffff&label=downloads&color=3775A9)
+<a href="https://github.com/reagento/dishka/blob/main/UNLICENSE"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/github/reagento/dishka/license.svg?variant=secondary&font=geist&size=xs&mode=dark"><img alt="License" src="https://shieldcn.dev/github/reagento/dishka/license.svg?variant=secondary&font=geist&size=xs&mode=light"></picture></a>
+<a href="https://github.com/reagento/dishka/actions?query=branch%3Amain"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/github/ci/reagento/dishka.svg?variant=secondary&font=geist&size=xs&animate=pulse&mode=dark"><img alt="CI" src="https://shieldcn.dev/github/ci/reagento/dishka.svg?variant=secondary&font=geist&size=xs&animate=pulse&mode=light"></picture></a>
+<a href="https://t.me/reagento_ru"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/badge/dynamic/json.svg?url=https%3A%2F%2Ftg.chirizxc.workers.dev%2Freagento_ru&query=%24.members&suffix=+members&variant=secondary&size=xs&mode=dark&logo=telegram&logoColor=24A1DE&label=Telegram"/><img alt="Telegram members" src="https://shieldcn.dev/badge/dynamic/json.svg?url=https%3A%2F%2Ftg.chirizxc.workers.dev%2Freagento_ru&query=%24.members&suffix=+members&variant=secondary&size=xs&mode=light&logo=telegram&logoColor=24A1DE&label=Telegram"/></picture></a>
 
 Cute DI framework with scopes and an agreeable API.
 

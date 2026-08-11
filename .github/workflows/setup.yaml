@@ -95,8 +95,9 @@ jobs:
         mypy
 
     - name: "Run tests"
+      # See: https://docs.github.com/en/actions/reference/runners/github-hosted-runners#:~:text=ubuntu%2Dlatest
       run: |
-        nox -t ci
+        nox -t latest --parallel 4
         mv .coverage .coverage.${{ matrix.python-version }}
 
     - name: "Build doc"

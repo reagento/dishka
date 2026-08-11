@@ -41,5 +41,6 @@ jobs:
           uv pip install . --group ci --system
 
       - name: "Run tests"
+        # See: https://docs.github.com/en/actions/reference/runners/github-hosted-runners#:~:text=ubuntu%2Dlatest
         run: |
-          nox -t latest
+          nox -t latest --parallel 4

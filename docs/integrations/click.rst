@@ -17,7 +17,7 @@ How to use
 .. code-block:: python
 
     from dishka import make_container
-    from dishka.integrations.click import setup_dishka, inject
+    from dishka.integrations.click import get_container, setup_dishka, inject
 
 2. Create container in group handler and setup it to click context. Pass ``auto_inject=True`` unless you want to use ``@inject`` decorator explicitly
 
@@ -39,7 +39,18 @@ Or pass your own inject decorator
         container = make_container(MyProvider())
         setup_dishka(container=container, context=context, auto_inject=my_inject)
 
-3. Mark those of your command handlers parameters which are to be injected with ``FromDishka[]``
+3. *(optional)* Close the container manually when ``finalize_container=False``
+
+.. code-block:: python
+
+    setup_dishka(
+        container=container,
+        context=context,
+        finalize_container=False,
+    )
+    context.call_on_close(get_container(context).close)
+
+4. Mark those of your command handlers parameters which are to be injected with ``FromDishka[]``
 
 .. code-block:: python
 

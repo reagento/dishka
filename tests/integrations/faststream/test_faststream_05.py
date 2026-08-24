@@ -76,7 +76,7 @@ async def test_app_dependency(app_provider: AppProvider) -> None:
     app_provider.app_released.assert_called()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_get_container_returns_configured_container(
     app_provider: AppProvider,
 ) -> None:
@@ -170,7 +170,7 @@ async def handle_for_custom_inject(
     return "passed"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_custom_auto_inject(app_provider: AppProvider) -> None:
     async with dishka_app(
         handle_for_custom_inject,

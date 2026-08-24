@@ -67,7 +67,7 @@ async def get_with_app(
     return "passed"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_app_dependency(app_provider: AppProvider) -> None:
     async with dishka_app(get_with_app, app_provider) as client:
         msg = await client.request("", "test")
@@ -78,7 +78,7 @@ async def test_app_dependency(app_provider: AppProvider) -> None:
     app_provider.app_released.assert_called()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_get_container_returns_configured_container(
     app_provider: AppProvider,
 ) -> None:
@@ -101,7 +101,7 @@ async def get_with_request(
     return "passed"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_request_dependency(app_provider: AppProvider) -> None:
     async with dishka_app(get_with_request, app_provider) as client:
         msg = await client.request("", "test")
@@ -111,7 +111,7 @@ async def test_request_dependency(app_provider: AppProvider) -> None:
         app_provider.request_released.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_autoinject_before_subscriber(app_provider: AppProvider) -> None:
     broker = NatsBroker()
     app = FastStream(broker)
@@ -132,7 +132,7 @@ async def test_autoinject_before_subscriber(app_provider: AppProvider) -> None:
     await container.close()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_autoinject_after_subscriber(app_provider: AppProvider) -> None:
     broker = NatsBroker()
     app = FastStream(broker)
@@ -153,7 +153,7 @@ async def test_autoinject_after_subscriber(app_provider: AppProvider) -> None:
     await container.close()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_faststream_with_broker(app_provider: AppProvider) -> None:
     broker = NatsBroker()
 
@@ -181,7 +181,7 @@ async def handle_for_custom_inject(
     return "passed"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_custom_auto_inject(app_provider: AppProvider) -> None:
     async with dishka_app(
         handle_for_custom_inject,

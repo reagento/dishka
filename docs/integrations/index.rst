@@ -21,6 +21,7 @@ Some of the integrations are supported by a community, refer to their documentat
    celery
    click
    fastapi
+   FastMCP <https://github.com/bagowix/dishka-fastmcp>
    faststream
    flask
    flet <https://github.com/C3EQUALZz/dishka-flet>
@@ -64,7 +65,7 @@ Some of the integrations are supported by a community, refer to their documentat
    * - :ref:`Flask`
      -
      - :ref:`Celery`
-     -
+     - `FastMCP <https://github.com/bagowix/dishka-fastmcp>`_ (:abbr:`com (Community support)`)
    * -  :ref:`Litestar`
      -
      - `RQ <https://github.com/prepin/dishka-rq>`_ (:abbr:`com (Community support)`)

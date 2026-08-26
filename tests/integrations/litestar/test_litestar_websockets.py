@@ -1,3 +1,4 @@
+import importlib.util
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from unittest.mock import Mock
@@ -7,6 +8,12 @@ from asgi_lifespan import LifespanManager
 from litestar import Litestar, websocket_listener
 from litestar.handlers import WebsocketListener
 from litestar.testing import TestClient
+
+try:
+    importlib.util.find_spec("litestar.plugins.InitPlugin")
+    HAS_PLUGINS = True
+except ImportError:
+    HAS_PLUGINS = False
 
 from dishka import make_async_container
 from dishka.integrations.litestar import (
@@ -43,6 +50,21 @@ async def dishka_auto_app(view, provider) -> AsyncGenerator[TestClient, None]:
     app = Litestar([router], debug=True)
     container = make_async_container(provider)
     setup_dishka(container, app)
+    async with LifespanManager(app):
+        yield TestClient(app)
+    await container.close()
+
+
+@asynccontextmanager
+async def dishka_plugin_app(
+        view, provider,
+) -> AsyncGenerator[TestClient, None]:
+    from dishka.integrations.litestar import DishkaPlugin
+
+    router = DishkaRouter("", route_handlers=[])
+    router.register(view)
+    container = make_async_container(provider)
+    app = Litestar([router], debug=True, plugins=[DishkaPlugin(container)])
     async with LifespanManager(app):
         yield TestClient(app)
     await container.close()
@@ -104,6 +126,12 @@ class AutoGetWithApp(WebsocketListener):
         (dishka_auto_app, auto_get_with_app),
         (dishka_app, GetWithApp),
         (dishka_auto_app, AutoGetWithApp),
+        *((
+            (dishka_plugin_app, get_with_app),
+            (dishka_plugin_app, auto_get_with_app),
+            (dishka_plugin_app, GetWithApp),
+            (dishka_plugin_app, AutoGetWithApp),
+        ) if HAS_PLUGINS else ()),
     ],
 )
 async def test_app_dependency(
@@ -177,6 +205,12 @@ class AutoGetWithRequest(WebsocketListener):
         (dishka_auto_app, auto_get_with_request),
         (dishka_app, GetWithRequest),
         (dishka_auto_app, AutoGetWithRequest),
+        *((
+            (dishka_plugin_app, get_with_request),
+            (dishka_plugin_app, auto_get_with_request),
+            (dishka_plugin_app, GetWithRequest),
+            (dishka_plugin_app, AutoGetWithRequest),
+        ) if HAS_PLUGINS else ()),
     ],
 )
 async def test_request_dependency(
@@ -200,6 +234,12 @@ async def test_request_dependency(
         (dishka_auto_app, auto_get_with_request),
         (dishka_app, GetWithRequest),
         (dishka_auto_app, AutoGetWithRequest),
+        *((
+            (dishka_plugin_app, get_with_request),
+            (dishka_plugin_app, auto_get_with_request),
+            (dishka_plugin_app, GetWithRequest),
+            (dishka_plugin_app, AutoGetWithRequest),
+        ) if HAS_PLUGINS else ()),
     ],
 )
 async def test_request_dependency2(
@@ -279,6 +319,12 @@ class AutoGetWithWebsocket(WebsocketListener):
         (dishka_auto_app, auto_get_with_websocket),
         (dishka_app, GetWithWebsocket),
         (dishka_auto_app, AutoGetWithWebsocket),
+        *((
+            (dishka_plugin_app, get_with_websocket),
+            (dishka_plugin_app, auto_get_with_websocket),
+            (dishka_plugin_app, GetWithWebsocket),
+            (dishka_plugin_app, AutoGetWithWebsocket),
+        ) if HAS_PLUGINS else ()),
     ],
 )
 async def test_websocket_dependency(

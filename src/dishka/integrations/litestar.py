@@ -13,6 +13,7 @@ from inspect import Parameter
 from typing import ParamSpec, TypeVar, get_type_hints
 
 from litestar import Controller, Litestar, Request, Router, WebSocket
+from litestar.config.app import AppConfig
 from litestar.enums import ScopeType
 from litestar.handlers import (
     BaseRouteHandler,
@@ -29,6 +30,12 @@ from litestar.types import (
     Scope,
     Send,
 )
+
+try:
+    from litestar.plugins import InitPlugin
+    HAS_PLUGINS = True
+except ImportError:
+    HAS_PLUGINS = False
 
 from dishka import AsyncContainer, FromDishka, Provider, from_context
 from dishka import Scope as DIScope
@@ -166,3 +173,15 @@ def setup_dishka(container: AsyncContainer, app: Litestar) -> None:
         app.asgi_handler,
     )
     app.state.dishka_container = container
+
+if HAS_PLUGINS:
+    __all__ += ["DishkaPlugin"]
+
+    class DishkaPlugin(InitPlugin):
+        def __init__(self, container: AsyncContainer):
+            self.container = container
+
+        def on_app_init(self, app_config: AppConfig) -> AppConfig:
+            app_config.state.dishka_container = self.container
+            app_config.middleware.append(make_add_request_container_middleware)
+            return app_config

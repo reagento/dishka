@@ -148,3 +148,45 @@ jobs:
         with:
           name: python-coverage-comment-action
           path: python-coverage-comment-action.txt
+
+  docs-preview:
+    name: "Documentation preview"
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: "Update PR body"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          DOCS_URL: https://dishka--${{ github.event.pull_request.number }}.org.readthedocs.build/en/${{ github.event.pull_request.number }}/
+        run: |
+          set -euo pipefail
+
+          body="$(gh pr view "$PR_NUMBER" --json body --jq '.body // ""')"
+
+          block='<!-- dishka-docs-preview-start -->
+          ## Documentation
+
+          [<img src="https://thesvg.org/icons/read-the-docs/default.svg" alt="Read the Docs" height="14" /> Documentation preview]('"$DOCS_URL"')
+
+          <!-- dishka-docs-preview-end -->'
+
+          body="$(printf '%s\n' "$body" | awk '
+            /<!-- dishka-docs-preview-start -->/ {
+              skip = 1
+            }
+            !skip {
+              print
+            }
+            /<!-- dishka-docs-preview-end -->/ {
+              skip = 0
+            }
+          ')"
+
+          printf '%s\n\n%s\n' "$body" "$block" > body.md
+
+          gh pr edit "$PR_NUMBER" --body-file body.md

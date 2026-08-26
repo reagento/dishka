@@ -9,8 +9,7 @@ on:
   pull_request:
     branches: [ "develop" ]
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.event.pull_request.number || github.sha }}
@@ -155,6 +154,7 @@ jobs:
     if: ${{ github.event_name == 'pull_request' }}
 
     permissions:
+      contents: read
       pull-requests: write
 
     steps:

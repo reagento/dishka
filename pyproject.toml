@@ -52,12 +52,12 @@ dependencies = [
 [dependency-groups]
 typos = ["typos==1.49.0"]
 zizmor = ["zizmor==1.29.0"]
-ast-grep = ["ast-grep-cli==0.45.1"]
+ast-grep = ["ast-grep-cli==0.45.2"]
 ci = [
-    "uv==0.12.3",
-    "ruff==0.16.2",
-    "mypy==2.3.0",
-    "nox==2026.8.10",
+    "uv==0.12.6",
+    "ruff==0.16.4",
+    "mypy==2.3.1",
+    "nox==2026.8.17",
 ]
 dev = [
     { include-group = "ci" },

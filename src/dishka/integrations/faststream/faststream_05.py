@@ -1,5 +1,6 @@
 __all__ = (
     "FastStreamProvider",
+    "get_container",
     "inject",
     "setup_dishka",
 )
@@ -131,6 +132,22 @@ def setup_dishka(
             inject_func,
             *broker._call_decorators,  # noqa: SLF001
         )
+
+    broker.dishka_container = container
+
+
+def get_container(
+    app: "Application | ApplicationLike | None" = None,
+    broker: "BrokerType[Any, Any] | None" = None,
+) -> AsyncContainer:
+    if (app and broker) or (not app and not broker):
+        raise ValueError(  # noqa: TRY003
+            "You must provide either app or broker "
+            "to get dishka container.",
+        )
+    if app:
+        return app.broker.dishka_container
+    return broker.dishka_container
 
 
 def inject(func: Callable[_ParamsP, _ReturnT]) -> Callable[_ParamsP, _ReturnT]:

@@ -27,6 +27,7 @@ How to use
         DishkaRoute,
         FromDishka,
         FastapiProvider,
+        get_container,
         inject,
         setup_dishka,
     )
@@ -83,7 +84,7 @@ How to use
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         yield
-        await app.state.dishka_container.close()
+        await get_container(app).close()
 
     app = FastAPI(lifespan=lifespan)
 
@@ -163,6 +164,7 @@ If you are using sync ``Container``, created using ``make_container`` function, 
     from dishka.integrations.fastapi import (
         FromDishka,
         FastapiProvider,
+        get_container,
         inject_sync,
         setup_dishka,
     )
@@ -183,7 +185,7 @@ If you are using sync ``Container``, created using ``make_container`` function, 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         yield
-        app.state.dishka_container.close()
+        get_container(app).close()
 
     app = FastAPI(lifespan=lifespan)
     app.include_router(router)

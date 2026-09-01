@@ -18,6 +18,7 @@ How to use
 
     from dishka.integrations.arq import (
         FromDishka,
+        get_container,
         inject,
         setup_dishka,
     )
@@ -40,3 +41,9 @@ How to use
 .. code-block:: python
 
     setup_dishka(container=container, worker_settings=WorkerSettings)
+
+5. *(optional)* Close container when the worker stops
+
+.. code-block:: python
+
+    await get_container(WorkerSettings).close()

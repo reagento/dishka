@@ -5,7 +5,7 @@ from dishka.entities.key import DependencyKey
 from .name import get_key_name, get_name, get_source_name
 
 
-def render_suggestions_for_missing(
+def render_suggestions_for_missing(  # noqa: PLR0917
     requested_for: FactoryData | None,
     requested_key: DependencyKey,
     suggest_other_scopes: Sequence[FactoryData],

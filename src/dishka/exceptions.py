@@ -114,7 +114,7 @@ class WhenOverrideConflictError(DishkaError):
 
 
 class NoFactoryError(DishkaError):
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         requested: DependencyKey,
         path: Sequence[FactoryData] = (),
@@ -259,8 +259,10 @@ class UnknownScopeError(InvalidGraphError):
     def __str__(self) -> str:
         name = get_name(self.factory.source, include_module=False)
         return " ".join((
-            f"Scope {self.scope} at `{name}` is unknown, "
-            f"expected one of {self.expected}.",
+            (
+                f"Scope {self.scope} at `{name}` is unknown, "
+                f"expected one of {self.expected}."
+            ),
             self.extend_message,
         ))
 

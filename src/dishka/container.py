@@ -55,7 +55,7 @@ class Container:
         "registry",
     )
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
             self,
             registry: Registry,
             parent_container: "Container | None",

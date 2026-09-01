@@ -12,6 +12,9 @@ on:
 permissions:
   contents: read
 
+env:
+  FORCE_COLOR: "1"
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
@@ -31,8 +34,8 @@ jobs:
 
           - name: "ast-grep"
             commands: |
-              sg test --test-dir tests/ast-grep
-              sg scan
+              ast-grep test --test-dir tests/ast-grep
+              ast-grep scan
 
     name: ${{ matrix.name }}
 
@@ -95,8 +98,9 @@ jobs:
         mypy
 
     - name: "Run tests"
+      # See: https://docs.github.com/en/actions/reference/runners/github-hosted-runners#:~:text=ubuntu%2Dlatest
       run: |
-        nox -t ci
+        nox -t latest --parallel 4
         mv .coverage .coverage.${{ matrix.python-version }}
 
     - name: "Build doc"

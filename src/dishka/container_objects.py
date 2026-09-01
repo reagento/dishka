@@ -12,7 +12,7 @@ Exit: TypeAlias = tuple[
 
 class CompiledFactory(Protocol):
     @abstractmethod
-    def __call__(
+    def __call__(  # noqa: PLR0917
             self,
             getter: Callable[[CompilationKey], Any] | None,
             exits: list[Exit],

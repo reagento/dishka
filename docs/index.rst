@@ -38,6 +38,7 @@ Key features:
    integrations/index
    errors
    alternatives
+   migration_from_di
 
 .. toctree::
    :hidden:

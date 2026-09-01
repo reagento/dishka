@@ -15,6 +15,10 @@ else:
 
 
 def unwrap_type_alias(hint: Any) -> Any:
+    seen: set[Any] = set()
     while is_type_alias_type(hint):
+        if hint in seen:
+            break
+        seen.add(hint)
         hint = hint.__value__
     return hint

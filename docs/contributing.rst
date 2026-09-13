@@ -38,7 +38,7 @@ Currently we use ``ruff`` and ``ast-grep-cli`` to check code. To run it do
 
 .. code-block::
 
-    sg scan
+    ast-grep scan
 
 We do not use ruff formatter for all code, so ensure that you formatted only your part of code proposing new changes.
 We have a lot of checks enabled and some of them can be false positive. Double check your code before suppressing any linter warning.

@@ -130,7 +130,7 @@ class Factory(FactoryData):
             when_dependencies=self.when_dependencies,
         )
 
-    def replace(
+    def replace(  # noqa: PLR0917
         self,
         scope: MayBe[BaseScope] = Special.OMITTED,
         dependencies: MayBe[Sequence[DependencyKey]] = Special.OMITTED,

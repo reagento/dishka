@@ -80,7 +80,7 @@ class InjectedFuncType:
         )
 
 
-def compile_injected_func(
+def compile_injected_func(  # noqa: PLR0917
     injected_func_type: InjectedFuncType,
     container_getter: ContainerGetter[AsyncContainer],
     additional_params: Sequence[Parameter],

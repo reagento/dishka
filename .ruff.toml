@@ -116,6 +116,7 @@ ignore = [
 [per-file-target-version]
 "tests/unit/container/pep695_new_syntax.py" = "py312"
 "tests/unit/container/type_alias_type_provider.py" = "py312"
+"tests/unit/entities/cyclic_aliases.py" = "py312"
 
 [lint.isort]
 no-lines-before = ["local-folder"]

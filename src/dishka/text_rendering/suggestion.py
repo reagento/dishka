@@ -13,6 +13,10 @@ def render_suggestions_for_missing(
     suggest_abstract_factories: Sequence[FactoryData],
     suggest_concrete_factories: Sequence[FactoryData],
 ) -> str:
+    type_checking_suggestion = (
+        "\n * If you suggest that error might be due to "
+        "`if TYPE_CHECKING`, try use exec_type_checking()."
+    )
     suggestion = ""
     if suggest_other_scopes:
         scopes = " or ".join(
@@ -48,6 +52,8 @@ def render_suggestions_for_missing(
         suggestion += ". Found factories for more abstract dependencies: "
         suggestion += abstract_names
 
+        suggestion += type_checking_suggestion
+
     if suggest_concrete_factories:
         concreate_names = ""
         for factory in suggest_concrete_factories:
@@ -66,5 +72,7 @@ def render_suggestions_for_missing(
 
         suggestion += ". Found factories for more concrete dependencies: "
         suggestion += concreate_names
+
+        suggestion += type_checking_suggestion
 
     return suggestion

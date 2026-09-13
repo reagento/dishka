@@ -3,7 +3,7 @@
 Key concepts
 *****************
 
-``dishka`` is a DI-framework and it is designed to create complex objects following dependency injection principle.
+``dishka`` is a DI-framework  and it is designed to create complex objects following dependency injection principle.
 Let's start with some terms.
 
 Dependency

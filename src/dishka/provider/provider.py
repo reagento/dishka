@@ -1,6 +1,7 @@
 import inspect
+import sys
 from collections.abc import Callable, Sequence
-from typing import Any, TypeGuard
+from typing import Any, TypeGuard, overload
 
 from dishka.dependency_source import (
     Activator,
@@ -15,6 +16,7 @@ from dishka.dependency_source import (
 from dishka.entities.component import DEFAULT_COMPONENT, Component
 from dishka.entities.marker import BaseMarker, Marker
 from dishka.entities.scope import BaseScope
+from dishka.entities.type_form import TypeForm
 from .base_provider import BaseProvider, ProviderWrapper
 from .exceptions import (
     NoScopeSetInContextError,
@@ -163,12 +165,43 @@ class Provider(BaseProvider):
         self._add_dependency_sources(composite.dependency_sources)
         return composite
 
+    if sys.version_info >= (3, 15):
+        @overload  # type: ignore[misc]
+        def provide(
+                self,
+                source: Callable[..., Any] | type,
+                *,
+                scope: BaseScope | None = None,
+                provides: TypeForm[Any] | None = None,
+                cache: bool = True,
+                recursive: bool = False,
+                override: bool = False,
+                when: BaseMarker | None = None,
+                allow_static_evaluation: bool = False,
+        ) -> CompositeDependencySource:
+            ...
+    else:
+        @overload  # type: ignore[misc]
+        def provide(
+                self,
+                source: Callable[..., Any] | type,
+                *,
+                scope: BaseScope | None = None,
+                provides: Any = None,
+                cache: bool = True,
+                recursive: bool = False,
+                override: bool = False,
+                when: BaseMarker | None = None,
+                allow_static_evaluation: bool = False,
+        ) -> CompositeDependencySource:
+            ...
+
     def provide(
             self,
             source: Callable[..., Any] | type,
             *,
             scope: BaseScope | None = None,
-            provides: Any = None,
+            provides: TypeForm[Any] | None = None,
             cache: bool = True,
             recursive: bool = False,
             override: bool = False,

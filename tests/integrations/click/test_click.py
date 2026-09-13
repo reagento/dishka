@@ -5,7 +5,7 @@ import pytest
 from click.testing import CliRunner
 
 from dishka import FromDishka, make_container
-from dishka.integrations.click import inject, setup_dishka
+from dishka.integrations.click import get_container, inject, setup_dishka
 from ..common import (
     APP_DEP_VALUE,
     AppDep,
@@ -184,3 +184,22 @@ def test_custom_auto_inject(app_provider: AppProvider) -> None:
         assert result.exit_code == 0
         app_provider.app_mock.assert_called_with(APP_DEP_VALUE)
         app_provider.request_released.assert_not_called()
+
+
+def test_get_container_returns_configured_container(
+    app_provider: AppProvider,
+) -> None:
+    container = make_container(app_provider)
+
+    @click.group()
+    @click.pass_context
+    def main(context: click.Context):
+        setup_dishka(
+            container=container, context=context, finalize_container=False,
+        )
+        assert get_container(context) is container
+
+    result = CliRunner().invoke(main)
+
+    assert result.exit_code == 0
+    container.close()

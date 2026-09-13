@@ -3,6 +3,7 @@ __all__ = [
     "DishkaSyncRoute",
     "FastapiProvider",
     "FromDishka",
+    "get_container",
     "inject",
     "inject_sync",
     "setup_dishka",
@@ -188,3 +189,7 @@ def setup_dishka(container: AsyncContainer | Container, app: FastAPI) -> None:
     else:
         app.add_middleware(SyncContainerMiddleware)
     app.state.dishka_container = container
+
+
+def get_container(app: FastAPI) -> AsyncContainer | Container:
+    return app.state.dishka_container

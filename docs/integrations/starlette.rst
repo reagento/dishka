@@ -26,6 +26,7 @@ How to use
     from dishka.integrations.starlette import (
         FromDishka,
         StarletteProvider,
+        get_container,
         inject,
         setup_dishka,
     )
@@ -66,6 +67,16 @@ How to use
 
     setup_dishka(container=container, app=app)
 
+6. *(optional)* Setup lifespan to close container on app termination
+
+.. code-block:: python
+
+    @asynccontextmanager
+    async def lifespan(app: Starlette):
+        yield
+        await get_container(app).close()
+
+    app = Starlette(lifespan=lifespan)
 
 Websockets
 **********************

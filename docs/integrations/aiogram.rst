@@ -21,6 +21,7 @@ How to use
     from dishka.integrations.aiogram import (
         AiogramProvider,
         FromDishka,
+        get_container,
         inject,
         setup_dishka,
     )
@@ -82,5 +83,8 @@ Or pass your own inject decorator
 
 .. code-block:: python
 
-    dispatcher.shutdown.register(container.close)
+    async def close_dishka():
+        await get_container(dp).close()
+
+    dispatcher.shutdown.register(close_dishka)
 

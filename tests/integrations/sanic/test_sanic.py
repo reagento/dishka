@@ -5,7 +5,12 @@ import pytest
 from sanic import HTTPResponse, Request, Sanic
 
 from dishka import make_async_container
-from dishka.integrations.sanic import FromDishka, inject, setup_dishka
+from dishka.integrations.sanic import (
+    FromDishka,
+    get_container,
+    inject,
+    setup_dishka,
+)
 from ..common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
@@ -78,6 +83,19 @@ async def get_compat(
 ) -> HTTPResponse:
     mock(a)
     return HTTPResponse(status=200)
+
+
+@pytest.mark.asyncio
+async def test_get_container_returns_configured_container(
+    app_provider: AppProvider,
+) -> None:
+    app = Sanic("test")
+    container = make_async_container(app_provider)
+    setup_dishka(container, app)
+
+    assert get_container(app) is container
+
+    await container.close()
 
 
 @pytest.mark.asyncio

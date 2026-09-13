@@ -2,6 +2,7 @@ __all__ = [
     "DishkaRouter",
     "FromDishka",
     "LitestarProvider",
+    "get_container",
     "inject",
     "inject_websocket",
     "setup_dishka",
@@ -166,3 +167,7 @@ def setup_dishka(container: AsyncContainer, app: Litestar) -> None:
         app.asgi_handler,
     )
     app.state.dishka_container = container
+
+
+def get_container(app: Litestar) -> AsyncContainer:
+    return app.state.dishka_container

@@ -11,6 +11,7 @@ from aiohttp.web_routedef import RouteTableDef
 from dishka import make_async_container
 from dishka.integrations.aiohttp import (
     FromDishka,
+    get_container,
     inject,
     setup_dishka,
 )
@@ -160,3 +161,16 @@ async def test_app_dependency_finalized(
         app_provider.app_released.assert_called_once()
     else:
         app_provider.app_released.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_container_returns_configured_container(
+    app_provider: AppProvider,
+) -> None:
+    app = Application()
+    container = make_async_container(app_provider)
+    setup_dishka(container, app=app)
+
+    assert get_container(app) is container
+
+    await container.close()

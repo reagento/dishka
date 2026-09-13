@@ -12,6 +12,7 @@ from dishka import make_async_container
 from dishka.integrations.litestar import (
     DishkaRouter,
     FromDishka,
+    get_container,
     inject,
     setup_dishka,
 )
@@ -59,6 +60,19 @@ async def dishka_auto_app(
 
 async def websocket_handler(data: str):
     pass
+
+
+@pytest.mark.asyncio
+async def test_get_container_returns_configured_container(
+    app_provider: AppProvider,
+) -> None:
+    app = litestar.Litestar()
+    container = make_async_container(app_provider)
+    setup_dishka(container, app)
+
+    assert get_container(app) is container
+
+    await container.close()
 
 
 def get_with_app(request_class: type[Request]):

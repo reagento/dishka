@@ -35,6 +35,7 @@ Key features:
    concepts
    provider/index
    container/index
+   dishka_app
    integrations/index
    errors
    alternatives

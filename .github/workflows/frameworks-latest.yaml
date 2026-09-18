@@ -7,6 +7,9 @@ on:
   schedule:
     - cron: "0 0 * * *"
 
+env:
+  FORCE_COLOR: "1"
+
 jobs:
   cpython:
     runs-on: ${{ matrix.os }}
@@ -41,5 +44,6 @@ jobs:
           uv pip install . --group ci --system
 
       - name: "Run tests"
+        # See: https://docs.github.com/en/actions/reference/runners/github-hosted-runners#:~:text=ubuntu%2Dlatest
         run: |
-          nox -t latest
+          nox -t latest --parallel 4

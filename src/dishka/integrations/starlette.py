@@ -1,6 +1,7 @@
 __all__ = [
     "FromDishka",
     "StarletteProvider",
+    "get_container",
     "inject",
     "setup_dishka",
 ]
@@ -113,3 +114,7 @@ def setup_dishka(container: AsyncContainer, app: Starlette) -> None:
     )
     app.add_middleware(ContainerMiddleware)
     app.state.dishka_container = container
+
+
+def get_container(app: Starlette) -> AsyncContainer:
+    return app.state.dishka_container

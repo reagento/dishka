@@ -2,6 +2,7 @@ __all__ = [
     "DISHKA_APP_CONTAINER_KEY",
     "DISHKA_REQUEST_CONTAINER_KEY",
     "FromDishka",
+    "get_container",
     "inject",
     "setup_dishka",
 ]
@@ -88,3 +89,12 @@ def setup_dishka(
             if hasattr(worker_settings, "on_job_end")
             else job_end(None)
         )
+
+
+def get_container(
+    worker_settings: dict[Any, Any] | Worker | Any,
+) -> AsyncContainer:
+    if isinstance(worker_settings, dict):
+        return worker_settings["ctx"][DISHKA_APP_CONTAINER_KEY]
+    return worker_settings.ctx[DISHKA_APP_CONTAINER_KEY]
+

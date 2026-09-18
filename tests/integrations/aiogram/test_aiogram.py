@@ -14,6 +14,7 @@ from dishka.integrations.aiogram import (
     AiogramProvider,
     AutoInjectMiddleware,
     FromDishka,
+    get_container,
     inject,
     setup_dishka,
 )
@@ -257,6 +258,20 @@ async def test_aiogram_provider_with_container_middleware(bot):
 
     async with dishka_auto_app(handler, AiogramProvider()) as dp:
         await send_message(bot, dp)
+
+
+@pytest.mark.asyncio
+async def test_get_container_returns_configured_container(
+    app_provider: AppProvider,
+) -> None:
+    router = Router()
+    container = make_async_container(app_provider)
+
+    setup_dishka(container=container, router=router)
+
+    assert get_container(router) is container
+
+    await container.close()
 
 
 @pytest.mark.asyncio

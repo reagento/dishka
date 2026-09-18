@@ -20,6 +20,7 @@ How to use
     from dishka.integrations.litestar import (
         FromDishka,
         LitestarProvider,
+        get_container,
         inject,
         setup_dishka,
     )
@@ -73,7 +74,7 @@ How to use
     @asynccontextmanager
     async def lifespan(app: Litestar):
         yield
-        await app.state.dishka_container.close()
+        await get_container(app).close()
 
     app = Litestar([endpoint], lifespan=[lifespan])
 

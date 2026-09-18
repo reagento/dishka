@@ -16,12 +16,18 @@ warnings.warn(
 )
 
 if FASTSTREAM_VERSION.startswith("0.5"):
-    from .faststream_05 import FastStreamProvider, inject, setup_dishka
+    from .faststream_05 import (
+        FastStreamProvider,
+        get_container,
+        inject,
+        setup_dishka,
+    )
 elif (
     FASTSTREAM_VERSION.startswith(("0.6", "0.7"))
 ):
     from .faststream_06 import (  # type: ignore[assignment]
         FastStreamProvider,
+        get_container,
         inject,
         setup_dishka,
     )
@@ -37,6 +43,7 @@ else:
 __all__ = (
     "FastStreamProvider",
     "FromDishka",
+    "get_container",
     "inject",
     "setup_dishka",
 )

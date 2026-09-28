@@ -41,6 +41,8 @@ ExitCallable = Callable[
     Awaitable[None],
 ]
 
+_NOT_RESOLVED = object()
+
 
 class AsyncContainer:
     __slots__ = (
@@ -183,11 +185,16 @@ class AsyncContainer:
                     dependency_type if component == DEFAULT_COMPONENT
                     else DependencyKey(dependency_type, component),
                 )
+            key = (
+                dependency_type if component == DEFAULT_COMPONENT
+                else DependencyKey(dependency_type, component)
+            )
+            cached = self._cache.get(key, _NOT_RESOLVED)
+            if cached is not _NOT_RESOLVED:
+                # already resolved values need no single-flight protection
+                return cached  # type: ignore[return-value]
             async with lock:
-                return await self._get_unlocked(  # type: ignore[no-any-return]
-                    dependency_type if component == DEFAULT_COMPONENT
-                    else DependencyKey(dependency_type, component),
-                )
+                return await self._get_unlocked(key)  # type: ignore[no-any-return]
         except (NoFactoryError, NoActiveFactoryError) as e:
             e.scope = self.scope
             raise
@@ -269,6 +276,10 @@ class AsyncContainer:
         lock = self.lock
         if lock is None:
             return await self._get_unlocked(key)
+        cached = self._cache.get(key, _NOT_RESOLVED)
+        if cached is not _NOT_RESOLVED:
+            # already resolved values need no single-flight protection
+            return cached
         async with lock:
             return await self._get_unlocked(key)
 

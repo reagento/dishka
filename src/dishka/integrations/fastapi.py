@@ -115,9 +115,10 @@ def _find_context_param(func: Callable[P, T]) -> str | None:
 
 
 def _container_getter(_: Any, kwargs: Any) -> Container | AsyncContainer:
-    request = kwargs.setdefault(DISHKA_REQUEST_PARAM.name)
-    websocket = kwargs.setdefault(DISHKA_WEBSOCKET_PARAM.name)
-    return (request or websocket).state.dishka_container
+    request = kwargs.get(DISHKA_REQUEST_PARAM.name)
+    if request is not None:
+        return request.state.dishka_container
+    return kwargs[DISHKA_WEBSOCKET_PARAM.name].state.dishka_container
 
 
 def _wrap_fastapi_injection(

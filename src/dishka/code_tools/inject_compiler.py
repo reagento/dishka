@@ -112,8 +112,9 @@ def compile_injected_func(  # noqa: PLR0917
             ),
         )
 
-        for param in additional_params:
-            builder.statement(f"kwargs.pop('{param.name}')")
+        if additional_params:
+            for param in additional_params:
+                builder.statement(f"kwargs.pop('{param.name}', None)")
 
         context: AbstractContextManager[None] = nullcontext()
 

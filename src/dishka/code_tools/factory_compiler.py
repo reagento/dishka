@@ -73,7 +73,7 @@ class FactoryBuilder(CodeBuilder):
         obj: DependencyKey,
         compiled_deps: dict[DependencyKey, CompiledFactory],
     ) -> str:
-        if obj.is_const():
+        if obj.is_const() and obj not in compiled_deps:
             return self.global_(obj.get_const_value())
         if obj.type_hint is DependencyKey:
             return self.provides_name

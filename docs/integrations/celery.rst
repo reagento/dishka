@@ -21,6 +21,7 @@ How to use
     from dishka.integrations.celery import (
         DishkaTask,
         FromDishka,
+        get_container,
         inject,
         setup_dishka,
     )
@@ -72,12 +73,10 @@ or for one task handler
 
     from celery import current_app
     from celery.signals import worker_process_shutdown
-    from dishka import Container
 
     @worker_process_shutdown.connect()
     def close_dishka(*args, **kwargs):
-        container: Container = current_app.conf["dishka_container"]
-        container.close()
+        get_container(current_app).close()
 
 7. Setup ``dishka`` integration
 

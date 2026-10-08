@@ -6,7 +6,7 @@ import pytest
 from taskiq import AsyncBroker, Context, InMemoryBroker, TaskiqDepends
 
 from dishka import FromDishka, Provider, Scope, make_async_container
-from dishka.integrations.taskiq import inject, setup_dishka
+from dishka.integrations.taskiq import get_container, inject, setup_dishka
 from .utils import PickleResultBackend
 
 provider = Provider(scope=Scope.REQUEST)
@@ -64,6 +64,17 @@ async def test_return_int_task(task_func) -> None:
         kiq = await task.kiq()
         result = await kiq.wait_result()
         assert result.return_value == hash("dishka")
+
+
+@pytest.mark.asyncio
+async def test_get_container_returns_configured_container() -> None:
+    broker = InMemoryBroker()
+    container = make_async_container(provider)
+    setup_dishka(container, broker)
+
+    assert get_container(broker) is container
+
+    await container.close()
 
 
 @pytest.mark.asyncio

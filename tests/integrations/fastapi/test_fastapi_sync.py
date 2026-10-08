@@ -11,6 +11,7 @@ from dishka import make_container
 from dishka.integrations.fastapi import (
     DishkaSyncRoute,
     FromDishka,
+    get_container,
     inject_sync,
     setup_dishka,
 )
@@ -66,6 +67,19 @@ async def test_app_dependency(app_provider: AppProvider, app_factory):
         app_provider.mock.assert_called_with(APP_DEP_VALUE)
         app_provider.app_released.assert_not_called()
     app_provider.app_released.assert_called()
+
+
+@pytest.mark.asyncio
+async def test_get_container_returns_configured_container(
+    app_provider: AppProvider,
+) -> None:
+    app = fastapi.FastAPI()
+    container = make_container(app_provider)
+    setup_dishka(container, app)
+
+    assert get_container(app) is container
+
+    container.close()
 
 
 def get_with_request(

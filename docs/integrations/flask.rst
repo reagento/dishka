@@ -20,6 +20,7 @@ How to use
     from dishka.integrations.flask import (
         FlaskProvider,
         FromDishka,
+        get_container,
         inject,
         setup_dishka,
     )
@@ -74,3 +75,9 @@ Or pass your own inject decorator
 .. code-block:: python
 
     setup_dishka(container=container, app=app, auto_inject=my_inject)
+
+6. *(optional)* Close container when the application stops
+
+.. code-block:: python
+
+    get_container(app).close()

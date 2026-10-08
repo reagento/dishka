@@ -12,6 +12,7 @@ from starlette.testclient import TestClient
 from dishka import make_async_container
 from dishka.integrations.starlette import (
     FromDishka,
+    get_container,
     inject,
     setup_dishka,
 )
@@ -59,6 +60,19 @@ async def get_with_request(
 ) -> PlainTextResponse:
     mock(a)
     return PlainTextResponse("passed")
+
+
+@pytest.mark.asyncio
+async def test_get_container_returns_configured_container(
+    app_provider: AppProvider,
+) -> None:
+    app = Starlette()
+    container = make_async_container(app_provider)
+    setup_dishka(container, app)
+
+    assert get_container(app) is container
+
+    await container.close()
 
 
 @pytest.mark.asyncio

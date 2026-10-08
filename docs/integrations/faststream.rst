@@ -36,6 +36,7 @@ How to use
 
     from dishka.integrations.faststream import (
         FromDishka,
+        get_container,
         inject,
         setup_dishka,
         FastStreamProvider,
@@ -93,6 +94,12 @@ Or pass your own inject decorator
 .. code-block:: python
 
     setup_dishka(container=container, broker=broker, auto_inject=my_inject)
+
+6. *(optional)* Close the container manually when ``finalize_container=False``
+
+.. code-block:: python
+
+    await get_container(broker).close()
 
 FastStream - Litestar/FastAPI - dishka integration
 *********************************************************

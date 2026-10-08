@@ -2,6 +2,7 @@ __all__ = [
     "DISHKA_CONTAINER_KEY",
     "AiohttpProvider",
     "FromDishka",
+    "get_container",
     "inject",
     "setup_dishka",
 ]
@@ -121,3 +122,7 @@ def setup_dishka(
             inject_func = auto_inject
 
         _inject_routes(app.router, inject_func)
+
+
+def get_container(app: Application) -> AsyncContainer:  # noqa: FURB118
+    return app[DISHKA_CONTAINER_KEY]

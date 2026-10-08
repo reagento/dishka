@@ -1,6 +1,7 @@
 __all__ = [
     "FromDishka",
     "TelebotProvider",
+    "get_container",
     "inject",
     "setup_dishka",
 ]
@@ -70,4 +71,9 @@ class ContainerMiddleware(BaseMiddleware):  # type: ignore[misc]
 def setup_dishka(container: Container, bot: TeleBot) -> Container:
     middleware = ContainerMiddleware(container)
     bot.setup_middleware(middleware)
+    bot.dishka_container = container
     return container
+
+
+def get_container(bot: TeleBot) -> Container:
+    return bot.dishka_container

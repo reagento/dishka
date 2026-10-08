@@ -1,5 +1,6 @@
 __all__ = [
     "FromDishka",
+    "get_container",
     "inject",
     "setup_dishka",
 ]
@@ -69,3 +70,7 @@ def setup_dishka(
             inject_func = auto_inject
 
         _inject_commands(context, context.command, inject_func)
+
+
+def get_container(context: Context) -> Container:
+    return context.meta[CONTAINER_NAME]

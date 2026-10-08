@@ -1,6 +1,7 @@
 __all__ = [
     "DishkaTask",
     "FromDishka",
+    "get_container",
     "inject",
     "setup_dishka",
 ]
@@ -34,6 +35,10 @@ def inject(func: Callable[P, T]) -> Callable[P, T]:
 
 def setup_dishka(container: Container, app: Celery) -> None:
     app.conf[CONTAINER_NAME] = container
+
+
+def get_container(app: Celery) -> Container:
+    return app.conf[CONTAINER_NAME]
 
 
 class DishkaTask(Task):

@@ -1,6 +1,7 @@
 __all__ = [
     "FromDishka",
     "SanicProvider",
+    "get_container",
     "inject",
     "setup_dishka",
 ]
@@ -76,3 +77,9 @@ def setup_dishka(
         _inject_routes(app.router.routes, inject_func)
         for blueprint in app.blueprints.values():
             _inject_routes(blueprint.routes, inject_func)
+
+    app.ctx.dishka_container = container
+
+
+def get_container(app: Sanic[Any, Any]) -> AsyncContainer:
+    return app.ctx.dishka_container

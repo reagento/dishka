@@ -1,3 +1,4 @@
+from enum import Enum, auto
 from typing import Annotated
 
 import pytest
@@ -270,3 +271,46 @@ def test_decorate_two_components():
     )
     assert container.get(int, component="X") == 43
     assert container.get(int, component="Y") == -2
+
+
+class Comp(Enum):
+    A = auto()
+    B = auto()
+
+
+class EnumMainProvider(Provider):
+    scope = Scope.APP
+
+    @provide
+    def foo(self, a: Annotated[float, FromComponent(Comp.A)]) -> complex:
+        return a * 10
+
+    @provide
+    def bar(self) -> int:
+        return 20
+
+
+class EnumAProvider(Provider):
+    scope = Scope.APP
+    component = Comp.A
+
+    @provide
+    def foo(self, a: Annotated[int, FromComponent()]) -> float:
+        return a + 1
+
+
+def test_enum_component():
+    container = make_container(EnumMainProvider(), EnumAProvider())
+    assert container.get(complex) == 210
+    assert container.get(float, component=Comp.A) == 21
+    with pytest.raises(NoFactoryError):
+        container.get(float)
+
+
+@pytest.mark.asyncio
+async def test_enum_component_async():
+    container = make_async_container(EnumMainProvider(), EnumAProvider())
+    assert await container.get(complex) == 210
+    assert await container.get(float, component=Comp.A) == 21
+    with pytest.raises(NoFactoryError):
+        await container.get(float)

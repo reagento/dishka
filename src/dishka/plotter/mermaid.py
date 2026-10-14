@@ -1,4 +1,5 @@
 import html
+import re
 
 from dishka.plotter.model import Group, Node, NodeType, Renderer
 
@@ -89,12 +90,15 @@ class MermaidRenderer(Renderer):
             return "🔗 " + prefix
         return "🏭 " + prefix
 
+    def _escape_namespace(self, line: str) -> str:
+        return re.sub(r"[^\w.]", "_", line)
+
     def _render_group(
             self, group: Group, name_prefix: str = "",
     ) -> str:
         if not group.nodes and not group.children:
             return ""
-        name = name_prefix + self._escape(group.name or "")
+        name = name_prefix + self._escape_namespace(group.name or "")
         res = ""
         if group.nodes:
             res = f"namespace {name} {{\n"

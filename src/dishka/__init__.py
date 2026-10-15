@@ -19,6 +19,7 @@ __all__ = [
     "alias",
     "collect",
     "decorate",
+    "exec_type_checking",
     "from_context",
     "make_async_container",
     "make_container",
@@ -27,6 +28,7 @@ __all__ = [
     "provide_all",
 ]
 
+from ._adaptix.type_tools.type_evaler import exec_type_checking
 from .async_container import AsyncContainer, make_async_container
 from .container import Container, make_container
 from .entities.component import DEFAULT_COMPONENT, Component

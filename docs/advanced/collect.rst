@@ -5,9 +5,9 @@ By default dishka relies on approach "last wins" which means that
 if you have multiple factories providing the same type
 only the last of them will be used.
 The same rule still applies even if factories are marked with ``when=``,
-but in that case only active factories are used (see :ref:`when`)
+but in that case only active factories are used (see :ref:`when`).
 
-In some cases it is useful to have all objects created instead of a single one.
+In some cases, it is useful to create all objects rather than a single one.
 To achieve that you should use ``collect`` in your provider.
 By default, it provides a list of requested type.
 You can use it as a dependency or request directly from a container.

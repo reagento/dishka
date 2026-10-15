@@ -4,6 +4,7 @@ from typing import Any
 from dishka import AsyncContainer, BaseScope, Container, DependencyKey
 from dishka._adaptix.type_tools.basic_utils import is_protocol
 from dishka.dependency_source import Factory
+from dishka.entities.component import Component
 from dishka.entities.factory_type import FactoryType
 from dishka.entities.marker import unpack_marker
 from dishka.registry import Registry
@@ -37,6 +38,11 @@ class Transformer:
     def _is_decorated(self, key: DependencyKey) -> bool:
         return key.depth > 0
 
+    def _get_component_name(self, component: Component) -> str:
+        if isinstance(component, str):
+            return component
+        return get_name(component, include_module=False)
+
     def _node_type(self, factory: Factory) -> NodeType:
         for dep in factory.dependencies:
             if self._is_decorated(dep):
@@ -57,7 +63,7 @@ class Transformer:
             else:
                 component_group = self.groups[group_key] = Group(
                     id=self.count("component"),
-                    name=str(key.component),
+                    name=self._get_component_name(key.component),
                     children=[],
                     nodes=[],
                     type=GroupType.COMPONENT,

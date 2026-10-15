@@ -192,7 +192,7 @@ class GraphBuilder:
                 scope=InvalidScopes.UNKNOWN_SCOPE,
                 new_dependency=provides,
                 cache=False,
-                component=cast(Component, provides.component),  # fixed above
+                component=provides.component,  # fixed above
             )],
         )
 
@@ -247,7 +247,7 @@ class GraphBuilder:
             if self._is_alias_source_decorated(
                 decorator=decorator,
                 # should be fixes on group creation
-                component=cast(Component, provides.component),
+                component=provides.component,
                 factory=old_factory,
                 processed_path=[],
             ):
@@ -264,18 +264,18 @@ class GraphBuilder:
                 scope=cast(BaseScope, old_factory.scope),
                 new_dependency=decorated_provides,
                 cache=old_factory.cache,
-                component=cast(Component, provides.component),
+                component=provides.component,
             ).replace(
                 provides=provides,
                 when_active=old_factory.when_active,
                 when_override=old_factory.when_override,
-                when_component=cast(Component, old_factory.when_component),
+                when_component=old_factory.when_component,
             )
             if decorator.when is not None:
                 conditional_factory = new_factory.replace(
                     when_override=~decorator.when,
                     when_active=~decorator.when,
-                    when_component=cast(Component, provides.component),
+                    when_component=provides.component,
                 )
                 decorated_factory.when_dependencies = [conditional_factory]
             group_replacement.append(decorated_factory)

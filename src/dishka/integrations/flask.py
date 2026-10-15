@@ -1,6 +1,7 @@
 __all__ = [
     "FlaskProvider",
     "FromDishka",
+    "get_container",
     "inject",
     "setup_dishka",
 ]
@@ -75,3 +76,9 @@ def setup_dishka(
         _inject_routes(app, inject_func)
         for blueprint in app.blueprints.values():
             _inject_routes(blueprint, inject_func)
+
+    app.extensions["dishka_container"] = container
+
+
+def get_container(app: Flask) -> Container:
+    return app.extensions["dishka_container"]

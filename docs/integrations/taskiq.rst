@@ -19,6 +19,7 @@ How to use
 
     from dishka.integrations.taskiq import (
         FromDishka,
+        get_container,
         inject,
         setup_dishka,
         TaskiqProvider,
@@ -67,4 +68,10 @@ How to use
 .. code-block:: python
 
     setup_dishka(container=container, broker=broker)
+
+6. *(optional)* Close container when the broker stops
+
+.. code-block:: python
+
+    await get_container(broker).close()
 

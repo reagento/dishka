@@ -5,7 +5,12 @@ from telebot import TeleBot
 from telebot.types import Message, Update
 
 from dishka import make_container
-from dishka.integrations.telebot import FromDishka, inject, setup_dishka
+from dishka.integrations.telebot import (
+    FromDishka,
+    get_container,
+    inject,
+    setup_dishka,
+)
 from ..common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
@@ -56,6 +61,22 @@ def test_app_dependency(app_provider: AppProvider):
         app_provider.mock.assert_called_with(APP_DEP_VALUE)
         app_provider.app_released.assert_not_called()
     app_provider.app_released.assert_called()
+
+
+def test_get_container_returns_configured_container(
+    app_provider: AppProvider,
+) -> None:
+    bot = TeleBot(
+        "1234567890:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        use_class_middlewares=True,
+        threaded=False,
+    )
+    container = make_container(app_provider)
+    setup_dishka(container=container, bot=bot)
+
+    assert get_container(bot) is container
+
+    container.close()
 
 
 def handle_with_request(

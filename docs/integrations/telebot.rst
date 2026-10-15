@@ -20,6 +20,7 @@ How to use
 
     from dishka.integrations.telebot import (
         FromDishka,
+        get_container,
         inject,
         setup_dishka,
         TelebotProvider,
@@ -62,3 +63,8 @@ How to use
 
     setup_dishka(container=container, bot=bot)
 
+6. *(optional)* Close container when the bot stops
+
+.. code-block:: python
+
+    get_container(bot).close()

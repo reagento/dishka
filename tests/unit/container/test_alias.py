@@ -1,5 +1,6 @@
 import math
 from collections.abc import AsyncIterable, Iterable
+from typing import Literal
 from unittest.mock import Mock
 
 import pytest
@@ -153,6 +154,17 @@ def test_union_alias():
     container = make_container(provider)
     assert container.get(float) == 42
     assert container.get(complex) == 42
+
+
+@pytest.mark.parametrize(
+    "provides",
+    [AnyOf[Literal["a"], int], AnyOf[int, Literal["a"]]],
+)
+def test_anyof_literal(provides: object) -> None:
+    provider = Provider(scope=Scope.APP)
+    provider.provide(lambda: 1357, provides=provides)
+    container = make_container(provider)
+    assert container.get(int) == 1357
 
 
 if HAS_PY_311:

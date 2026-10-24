@@ -22,7 +22,7 @@ You can use auto-injection for ``FastStream`` 0.5.0 and higher. For older versio
 
     If you are using **FastAPI plugin** of **FastStream** you need to use both dishka integrations, but you can share the same container.
 
-    * Call ``dishka.integrations.faststream.setup_dishka`` on faststream broker or router.
+    * Call ``dishka_faststream.setup_dishka`` on faststream broker or router.
     * Call ``dishka.integrations.fastapi.setup_dishka`` on fastapi app.
 
 
@@ -34,13 +34,13 @@ How to use
 
 ..  code-block:: python
 
-    from dishka.integrations.faststream import (
+    from dishka import make_async_container, Provider, provide, Scope
+    from dishka_faststream import (
+        FastStreamProvider,
         FromDishka,
         inject,
         setup_dishka,
-        FastStreamProvider,
     )
-    from dishka import make_async_container, Provider, provide, Scope
 
 2. Create provider. You can use ``faststream.types.StreamMessage`` and ``faststream.ContextRepo`` as a factory parameter to access on *REQUEST*-scope
 
@@ -112,15 +112,13 @@ FastStream - Litestar/FastAPI - dishka integration
 .. code-block:: python
 
     import uvicorn
-    from dishka import Provider, Scope, provide
-    from dishka import make_async_container
-    from dishka.integrations import faststream as faststream_integration
-    from dishka.integrations import litestar as litestar_integration
-    from dishka.integrations.base import FromDishka
-    from dishka.integrations.faststream import inject as faststream_inject
+    from dishka import FromDishka, Provider, Scope, make_async_container, provide
     from dishka.integrations.litestar import inject as litestar_inject
+    from dishka.integrations.litestar import setup_dishka as litestar_setup_dishka
+    from dishka_faststream import inject as faststream_inject
+    from dishka_faststream import setup_dishka as faststream_setup_dishka
     from faststream.rabbit import RabbitBroker, RabbitRouter
-    from litestar import Litestar, route, HttpMethod
+    from litestar import HttpMethod, Litestar, route
 
 
     class SomeDependency:
@@ -155,14 +153,14 @@ FastStream - Litestar/FastAPI - dishka integration
 
         broker = RabbitBroker(url="amqp://guest:guest@localhost:5672/")
         broker.include_router(amqp_router)
-        faststream_integration.setup_dishka(container, broker=broker)
+        faststream_setup_dishka(container, broker=broker)
 
         http = Litestar(
             route_handlers=[http_handler],
             on_startup=[broker.start],
             on_shutdown=[broker.stop],
         )
-        litestar_integration.setup_dishka(container, http)
+        litestar_setup_dishka(container, http)
         return http
 
 
@@ -174,18 +172,17 @@ FastStream - Litestar/FastAPI - dishka integration
 
 .. code-block:: python
 
-    from collections.abc import AsyncIterator
+    from collections.abc import AsyncGenerator
     from contextlib import asynccontextmanager
 
     import uvicorn
+    from dishka import FromDishka, Provider, Scope, make_async_container, provide
+    from dishka.integrations.fastapi import DishkaRoute
+    from dishka.integrations.fastapi import setup_dishka as fastapi_setup_dishka
+    from dishka_faststream import inject as faststream_inject
+    from dishka_faststream import setup_dishka as faststream_setup_dishka
     from fastapi import APIRouter, FastAPI
     from faststream.rabbit import RabbitBroker, RabbitRouter
-    from dishka import Provider, Scope, make_async_container, provide
-    from dishka.integrations import fastapi as fastapi_integration
-    from dishka.integrations import faststream as faststream_integration
-    from dishka.integrations.base import FromDishka
-    from dishka.integrations.fastapi import DishkaRoute
-    from dishka.integrations.faststream import inject as faststream_inject
 
 
     class SomeDependency:
@@ -222,22 +219,23 @@ FastStream - Litestar/FastAPI - dishka integration
 
         broker = RabbitBroker(url="amqp://guest:guest@localhost:5672/")
         broker.include_router(amqp_router)
-        faststream_integration.setup_dishka(container, broker=broker)
+        faststream_setup_dishka(container, broker=broker)
 
         @asynccontextmanager
-        async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             async with broker:
                 await broker.start()
                 yield
 
         http = FastAPI(lifespan=lifespan)
         http.include_router(router)
-        fastapi_integration.setup_dishka(container, http)
+        fastapi_setup_dishka(container, http)
         return http
 
 
     if __name__ == "__main__":
         uvicorn.run(create_app(), host="0.0.0.0", port=8000)
+
 
 
 Testing FastStream with dishka
@@ -247,15 +245,21 @@ Simple example:
 
 .. code-block:: python
 
-    from collections.abc import AsyncIterator
+    from collections.abc import AsyncGenerator
 
     import pytest
-    from dishka import AsyncContainer, make_async_container
-    from dishka import Provider, Scope, provide
-    from dishka.integrations import faststream as faststream_integration
-    from dishka.integrations.base import FromDishka as Depends
+    from dishka import (
+        AsyncContainer,
+        Provider,
+        Scope,
+        make_async_container,
+        provide,
+    )
+    from dishka import FromDishka as Depends
+    from dishka_faststream import setup_dishka
     from faststream import FastStream, TestApp
-    from faststream.rabbit import RabbitBroker, TestRabbitBroker, RabbitRouter
+    from faststream.rabbit import RabbitBroker, RabbitRouter, TestRabbitBroker
+
 
     router = RabbitRouter()
 
@@ -291,12 +295,12 @@ Simple example:
     @pytest.fixture
     async def app(broker: RabbitBroker, container: AsyncContainer) -> FastStream:
         app = FastStream(broker)
-        faststream_integration.setup_dishka(container, app, auto_inject=True)
+        setup_dishka(container, app, auto_inject=True)
         return FastStream(broker)
 
 
     @pytest.fixture
-    async def client(app: FastStream) -> AsyncIterator[RabbitBroker]:
+    async def client(app: FastStream) -> AsyncGenerator[RabbitBroker, None]:
         async with TestRabbitBroker(app.broker) as br, TestApp(app):
             yield br
 

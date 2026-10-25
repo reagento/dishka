@@ -522,6 +522,7 @@ def make_factory(
         allow_static_evaluation: bool = False,
 ) -> Factory:
     provides, source = _extract_source(provides, source)
+    provides = _alias_to_anyof(provides)
 
     if source and is_protocol(source):
         raise CannotUseProtocolError(source)

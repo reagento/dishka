@@ -21,13 +21,17 @@ if sys.version_info < (3, 12):
 
 from .type_alias_type_provider import (
     BytesMemoryView,
+    Consumer,
     Integer,
     IntegerWithComponent,
     IntStr,
     IterableInt,
     ListFloat,
+    Service,
+    ServiceAlias,
     StrNone,
     WrappedIntegerDep,
+    WrappedServiceAlias,
 )
 
 
@@ -158,3 +162,49 @@ async def test_type_alias_component_async(component_provider):
     )
     assert await container.get(int, component="X") == 42
     assert await container.get(str) == "42"
+
+
+def make_provides_alias_provider(alias: Any) -> Provider:
+    provider = Provider(scope=Scope.APP)
+    provider.provide(Service, provides=alias)
+    provider.provide(Consumer)
+    return provider
+
+
+def make_provides_alias_func_provider(alias: Any) -> Provider:
+    def get_service() -> Service:
+        return Service()
+
+    provider = Provider(scope=Scope.APP)
+    provider.provide(get_service, provides=alias)
+    provider.provide(Consumer)
+    return provider
+
+
+PROVIDES_ALIAS_FACTORIES = [
+    make_provides_alias_provider,
+    make_provides_alias_func_provider,
+]
+
+
+@pytest.mark.parametrize("make_provider", PROVIDES_ALIAS_FACTORIES)
+@pytest.mark.parametrize("alias", [ServiceAlias, WrappedServiceAlias])
+def test_type_alias_in_provides(make_provider, alias):
+    container = make_container(make_provider(alias))
+    service = container.get(alias)
+    assert isinstance(service, Service)
+    assert container.get(Service) is service
+    assert container.get(ServiceAlias) is service
+    assert container.get(Consumer).service is service
+
+
+@pytest.mark.parametrize("make_provider", PROVIDES_ALIAS_FACTORIES)
+@pytest.mark.parametrize("alias", [ServiceAlias, WrappedServiceAlias])
+@pytest.mark.asyncio
+async def test_type_alias_in_provides_async(make_provider, alias):
+    container = make_async_container(make_provider(alias))
+    service = await container.get(alias)
+    assert isinstance(service, Service)
+    assert await container.get(Service) is service
+    assert await container.get(ServiceAlias) is service
+    assert (await container.get(Consumer)).service is service

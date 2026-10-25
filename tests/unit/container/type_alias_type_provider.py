@@ -13,3 +13,16 @@ type IterableInt = Iterable[Integer]
 type IntStr = Integer | String
 type BytesMemoryView = bytes | memoryview
 type StrNone = String | None
+
+
+class Service:
+    pass
+
+
+type ServiceAlias = Service
+type WrappedServiceAlias = ServiceAlias
+
+
+class Consumer:
+    def __init__(self, service: ServiceAlias) -> None:
+        self.service = service

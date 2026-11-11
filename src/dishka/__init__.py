@@ -7,6 +7,8 @@ __all__ = [
     "Component",
     "Container",
     "DependencyKey",
+    "DishkaApp",
+    "DishkaModule",
     "FromComponent",
     "FromDishka",
     "Has",
@@ -27,6 +29,7 @@ __all__ = [
     "provide_all",
 ]
 
+from .app import DishkaApp, DishkaModule
 from .async_container import AsyncContainer, make_async_container
 from .container import Container, make_container
 from .entities.component import DEFAULT_COMPONENT, Component

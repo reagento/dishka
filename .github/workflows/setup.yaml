@@ -109,7 +109,7 @@ jobs:
         sphinx-build -M html docs docs-build -W
 
     - name: "Store coverage file"
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       if: ${{ github.event_name == 'pull_request' }}
       with:
         name: coverage-${{ matrix.python-version }}
@@ -147,7 +147,7 @@ jobs:
           MINIMUM_GREEN: 90
 
       - name: "Store Pull Request comment to be posted (for external pr)"
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
         with:
           name: python-coverage-comment-action

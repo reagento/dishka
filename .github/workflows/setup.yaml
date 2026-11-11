@@ -100,7 +100,7 @@ jobs:
     - name: "Run tests"
       # See: https://docs.github.com/en/actions/reference/runners/github-hosted-runners#:~:text=ubuntu%2Dlatest
       run: |
-        nox -t latest --parallel 4
+        nox -t ci
         mv .coverage .coverage.${{ matrix.python-version }}
 
     - name: "Build doc"

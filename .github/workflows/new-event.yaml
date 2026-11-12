@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "Send Telegram notification for new issue or pull request"
-        uses: reagento/relator@4b1531359edba1228db0906e8931b0da2aef69cd # v1.7.0
+        uses: reagento/relator@879d895c8d7f44cfe7471bda4f5449c233e6f986 # v1.7.1
         with:
           tg-bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           tg-chat-id: ${{ vars.TELEGRAM_CHAT_ID }}

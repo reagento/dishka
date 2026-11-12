@@ -1,3 +1,4 @@
+from enum import Enum, auto
 from typing import Protocol
 
 import pytest
@@ -36,9 +37,34 @@ class MyProvider(Provider):
     float_alias = alias(source=int, provides=float)
 
 
+class Comp(Enum):
+    DB = auto()
+
+
+ANON = object()
+
+
+class EnumComponentProvider(Provider):
+    component = Comp.DB
+
+    @provide(scope=Scope.APP)
+    def value(self) -> int:
+        return 1
+
+
+class ObjectComponentProvider(Provider):
+    component = ANON
+
+    @provide(scope=Scope.APP)
+    def value(self) -> float:
+        return 1.0
+
+
 @pytest.mark.parametrize("container", [
     make_container(MyProvider()),
     make_async_container(MyProvider()),
+    make_container(EnumComponentProvider(), ObjectComponentProvider()),
+    make_async_container(EnumComponentProvider(), ObjectComponentProvider()),
 ])
 @pytest.mark.parametrize("renderer", [
     render_d2, render_mermaid,

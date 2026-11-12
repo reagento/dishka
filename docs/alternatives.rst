@@ -8,11 +8,11 @@ For this analysis we imagined several cases. Not all applications require all of
 * For some apps (like AWS Lambdas) you do not need to create all singletons at startup as it serves only few requests.
 * For some apps (like desktop) you will use threads, for others you will use asyncio.
 * Some objects such as database connections may require async initialization and finalization.
-* Some dependencies must be shared between other objects. For example: databases connection can be used by multiple data-mappers and unit-of-work within single processing request.
+* Some dependencies must be shared between other objects. For example: database connection can be used by multiple data-mappers and unit-of-work within single processing request.
 
 Actually, everything can be done in your code: DI-framework is not a required thing for an application. But isn't it more pleasant when everything is just working out of the box?
 
-There might be errors in this comparison, some features are not well described while still exist in selected libraries. Some features can be implemented manually, but this topic is not about your code - it is about existing libraries.
+There might be errors in this comparison, some features are not well described while still existing in selected libraries. Some features can be implemented manually, but this topic is not about your code - it is about existing libraries.
 
 .. note:: The data is up to date as of **March 8, 2024**
 
@@ -147,7 +147,7 @@ Why not di?
 ``di`` is a young promising project which has own advantages comparing to ``dishka``, but looks more complicated.
 
 * You need to pass 3 things to get a dependency: solved dependency, executor and state. In ``dishka`` you need only container (and already known dependency type).
-* Scopes in di work differently, they are not thread-safe.
+* Scopes in ``di`` work differently, they are not thread-safe.
 * It supports binding by subclasses or by name, but retrieving dependencies is more complicated.
 * It does not support generic dependencies.
 * It is quite fast in creating dependencies, but very slow initialization. For big graphs it can take years to start application. E.g.: if you have graph of 60 classes nested with with depth of 6, then for ``di`` it take **50 sec** to initialize container and only **5ms** for ``dishka``.

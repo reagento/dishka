@@ -36,7 +36,7 @@ Technical requirements
 
 1. Dependencies which require some cleanup must be cleaned up on the scope exit.
 2. Dependencies which do not require cleanup should somehow be supported.
-3. Dependencies are cleaned in reverse order as they created.
+3. Dependencies are cleaned in reverse order as they were created.
 4. Exceptions should not prevent cleaning of then rest of dependencies.
 
 5. Context data
@@ -48,7 +48,7 @@ Technical requirements
 6. Modularity
 ================
 
-1. There can be multiple containers within same code base for different purposes.
+1. There can be multiple containers within the same codebase for different purposes.
 2. There must be a way to assemble a container from some reusable parts.
 3. Assembling of container should be done in runtime in local scope.
 4. There should be a way to isolate different parts of container so they do not affect each other.
@@ -60,8 +60,8 @@ Technical requirements
 1. There should be a way to create dependency based on its ``__init__``.
 2. When creating a dependency there should be a way to decide which subtype is used and request only its dependencies.
 3. There should be a way to reuse same object for multiple requested types.
-4. There should be a way to decorate dependency just adding new providers.
-5. There should be a way to enter multiple scopes with single call. The last of those scopes is used when dependencies are requested.
+4. There should be a way to decorate a dependency by just adding new providers.
+5. There should be a way to enter multiple scopes in a single call. The last of those scopes is used when dependencies are requested.
 6. Container user errors must be clear and contain information necessary for resolution.
 7. Dependency graph should be prematurely analyzed to detect most obvious errors.
 

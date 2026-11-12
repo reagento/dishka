@@ -150,7 +150,7 @@ NoActiveFactoryError: Cannot select active factory for ...
          ╰─× MyProvider.cache: Marker("a")
 
 
-There were multiple variant of factory provided wit various conditions, but none of them is considered active.
+There were multiple variant of factory provided with various conditions, but none of them is considered active.
 Check the logic of marker activation.
 
 

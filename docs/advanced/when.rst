@@ -14,7 +14,7 @@ This can be achieved with "activation" approach. Key concepts here:
 
 * **Marker** - special object to distinguish which implementations should be used.
 * **Activator** or **activation function** - special function registered in provider and taking decision if marker is active or not.
-* **activation condition** - expression with marker objects set in dependency source dynamically associated with activators to select between multiple implementations or enable decorators
+* **Activation condition** - expression with marker objects set in dependency source dynamically associated with activators to select between multiple implementations or enable decorators
 
 Activators can be called preliminary or multiple times, so avoid acquiring resources or doing heavy calculations, if necessary, move such things into factories or context data.
 
@@ -51,7 +51,7 @@ The base implementation will be used in all other cases as it has no condition s
 The overall rule is "last wins" like it worked with overriding.
 
 Second step is to provide logic of marker activation. You write a function returning ``bool`` and register it in provider using ``@activate`` decorator.
-It can be the same or another provider while you pass when creating a container.
+It can be the same or another provider that you specify when creating a container.
 
 .. code-block:: python
 
@@ -189,8 +189,8 @@ For example:
 In this case,
 
 * ``memcached_impl`` is not used because no factory for ``MemcachedConfig`` is provided
-* ``redis_impl`` is not used while it is registered as ``from_context`` but no real value is provided.
-* ``base_impl`` is used as a default one, because none of later is active
+* ``redis_impl`` is not used while it is registered as ``from_context`` but no real value is provided
+* ``base_impl`` is used as the default because none of the former are active
 
 
 Preliminary (static) evaluation and graph validation
@@ -198,7 +198,7 @@ Preliminary (static) evaluation and graph validation
 
 In certain cases activator can be called during graph building step, this allows avoid unnecessary calls in runtime and ignore errors on factories which are never called.
 
-Static evaluation is enabled only if activator a sync non-generator function with dependencies retrieved from root context or without dependencies at all.
+Static evaluation is enabled only if the activator is a sync non-generator function with dependencies retrieved from the root context or without dependencies at all.
 For example, in the following code ``redis_impl`` is never called because ``RedisConfig`` is not passed, so it won't be validated at all.
 
 

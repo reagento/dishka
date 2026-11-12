@@ -72,8 +72,10 @@ class FactoryBuilder(CodeBuilder):
         self,
         obj: DependencyKey,
         compiled_deps: dict[DependencyKey, CompiledFactory],
+        *,
+        allow_const: bool = True,
     ) -> str:
-        if obj.is_const():
+        if allow_const and obj.is_const():
             return self.global_(obj.get_const_value())
         if obj.type_hint is DependencyKey:
             return self.provides_name
@@ -251,7 +253,9 @@ def _alias_factory_body(
     compiled_deps: dict[DependencyKey, CompiledFactory],
 ) -> None:
     builder.assign_solved(
-        builder.getter(factory.dependencies[0], compiled_deps),
+        builder.getter(
+            factory.dependencies[0], compiled_deps, allow_const=False,
+        ),
     )
 
 

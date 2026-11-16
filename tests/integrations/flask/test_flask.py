@@ -10,7 +10,12 @@ from flask.typing import (
 )
 
 from dishka import Provider, make_container
-from dishka.integrations.flask import FromDishka, inject, setup_dishka
+from dishka.integrations.flask import (
+    FromDishka,
+    get_container,
+    inject,
+    setup_dishka,
+)
 from ..common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
@@ -187,3 +192,16 @@ def test_custom_auto_inject(
         app.test_request_context(),
     ):
         app.test_client().get("/")
+
+
+def test_get_container_returns_configured_container(
+    app_provider: AppProvider,
+) -> None:
+    app = Flask(__name__)
+    container = make_container(app_provider)
+
+    setup_dishka(container=container, app=app)
+
+    assert get_container(app) is container
+
+    container.close()

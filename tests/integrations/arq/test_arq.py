@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 from dishka import FromDishka, make_async_container
-from dishka.integrations.arq import inject, setup_dishka
+from dishka.integrations.arq import get_container, inject, setup_dishka
 from ..common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
@@ -65,3 +65,15 @@ async def test_request_dependency(app_provider: AppProvider):
         await settings.on_job_end(settings.ctx)
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.app_released.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_container_returns_configured_container(
+    app_provider: AppProvider,
+) -> None:
+    container = make_async_container(app_provider)
+    setup_dishka(container, worker_settings=WorkerSettings)
+
+    assert get_container(WorkerSettings) is container
+
+    await container.close()

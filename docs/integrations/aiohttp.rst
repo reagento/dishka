@@ -18,8 +18,8 @@ How to use
 ..  code-block:: python
 
     from dishka.integrations.aiohttp import (
-        DISHKA_CONTAINER_KEY,
         FromDishka,
+        get_container,
         inject,
         setup_dishka,
         AiohttpProvider,
@@ -76,13 +76,18 @@ Or pass your own inject decorator
 
     setup_dishka(container=container, app=app, auto_inject=my_inject)
 
-6. *(optional)* Close container on app termination
+6. *(optional)* Close the container manually when ``finalize_container=False``
 
 .. code-block:: python
 
     async def on_shutdown(app: Application):
-        await app[DISHKA_CONTAINER_KEY].close()
+        await get_container(app).close()
 
+    setup_dishka(
+        container=container,
+        app=app,
+        finalize_container=False,
+    )
     app.on_shutdown.append(on_shutdown)
 
 Websockets

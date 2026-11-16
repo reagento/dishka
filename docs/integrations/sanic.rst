@@ -20,6 +20,7 @@ How to use
     from dishka.integrations.sanic import (
         FromDishka,
         SanicProvider,
+        get_container,
         inject,
         setup_dishka,
     )
@@ -75,6 +76,12 @@ Or pass your own inject decorator
 .. code-block:: python
 
     setup_dishka(container=container, app=app, auto_inject=my_inject)
+
+6. *(optional)* Close container when the application stops
+
+.. code-block:: python
+
+    await get_container(app).close()
 
 Websockets
 **********************

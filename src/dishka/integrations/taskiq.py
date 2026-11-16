@@ -1,6 +1,7 @@
 __all__ = [
     "FromDishka",
     "TaskiqProvider",
+    "get_container",
     "inject",
     "setup_dishka",
 ]
@@ -166,3 +167,8 @@ def setup_dishka(
     broker: AsyncBroker,
 ) -> None:
     broker.add_middlewares(ContainerMiddleware(container))
+    broker.state["dishka_container"] = container
+
+
+def get_container(broker: AsyncBroker) -> AsyncContainer:
+    return broker.state["dishka_container"]

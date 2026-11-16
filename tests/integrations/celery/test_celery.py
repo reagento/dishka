@@ -5,7 +5,12 @@ from unittest.mock import Mock
 from celery import Celery, Task
 
 from dishka import FromDishka, Provider, make_container
-from dishka.integrations.celery import DishkaTask, inject, setup_dishka
+from dishka.integrations.celery import (
+    DishkaTask,
+    get_container,
+    inject,
+    setup_dishka,
+)
 from ..common import APP_DEP_VALUE, AppDep, AppProvider
 
 
@@ -80,6 +85,18 @@ def test_app_auto_dependency(app_provider: AppProvider):
         app_provider.mock.assert_called_with(APP_DEP_VALUE)
         app_provider.app_released.assert_not_called()
     app_provider.app_released.assert_called()
+
+
+def test_get_container_returns_configured_container(
+    app_provider: AppProvider,
+) -> None:
+    app = Celery()
+    container = make_container(app_provider)
+    setup_dishka(container=container, app=app)
+
+    assert get_container(app) is container
+
+    container.close()
 
 
 def test_with_bind(app_provider: AppProvider):

@@ -4,6 +4,7 @@ __all__ = [
     "AiogramProvider",
     "AutoInjectMiddleware",
     "FromDishka",
+    "get_container",
     "inject",
     "inject_handler",
     "inject_router",
@@ -120,6 +121,12 @@ def setup_dishka(
             inject_func=inject_func,
         )
         router.startup.register(callback)
+
+    router.dishka_container = container
+
+
+def get_container(router: Router) -> AsyncContainer:
+    return router.dishka_container
 
 
 def inject_router(

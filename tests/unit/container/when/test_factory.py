@@ -139,6 +139,19 @@ def test_activation_with_param_static_inactive():
     assert c.get(str) == "a"
 
 
+async def provide_async_str() -> str:
+    return "async"
+
+
+def test_sync_container_skips_statically_inactive_async_factory():
+    provider = Provider(scope=Scope.APP)
+    provider.provide(lambda: "sync", provides=str)
+    provider.provide(provide_async_str, provides=str, when=Marker("ASYNC"))
+    provider.activate(lambda: False, Marker("ASYNC"))
+    c = make_container(provider)
+    assert c.get(str) == "sync"
+
+
 def test_activation_with_param_static_active_no_dep():
     provider = Provider(scope=Scope.APP)
     provider.provide(lambda: "a", provides=str)

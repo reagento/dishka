@@ -285,6 +285,14 @@ def _context_factory_body(
         builder.raise_()
 
 
+def enabled_variants(factory: Factory) -> list[Factory]:
+    """Variants not switched off by static evaluation (`when=False`)."""
+    return [
+        variant for variant in factory.when_dependencies
+        if variant.when_override != BoolMarker(False)
+    ]
+
+
 def _selector_factory_body(
     builder: FactoryBuilder,
     source_call: str,
@@ -306,7 +314,7 @@ def _collection_factory_body(
 ) -> None:
     unconditional_factories: list[Factory] = []
     assigned = False
-    for variant in factory.when_dependencies:
+    for variant in enabled_variants(factory):
         condition = builder.when(
             variant.when_override, variant.when_component, compiled_deps,
         )
@@ -374,7 +382,7 @@ def _select_when_dependency(
 ) -> bool:
     """return True if there is assignment in any case"""
     first = True
-    for variant in factory.when_dependencies:
+    for variant in enabled_variants(factory):
         condition = builder.when(
             variant.when_override, factory.when_component, compiled_deps,
         )
@@ -420,7 +428,7 @@ def _make_body(
                 },
             )
             body_generator = BODY_GENERATORS[factory.type]
-            if factory.when_dependencies:  # conditions generated
+            if enabled_variants(factory):  # conditions generated
                 with builder.else_():
                     body_generator(
                         builder, source_call, factory, compiled_deps,

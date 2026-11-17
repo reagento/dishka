@@ -15,7 +15,11 @@ from typing import (
 
 from ._adaptix.type_tools.basic_utils import is_generic
 from ._adaptix.type_tools.fundamentals import get_type_vars
-from .code_tools.factory_compiler import compile_activation, compile_factory
+from .code_tools.factory_compiler import (
+    compile_activation,
+    compile_factory,
+    enabled_variants,
+)
 from .container_objects import CompiledFactory
 from .dependency_source import (
     Factory,
@@ -113,7 +117,7 @@ class Registry:
         return list(itertools.chain(
             factory.dependencies,
             factory.kw_dependencies.values(),
-            (f.provides for f in factory.when_dependencies),
+            (f.provides for f in enabled_variants(factory)),
             activation_deps,
             (
                 DependencyKey(m, factory.when_component)

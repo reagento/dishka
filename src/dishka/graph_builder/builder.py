@@ -418,11 +418,15 @@ class GraphBuilder:
     def _make_registries(self, factories: list[Factory]) -> Sequence[Registry]:
         registries: dict[BaseScope, Registry] = {}
         has_fallback = True
+        provided_consts = frozenset(
+            f.provides for f in factories if f.provides.is_const()
+        )
         for scope in self.scopes:
             registry = Registry(
                 scope=scope,
                 has_fallback=has_fallback,
                 container_key=self.container_key,
+                provided_consts=provided_consts,
             )
             context_var = ContextVariable(
                 provides=self.container_key,

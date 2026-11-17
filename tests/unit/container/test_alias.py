@@ -167,16 +167,26 @@ def test_anyof_literal(provides: object) -> None:
     assert container.get(int) == 1357
 
 
-@pytest.mark.parametrize(
-    "provides",
-    [Literal["a"], AnyOf[Literal["a"], int], AnyOf[int, Literal["a"]]],
-)
-def test_literal_without_alias_from_child_scope(provides: object) -> None:
-    provider = Provider(scope=Scope.APP)
-    provider.provide(lambda: 1357, provides=provides)
-    container = make_container(provider, Provider(scope=Scope.REQUEST))
+def need_literal(arg: Literal["a"]) -> int:
+    return arg
+
+
+@pytest.mark.parametrize("scope", [Scope.APP, Scope.REQUEST])
+def test_literal_dep(scope: Scope) -> None:
+    provider = Provider(scope=scope)
+    provider.provide(lambda: 1357, provides=Literal["a"])
+    provider.provide(need_literal)
+    container = make_container(provider)
     with container() as request_container:
         assert request_container.get(Literal["a"]) == 1357
+        assert request_container.get(int) == 1357
+
+
+def test_unprovided_literal_dep() -> None:
+    provider = Provider(scope=Scope.APP)
+    provider.provide(need_literal)
+    container = make_container(provider)
+    assert container.get(int) == "a"
 
 
 @pytest.mark.parametrize(

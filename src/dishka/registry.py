@@ -59,6 +59,7 @@ class Registry:
         "container_key",
         "factories",
         "has_fallback",
+        "provided_consts",
         "scope",
     )
 
@@ -69,8 +70,10 @@ class Registry:
             has_fallback: bool,
             container_key: DependencyKey,
             child_registry: "Registry | None" = None,
+            provided_consts: frozenset[DependencyKey] = frozenset(),
     ) -> None:
         self.scope = scope
+        self.provided_consts = provided_consts
         self.factories: dict[DependencyKey, Factory] = {}
         self.compiled: CompiledFactories = {}
         self.compiled_async: CompiledFactories = {}
@@ -181,6 +184,7 @@ class Registry:
             is_async=False,
             compiled_deps=self._compile_deps(factory, False),
             container_key=self.container_key,
+            provided_consts=self.provided_consts,
         )
 
     def get_compiled_async(
@@ -215,6 +219,7 @@ class Registry:
             is_async=True,
             compiled_deps=self._compile_deps_async(factory, False),
             container_key=self.container_key,
+            provided_consts=self.provided_consts,
         )
 
     def get_compiled_activation(

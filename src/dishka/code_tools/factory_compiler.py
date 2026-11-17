@@ -34,8 +34,10 @@ class FactoryBuilder(CodeBuilder):
             is_async: bool,
             getter_prefix: str,
             container_key: DependencyKey,
+            provided_consts: frozenset[DependencyKey] = frozenset(),
     ) -> None:
         super().__init__(is_async=is_async)
+        self.provided_consts = provided_consts
         self.provides_name = ""
         self.cache_key = ""
         self.getter_name = ""
@@ -72,8 +74,14 @@ class FactoryBuilder(CodeBuilder):
         self,
         obj: DependencyKey,
         compiled_deps: dict[DependencyKey, CompiledFactory],
+        *,
+        allow_const: bool = True,
     ) -> str:
-        if obj.is_const():
+        if (
+            allow_const
+            and obj.is_const()
+            and obj not in self.provided_consts
+        ):
             return self.global_(obj.get_const_value())
         if obj.type_hint is DependencyKey:
             return self.provides_name
@@ -251,7 +259,9 @@ def _alias_factory_body(
     compiled_deps: dict[DependencyKey, CompiledFactory],
 ) -> None:
     builder.assign_solved(
-        builder.getter(factory.dependencies[0], compiled_deps),
+        builder.getter(
+            factory.dependencies[0], compiled_deps, allow_const=False,
+        ),
     )
 
 
@@ -445,6 +455,7 @@ def compile_factory(
     is_async: bool,
     compiled_deps: dict[DependencyKey, CompiledFactory],
     container_key: DependencyKey,
+    provided_consts: frozenset[DependencyKey] = frozenset(),
 ) -> CompiledFactory:
     if (
         factory.type is FactoryType.ALIAS
@@ -462,6 +473,7 @@ def compile_factory(
         is_async=is_async,
         getter_prefix="get_",
         container_key=container_key,
+        provided_consts=provided_consts,
     )
     builder.register_provides(factory.provides)
 

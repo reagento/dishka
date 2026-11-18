@@ -51,7 +51,8 @@ Key features:
    advanced/collect
    advanced/testing/index
    advanced/plotter
-
+   advanced/dealing-with-if-type-checking
+   
 .. toctree::
    :hidden:
    :caption: For developers:

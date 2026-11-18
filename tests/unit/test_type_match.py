@@ -1,8 +1,12 @@
+import sys
 from typing import Generic, Literal, TypeVar
 
 import pytest
 
-from dishka.dependency_source.decorator import is_broader_or_same_type
+from dishka.dependency_source.decorator import (
+    get_typevar_replacement,
+    is_broader_or_same_type,
+)
 
 T = TypeVar("T")
 T2 = TypeVar("T2")
@@ -27,6 +31,9 @@ class C: ...
 
 
 class SubC(C): ...
+
+
+class SubC2(C): ...
 
 
 class D: ...
@@ -76,7 +83,71 @@ TSubCCD = TypeVar("TSubCCD", "C", SubC, D)
         (DGeneric[T5], DGeneric[Literal["a"]], True),
         (DGeneric[T5], DGeneric[Literal[True]], True),
         (DGeneric[T5], DGeneric[Literal["a", 1]], False),
+        # bare (non-alias) union vs a bound TypeVar: broader iff every
+        # union member satisfies the bound.
+        (TC, SubC | SubC2, True),
+        (TC, SubC | D, False),
+        # a constrained TypeVar is invariant: it can only be one exact
+        # constraint, never a union of them.
+        (TCD, C | D, False),
     ],
 )
 def test_is_broader_or_same_type(*, first: T, second: T, match: bool):
     assert is_broader_or_same_type(first, second) == match
+
+
+# PEP 695 `type X = ...` aliases (typing.TypeAliasType) only exist on 3.12+.
+# Build them via the constructor so this module still parses on 3.10/3.11.
+if sys.version_info >= (3, 12):
+    from typing import TypeAliasType
+
+    class BoundCGeneric(Generic[TC]): ...
+
+    SingleClassAlias = TypeAliasType("SingleClassAlias", SubC)
+    UnionAlias = TypeAliasType("UnionAlias", SubC | SubC2)
+    BadUnionAlias = TypeAliasType("BadUnionAlias", SubC | D)
+    NestedAlias = TypeAliasType("NestedAlias", UnionAlias)
+    ConstraintClassAlias = TypeAliasType("ConstraintClassAlias", C)
+
+    ALIAS_MATCH_CASES = [
+        # bound TypeVar vs single-class alias (SubC <: C)
+        (TC, SingleClassAlias, True),
+        # bound TypeVar vs union alias, every member <: C
+        (TC, UnionAlias, True),
+        # bound TypeVar vs union alias with a non-subclass member
+        (TC, BadUnionAlias, False),
+        # alias-to-alias unwraps recursively
+        (TC, NestedAlias, True),
+        # alias nested in a generic arg
+        (BoundCGeneric[TC], BoundCGeneric[UnionAlias], True),
+        # constrained TypeVar (C, D) vs single-class alias -> C
+        (TCD, ConstraintClassAlias, True),
+        # alias nested in a generic arg with a non-subclass member -> False
+        (BoundCGeneric[TC], BoundCGeneric[BadUnionAlias], False),
+        # alias on the provider side (t1) unwraps at the top level
+        (SingleClassAlias, SubC, True),
+        # unwrapped alias hits the `t1 == t2` early return
+        (C, ConstraintClassAlias, True),
+    ]
+else:
+    ALIAS_MATCH_CASES = []
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 12),
+    reason="PEP 695 type aliases require Python 3.12+",
+)
+@pytest.mark.parametrize(("first", "second", "match"), ALIAS_MATCH_CASES)
+def test_is_broader_or_same_type_alias(*, first: T, second: T, match: bool):
+    assert is_broader_or_same_type(first, second) == match
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 12),
+    reason="PEP 695 type aliases require Python 3.12+",
+)
+def test_get_typevar_replacement_unwraps_alias():
+    # The substitution dict drives factory compilation, so it must hold the
+    # unwrapped concrete type, never the raw TypeAliasType.
+    assert get_typevar_replacement(TC, SingleClassAlias) == {TC: SubC}
+    assert get_typevar_replacement(TC, UnionAlias) == {TC: SubC | SubC2}
